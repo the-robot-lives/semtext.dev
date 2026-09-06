@@ -2,7 +2,7 @@ static-site:
   nameOverride: semtext
   fullnameOverride: semtext
   domain: semtext.dev
-  image: ops.noizu.com/semtext.dev/web:sha-0000000
+  image: ops.noizu.com/semtext.dev/web:sha-39edfd0
   port: 80
   imagePullSecrets:
     - name: ops-registry-secret
