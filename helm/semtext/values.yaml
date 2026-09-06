@@ -1,0 +1,15 @@
+static-site:
+  nameOverride: semtext
+  fullnameOverride: semtext
+  domain: semtext.dev
+  image: ops.noizu.com/semtext.dev/web:sha-0000000
+  port: 80
+  imagePullSecrets:
+    - name: ops-registry-secret
+  tls:
+    secretName: semtext-dev-tls
+    infisical:
+      enabled: true
+      secretsPath: "/apps/tls/semtext"
+      crtKey: SEMTEXT_TLS_CRT
+      keyKey: SEMTEXT_TLS_KEY
