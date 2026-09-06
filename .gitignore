@@ -7,3 +7,9 @@
 _build/
 deps/
 node_modules/
+.next/
+out/
+web/.next/
+web/out/
+web/node_modules/
+*.tsbuildinfo
