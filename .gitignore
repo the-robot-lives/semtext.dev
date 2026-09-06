@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+# env/secrets
+.envrc.local
+*.env
+# build
+_build/
+deps/
+node_modules/
