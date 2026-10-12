@@ -953,6 +953,17 @@ export default function Home() {
             <code className="font-mono">sem-reader</code> is chrome and mints
             nothing.
           </p>
+          <p className="mt-3 text-sm text-ink-mute">
+            Browse all of them — purpose, attributes, a live render from the
+            fallback tier, and the authored markup — in the{" "}
+            <a
+              href="/elements/"
+              className="font-mono text-violet-soft underline-offset-4 hover:underline"
+            >
+              elements glossary
+            </a>
+            .
+          </p>
 
           <div className="mt-8 rounded-xl border border-code-border bg-slateink-lift p-5">
             <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-ink-faint">

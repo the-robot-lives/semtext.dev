@@ -42,6 +42,12 @@ export function Header() {
             Quick start
           </a>
           <a
+            href="/elements/"
+            className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex"
+          >
+            Elements
+          </a>
+          <a
             href={`${SHOWCASE}/demo/`}
             className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex"
           >
