@@ -203,17 +203,17 @@ body {
   display: none;
 }
 
-#tab-parse:checked ~ .tab-bar label[for="tab-parse"],
-#tab-embed:checked ~ .tab-bar label[for="tab-embed"],
-#tab-similar:checked ~ .tab-bar label[for="tab-similar"] {
+#tab-browser:checked ~ .tab-bar label[for="tab-browser"],
+#tab-model:checked ~ .tab-bar label[for="tab-model"],
+#tab-text:checked ~ .tab-bar label[for="tab-text"] {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
 }
 
-#tab-parse:checked ~ .panels #panel-parse,
-#tab-embed:checked ~ .panels #panel-embed,
-#tab-similar:checked ~ .panels #panel-similar {
+#tab-browser:checked ~ .panels #panel-browser,
+#tab-model:checked ~ .panels #panel-model,
+#tab-text:checked ~ .panels #panel-text {
   display: block;
 }
 
@@ -297,4 +297,16 @@ body {
   font-size: 0.68rem;
   letter-spacing: 0.16em;
   color: var(--accent-soft);
+}
+
+.qa summary::-webkit-details-marker {
+  display: none;
+}
+
+.qa summary:hover {
+  color: var(--accent-soft);
+}
+
+.qa[open] {
+  border-color: rgba(167, 139, 250, 0.45);
 }

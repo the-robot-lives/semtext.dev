@@ -6,7 +6,7 @@ import "./globals.css";
 const siteUrl = "https://semtext.dev";
 const title = "SemText — one XHTML file, in place of Markdown";
 const description =
-  "SemText is a context-dense XHTML replacement for Markdown in AI prompts. One standalone file, read three ways: a browser renders it with Lit web components, a model reads it as structural XHTML, and it is readable plain text as-is. Part of The Robot Lives portfolio.";
+  "SemText: one XHTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components. Part of The Robot Lives portfolio.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
