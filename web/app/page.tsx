@@ -1,3 +1,5 @@
+import { HeroWindow } from "@/components/hero-window";
+
 const SHOWCASE = "http://localhost:4173";
 const REPO = "https://github.com/noizu-labs-ml/npl-enhanced-content";
 const SPEC = `${REPO}/blob/develop/spec`;
@@ -70,15 +72,15 @@ const FACTS: Array<{
   },
 ];
 
-const RECORDS = `sem-facts (#try-deck kind=capability)
-  sem-fact (#f-view-as kind=rule): view-as is a parameter, not an identity :: A fact is a fact in every view; the attribute only selects a rendering.
-    distractors: Each view is a different element type.
-  sem-fact (#f-light-dom kind=rule): Components render into light DOM :: Content stays in the page, so find-in-page, copy and plain CSS all still reach it.
-    distractors: Content moves into a shadow root for encapsulation.
-  sem-fact (#f-invariant kind=rule): Extraction reads the authored document :: Generated chrome is skipped, so records do not depend on the view on screen.
-    distractors: Extraction reads whatever is currently rendered.
-  sem-fact (#f-no-build kind=rule): Authoring needs no build step :: Two stylesheets and one script tag in a plain HTML file.
-    distractors: A bundler compiles the vocabulary down to HTML.`;
+const RECORDS = `<sem-facts> (#try-deck kind=capability)
+  <sem-fact> (#f-view-as kind=rule): view-as is a parameter, not an identity :: A fact is a fact in every view; the attribute only selects a rendering.
+    <sem-distractor>: Each view is a different element type.
+  <sem-fact> (#f-light-dom kind=rule): Components render into light DOM :: Content stays in the page, so find-in-page, copy and plain CSS all still reach it.
+    <sem-distractor>: Content moves into a shadow root for encapsulation.
+  <sem-fact> (#f-invariant kind=rule): Extraction reads the authored document :: Generated chrome is skipped, so records do not depend on the view on screen.
+    <sem-distractor>: Extraction reads whatever is currently rendered.
+  <sem-fact> (#f-no-build kind=rule): Authoring needs no build step :: Two stylesheets and one script tag in a plain HTML file.
+    <sem-distractor>: A bundler compiles the vocabulary down to HTML.`;
 
 const TIERS: Array<[string, string]> = [
   [
@@ -292,32 +294,7 @@ export default function Home() {
             </dl>
           </div>
 
-          <figure className="code-window" aria-label="A SemText document fragment">
-            <div className="code-chrome">
-              <span className="dot live" aria-hidden="true" />
-              <span className="dot" aria-hidden="true" />
-              <span className="dot" aria-hidden="true" />
-              <span>auth-notes.xhtml · what the model reads</span>
-            </div>
-            <pre>
-              <code>
-                {`<sem-note variant="warning">
-  Refresh tokens rotate per use —
-  each exchange retires the last one.
-</sem-note>
-
-<sem-facts view-as="flashcards">
-  <sem-fact id="f-jwt" kind="concept">
-    <statement>JWTs rotate per session</statement>
-    <conclusion>Short-lived access tokens;
-    the refresh grant issues a new pair.</conclusion>
-    <sem-distractor>Store the token in
-    localStorage for durability.</sem-distractor>
-  </sem-fact>
-</sem-facts>`}
-              </code>
-            </pre>
-          </figure>
+          <HeroWindow />
         </div>
       </section>
 
@@ -454,28 +431,52 @@ export default function Home() {
           <SectionHead id="try-h" eyebrow="The idea, in one control" title="Change the view. The content does not move.">
             <p className="mt-3 leading-relaxed text-ink-mute">
               These four facts are authored once, as{" "}
-              <code className="font-mono">div.sem-fact</code> elements holding
-              a <code className="font-mono">.sem-statement</code> and a{" "}
-              <code className="font-mono">.sem-conclusion</code>.{" "}
-              <code className="font-mono">data-view-as</code> selects how they
-              render. Switching it rewrites nothing about what they are, and
-              the records a machine reads stay identical.
+              <code className="font-mono">&lt;sem-fact&gt;</code> elements
+              holding a <code className="font-mono">&lt;statement&gt;</code>{" "}
+              and a <code className="font-mono">&lt;conclusion&gt;</code>.{" "}
+              <code className="font-mono">view-as</code> on the{" "}
+              <code className="font-mono">&lt;sem-facts&gt;</code> element
+              selects how the facts render. Switching it rewrites nothing
+              about what they are, and the records a machine reads stay
+              identical. The same file has three views:
             </p>
+            <ul className="mt-4 flex max-w-3xl flex-col gap-2 text-sm leading-relaxed text-ink-mute">
+              <li>
+                <code className="font-mono text-violet-soft">semtext.html</code>{" "}
+                — the in-browser render: open it and the markup becomes the
+                page you are reading.
+              </li>
+              <li>
+                <code className="font-mono text-violet-soft">semtext tui</code>{" "}
+                — an interactive terminal viewer for people, with flashcards,
+                a data visualizer and graphs.
+              </li>
+              <li>
+                <code className="font-mono text-violet-soft">
+                  semtext --render
+                </code>{" "}
+                — renders and loads embeds, with collapse, expand and
+                filtering for agents. Summaries can be expanded — a file is
+                effectively its own summary view — and expand with{" "}
+                <code className="font-mono">
+                  &lt;sem-view-more&gt;&lt;sem-embed data-source=&quot;./non-summary-file.semtext.html&quot;
+                  data-section=&quot;#Anchor Name&quot;&gt;&lt;/sem-view-more&gt;
+                </code>
+                .
+              </li>
+            </ul>
           </SectionHead>
 
           <div className="mt-8 grid gap-8 lg:grid-cols-2">
             <div>
-              <h3 className="font-mono text-sm font-semibold text-ink">
-                What a person sees
-              </h3>
-              <ul className="mt-3 flex flex-col gap-3">
+              <ul className="flex flex-col gap-3">
                 {FACTS.map((fact) => (
                   <li
                     key={fact.id}
                     className="rounded-xl border border-code-border bg-slateink-lift p-4"
                   >
                     <p className="font-mono text-[0.68rem] uppercase tracking-[0.16em] text-ink-faint">
-                      sem-fact · {fact.id}
+                      &lt;sem-fact&gt; · {fact.id}
                     </p>
                     <p className="mt-1.5 font-semibold text-ink">
                       {fact.statement}
@@ -485,7 +486,7 @@ export default function Home() {
                     </p>
                     <p className="mt-2 border-t border-white/5 pt-2 text-sm leading-relaxed text-ink-faint">
                       <span className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-rose-300/80">
-                        distractor
+                        &lt;sem-distractor&gt;
                       </span>{" "}
                       — {fact.distractor}
                     </p>
@@ -505,11 +506,8 @@ export default function Home() {
             </div>
 
             <div>
-              <h3 className="font-mono text-sm font-semibold text-ink">
-                What a machine reads
-              </h3>
               <pre
-                className="mt-3 overflow-x-auto rounded-xl border border-code-border bg-code p-4 font-mono text-[0.78rem] leading-relaxed text-ink-mute"
+                className="overflow-x-auto rounded-xl border border-code-border bg-code p-4 font-mono text-[0.78rem] leading-relaxed text-ink-mute"
                 aria-label="Records extracted from the facts deck"
               >
                 {RECORDS}
