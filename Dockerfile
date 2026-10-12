@@ -38,7 +38,14 @@ COPY package.json package-lock.json ./
 # npm's download cache survives lockfile changes (the layer itself does not).
 RUN --mount=type=cache,target=/root/.npm npm ci
 
-COPY src/ spec/ site/ demo/ themes/ scripts/ ./
+# NOTE: `COPY dir/ ./` copies the CONTENTS of dir/ into ./ — each showcase
+# dir therefore needs its own destination below, or the build flat-reads /app.
+COPY src/ ./src/
+COPY spec/ ./spec/
+COPY site/ ./site/
+COPY demo/ ./demo/
+COPY themes/ ./themes/
+COPY scripts/ ./scripts/
 COPY vite.config.ts tsconfig.json ./
 RUN npm run build
 
