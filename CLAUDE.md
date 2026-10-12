@@ -1,6 +1,9 @@
 # semtext.dev
 
-Static Next.js landing page (`web/`, `output: 'export'`). No backend.
+SemText — consolidated product repo. One nginx image: Next.js landing
+(`landing/`, `output: 'export'`) at `/` and the SemText showcase
+(`site/`, `demo/`, `spec/` built from the format code at the root) under
+`/site/`, `/demo/`, `/spec/`. No backend.
 
 ## Branch policy
 
