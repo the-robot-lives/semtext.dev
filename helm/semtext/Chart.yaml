@@ -1,10 +1,15 @@
 apiVersion: v2
 name: semtext
-description: "semtext.dev static landing page"
+description: "SemText — XHTML-first semantic content format: marketing site + component demos (static nginx)"
 version: 0.1.0
 appVersion: "0.1.0"
 type: application
-# static-site subchart is vendored directly under charts/static-site (not
-# fetched via `helm dependency update`) — the file://../../../../components
-# path escaped the repo and ArgoCD couldn't resolve it. No `dependencies:`
-# block needed; Helm auto-discovers unpacked subcharts under charts/.
+keywords:
+  - semtext
+  - xhtml
+  - semantic-markup
+  - lit
+  - static-site
+maintainers:
+  - name: Keith Brings
+    email: keith.brings@noizu.com
