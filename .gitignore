@@ -7,3 +7,14 @@
 _build/
 deps/
 node_modules/
+# showcase build output
+dist/
+coverage/
+test/screenshots/
+test/videos/
+# landing build output
+landing/node_modules/
+landing/.next/
+landing/out/
+# worktrees (also in .git/info/exclude)
+.claude/worktrees/
