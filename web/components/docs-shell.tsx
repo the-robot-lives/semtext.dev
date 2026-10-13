@@ -74,10 +74,12 @@ export const INTEGRATIONS: ShowcaseItem[] = [
   },
 ];
 
-const GROUPS: Array<{
+export interface NavGroup {
   title: string;
-  items: Array<{ key: string; label: string; href: string }>;
-}> = [
+  items: Array<{ key: string; label: string; href: string; dataRef?: string }>;
+}
+
+const GROUPS: NavGroup[] = [
   {
     title: "Guides",
     items: [{ key: "cli", label: "CLI commands", href: "/docs/" }],
@@ -120,11 +122,12 @@ export function DocsShell({
    * Override the default nav groups (a page that needs its own sidebar
    * inventory — /reference/ lists every element tag by family). Falls back
    * to the shared GROUPS above.
+   *
+   * `dataRef` is the string the reference index's filter box matches
+   * sidebar links against (the element's name and summary); links without
+   * it are never hidden by the filter.
    */
-  groups?: Array<{
-    title: string;
-    items: Array<{ key: string; label: string; href: string }>;
-  }>;
+  groups?: NavGroup[];
   children: React.ReactNode;
 }) {
   const navGroups = groups ?? GROUPS;
@@ -140,6 +143,7 @@ export function DocsShell({
                   <li key={item.key}>
                     <a
                       href={item.href}
+                      data-ref={item.dataRef}
                       aria-current={item.key === active ? "page" : undefined}
                       className={
                         "g-nav-link" + (item.key === active ? " is-active" : "")
