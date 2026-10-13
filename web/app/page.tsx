@@ -71,7 +71,8 @@ const FACTS: Array<{
   {
     id: "f-no-build",
     statement: "Authoring needs no build step",
-    conclusion: "Two stylesheets and one script tag in a plain HTML file.",
+    conclusion:
+      "One stylesheet and one script tag in a plain HTML file; a theme is optional.",
     distractor: "A bundler compiles the vocabulary down to HTML.",
   },
 ];
@@ -79,22 +80,22 @@ const FACTS: Array<{
 const TIERS: Array<[string, string]> = [
   [
     "Tier 1 — CSS only",
-    "Two stylesheets render every element readably. Quiz answers, collapsed notes and inactive views all stay on the page, because the rules that would hide them never match.",
+    "Two stylesheets and no script: every element renders. Quiz answers, collapsed notes and inactive views all stay on the page — the rules that would hide them never match.",
   ],
   [
     "Tier 2 — the fallback script",
-    "About 7 KB of vanilla JavaScript wires flashcards, quizzes, tabs, disclosure and meters. No dependencies, no network, no build. It is the tier a file you email still has.",
+    "Under 14 KB of vanilla JavaScript wires flashcards, quizzes, tabs and disclosure. No dependencies, no network, no build — and it is embedded in the file, so a copy you email keeps this tier.",
   ],
   [
     "Tier 3 — Lit components",
-    "When the component bundle loads, elements claim data-sem-upgraded, drop the fallback marker and take over in place. Content is never re-parented into a shadow root.",
+    "When the Lit bundle loads, elements claim data-sem-upgraded, drop the fallback marker and take over in place. Content is never re-parented into a shadow root.",
   ],
 ];
 
 const GLOSSARY: Array<[string, React.ReactNode]> = [
   [
     "record",
-    "One entry in the array extraction returns: a type, an id, qualifiers, a payload of fields and a one-line text.",
+    "One entry in the array extraction returns: a type, an id, qualifiers, a payload of fields, and one line of text.",
   ],
   [
     "tier",
@@ -102,7 +103,11 @@ const GLOSSARY: Array<[string, React.ReactNode]> = [
   ],
   [
     "tier marker",
-    "The data-sem-fallback or data-sem-upgraded attribute a script sets on what it wired; every hide rule is gated on one of them.",
+    <>
+      The <code className="font-mono">data-sem-fallback</code> or{" "}
+      <code className="font-mono">data-sem-upgraded</code> attribute a script
+      sets on what it wired; every hide rule is gated on one of them.
+    </>,
   ],
 ];
 
@@ -122,7 +127,7 @@ const REFERENCES: Array<[string, string, string]> = [
   [
     "sem-references.md",
     `${SPEC}/schema/sem-references.md`,
-    "Print appends (href) inside the references block only.",
+    "In print, a reference's URL appears after its text — inside the references block only, never at the citation.",
   ],
 ];
 
@@ -130,9 +135,8 @@ const ARTIFACTS: Array<[string, React.ReactNode]> = [
   [
     "semtext.js",
     <>
-      One bundle: Lit 3 components, the vanilla interactivity, reading
-      chrome, extraction and the Markdown renderer · global{" "}
-      <code className="font-mono">SemText</code>
+      One bundle: Lit 3 components, reading chrome and the Markdown
+      renderer · global <code className="font-mono">SemText</code>
     </>,
   ],
   [
@@ -146,9 +150,8 @@ const ARTIFACTS: Array<[string, React.ReactNode]> = [
   [
     "semtext-theme-<name>.css",
     <>
-      Optional. Token values only, plus a{" "}
-      <code className="font-mono">prefers-color-scheme</code> block. A new
-      theme is a copy with new values.
+      Optional. Token values only, plus a dark-mode block. A new theme is a
+      copy with new values.
     </>,
   ],
 ];
@@ -156,7 +159,7 @@ const ARTIFACTS: Array<[string, React.ReactNode]> = [
 const QUESTIONS: Array<[string, string]> = [
   [
     "Why not Markdown?",
-    "Markdown has nowhere to put the attributes that make a datum machine-readable — no way to mark a conclusion as distinct from a decoy, or a step as blocked. An authoring aid that compiles Markdown into SemText is a reasonable thing to build, but the canonical artifact stays XHTML, because that is the artifact all three readers consume.",
+    "Markdown has nowhere to put the attributes that make a datum machine-readable — no way to mark a conclusion as distinct from a distractor, or a step as blocked. A converter that compiles Markdown into SemText is worth building; the canonical artifact stays XHTML, because that is what the browser, the terminal and the model all read.",
   ],
   [
     "Does a language model really need this?",
@@ -176,9 +179,9 @@ const QUESTIONS: Array<[string, string]> = [
  * would read. Raw innerHTML (rather than JSX elements) keeps attribute
  * names like key= and view-as= verbatim; React reserves key= on JSX props.
  */
-const SCOPE_NOTES = `<sem-note variant="info">SemText is a markup vocabulary and three small scripts. It is not a CMS, a site generator or an application framework, and it has no opinion about how you produce the HTML.</sem-note>
-<sem-note variant="warning">Versioning follows the open/closed principle: any version changes should not break your existing markup. New elements and attributes land alongside the ones a document already uses — never swapped out from under it — so a file authored today keeps rendering as the vocabulary grows. Pin a version when you ship.</sem-note>
-<sem-note variant="tip">There is no React in the dependency tree and there is not going to be one. Lit 3 is the only runtime dependency, and it is optional — the fallback tier has none.</sem-note>`;
+const SCOPE_NOTES = `<sem-note variant="info">SemText is a markup vocabulary, two stylesheets and one script. It is not a CMS, a site generator or an application framework, and it has no opinion about how you produce the HTML.</sem-note>
+<sem-note variant="warning">A new version should not break markup authored against an older one. New elements and attributes land alongside the ones a document already uses — never swapped out from under it — so a file authored today keeps rendering as the vocabulary grows. Pin a version when you ship.</sem-note>
+<sem-note variant="tip">Nothing in the SemText bundle is React, and none is planned. Lit 3 is the only runtime dependency, and it is optional — the fallback tier has none.</sem-note>`;
 
 const SCOPE_QA = QUESTIONS.map(
   ([q, a]) => `<sem-reveal summary="${q}" collapsed>${a}</sem-reveal>`
@@ -223,7 +226,7 @@ export default function Home() {
         <div className="mx-auto grid max-w-docs gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.18fr)] lg:py-16">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.22em] text-violet-soft">
-              semantic text · one XHTML file
+              a semantic text format
             </p>
             <h1 className="mt-3 text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl">
               One XHTML file,
@@ -232,25 +235,23 @@ export default function Home() {
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-ink-mute sm:text-lg">
               SemText is a semantic text format: a single XHTML file that a
-              language model reads and writes the way it reads and writes
-              Markdown today. The difference is what the text can say. A fact,
-              a step, a caveat, a distractor, a term and its definition are
-              each written as what they <em>are</em> — a class and a few
-              attributes on a plain element — so the structure is in the text
-              itself, not inferred from it.
+              language model reads and writes the way it writes Markdown
+              today. The difference is what the text can say. A fact, a step,
+              a caveat, a distractor, a term and its definition are each
+              written as what they <em>are</em> — a tag and a few attributes —
+              so the structure is in the text itself, not inferred from it.
             </p>
             <p className="mt-4 max-w-md text-base leading-relaxed text-ink-mute">
-              Read it as-is. A model, a diff, a terminal, or a person with the
-              file open in an editor sees readable text in document order, with
-              every qualifier spelled out next to the thing it qualifies.
-              Nothing has to run first.
+              Read it as-is. A model, a diff, a terminal, or an editor shows
+              readable text in document order, with every qualifier spelled
+              out next to the thing it qualifies. Nothing has to run first.
             </p>
             <p className="mt-4 max-w-md text-base leading-relaxed text-ink-mute">
               Open it in a browser and the same markup becomes working web
               components: flashcards flip, quizzes score, tabs switch, code
-              copies, terms preview, and a reader bar tracks the outline. That
-              works in any current browser from a double-clicked file, and none
-              of it changes the text the model wrote.
+              copies, terms preview, and a reader bar tracks the outline. All
+              of it works from a double-clicked file in any current browser,
+              and none of it changes the text the model wrote.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <a
@@ -258,12 +259,6 @@ export default function Home() {
                 className="inline-flex min-h-11 items-center bg-violet px-5 py-2 text-sm font-semibold text-white hover:brightness-110"
               >
                 See it work
-              </a>
-              <a
-                href="/reference/"
-                className="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft"
-              >
-                Reference
               </a>
               <a
                 href="/spec/semtext.html"
@@ -301,41 +296,38 @@ export default function Home() {
         className="border-b border-white/10 px-4 py-14 sm:px-6 sm:py-20"
       >
         <div className="mx-auto max-w-docs">
-          <SectionHead id="try-h" eyebrow="The idea, in one control" title="Change the view. The content does not move.">
+          <SectionHead id="try-h" eyebrow="The idea, in one control" title="Switch the view. The content does not change.">
             <p className="mt-3 leading-relaxed text-ink-mute">
               These four facts are authored once, as{" "}
               <code className="font-mono">&lt;sem-fact&gt;</code> elements
-              holding a <code className="font-mono">&lt;statement&gt;</code>{" "}
-              and a <code className="font-mono">&lt;conclusion&gt;</code>.{" "}
+              holding a <code className="font-mono">&lt;statement&gt;</code>, a{" "}
+              <code className="font-mono">&lt;conclusion&gt;</code> and a{" "}
+              <code className="font-mono">&lt;sem-distractor&gt;</code>.{" "}
               <code className="font-mono">view-as</code> on the{" "}
               <code className="font-mono">&lt;sem-facts&gt;</code> element
-              selects how the facts render. Switching it rewrites nothing
-              about what they are, and the records a machine reads stay
-              identical. The same file has three views:
+              selects how they render — switching it rewrites nothing, and the
+              records a machine reads are the same in every view. One file,
+              three readers:
             </p>
-            <ul className="mt-4 flex max-w-3xl flex-col gap-2 text-sm leading-relaxed text-ink-mute">
+            <ul
+              role="list"
+              className="mt-4 flex max-w-3xl flex-col gap-2 text-sm leading-relaxed text-ink-mute"
+            >
               <li>
                 <code className="font-mono text-violet-soft">semtext.html</code>{" "}
-                — the in-browser render: open it and the markup becomes the
-                page you are reading.
+                — the in-browser render: double-click the file and it runs.
               </li>
               <li>
                 <code className="font-mono text-violet-soft">semtext tui</code>{" "}
-                — an interactive terminal viewer for people, with flashcards,
-                a data visualizer and graphs.
+                — the same file in an interactive terminal for people: navigate
+                sections, flip flashcards, run quizzes.
               </li>
               <li>
                 <code className="font-mono text-violet-soft">
                   semtext --render
                 </code>{" "}
-                — renders and loads embeds, with collapse, expand and
-                filtering for agents. Summaries can be expanded — a file is
-                effectively its own summary view — and expand with{" "}
-                <code className="font-mono">
-                  &lt;sem-view-more&gt;&lt;sem-embed data-source=&quot;./non-summary-file.semtext.html&quot;
-                  data-section=&quot;#Anchor Name&quot;&gt;&lt;/sem-view-more&gt;
-                </code>
-                .
+                — plain text for agents: collapsed sections expand on demand,
+                embeds load, and the file arrives as its own summary.
               </li>
             </ul>
           </SectionHead>
@@ -343,14 +335,15 @@ export default function Home() {
           <div className="mt-8">
             <TryViews facts={FACTS} />
             <p className="mt-3 text-sm text-ink-mute">
-              The live toggle — list, flashcards, quiz — runs on the{" "}
+              The view toggle and flashcards in the browser pane are live —
+              this page is the showcase. More sample documents sit in the{" "}
               <a
-                href="/#try"
+                href="#scope"
                 className="text-violet-soft underline-offset-4 hover:underline"
               >
-                showcase
-              </a>
-              .
+                showcase menu
+              </a>{" "}
+              below.
             </p>
           </div>
         </div>
@@ -365,17 +358,18 @@ export default function Home() {
         <div className="mx-auto max-w-docs">
           <SectionHead id="tiers-h" eyebrow="Degradation" title="Three tiers, and the bottom one is the contract.">
             <p className="mt-3 leading-relaxed text-ink-mute">
-              Every hide rule in the vocabulary CSS is gated on an enhancement
-              marker that only a script sets. With no script, nothing is hidden
-              and the document reads as prose. Each tier above that adds
-              behaviour without moving content.
+              Nothing is hidden until a script asks for it. Every hide rule in
+              the vocabulary CSS is gated on a tier marker only a script sets,
+              so with no script the document is still complete — it simply
+              reads as prose. Each tier adds behaviour; none of them moves
+              content.
             </p>
           </SectionHead>
 
           <ol className="mt-8 grid gap-px border border-code-border bg-code-border text-sm sm:grid-cols-3">
             {TIERS.map(([name, body]) => (
               <li key={name} className="bg-slateink p-5">
-                <p className="font-mono text-violet-soft">{name}</p>
+                <h3 className="font-mono font-semibold text-violet-soft">{name}</h3>
                 <p className="mt-2 leading-relaxed text-ink-mute">{body}</p>
               </li>
             ))}
@@ -392,14 +386,14 @@ export default function Home() {
         <div className="mx-auto max-w-docs">
           <SectionHead id="reading-h" eyebrow="Reading" title="Long-form documents, with the reading affordances left in.">
             <p className="mt-3 leading-relaxed text-ink-mute">
-              The recall elements above are one use. Most documents are read,
-              not drilled, so the vocabulary also carries what a long document
-              needs: a glossary whose terms preview on hover, references with
-              backlinks, a dated chronology, listings with provenance, notes
-              that sit in the margin, content addressed to a named audience,
-              and links that reach into closed disclosures. The examples below
-              are the real content; the live affordances — hover previews,
-              sorting, the reader bar — run on the{" "}
+              The recall elements above are one use of the vocabulary. Most
+              documents are read, not drilled, so it also carries what a long
+              document needs: a glossary whose terms preview on hover, references
+              with backlinks, a dated chronology, listings with provenance, notes
+              that can float in the margin, content addressed to a named
+              audience, and links that reach into closed disclosures. The
+              examples below are the real content; the live affordances — hover
+              previews, sorting, the reader bar — run on the{" "}
               <a
                 href="/#reading"
                 className="text-violet-soft underline-offset-4 hover:underline"
@@ -417,9 +411,9 @@ export default function Home() {
               </h3>
               <p className="mt-2 leading-relaxed text-ink-mute">
                 A <code className="font-mono">sem-properties</code> block with{" "}
-                <code className="font-mono">data-view-as=&quot;glossary&quot;</code>.
+                <code className="font-mono">view-as=&quot;glossary&quot;</code>.
                 Each property carries an <code className="font-mono">id</code>;
-                a term in prose is a plain anchor to it. With scripts off the
+                a term in prose is a plain anchor to it. With scripts off, the
                 link simply jumps to the definition; the reading bundle adds a
                 preview on hover or focus.
               </p>
@@ -435,11 +429,6 @@ export default function Home() {
                   </div>
                 ))}
               </dl>
-              <p className="mt-4 text-sm leading-relaxed text-ink-mute">
-                Because every hide rule is gated on a tier marker, a document
-                with no script hides nothing, and the records a machine reads
-                are the same at every tier.
-              </p>
 
               <h3 className="mt-10 text-xl font-semibold tracking-tight text-ink">
                 Chronology
@@ -448,8 +437,9 @@ export default function Home() {
                 <code className="font-mono">sem-chronology</code> is CSS only:
                 a list of <code className="font-mono">sem-event</code> items in
                 chronological order, each with a{" "}
-                <code className="font-mono">data-when</code> and an optional
-                status. Extraction gives each event a positional ordinal.
+                <code className="font-mono">when</code> and an optional{" "}
+                <code className="font-mono">status</code>. Extraction gives each
+                event a positional ordinal.
               </p>
               <ol className="mt-4 border-l border-code-border pl-4">
                 {CHRONOLOGY.map(([when, what, status]) => (
@@ -480,11 +470,10 @@ export default function Home() {
               <p className="mt-2 leading-relaxed text-ink-mute">
                 A <code className="font-mono">sem-audiences</code> block
                 declares the profiles a document knows; any element may carry{" "}
-                <code className="font-mono">data-audience</code>. Nothing is
-                removed — content for a profile is hidden until a reader claims
-                it, and extraction never looks at{" "}
-                <code className="font-mono">hidden</code>, so a filtered
-                document still extracts whole.
+                <code className="font-mono">audience</code>. Nothing is removed —
+                content for a profile is hidden until a reader claims it, and
+                extraction never consults visibility, so a filtered document
+                still extracts whole.
               </p>
               <div className="mt-4 flex flex-col gap-3">
                 <Note variant="warning">
@@ -492,8 +481,8 @@ export default function Home() {
                   sees every reader note as well.
                 </Note>
                 <Note variant="info">
-                  Readers and operators: content for a profile is hidden until
-                  a reader claims it, never deleted.
+                  Readers and operators: profiles are claimed from the reader
+                  bar; this note is addressed to both.
                 </Note>
                 <Note variant="tip">
                   Everyone except operators: a negated spec shows by default
@@ -516,7 +505,7 @@ export default function Home() {
               </p>
               <figure
                 className="code-window mt-4"
-                aria-label="A reference cited from prose"
+                aria-label="A source listing with lines 3-4 marked: a citation in prose and the reference entry it points to"
               >
                 <div className="code-chrome">
                   <span className="dot live" aria-hidden="true" />
@@ -525,10 +514,12 @@ export default function Home() {
                 <pre>
                   <code>
                     {`<p>Rotate per use<a href="#r-rfc">[1]</a>.</p>
-<div class="sem-references" data-kind="bibliography" role="list">
-  <div class="sem-reference" id="r-rfc" role="listitem"
-       data-href="https://www.rfc-editor.org/rfc/rfc6749" data-cite="RFC 6749">…</div>
-</div>`}
+<sem-references id="refs" kind="bibliography" role="list">
+`}
+                    <mark className="rounded-sm bg-violet/20 text-ink">{`  <sem-reference id="r-rfc" role="listitem"
+       href="https://www.rfc-editor.org/rfc/rfc6749" cite="RFC 6749">The OAuth 2.0 Authorization Framework, §10.4.</sem-reference>`}</mark>
+                    {`
+</sem-references>`}
                   </code>
                 </pre>
               </figure>
@@ -538,12 +529,13 @@ export default function Home() {
               </h3>
               <p className="mt-2 leading-relaxed text-ink-mute">
                 <code className="font-mono">sem-reader</code> is the bar
-                pinned to the top of the showcase page: one per document,
-                first child of the wrapper, mints nothing. Its outline is
-                generated from the <code className="font-mono">h2</code>{" "}
-                headings, and focus, type size, face and colour scheme are
-                attributes on <code className="font-mono">&lt;html&gt;</code>{" "}
-                that the vocabulary CSS keys on, remembered in{" "}
+                pinned to the top of the showcase page: one per document, a
+                direct child of the root wrapper, mints nothing. Its outline is
+                generated from the headings,{" "}
+                <code className="font-mono">h2</code> on down. Focus, type size,
+                face and colour scheme are attributes on{" "}
+                <code className="font-mono">&lt;html&gt;</code> that the
+                vocabulary CSS keys on, remembered in{" "}
                 <code className="font-mono">localStorage</code> when the
                 browser allows it.
               </p>
@@ -555,11 +547,11 @@ export default function Home() {
                 <code className="font-mono">sem-source</code> lets a reader
                 flip a section between the rendered result and the markup that
                 produced it. <code className="font-mono">sem-md</code> holds
-                Markdown as its text and renders it in the browser; tables are
-                the case it exists for.{" "}
+                Markdown as its text and renders it in the browser — tables
+                above all.{" "}
                 <code className="font-mono">sem-table</code> wraps an authored{" "}
                 <code className="font-mono">&lt;table&gt;</code> and adds sort
-                and filter; there is no JSON payload, the markup is the data.
+                and filter; there is no JSON payload — the markup is the data.
                 All three run live on the{" "}
                 <a
                   href="/#reading"
@@ -617,14 +609,14 @@ export default function Home() {
                 &lt;sem-step status=&quot;done&quot;&gt;
               </code>{" "}
               — so any editor, template language or generator that emits HTML
-              can emit it, and the browser parses it with or without a script.
+              can write one, and the browser parses it with or without a script.
             </p>
           </SectionHead>
 
           <div className="mt-8">
             <CodeViewer />
           </div>
-          <p className="mt-3 text-sm text-ink-mute">
+          <p className="mt-3 max-w-2xl text-sm text-ink-mute">
             Save it, double-click it. That is the whole workflow. Written the
             older way —{" "}
             <code className="font-mono">
@@ -632,12 +624,21 @@ export default function Home() {
             </code>{" "}
             — it renders and extracts the same; that spelling is the
             compatibility alias, documented once in the spec&apos;s Appendix A.
+            The <code className="font-mono">cdn.semtext.dev</code> links are
+            the planned origin; today the same files ship in the{" "}
+            <a
+              href={REPO}
+              className="text-violet-soft underline-offset-4 hover:underline"
+            >
+              spec repo
+            </a>
+            .
           </p>
 
           <h3 className="mt-10 text-xl font-semibold tracking-tight text-ink">
             Adding it to a project
           </h3>
-          <ol className="mt-4 grid gap-3 sm:grid-cols-2">
+          <ol className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {[
               <>
                 Copy{" "}
@@ -687,18 +688,10 @@ export default function Home() {
           <SectionHead id="surface-h" eyebrow="Surface" title="Everything that ships.">
             <p className="mt-3 leading-relaxed text-ink-mute">
               One script and one stylesheet, plus an optional theme file.
-              Everything rides in the single{" "}
-              <code className="font-mono">semtext.js</code> — components,
-              interactivity, reading chrome, extraction and the Markdown
-              renderer — so a document needs no other assets. Measured
-              sizes live on the{" "}
-              <a
-                href="/#surface"
-                className="text-violet-soft underline-offset-4 hover:underline"
-              >
-                showcase
-              </a>
-              .
+              Everything a document needs rides in the single{" "}
+              <code className="font-mono">semtext.js</code> — the components,
+              the reading chrome and the Markdown renderer — so there is no
+              build step and nothing else to link.
             </p>
           </SectionHead>
 
@@ -758,14 +751,14 @@ export default function Home() {
           </p>
 
           <div className="mt-8 rounded-xl border border-code-border bg-slateink-lift p-5">
-            <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-ink-faint">
+            <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-ink-mute">
               sem-agent
             </p>
             <p className="mt-2 font-semibold text-ink">SemText Guide</p>
             <p className="mt-1 text-sm leading-relaxed text-ink-mute">
               Answers questions about SemText from the facts on this page.
             </p>
-            <p className="mt-2 font-mono text-xs leading-relaxed text-ink-faint">
+            <p className="mt-2 font-mono text-xs leading-relaxed text-ink-mute">
               Answer only from sem-fact records in this document; cite ids.
             </p>
           </div>
@@ -785,15 +778,20 @@ export default function Home() {
         className="border-b border-white/10 px-4 py-14 sm:px-6 sm:py-20"
       >
         <div className="mx-auto max-w-docs">
-          <SectionHead id="scope-h" eyebrow="Scope" title="What it is not." />
+          <SectionHead id="scope-h" eyebrow="Scope" title="What it is not.">
+            <p className="mt-3 leading-relaxed text-ink-mute">
+              SemText ends at the document: no build step, no service, no
+              install. The limits below are the design, not the gaps.
+            </p>
+          </SectionHead>
 
           <Sem
-            className="mt-6 flex max-w-3xl flex-col gap-3"
+            className="mt-8 flex max-w-3xl flex-col gap-3"
             html={SCOPE_NOTES}
           />
 
           <h3 className="mt-10 text-xl font-semibold tracking-tight text-ink">
-            Reasonable questions
+            The obvious questions
           </h3>
           <Sem
             className="mt-4 flex max-w-3xl flex-col gap-3"
@@ -873,7 +871,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Add Ons ---------------------------------------------------------- */}
+      {/* Integrations ----------------------------------------------------- */}
       <section
         id="addons"
         aria-labelledby="addons-h"
@@ -882,17 +880,29 @@ export default function Home() {
         <div className="mx-auto max-w-docs">
           <SectionHead
             id="addons-h"
-            eyebrow="Add Ons"
-            title="Super Charge with Add Ons."
+            eyebrow="Integrations"
+            title="Documents that do more than read."
           >
             <p className="mt-4 leading-relaxed text-ink-mute">
-              The reading and extraction core is free and static. The add-ons
-              are where documents start doing things — each one gets hooked to
-              its real logic as it is built, and none of them change how a
-              document reads.
+              The reading and extraction core is free and static. Integrations
+              connect a document to live systems — tickets and knowledge-base
+              answers cited inline, quizzes and courses readers work through,
+              mockups and UML rendered in place. Each is wired to its real
+              logic as it is built, and none change how a document reads.
             </p>
           </SectionHead>
           <AddonsCarousel />
+          <div className="mt-8">
+            <a
+              href="/integrations"
+              className="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft"
+            >
+              More integrations
+              <span aria-hidden="true" className="ml-2">
+                →
+              </span>
+            </a>
+          </div>
         </div>
       </section>
 

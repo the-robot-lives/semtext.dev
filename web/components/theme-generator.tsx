@@ -218,11 +218,15 @@ export function ThemeGenerator() {
 
   return (
     <>
+      <p className="mt-8 text-sm leading-relaxed text-ink-mute">
+        Want your own look? Pick colors and a font — the generator writes the
+        theme file.
+      </p>
       <button
         ref={openerRef}
         type="button"
         onClick={openGenerator}
-        className="mt-8 inline-flex items-center gap-2 rounded bg-violet px-4 py-2 text-sm font-semibold text-white hover:brightness-110"
+        className="mt-3 inline-flex items-center gap-2 rounded bg-violet px-4 py-2 text-sm font-semibold text-white hover:brightness-110"
       >
         Open theme generator
       </button>
@@ -250,16 +254,20 @@ export function ThemeGenerator() {
             </button>
           </div>
           <p className="mt-2 text-sm text-ink-mute">
-            Create a new theme by choosing colors and a font. The generator
-            outputs a complete CSS file with light and dark variants.
+            The output is a complete theme file: one stylesheet, light and
+            dark variants, ready to drop next to your document.
           </p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-mono text-violet-soft">
+              <label
+                htmlFor="theme-name"
+                className="block text-sm font-mono text-violet-soft"
+              >
                 Theme name
               </label>
               <input
+                id="theme-name"
                 type="text"
                 value={themeName}
                 onChange={(e) => setThemeName(e.target.value.replace(/\s+/g, "-").toLowerCase())}
@@ -269,10 +277,14 @@ export function ThemeGenerator() {
             </div>
 
             <div>
-              <label className="block text-sm font-mono text-violet-soft">
+              <label
+                htmlFor="theme-font"
+                className="block text-sm font-mono text-violet-soft"
+              >
                 Font family
               </label>
               <select
+                id="theme-font"
                 value={colors.font}
                 onChange={(e) => setColors({ ...colors, font: e.target.value })}
                 className="mt-2 w-full rounded border border-code-border bg-slate-900 px-3 py-2 font-mono text-sm text-white"
@@ -285,10 +297,14 @@ export function ThemeGenerator() {
             </div>
 
             <div>
-              <label className="block text-sm font-mono text-violet-soft">
+              <label
+                htmlFor="theme-bg"
+                className="block text-sm font-mono text-violet-soft"
+              >
                 Background color
               </label>
               <input
+                id="theme-bg"
                 type="color"
                 value={colors.bg}
                 onChange={(e) => setColors({ ...colors, bg: e.target.value })}
@@ -297,10 +313,14 @@ export function ThemeGenerator() {
             </div>
 
             <div>
-              <label className="block text-sm font-mono text-violet-soft">
+              <label
+                htmlFor="theme-text"
+                className="block text-sm font-mono text-violet-soft"
+              >
                 Text color
               </label>
               <input
+                id="theme-text"
                 type="color"
                 value={colors.text}
                 onChange={(e) => setColors({ ...colors, text: e.target.value })}
@@ -309,10 +329,14 @@ export function ThemeGenerator() {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-sm font-mono text-violet-soft">
+              <label
+                htmlFor="theme-accent"
+                className="block text-sm font-mono text-violet-soft"
+              >
                 Accent color
               </label>
               <input
+                id="theme-accent"
                 type="color"
                 value={colors.accent}
                 onChange={(e) => setColors({ ...colors, accent: e.target.value })}

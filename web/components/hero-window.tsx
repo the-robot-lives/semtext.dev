@@ -12,6 +12,12 @@ import { useEffect, useRef, useState } from "react";
  * this component hydrates), so the static export stays zero-JS safe.
  */
 
+/*
+ * SOURCE and RENDERED_HTML are the SAME string on purpose: the section's
+ * point is that render never rewrites the authored markup — Render wires
+ * the identical file in place. Do not "diverge" them.
+ */
+
 const SOURCE = `<sem-note variant="warning">
   Refresh tokens rotate per use —
   each exchange retires the last one.

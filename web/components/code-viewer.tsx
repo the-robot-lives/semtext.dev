@@ -5,16 +5,16 @@ import { useState } from "react";
 const DOC_HTML = `<!doctype html>
 <html lang="en" data-sem-theme="minimal-tech-light">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Auth notes</title>
-  <link rel="stylesheet" href="https://cdn.semtext.dev/semtext.css">
-  <link rel="stylesheet" href="https://cdn.semtext.dev/semtext-theme-minimal-tech-light.css">
-  <script src="https://cdn.semtext.dev/semtext.js"></script>
+  <link rel="stylesheet" href="https://cdn.semtext.dev/v0/semtext.css" />
+  <link rel="stylesheet" href="https://cdn.semtext.dev/v0/semtext-theme-minimal-tech-light.css" />
+  <script defer src="https://cdn.semtext.dev/v0/semtext.js"></script>
 </head>
 <body>
 <sem-enhanced-document>
 
-  <h1>Auth notes</h1>
+  <h1 data-kind="title">Auth notes</h1>
 
   <sem-note variant="warning">
     Refresh tokens rotate per use — each exchange retires the last one.
@@ -220,14 +220,14 @@ export function CopySaveButtons({
         onClick={handleCopy}
         className={buttonClassName}
         aria-label="Copy code"
-        title={copyStatus === "copied" ? "Copied!" : "Copy"}
+        title={copyStatus === "copied" ? "Copied" : "Copy"}
       >
         {copyStatus === "copied" ? "✓ Copied" : "Copy"}
       </button>
       <button
         onClick={handleDownload}
         className={buttonClassName}
-        aria-label={`Download ${filename}`}
+        aria-label={`Save ${filename}`}
         title={downloadStatus === "downloading" ? "Downloading..." : "Download"}
       >
         {downloadStatus === "downloading" ? "↓ Saving" : "Save"}

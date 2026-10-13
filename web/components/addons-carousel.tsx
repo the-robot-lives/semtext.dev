@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
 
 /*
- * The Add Ons section's carousel: one card per add-on, each with a mock
- * of the surface the add-on would put on a page — an embedded ticket,
- * a knowledge-base answer, a course panel, a scored quiz, a Draftamo UML
- * render, a filed issue. No status chips: an add-on is hooked to its real
- * logic as it is built, and until then the mocks are illustrations of
+ * The Integrations section's carousel: one card per integration, each with
+ * a mock of the surface the integration would put on a page — an embedded
+ * ticket, a knowledge-base answer, a course panel, a scored quiz, a Draftamo
+ * UML render, a filed issue. No status chips: an integration is wired to its
+ * real logic as it is built, and until then the mocks are illustrations of
  * planned output, not screenshots of shipped product — nothing in them is
  * a claim of availability.
  *
@@ -138,10 +138,10 @@ function PlansIssueMock() {
   return (
     <div className="rounded-lg border border-code-border bg-slateink p-3">
       <p className="font-mono text-xs text-violet-soft">
-        SEM-312 · Add-on carousel keyboard focus ring
+        SEM-312 · Integration carousel keyboard focus ring
       </p>
       <div className="mt-2 flex flex-wrap gap-1.5">
-        <span className="g-status">add-ons</span>
+        <span className="g-status">integrations</span>
         <span className="g-status">enhancement</span>
       </div>
       <p className="mt-2 text-sm leading-relaxed text-ink-mute">
@@ -229,7 +229,7 @@ export function AddonsCarousel() {
         ? {
             role: "region",
             "aria-roledescription": "carousel",
-            "aria-label": "Add-on cards",
+            "aria-label": "Integration cards",
             tabIndex: 0,
             onKeyDown,
           }
@@ -276,7 +276,7 @@ export function AddonsCarousel() {
               type="button"
               onClick={() => go(index - 1)}
               disabled={index === 0}
-              aria-label="Previous add-on"
+              aria-label="Previous integration"
               className="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink hover:border-violet-soft disabled:cursor-not-allowed disabled:opacity-40"
             >
               ← prev
@@ -285,7 +285,7 @@ export function AddonsCarousel() {
               type="button"
               onClick={() => go(index + 1)}
               disabled={index === count - 1}
-              aria-label="Next add-on"
+              aria-label="Next integration"
               className="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink hover:border-violet-soft disabled:cursor-not-allowed disabled:opacity-40"
             >
               next →
