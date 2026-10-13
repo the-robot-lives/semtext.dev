@@ -58,6 +58,19 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="docs-bg min-h-screen antialiased">
+        {/* SemText vocabulary + the one shipped theme, global: the hero,
+            the home sections, /elements and /docs all render with them.
+            React 19 hoists precedence-marked stylesheets into <head>. */}
+        <link
+          rel="stylesheet"
+          precedence="semtext"
+          href="/semtext/themes/_vocabulary.css"
+        />
+        <link
+          rel="stylesheet"
+          precedence="semtext"
+          href="/semtext/themes/minimal-tech-light.css"
+        />
         <a className="skip-link" href="#main">
           Skip to docs
         </a>

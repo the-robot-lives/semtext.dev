@@ -48,6 +48,12 @@ export function Header() {
             Elements
           </a>
           <a
+            href="/docs/"
+            className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex"
+          >
+            Docs
+          </a>
+          <a
             href={`${SHOWCASE}/demo/`}
             className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex"
           >

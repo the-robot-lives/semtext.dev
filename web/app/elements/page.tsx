@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fragment } from "react";
+import { DocsShell } from "@/components/docs-shell";
 import { ELEMENTS, searchIndex } from "./data";
 
 export const metadata: Metadata = {
@@ -102,26 +103,15 @@ function MintBadge({ mints }: { mints: boolean }) {
 export default function ElementsPage() {
   const litCount = ELEMENTS.filter((e) => e.kind === "Lit").length;
   return (
-    <main
-      id="main"
-      className="mx-auto w-full max-w-docs px-4 pb-24 pt-12 sm:px-6"
-    >
-      {/* Real SemText assets for the live renders — copied verbatim into
-          public/semtext/ (see public/semtext/VERSION.md). Loaded without
-          __semJsOff so the bundle auto-wires every example on this page. */}
-      <link
-        rel="stylesheet"
-        precedence="semtext"
-        href="/semtext/themes/_vocabulary.css"
-      />
-      <link
-        rel="stylesheet"
-        precedence="semtext"
-        href="/semtext/themes/minimal-tech-light.css"
-      />
-      <script defer src="/semtext/semtext-fallback.js" />
+    <DocsShell active="elements">
+      <main id="main">
+        {/* The fallback bundle drives the live renders — copied verbatim
+            into public/semtext/ (see public/semtext/VERSION.md). Loaded
+            without __semJsOff so it auto-wires every example on this page;
+            the theme stylesheets come from the root layout. */}
+        <script defer src="/semtext/semtext-fallback.js" />
 
-      <p className="g-eyebrow">Reference</p>
+        <p className="g-eyebrow">Reference</p>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
         The elements
       </h1>
@@ -327,6 +317,7 @@ export default function ElementsPage() {
       </div>
 
       <script dangerouslySetInnerHTML={{ __html: SCRIPT }} />
-    </main>
+      </main>
+    </DocsShell>
   );
 }

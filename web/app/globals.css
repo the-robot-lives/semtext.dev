@@ -494,3 +494,113 @@ label.g-pill.is-active {
 .g-source {
   white-space: pre;
 }
+
+/* ————— Docs shell (left menu) + showcase menu + live home blocks ————— */
+
+.g-nav-title {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.g-nav-link {
+  display: flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0 0.6rem;
+  border-radius: 0.35rem;
+  font-size: 0.84rem;
+  color: var(--mute);
+}
+
+.g-nav-link:hover {
+  color: var(--ink);
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.g-nav-link.is-active {
+  color: var(--accent-soft);
+  background: rgba(124, 58, 237, 0.14);
+}
+
+/* The "Open the showcase" menu (Scope section). */
+.showcase-menu {
+  position: relative;
+}
+
+.showcase-menu > summary {
+  list-style: none;
+}
+
+.showcase-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.showcase-menu[open] > summary {
+  background: var(--accent-dim);
+}
+
+.showcase-menu-panel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: min(34rem, 92vw);
+  border: 1px solid var(--code-border);
+  border-radius: 0.75rem;
+  background: var(--bg-lift);
+  padding: 1.1rem 1.25rem 1.25rem;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+/* Raw SemText blocks rendered server-side (Sem component). The vocabulary
+   sheet styles the elements; these rules only lay them out and link them
+   to the page palette. */
+.g-sem {
+  color: var(--ink);
+}
+
+.g-sem sem-note,
+.g-sem sem-reveal,
+.g-sem sem-properties,
+.g-sem sem-procedure,
+.g-sem sem-views {
+  display: block;
+}
+
+.g-sem a {
+  color: var(--accent-soft);
+  text-decoration-line: underline;
+  text-underline-offset: 4px;
+}
+
+.g-sem a:hover {
+  color: var(--ink);
+}
+
+.g-status {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.5rem;
+  border: 1px solid var(--code-border);
+  border-radius: 999px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.58rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.g-status:first-child {
+  margin-left: 0;
+}
+
+.g-muted {
+  color: var(--faint);
+}
