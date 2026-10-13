@@ -7,7 +7,7 @@ const LINKS: Array<[string, string]> = [
   ["Format spec", `${SPEC}/conventions.md`],
   ["Extraction contract", `${SPEC}/extraction.md`],
   ["Repository", REPO],
-  ["Vocabulary demo", `${SHOWCASE}/demo/`],
+  ["Elements demo", `${SHOWCASE}/demo/`],
   ["Lit demo", `${SHOWCASE}/demo/standalone-lit.html`],
   ["Reading demo", `${SHOWCASE}/demo/reading.html`],
   ["Scripts stripped", `${SHOWCASE}/demo/index.nojs.html`],
@@ -47,7 +47,7 @@ export function Footer() {
           ))}
         </ul>
         <p className="mt-6 text-sm text-ink-mute">
-          SemText · draft spec · part of Noizu Prompt Lingua.{" "}
+          SemText · beta · part of Noizu Prompt Lingua.{" "}
           <a
             href={TRL}
             className="text-violet-soft underline-offset-4 hover:underline"

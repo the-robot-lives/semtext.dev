@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## 2026-10-13
+- Landing: Quick start moved before Reading (nav matches); Surface artifact copy corrected to the current distribution (semtext.js majors + lazy-loaded shell, semtext-lazy.js light loader, semtext-shell pair); "the vocabulary" renamed "the elements" page-wide; Scope states the Lit-components reality; draft-spec hedges replaced with beta positioning (#9).
 - Consolidated the SemText format code from noizu-labs-ml/npl-enhanced-content @ 0d8a708 (main, content fd4a166): spec/, src/, site/ (ex web/site), demo/ (ex web/demo), themes/, bin/, scripts/, test/, root package.json, helm/semtext — the flat production chart, byte-identical render to what prod runs (#3).
 - Landing revamp moved from web/ to landing/ (feat/landing-semtext-rewrite @ 91df7bc, Next.js static export preserved). One image via root Dockerfile: landing at /, showcase under /site/, /demo/, /spec/; nginx.conf adds /_next/static/ immutable caching (#3).
 - CI merged: landing typecheck+build lane + showcase unit/sharded-e2e lanes; main build-push sha-* + chart bump; publish-cdn carried over dormant (CDN_PUBLISH unset here, MinIO secrets absent) (#3).
