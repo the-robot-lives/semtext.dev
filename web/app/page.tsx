@@ -1,5 +1,6 @@
 import { HeroWindow } from "@/components/hero-window";
 import { TryViews } from "@/components/try-views";
+import { AddonsCarousel } from "@/components/addons-carousel";
 import { Sem, SAMPLE_DOCS, INTEGRATIONS } from "@/components/docs-shell";
 
 const SHOWCASE = "http://localhost:4173";
@@ -215,16 +216,6 @@ const SCOPE_NOTES = `<sem-note variant="info">SemText is a markup vocabulary and
 const SCOPE_QA = QUESTIONS.map(
   ([q, a]) => `<sem-reveal summary="${q}" collapsed>${a}</sem-reveal>`
 ).join("\n");
-
-const ADDONS_HTML = `<sem-note variant="info">Add Ons unlock behind an account key. The vocabulary itself stays open — every add-on embeds into or extends a document, and none of them change how one is read.</sem-note>
-<sem-properties kind="add-ons">
-  <sem-property key="Ticket embedding" role="definition">An account key enables ticket embedding — live tickets from your tracker, cited inline like any other datum. <b class="g-status">planned</b></sem-property>
-  <sem-property key="The Robot Knows hookup" role="definition">Point a document at your knowledge base, so facts and procedures draw on live KB entries. <b class="g-status">planned</b></sem-property>
-  <sem-property key="The Robot Learns courses" role="definition">Courses load as SemText and track each reader's quiz progress; sign-in is prompted when tracking starts. <b class="g-status">planned</b></sem-property>
-  <sem-property key="Embedded exams &amp; quizzes" role="definition">Private exams and quizzes from The Robot Learns embed in your pages, beside an always-available catalogue of public embedded quizzes. <b class="g-status">planned</b></sem-property>
-  <sem-property key="Draftamo renders" role="definition">Mockups and UML renders from Draftamo-hosted projects, or from local Draftamo XML. <b class="g-status">planned</b></sem-property>
-  <sem-property key="Issue submission" role="definition">Submit an issue from the page itself — The Robot Plans files it in Jira, ClickUp, or GitHub. <b class="g-status">planned</b></sem-property>
-</sem-properties>`;
 
 const EXTEND_HTML = `<sem-note variant="info">The vocabulary is open at the edges: an organisation can define its own elements for what its documents say over and over — a runbook step type, a compliance datum, a product fact.</sem-note>
 <sem-note variant="warning">The submission flow below is planned, not shipped — nothing here clicks yet. Custom elements are Lit components with a vocabulary entry, and the AI submission tool assembles both.</sem-note>
@@ -1134,10 +1125,7 @@ export default function Home() {
               planned, none of them change how a document reads.
             </p>
           </SectionHead>
-          <Sem
-            className="mt-8 flex max-w-3xl flex-col gap-4"
-            html={ADDONS_HTML}
-          />
+          <AddonsCarousel />
         </div>
       </section>
 
@@ -1166,7 +1154,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SemText runtime for the Scope / Add Ons / Extend blocks above.
+      {/* SemText runtime for the Scope / Extend blocks above.
           __semJsOff keeps the bundle from auto-wiring on injection; the
           one-shot listener below enhances the whole document exactly once,
           after the deferred bundle has loaded. The hero window re-checks
