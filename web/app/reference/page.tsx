@@ -5,9 +5,10 @@ import {
   GAP_MISSING,
   NPL_TAGS,
   SEM_TAGS,
-  SPEC_VERSION,
+  bundlesFor,
   tagHref,
 } from "@/data/reference-tags";
+import { REFERENCE_BUCKETS } from "@/data/reference-buckets";
 
 export const metadata: Metadata = {
   title: "Reference — every SemText and NPL tag",
@@ -65,27 +66,8 @@ const FILTER_SCRIPT = `(function(){
   });
 })();`;
 
-const FAMILIES: Array<{
-  family: TagRecord["family"];
-  title: string;
-  blurb: string;
-  tags: TagRecord[];
-}> = [
-  {
-    family: "sem",
-    title: "SemText elements",
-    blurb:
-      "The sem-* XHTML vocabulary — the document-shaped format every SemText consumer reads.",
-    tags: SEM_TAGS,
-  },
-  {
-    family: "npl",
-    title: "NPL elements",
-    blurb:
-      "The npl-* components — display renders of NPL prompt blocks (agent introspection, critique, reasoning).",
-    tags: NPL_TAGS,
-  },
-];
+const NPL_BLURB =
+  "The npl-* components — display renders of NPL prompt blocks (agent introspection, critique, reasoning).";
 
 export default function ReferencePage() {
   const familyGroup = (title: string, tags: TagRecord[]) => ({
@@ -103,7 +85,15 @@ export default function ReferencePage() {
     { title: "Reference", items: [
       { key: "reference", label: "Tag reference", href: "/reference/" },
     ] },
-    familyGroup("SemText elements", SEM_TAGS),
+    ...REFERENCE_BUCKETS.map((bucket) => ({
+      title: bucket.label,
+      items: bucket.tags.map((t) => ({
+        key: `ref-${t.name}`,
+        label: t.name,
+        href: tagHref(t.name),
+        dataRef: `${t.name} ${t.summary}`.toLowerCase(),
+      })),
+    })),
     familyGroup("NPL elements", NPL_TAGS),
   ];
 
@@ -116,16 +106,10 @@ export default function ReferencePage() {
         </h1>
         <p className="mt-4 max-w-3xl text-base leading-7 text-ink-mute">
           All {SEM_TAGS.length + NPL_TAGS.length} SemText and NPL tags, each
-          with its options, children and an authored example on its own page
-          — generated from the normative schema files of spec v{SPEC_VERSION}
-          {" "}(<code className="font-mono">spec/schema/sem-*.md</code>,{" "}
-          <code className="font-mono">spec/schema/npl/*.md</code>), so the
-          pages cannot drift from the spec. Eight elements the schema files
-          do not cover come from the spec&apos;s tag catalog instead
-          (<code className="font-mono">spec/conventions.md</code>,{" "}
-          <code className="font-mono">spec/schema/sem-facts.md</code>).
-          Fields a source does not state stay empty and the element&apos;s
-          page marks them.
+          on its own page with its options, children and an authored example
+          — grouped by the job the element does. Filter by tag name or a
+          summary word; every card links to the element&apos;s page, and a
+          field its source does not state is marked there.
         </p>
 
         <div className="mt-8 max-w-3xl">
@@ -142,26 +126,41 @@ export default function ReferencePage() {
           <p id="ref-count" hidden className="mt-2 text-sm text-ink-mute" aria-live="polite" />
         </div>
 
-        {FAMILIES.map(({ family, title, blurb, tags }) => (
+        {REFERENCE_BUCKETS.map((bucket) => (
           <section
-            key={family}
-            aria-labelledby={`family-${family}-h`}
+            key={bucket.id}
+            aria-labelledby={`bucket-${bucket.id}-h`}
             className="mt-14"
           >
             <h2
-              id={`family-${family}-h`}
+              id={`bucket-${bucket.id}-h`}
               className="text-2xl font-semibold tracking-tight text-ink"
             >
-              {title}
+              {bucket.label}
             </h2>
-            <p className="mt-3 max-w-3xl leading-relaxed text-ink-mute">{blurb}</p>
+            <p className="mt-3 max-w-3xl leading-relaxed text-ink-mute">{bucket.description}</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {tags.map((t) => (
+              {bucket.tags.map((t) => (
                 <TagCard key={t.name} tag={t} />
               ))}
             </div>
           </section>
         ))}
+
+        <section aria-labelledby="family-npl-h" className="mt-14">
+          <h2
+            id="family-npl-h"
+            className="text-2xl font-semibold tracking-tight text-ink"
+          >
+            NPL elements
+          </h2>
+          <p className="mt-3 max-w-3xl leading-relaxed text-ink-mute">{NPL_BLURB}</p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {NPL_TAGS.map((t) => (
+              <TagCard key={t.name} tag={t} />
+            ))}
+          </div>
+        </section>
 
         <script defer dangerouslySetInnerHTML={{ __html: FILTER_SCRIPT }} />
       </main>
@@ -201,6 +200,52 @@ function TagCard({ tag: t }: { tag: TagRecord }) {
           See the element&apos;s page.
         </span>
       )}
+      <BundleBadge name={t.name} family={t.family} />
     </a>
+  );
+}
+
+/*
+ * Compact shipped-runtime badge: the file that provides the element (the
+ * lazy chunk when one exists, else the fallback bundle), a fallback suffix
+ * when the enhancement tier also covers it, or an honest none. The title
+ * carries the full provenance. Derived from data/bundles.json — never
+ * hand-maintained.
+ */
+function BundleBadge({
+  name,
+  family,
+}: {
+  name: string;
+  family: TagRecord["family"];
+}) {
+  const b = bundlesFor(name);
+  if (!b) return null;
+  let text: string;
+  let title: string;
+  if (family === "npl" || !b.shipped) {
+    text = family === "npl" ? "not in site bundles" : "no shipped runtime";
+    title = b.note ?? "";
+  } else {
+    const files = b.bundles ?? [];
+    const lazy = files.find((f) => f.file === "semtext-lazy.js");
+    const chunk = lazy?.detail.replace(/^loads\s+/, "");
+    text = [
+      chunk ?? files[0]?.file,
+      files.some((f) => f.file === "semtext-fallback.js") ? "fallback" : null,
+    ]
+      .filter((x): x is string => Boolean(x))
+      .join(" · ");
+    title =
+      (b.sharedWith ? `same runtime as ${b.sharedWith}: ` : "") +
+      files.map((f) => f.file).join(" + ");
+  }
+  return (
+    <span
+      title={title}
+      className="mt-2.5 block truncate font-mono text-[0.62rem] text-ink-faint"
+    >
+      {text}
+    </span>
   );
 }

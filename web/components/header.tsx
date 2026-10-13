@@ -1,5 +1,7 @@
 const TRL = "https://therobotlives.com";
 
+import { HeaderSearch } from "@/components/search";
+
 export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-slateink/85 backdrop-blur-md">
@@ -40,6 +42,7 @@ export function Header() {
           >
             Get started
           </a>
+          <HeaderSearch />
           <a
             href={TRL}
             className="inline-flex min-h-11 items-center font-medium text-violet-soft underline-offset-4 hover:underline"
