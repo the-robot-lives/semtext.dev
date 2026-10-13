@@ -26,7 +26,7 @@ Given("I start on the landing page", () => {
 });
 
 When("I tour the landing page", () => {
-  ["#why", "#try", "#tiers", "#reading", "#start", "#surface", "#scope", "#addons"].forEach(
+  ["#try", "#tiers", "#reading", "#start", "#surface", "#scope", "#addons"].forEach(
     (id) => {
       cy.get(id).scrollIntoView({ duration: 400 });
       cy.wait(BEAT);
