@@ -1,0 +1,13 @@
+.git
+.github
+.claude
+node_modules
+landing/node_modules
+landing/.next
+landing/out
+dist
+coverage
+test/screenshots
+test/videos
+helm
+*.md

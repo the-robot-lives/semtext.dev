@@ -1,0 +1,254 @@
+name: CI
+
+# Consolidated semtext.dev repo: Next.js landing (landing/) + SemText format
+# (spec, src, site, demo, themes — the ex npl-enhanced-content showcase).
+#
+# Release path (see monorepo docs/arch/deployment.md):
+#   push main -> build sha-<7> image -> CI seds the tag into
+#   helm/semtext/values.yaml and commits [skip ci] -> ArgoCD auto-syncs.
+# Nobody hand-edits chart tags and nobody runs helm-upgrade to ship.
+#
+# Component bundles are additionally published to the cdn.semtext.dev bucket
+# under an immutable /<version>/ prefix plus a mutable /latest/ pointer
+# (publish-cdn is dormant until the CDN secrets/variable are carried over).
+
+on:
+  push:
+    # develop pushes run the test jobs only (build-push is main-gated below);
+    # they exist to seed develop-ref caches that feature-PR runs can restore —
+    # a PR-ref cache is invisible to sibling PRs.
+    branches: [main, develop]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Supersede stale PR runs only. A release push to main must never be
+  # cancelled mid build-push / bump-chart.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  REGISTRY: ops.noizu.com
+  IMAGE_REPO: semtext.dev/web
+  CDN_BUCKET: cdn-semtext-dev
+
+jobs:
+  test-landing:
+    # Next.js static export: typecheck + build (landing/).
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: landing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: landing/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run build
+
+  unit:
+    # vitest unit tier + coverage gate (threshold in vite.config.ts). The dockerfile spec reads dist/, so build first.
+    runs-on: ubuntu-latest
+    env:
+      CYPRESS_INSTALL_BINARY: 0 # no browser needed here
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:unit:cover
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-coverage
+          path: coverage/
+          retention-days: 14
+
+  test:
+    # Build the bundles + demo pages, serve dist/, run the cypress e2e suite,
+    # split across parallel shards (scripts/cypress-shard.mjs assigns every
+    # spec to exactly one shard). The preview server must be up before cypress
+    # starts or every spec fails.
+    runs-on: ubuntu-latest # amd64
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    name: test (e2e ${{ matrix.shard }}/3)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      # setup-node caches ~/.npm only; the cypress binary npm ci installs
+      # lives in ~/.cache/Cypress.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-${{ hashFiles('package-lock.json') }}
+          restore-keys: ${{ runner.os }}-cypress-
+      - run: npm ci
+      # build:strict = build.mjs --strict-budget: a bundle over its ROADMAP
+      # budget fails the run here. Local `npm run build` stays lenient so an
+      # in-progress size creep never silently blocks local work — CI is where
+      # the gate closes.
+      - run: npm run build:strict
+      - name: Select specs
+        id: specs
+        run: echo "list=$(node scripts/cypress-shard.mjs ${{ matrix.shard }} 3)" >> "$GITHUB_OUTPUT"
+      - name: Cypress e2e
+        uses: cypress-io/github-action@v6
+        with:
+          install: false
+          spec: ${{ steps.specs.outputs.list }}
+          start: npm run serve
+          wait-on: "http://localhost:4173/demo/index.html"
+          wait-on-timeout: 120
+
+  docker-build:
+    # PR lane: build the combined image (no push) so Dockerfile/nginx changes
+    # fail fast, and seed the gha cache the release build reuses.
+    needs: [test-landing, unit, test]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: production
+          platforms: linux/amd64
+          push: false
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}:ci
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
+
+  build-push:
+    # Release is gated on all test tiers (landing, unit/coverage, e2e shards).
+    needs: [test-landing, unit, test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      short: ${{ steps.sha.outputs.short }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Short SHA
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Build & push web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: production
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}:sha-${{ steps.sha.outputs.short }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
+
+  bump-chart:
+    # Commit the new tag into the chart; ArgoCD auto-syncs the rollout.
+    needs: build-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bump image tag
+        run: |
+          set -euo pipefail
+          SHORT="${GITHUB_SHA::7}"
+          VALUES=helm/semtext/values.yaml
+          # A sed -E that matches nothing still exits 0. Assert the file exists
+          # before, and prove the substitution landed after, or the deploy is a
+          # green build that ships the previous image forever.
+          test -f "$VALUES"
+          sed -i -E "s|(image: ops\\.noizu\\.com/semtext\\.dev/web:).*|\\1sha-${SHORT}|" "$VALUES"
+          grep -q "image: ops\\.noizu\\.com/semtext\\.dev/web:sha-${SHORT}\$" "$VALUES" \
+            || { echo "::error::image tag substitution did not match in ${VALUES}"; grep -n 'image:' "$VALUES"; exit 1; }
+          grep -n 'image:' "$VALUES"
+      - name: Commit & push
+        run: |
+          set -euo pipefail
+          git config user.name "semtext-ci"
+          git config user.email "ci@noizu.com"
+          git add helm/semtext/values.yaml
+          git diff --cached --quiet && exit 0
+          git commit -m "ci: deploy sha-${GITHUB_SHA::7} [skip ci]"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push
+
+  publish-cdn:
+    # Publish the component bundles + themes to cdn.semtext.dev.
+    #   <version>/  immutable, never overwritten once published
+    #   latest/     mutable pointer, short max-age so it can move
+    #
+    # Gated so the pipeline stays green before the CDN secrets exist in THIS
+    # repo. Carried over verbatim from npl-enhanced-content, where the switch
+    # (repository VARIABLE `CDN_PUBLISH`) was never set — the job is dormant.
+    # To turn on, an operator must add CDN_MINIO_URL / CDN_MINIO_ACCESS_KEY /
+    # CDN_MINIO_SECRET_KEY secrets and `gh variable set CDN_PUBLISH --body true`.
+    needs: build-push
+    if: vars.CDN_PUBLISH == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      # Same gate as the test job: published bundles meet their budgets.
+      - run: npm run build:strict
+      - name: Stage CDN payload
+        id: payload
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./package.json').version")"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          rm -rf cdn-payload
+          mkdir -p cdn-payload/themes
+          cp dist/semtext.js dist/semtext-fallback.js dist/semtext-reading.js dist/semtext-extract.js dist/semtext-md.js cdn-payload/
+          cp themes/*.css cdn-payload/themes/
+          find cdn-payload -type f | sort
+      - name: Install mc
+        run: |
+          set -euo pipefail
+          curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc
+          chmod +x /usr/local/bin/mc
+          mc --version
+      - name: Publish
+        env:
+          CDN_MINIO_URL: ${{ secrets.CDN_MINIO_URL }}
+          CDN_MINIO_ACCESS_KEY: ${{ secrets.CDN_MINIO_ACCESS_KEY }}
+          CDN_MINIO_SECRET_KEY: ${{ secrets.CDN_MINIO_SECRET_KEY }}
+          VERSION: ${{ steps.payload.outputs.version }}
+        run: |
+          set -euo pipefail
+          mc alias set cdn "$CDN_MINIO_URL" "$CDN_MINIO_ACCESS_KEY" "$CDN_MINIO_SECRET_KEY"
+
+          TARGET="cdn/${CDN_BUCKET}/${VERSION}"
+          if [ -n "$(mc ls --quiet "$TARGET/" 2>/dev/null || true)" ]; then
+            echo "::notice::${VERSION} already published — versioned prefix is immutable, skipping."
+          else
+            mc mirror --overwrite \
+              --attr "Cache-Control=public,max-age=31536000,immutable" \
+              cdn-payload/ "$TARGET/"
+          fi

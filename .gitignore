@@ -9,3 +9,15 @@ deps/
 node_modules/
 web/scripts/snap/.next-snap/
 *.tsbuildinfo
+
+# showcase build output
+dist/
+coverage/
+test/screenshots/
+test/videos/
+# landing build output
+landing/node_modules/
+landing/.next/
+landing/out/
+# worktrees (also in .git/info/exclude)
+.claude/worktrees/
