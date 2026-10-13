@@ -1,15 +1,33 @@
 <!DOCTYPE html>
 <!-- Copied from noizu-labs-ml/npl-enhanced-content @ 6310232987b118eba49b1b49b058788aba076acc (2026-10-13); theme paths rewritten to /semtext/themes/ for this static site. The spec repo owns the source. -->
 
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" data-sem-theme="minimal-tech-light">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" data-sem-theme="semtext-landing">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SemText — Format Spec &amp; Conventions</title>
   <link rel="stylesheet" href="/semtext/semtext.css" />
-  <link rel="stylesheet" href="/semtext/semtext-theme-minimal-tech-light.css" />
+  <link rel="stylesheet" href="/semtext/themes/semtext-theme-landing.css" />
 </head>
 <body>
+<a class="stx-skip" href="#title">Skip to the spec</a>
+
+<header class="stx-header">
+  <div class="stx-header-bar">
+    <a class="stx-brand" href="/">
+      <span class="stx-brand-mark" aria-hidden="true">∑</span>
+      <span>Sem<span class="stx-brand-accent">Text</span></span>
+    </a>
+    <nav class="stx-nav" aria-label="Primary">
+      <a class="stx-nav-sm" href="/#why">Why</a>
+      <a class="stx-nav-sm" href="/#try">Try it</a>
+      <a class="stx-nav-sm" href="/elements/">Elements</a>
+      <a class="stx-nav-sm" href="/docs/">Docs</a>
+      <a class="stx-nav-sm" href="schema/index.sem.html">Schema</a>
+      <a class="stx-nav-cta" href="https://therobotlives.com">The Robot Lives</a>
+    </nav>
+  </div>
+</header>
 <sem-enhanced-document role="main">
 
   <sem-reader controls="outline,progress,focus,type,color,print,audience" outline-depth="3">
@@ -713,5 +731,37 @@
 
 
 </sem-enhanced-document>
+
+<footer class="stx-footer">
+  <div class="stx-tokenrail" aria-hidden="true">
+    <span>sem-note</span>
+    <span>sem-facts</span>
+    <span>sem-procedure</span>
+    <span>sem-code</span>
+    <span>sem-table</span>
+    <span>sem-reader</span>
+    <span>one file</span>
+    <span>three readers</span>
+    <span>no build step</span>
+    <span>sem-note</span>
+    <span>sem-facts</span>
+    <span>sem-procedure</span>
+    <span>sem-code</span>
+    <span>sem-table</span>
+    <span>sem-reader</span>
+  </div>
+  <div class="stx-footer-inner">
+    <ul class="stx-footer-links">
+      <li><a href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/conventions.md">Format spec</a></li>
+      <li><a href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/extraction.md">Extraction contract</a></li>
+      <li><a href="https://github.com/noizu-labs-ml/npl-enhanced-content">Repository</a></li>
+      <li><a href="/elements/">Elements</a></li>
+      <li><a href="/docs/">Docs</a></li>
+      <li><a href="schema/index.sem.html">Schema index</a></li>
+    </ul>
+    <p class="stx-footer-tag">SemText · draft spec · part of Noizu Prompt Lingua. <a href="https://therobotlives.com">The Robot Lives</a> portfolio.</p>
+    <p class="stx-footer-copy">© 2026 semtext</p>
+  </div>
+</footer>
 </body>
 </html>
