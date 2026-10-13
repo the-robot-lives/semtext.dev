@@ -1,5 +1,6 @@
 import { HeroWindow } from "@/components/hero-window";
 import { TryViews } from "@/components/try-views";
+import { ReaderCards } from "@/components/reader-cards";
 import { Sem, SAMPLE_DOCS, INTEGRATIONS } from "@/components/docs-shell";
 
 const SHOWCASE = "http://localhost:4173";
@@ -73,16 +74,6 @@ const FACTS: Array<{
     distractor: "A bundler compiles the vocabulary down to HTML.",
   },
 ];
-
-const RECORDS = `<sem-facts> (#try-deck kind=capability)
-  <sem-fact> (#f-view-as kind=rule): view-as is a parameter, not an identity :: A fact is a fact in every view; the attribute only selects a rendering.
-    <sem-distractor>: Each view is a different element type.
-  <sem-fact> (#f-light-dom kind=rule): Components render into light DOM :: Content stays in the page, so find-in-page, copy and plain CSS all still reach it.
-    <sem-distractor>: Content moves into a shadow root for encapsulation.
-  <sem-fact> (#f-invariant kind=rule): Extraction reads the authored document :: Generated chrome is skipped, so records do not depend on the view on screen.
-    <sem-distractor>: Extraction reads whatever is currently rendered.
-  <sem-fact> (#f-no-build kind=rule): Authoring needs no build step :: Two stylesheets and one script tag in a plain HTML file.
-    <sem-distractor>: A bundler compiles the vocabulary down to HTML.`;
 
 const TIERS: Array<[string, string]> = [
   [
@@ -373,110 +364,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="api-switch relative mx-auto mt-8 max-w-docs">
-          <input
-            className="api-radio"
-            type="radio"
-            name="reader-tab"
-            id="tab-raw"
-            defaultChecked
-          />
-          <input
-            className="api-radio"
-            type="radio"
-            name="reader-tab"
-            id="tab-web"
-          />
-          <input
-            className="api-radio"
-            type="radio"
-            name="reader-tab"
-            id="tab-viewer"
-          />
-          <input
-            className="api-radio"
-            type="radio"
-            name="reader-tab"
-            id="tab-renderer"
-          />
-
-          <div className="tab-bar flex flex-wrap gap-2">
-            <label
-              htmlFor="tab-raw"
-              className="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink"
-            >
-              raw
-            </label>
-            <label
-              htmlFor="tab-web"
-              className="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink"
-            >
-              web
-            </label>
-            <label
-              htmlFor="tab-viewer"
-              className="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink"
-            >
-              cli viewer
-            </label>
-            <label
-              htmlFor="tab-renderer"
-              className="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink"
-            >
-              cli renderer
-            </label>
-          </div>
-
-          <div className="panels mt-4">
-            <article id="panel-raw" className="panel">
-              <p className="sig mb-3">view: raw</p>
-              <p className="max-w-2xl leading-relaxed text-ink-mute">
-                The file as authored: XHTML you can open in an editor, a diff
-                or a terminal — prose in document order, each qualifier
-                written beside the thing it qualifies, no generated markup to
-                skip past. A model reads and writes this same text, with no
-                conversion step in either direction.
-              </p>
-            </article>
-
-            <article id="panel-web" className="panel">
-              <p className="sig mb-3">view: the web page</p>
-              <p className="max-w-2xl leading-relaxed text-ink-mute">
-                The in-browser render: open the file and the markup becomes
-                the page you are reading. The theme CSS styles the vocabulary
-                directly, so a document is readable the moment it opens.
-                Flashcards flip, quizzes score, tabs switch and disclosures
-                expand — driven by roughly 7 KB of vanilla JavaScript with no
-                dependencies and no network calls.
-              </p>
-            </article>
-
-            <article id="panel-viewer" className="panel">
-              <p className="sig mb-3">view: the CLI viewer</p>
-              <p className="max-w-2xl leading-relaxed text-ink-mute">
-                <code className="font-mono text-violet-soft">
-                  semtext tui
-                </code>{" "}
-                — an interactive terminal viewer for people: the same file
-                with flashcards, a data visualizer and graphs, without
-                leaving the terminal.
-              </p>
-            </article>
-
-            <article id="panel-renderer" className="panel">
-              <p className="sig mb-3">view: the CLI renderer</p>
-              <p className="max-w-2xl leading-relaxed text-ink-mute">
-                <code className="font-mono text-violet-soft">
-                  semtext --render
-                </code>{" "}
-                — rendered output from the --render mode: it renders and
-                loads embeds, with collapse, expand and filtering for agents.
-                Summaries expand in place, so a file is effectively its own
-                summary view.
-              </p>
-            </article>
-          </div>
-        </div>
+        <ReaderCards />
       </section>
 
       {/* Try -------------------------------------------------------------- */}
@@ -525,35 +413,18 @@ export default function Home() {
             </ul>
           </SectionHead>
 
-          <div className="mt-8 grid gap-8 lg:grid-cols-2">
-            <div>
-              <TryViews facts={FACTS} />
-              <p className="mt-3 text-sm text-ink-mute">
-                The live toggle — list, flashcards, quiz — runs on the{" "}
-                <a
-                  href={`${SHOWCASE}/site/#try`}
-                  className="text-violet-soft underline-offset-4 hover:underline"
-                >
-                  showcase
-                </a>
-                .
-              </p>
-            </div>
-
-            <div>
-              <pre
-                className="overflow-x-auto rounded-xl border border-code-border bg-code p-4 font-mono text-[0.78rem] leading-relaxed text-ink-mute"
-                aria-label="Records extracted from the facts deck"
+          <div className="mt-8">
+            <TryViews facts={FACTS} />
+            <p className="mt-3 text-sm text-ink-mute">
+              The live toggle — list, flashcards, quiz — runs on the{" "}
+              <a
+                href={`${SHOWCASE}/site/#try`}
+                className="text-violet-soft underline-offset-4 hover:underline"
               >
-                {RECORDS}
-              </pre>
-              <p className="mt-3 text-sm text-ink-mute">
-                Output of{" "}
-                <code className="font-mono">SemTextExtract.extractText()</code>{" "}
-                over the deck above, authored into the page so it is here with
-                scripts off too.
-              </p>
-            </div>
+                showcase
+              </a>
+              .
+            </p>
           </div>
         </div>
       </section>

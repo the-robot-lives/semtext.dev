@@ -13,9 +13,16 @@ import { useEffect, useRef, useState } from "react";
  *
  * Zero-JS: every panel except browser is server-rendered and the code panel
  * is visible by default; the switch buttons are only revealed after
- * hydration, and the terminal card below shows its prefilled session with
- * scripts off. The browser pane is enhanced pane-scoped with the real
+ * hydration, and the terminal card below shows its prefilled session (the
+ * tui flashcard screen) with scripts off — the input line only exists once
+ * scripts run. The browser pane is enhanced pane-scoped with the real
  * fallback tier on first show (same pattern as hero-window.tsx).
+ *
+ * The terminal simulates `semtext tui` over the page's sample facts only:
+ * it executes nothing, it renders strings. Commands (help, view, expand,
+ * collapse, filter, list, clear) are answered from the fact data below;
+ * Enter with an empty prompt flips the current flashcard, and the arrow
+ * keys recall command history.
  */
 
 export interface TryFact {
@@ -86,7 +93,7 @@ function wrap(text: string, width: number, indent = ""): string[] {
   return lines;
 }
 
-function boxCard(f: TryFact): string[] {
+function boxCard(f: TryFact, revealed = true): string[] {
   const inner = TERM_W - 2;
   const head = ` ${f.id} `;
   const kind = " rule ";
@@ -94,7 +101,11 @@ function boxCard(f: TryFact): string[] {
   lines.push("┌" + head + "─".repeat(Math.max(0, inner - head.length - kind.length)) + kind + "┐");
   for (const l of wrap(f.statement, inner - 2, "")) lines.push("│ " + l.padEnd(inner - 2) + " │");
   lines.push("│ " + " ".repeat(inner - 2) + " │");
-  for (const l of wrap("→ " + f.conclusion, inner - 4, "")) lines.push("│  " + l.padEnd(inner - 3) + "│");
+  if (revealed) {
+    for (const l of wrap("→ " + f.conclusion, inner - 4, "")) lines.push("│  " + l.padEnd(inner - 2) + "│");
+  } else {
+    lines.push("│" + " (enter flips)".padEnd(inner) + "│");
+  }
   lines.push("└" + "─".repeat(inner) + "┘");
   return lines;
 }
@@ -134,6 +145,8 @@ interface TermState {
   view: ViewMode;
   expanded: Set<string>;
   filter: string;
+  cardIdx: number;
+  hidden: boolean[];
 }
 
 function cliRender(facts: TryFact[], st: TermState): string[] {
@@ -151,11 +164,26 @@ function cliRender(facts: TryFact[], st: TermState): string[] {
     `FACTS #${DECK_ID} · view: ${st.view}` +
       (st.filter ? ` · filter: "${st.filter}" (${shown.length}/${facts.length})` : ` · ${facts.length} records`)
   );
-  for (const f of shown) {
-    out.push(`  ▸ ${f.id}  ${f.statement}`);
-    out.push(...wrap("└ " + f.conclusion, TERM_W - 4, "    "));
+  if (st.view === "flashcards") {
+    facts.forEach((f, i) => {
+      if (st.filter && !shown.includes(f)) return;
+      out.push(...boxCard(f, !st.hidden[i]));
+    });
+    out.push("(flip with Enter · `view list` for the plain list)");
+  } else if (st.view === "quiz") {
+    facts.forEach((f, i) => {
+      if (st.filter && !shown.includes(f)) return;
+      out.push(`  Q${i + 1} ${f.statement}`);
+      out.push(...wrap("✓ " + f.conclusion, TERM_W - 4, "    "));
+      out.push(...wrap("✗ " + f.distractor, TERM_W - 4, "    "));
+    });
+  } else {
+    for (const f of shown) {
+      out.push(`  ▸ ${f.id}  ${f.statement}`);
+      out.push(...wrap("└ " + f.conclusion, TERM_W - 4, "    "));
+    }
+    if (st.filter && shown.length === 0) out.push("  (no matches — `filter` clears)");
   }
-  if (st.filter && shown.length === 0) out.push("  (no matches — `filter` clears)");
   out.push("");
   out.push(
     bar("kinds", facts.length, facts.length) +
@@ -179,7 +207,7 @@ function cliRender(facts: TryFact[], st: TermState): string[] {
 
 function prefill(facts: TryFact[], st: TermState): string[] {
   return [
-    "$ semtext --render auth-notes.semtext.html",
+    "$ semtext tui auth-notes.semtext.html",
     ...cliRender(facts, st),
     "",
     "type `help` for commands — this is a simulation, it runs nothing",
@@ -269,6 +297,8 @@ function cliPanelLines(facts: TryFact[]): string[] {
     view: "list",
     expanded: new Set<string>(),
     filter: "",
+    cardIdx: 0,
+    hidden: [],
   })];
 }
 
@@ -279,14 +309,24 @@ export function TryViews({ facts }: { facts: TryFact[] }) {
   const bootedRef = useRef(false);
 
   const [log, setLog] = useState<string[]>(() =>
-    prefill(facts, { view: "list", expanded: new Set<string>(), filter: "" })
+    prefill(facts, {
+      view: "flashcards",
+      expanded: new Set<string>(),
+      filter: "",
+      cardIdx: 0,
+      hidden: facts.map(() => false),
+    })
   );
   const [input, setInput] = useState("");
   const termState = useRef<TermState>({
-    view: "list",
+    view: "flashcards",
     expanded: new Set<string>(),
     filter: "",
+    cardIdx: 0,
+    hidden: facts.map(() => false),
   });
+  const historyRef = useRef<string[]>([]);
+  const histIdxRef = useRef<number | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setJs(true), []);
@@ -330,8 +370,14 @@ export function TryViews({ facts }: { facts: TryFact[] }) {
     const [head, ...rest] = cmd.split(/\s+/);
     const arg = rest.join(" ");
     switch (head) {
-      case "":
+      case "": {
+        if (st.view !== "flashcards") break;
+        const i = st.cardIdx % facts.length;
+        st.hidden[i] = !st.hidden[i];
+        out[0] = `$ flip ${facts[i].id}`;
+        st.cardIdx = (i + 1) % facts.length;
         break;
+      }
       case "help":
         out.push(...HELP);
         break;
@@ -505,7 +551,7 @@ export function TryViews({ facts }: { facts: TryFact[] }) {
           role="log"
           aria-live="polite"
           aria-label="Terminal output"
-          className="max-h-96 overflow-y-auto p-4 font-mono text-[0.78rem] leading-relaxed text-ink-mute"
+          className="min-h-[20rem] max-h-[32rem] overflow-y-auto p-4 font-mono text-[0.78rem] leading-relaxed text-ink-mute"
         >
           {log.map((line, i) => (
             <div
@@ -525,6 +571,11 @@ export function TryViews({ facts }: { facts: TryFact[] }) {
             className="flex items-center gap-2 border-t border-white/5 px-4 py-3"
             onSubmit={(e) => {
               e.preventDefault();
+              const cmd = input.trim();
+              if (cmd) {
+                historyRef.current.push(cmd);
+                histIdxRef.current = null;
+              }
               run(input);
               setInput("");
             }}
@@ -533,6 +584,28 @@ export function TryViews({ facts }: { facts: TryFact[] }) {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                const h = historyRef.current;
+                if (e.key === "ArrowUp") {
+                  if (h.length === 0) return;
+                  e.preventDefault();
+                  histIdxRef.current =
+                    histIdxRef.current === null
+                      ? h.length - 1
+                      : Math.max(0, histIdxRef.current - 1);
+                  setInput(h[histIdxRef.current]);
+                } else if (e.key === "ArrowDown") {
+                  if (histIdxRef.current === null) return;
+                  e.preventDefault();
+                  histIdxRef.current += 1;
+                  if (histIdxRef.current >= h.length) {
+                    histIdxRef.current = null;
+                    setInput("");
+                  } else {
+                    setInput(h[histIdxRef.current]);
+                  }
+                }
+              }}
               aria-label="Terminal command input"
               className="min-h-9 w-full bg-transparent font-mono text-[0.78rem] text-ink outline-none"
               placeholder="help"
