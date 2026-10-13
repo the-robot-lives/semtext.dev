@@ -2,43 +2,51 @@
 
 import { Given, Then, When } from "@badeball/cypress-cucumber-preprocessor";
 
+/*
+ * Aligned with the docs page as rebuilt by 06125e5 (left-sidebar layout):
+ * nav groups Guides/Reference/Showcase/Platform, sections cli-commands and
+ * showcase. Showcase rows point at the external showcase origin, so the
+ * menu assertions check hrefs without following them.
+ */
 const MENU_LINKS: Array<[string, string]> = [
+  ["CLI commands", "/docs/"],
   ["Elements", "/elements/"],
-  ["Getting started", "/docs/#getting-started"],
-  ["Sample docs", "/docs/#samples"],
   ["Add Ons", "/#addons"],
   ["Extend", "/#extend"],
   ["Scope", "/#scope"],
+];
+
+const CLI_SUBCOMMANDS = [
+  "doc.semtext.html",
+  "semtext tui",
+  "semtext --render",
+  "semtext extract",
+  "semtext validate",
 ];
 
 Given("I visit the docs page", () => {
   cy.visit("/docs/");
 });
 
-Then("the getting started section lists the theme sheets", () => {
-  cy.get("section#getting-started")
+Then("the CLI commands section lists the semtext subcommands", () => {
+  cy.get("section#cli-commands")
     .scrollIntoView()
     .should("be.visible")
     .find("h2")
     .invoke("text")
-    .should("match", /Getting started/i);
-  // Theme keys are attributes on sem-property (rendered via CSS content,
-  // not text), so assert the entries themselves.
-  ["_vocabulary.css", "minimal-tech-light", "your theme here"].forEach(
-    (key) =>
-      cy
-        .get(`section#getting-started sem-property[key="${key}"]`)
-        .scrollIntoView()
-        .should("exist")
+    .should("match", /CLI commands/i);
+  CLI_SUBCOMMANDS.forEach((cmd) =>
+    cy
+      .get("section#cli-commands")
+      .contains("code", cmd)
+      .scrollIntoView()
+      .should("exist")
   );
-  cy.get("section#getting-started .g-status").then(($statuses) => {
-    const texts = [...$statuses].map((el) => (el.textContent ?? "").trim());
-    expect(texts.filter((t) => t === "ships").length).to.be.at.least(2);
-    expect(texts).to.include("planned");
-  });
+  // The showcase section renders live showcase rows as sem-properties.
+  cy.get("section#showcase sem-property").should("have.length.at.least", 3);
 });
 
-Then("the docs menu links to all six reference targets", () => {
+Then("the docs menu links to its reference targets", () => {
   cy.get('nav[aria-label="Docs"]').within(() => {
     MENU_LINKS.forEach(([label, href]) =>
       cy.contains("a", label).should("have.attr", "href", href)
@@ -61,17 +69,11 @@ Then("I land on the elements glossary", () => {
 
 Then("I land on the docs page", () => {
   cy.location("pathname").should("eq", "/docs/");
-  cy.get("h1").invoke("text").should("match", /Docs/i);
+  cy.get("h1").invoke("text").should("match", /Documentation/i);
 });
 
-Then("the getting started section is shown", () => {
-  cy.location("hash").should("eq", "#getting-started");
-  cy.get("h2#getting-started-h").should("be.visible");
-});
-
-Then("the sample docs section is shown", () => {
-  cy.location("hash").should("eq", "#samples");
-  cy.get("h2#samples-h").should("be.visible");
+Then("the CLI commands section is shown", () => {
+  cy.get("section#cli-commands").should("be.visible");
 });
 
 Then("I land on the landing page scope section", () => {
