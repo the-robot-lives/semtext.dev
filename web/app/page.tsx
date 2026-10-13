@@ -5,7 +5,6 @@ import { ThemeGenerator } from "@/components/theme-generator";
 import { AddonsCarousel } from "@/components/addons-carousel";
 import { Sem, SHOWCASE_ITEMS, INTEGRATIONS } from "@/components/docs-shell";
 
-const SHOWCASE = "http://localhost:4173";
 const REPO = "https://github.com/noizu-labs-ml/npl-enhanced-content";
 const SPEC = `${REPO}/blob/develop/spec`;
 
@@ -259,6 +258,12 @@ export default function Home() {
                 className="inline-flex min-h-11 items-center bg-violet px-5 py-2 text-sm font-semibold text-white hover:brightness-110"
               >
                 See it work
+              </a>
+              <a
+                href="/reference/"
+                className="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft"
+              >
+                Reference
               </a>
               <a
                 href="/spec/semtext.html"
@@ -856,13 +861,13 @@ export default function Home() {
               </div>
             </details>
             <a
-              href={`${SHOWCASE}/demo/`}
+              href="/elements/"
               className="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft"
             >
-              Open the demo
+              Browse the elements
             </a>
             <span className="font-mono text-xs text-ink-faint">
-              running at {SHOWCASE}
+              every tag, rendered live on this site
             </span>
           </div>
         </div>
