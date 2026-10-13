@@ -980,7 +980,7 @@ export default function Home() {
           after the deferred bundle has loaded. The hero window re-checks
           the html[data-sem-fallback] marker before touching anything. */}
       <script dangerouslySetInnerHTML={{ __html: "window.__semJsOff=true;" }} />
-      <script defer src="/semtext/semtext-fallback.js" />
+      <script defer src="/semtext/semtext.js" />
       <script
         dangerouslySetInnerHTML={{
           __html:

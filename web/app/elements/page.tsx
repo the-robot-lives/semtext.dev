@@ -109,7 +109,7 @@ export default function ElementsPage() {
             into public/semtext/ (see public/semtext/VERSION.md). Loaded
             without __semJsOff so it auto-wires every example on this page;
             the theme stylesheets come from the root layout. */}
-        <script defer src="/semtext/semtext-fallback.js" />
+        <script defer src="/semtext/semtext.js" />
 
         <p className="g-eyebrow">Reference</p>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
