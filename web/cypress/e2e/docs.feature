@@ -10,14 +10,14 @@ Feature: Docs and navigation
     Then the docs menu links to its reference targets
     When I follow the docs menu link "CLI commands"
     Then the CLI commands section is shown
-    When I follow the docs menu link "Elements"
-    Then I land on the elements glossary
+    When I follow the docs menu link "Tag reference"
+    Then I land on the tag reference
     When I follow the header link "Docs"
     Then I land on the docs page
 
-  Scenario: The header links Elements and Docs
+  Scenario: The header links Reference and Docs
     Given I visit the landing page
-    When I follow the header link "Elements"
-    Then I land on the elements glossary
+    When I follow the header link "Reference"
+    Then I land on the tag reference
     When I follow the header link "Docs"
     Then I land on the docs page

@@ -5,12 +5,14 @@ import { Given, Then, When } from "@badeball/cypress-cucumber-preprocessor";
 /*
  * Aligned with the docs page as rebuilt by 06125e5 (left-sidebar layout):
  * nav groups Guides/Reference/Showcase/Platform, sections cli-commands and
- * showcase. Showcase rows point at the external showcase origin, so the
- * menu assertions check hrefs without following them.
+ * showcase. The Reference group points at the tag reference — the
+ * /elements/ glossary page was retired into /reference/. Showcase rows
+ * point at the external showcase origin, so the menu assertions check
+ * hrefs without following them.
  */
 const MENU_LINKS: Array<[string, string]> = [
   ["CLI commands", "/docs/"],
-  ["Elements", "/elements/"],
+  ["Tag reference", "/reference/"],
   ["Add Ons", "/#addons"],
   ["Extend", "/#extend"],
   ["Scope", "/#scope"],
@@ -62,9 +64,9 @@ When("I follow the header link {string}", (label: string) => {
   cy.get("header").contains("a", label).click();
 });
 
-Then("I land on the elements glossary", () => {
-  cy.location("pathname").should("eq", "/elements/");
-  cy.get("h1").invoke("text").should("match", /The elements/i);
+Then("I land on the tag reference", () => {
+  cy.location("pathname").should("eq", "/reference/");
+  cy.get("h1").invoke("text").should("match", /Every tag/i);
 });
 
 Then("I land on the docs page", () => {

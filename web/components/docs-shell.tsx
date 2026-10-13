@@ -1,7 +1,7 @@
 import React from "react";
 
 /*
- * Shared left-menu layout for the reference pages (/elements/, /docs/),
+ * Shared left-menu layout for the reference pages (/reference/, /docs/),
  * Tailwind-docs style: sticky sidebar, content column, and an optional
  * examples rail beside it. Pure server component — no client JS.
  *
@@ -79,7 +79,7 @@ const GROUPS: Array<{
   },
   {
     title: "Reference",
-    items: [{ key: "elements", label: "Elements", href: "/elements/" }],
+    items: [{ key: "reference", label: "Tag reference", href: "/reference/" }],
   },
   {
     title: "Showcase",
