@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test:bdd": "cypress run"
+    "test:bdd": "cypress run",
+    "snap:tag": "node scripts/snap/snap-tag.mjs"
   },
   "dependencies": {
     "next": "^15.5.0",
