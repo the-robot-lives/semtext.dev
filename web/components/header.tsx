@@ -5,7 +5,7 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-white/10 bg-slateink/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-docs items-center justify-between gap-4 px-4 sm:px-6">
         <a
-          href="#main"
+          href="/#main"
           className="flex items-center gap-2.5 font-mono text-sm font-semibold tracking-tight text-ink sm:text-base"
         >
           <span className="brand-mark" aria-hidden="true">
