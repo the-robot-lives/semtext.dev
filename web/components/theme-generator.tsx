@@ -124,6 +124,8 @@ function generateCSSContent(
 
 export function ThemeGenerator() {
   const [mounted, setMounted] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const openerRef = useRef<HTMLButtonElement>(null);
   const [colors, setColors] = useState<ThemeColors>({
     bg: "#ffffff",
     text: "#1e293b",
@@ -171,110 +173,183 @@ export function ThemeGenerator() {
     }
   };
 
-  return (
-    <div className="mt-8 rounded-xl border border-code-border bg-slateink-lift p-6">
-      <h3 className="text-xl font-semibold tracking-tight text-ink">
-        Theme generator
-      </h3>
-      <p className="mt-2 text-sm text-ink-mute">
-        Create a new theme by choosing colors and a font. The generator
-        outputs a complete CSS file with light and dark variants.
+  /*
+   * The generator opens in a native <dialog> via showModal(): the browser
+   * owns focus trapping and Escape. `close` fires for the Close button,
+   * backdrop clicks and Escape alike, so one listener returns focus to
+   * the opener button (bound imperatively — not every React version
+   * forwards the dialog `close` event).
+   */
+  useEffect(() => {
+    // The dialog only enters the DOM once mounted flips true, so re-run on it.
+    const dialog = dialogRef.current;
+    if (!mounted || !dialog) return;
+    const handleClose = () => openerRef.current?.focus();
+    dialog.addEventListener("close", handleClose);
+    return () => dialog.removeEventListener("close", handleClose);
+  }, [mounted]);
+
+  const openGenerator = () => dialogRef.current?.showModal();
+
+  const closeGenerator = () => dialogRef.current?.close();
+
+  const handleDialogClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+    // Clicks on the ::backdrop target the <dialog> itself; the panel body
+    // is a child that fills it, so clicks inside never match.
+    if (e.target === dialogRef.current) dialogRef.current?.close();
+  };
+
+  // No JS: the opener can never open the dialog, so render neither it nor
+  // the generator — just point at the theme docs in the spec.
+  if (!mounted) {
+    return (
+      <p className="mt-8 text-sm leading-relaxed text-ink-mute">
+        Want your own look? The theme file format is documented in the{" "}
+        <a
+          href="/spec/semtext.html#s6"
+          className="text-violet-soft underline-offset-4 hover:underline"
+        >
+          theme conventions section of the spec
+        </a>
+        .
       </p>
+    );
+  }
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="block text-sm font-mono text-violet-soft">
-            Theme name
-          </label>
-          <input
-            type="text"
-            value={themeName}
-            onChange={(e) => setThemeName(e.target.value.replace(/\s+/g, "-").toLowerCase())}
-            className="mt-2 w-full rounded border border-code-border bg-slate-900 px-3 py-2 font-mono text-sm text-white placeholder-code-gray"
-            placeholder="my-theme"
-          />
-        </div>
+  return (
+    <>
+      <button
+        ref={openerRef}
+        type="button"
+        onClick={openGenerator}
+        className="mt-8 inline-flex items-center gap-2 rounded bg-violet px-4 py-2 text-sm font-semibold text-white hover:brightness-110"
+      >
+        Open theme generator
+      </button>
 
-        <div>
-          <label className="block text-sm font-mono text-violet-soft">
-            Font family
-          </label>
-          <select
-            value={colors.font}
-            onChange={(e) => setColors({ ...colors, font: e.target.value })}
-            className="mt-2 w-full rounded border border-code-border bg-slate-900 px-3 py-2 font-mono text-sm text-white"
-          >
-            <option value="system-ui">system-ui</option>
-            <option value="Georgia, serif">Georgia (serif)</option>
-            <option value="ui-monospace, monospace">Monospace</option>
-            <option value="sans-serif">Sans-serif</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-mono text-violet-soft">
-            Background color
-          </label>
-          <input
-            type="color"
-            value={colors.bg}
-            onChange={(e) => setColors({ ...colors, bg: e.target.value })}
-            className="mt-2 h-10 w-full rounded border border-code-border cursor-pointer"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-mono text-violet-soft">
-            Text color
-          </label>
-          <input
-            type="color"
-            value={colors.text}
-            onChange={(e) => setColors({ ...colors, text: e.target.value })}
-            className="mt-2 h-10 w-full rounded border border-code-border cursor-pointer"
-          />
-        </div>
-
-        <div className="sm:col-span-2">
-          <label className="block text-sm font-mono text-violet-soft">
-            Accent color
-          </label>
-          <input
-            type="color"
-            value={colors.accent}
-            onChange={(e) => setColors({ ...colors, accent: e.target.value })}
-            className="mt-2 h-10 w-full rounded border border-code-border cursor-pointer"
-          />
-        </div>
-      </div>
-
-      {mounted && cssOutput && (
-        <>
-          <div className="mt-6 flex gap-3">
-            <button
-              onClick={handleCopy}
-              className="inline-flex items-center gap-2 rounded bg-violet px-4 py-2 text-sm font-semibold text-white hover:brightness-110"
+      <dialog
+        ref={dialogRef}
+        aria-labelledby="theme-generator-title"
+        onClick={handleDialogClick}
+        className="max-h-[85vh] w-[min(42rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-code-border bg-slateink-lift p-0 text-left text-ink [&::backdrop]:bg-slate-950/70"
+      >
+        <div className="p-6">
+          <div className="flex items-start justify-between gap-4">
+            <h3
+              id="theme-generator-title"
+              className="text-xl font-semibold tracking-tight text-ink"
             >
-              {copyStatus === "copied" ? "✓ Copied" : "Copy CSS"}
-            </button>
+              Theme generator
+            </h3>
             <button
-              onClick={handleDownload}
-              className="inline-flex items-center gap-2 rounded border border-violet px-4 py-2 text-sm font-semibold text-violet-soft hover:brightness-110"
+              type="button"
+              onClick={closeGenerator}
+              className="shrink-0 rounded border border-code-border px-3 py-1.5 text-sm font-semibold text-ink-mute hover:text-ink"
             >
-              Download
+              Close
             </button>
           </div>
+          <p className="mt-2 text-sm text-ink-mute">
+            Create a new theme by choosing colors and a font. The generator
+            outputs a complete CSS file with light and dark variants.
+          </p>
 
-          <details className="mt-4">
-            <summary className="cursor-pointer text-sm font-mono text-violet-soft hover:text-violet">
-              Preview generated CSS
-            </summary>
-            <pre className="mt-3 max-h-64 overflow-y-auto rounded border border-code-border bg-slate-950 p-3 font-mono text-xs text-code-gray">
-              {cssOutput}
-            </pre>
-          </details>
-        </>
-      )}
-    </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-mono text-violet-soft">
+                Theme name
+              </label>
+              <input
+                type="text"
+                value={themeName}
+                onChange={(e) => setThemeName(e.target.value.replace(/\s+/g, "-").toLowerCase())}
+                className="mt-2 w-full rounded border border-code-border bg-slate-900 px-3 py-2 font-mono text-sm text-white placeholder-code-gray"
+                placeholder="my-theme"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-mono text-violet-soft">
+                Font family
+              </label>
+              <select
+                value={colors.font}
+                onChange={(e) => setColors({ ...colors, font: e.target.value })}
+                className="mt-2 w-full rounded border border-code-border bg-slate-900 px-3 py-2 font-mono text-sm text-white"
+              >
+                <option value="system-ui">system-ui</option>
+                <option value="Georgia, serif">Georgia (serif)</option>
+                <option value="ui-monospace, monospace">Monospace</option>
+                <option value="sans-serif">Sans-serif</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-mono text-violet-soft">
+                Background color
+              </label>
+              <input
+                type="color"
+                value={colors.bg}
+                onChange={(e) => setColors({ ...colors, bg: e.target.value })}
+                className="mt-2 h-10 w-full rounded border border-code-border cursor-pointer"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-mono text-violet-soft">
+                Text color
+              </label>
+              <input
+                type="color"
+                value={colors.text}
+                onChange={(e) => setColors({ ...colors, text: e.target.value })}
+                className="mt-2 h-10 w-full rounded border border-code-border cursor-pointer"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-mono text-violet-soft">
+                Accent color
+              </label>
+              <input
+                type="color"
+                value={colors.accent}
+                onChange={(e) => setColors({ ...colors, accent: e.target.value })}
+                className="mt-2 h-10 w-full rounded border border-code-border cursor-pointer"
+              />
+            </div>
+          </div>
+
+          {cssOutput && (
+            <>
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={handleCopy}
+                  className="inline-flex items-center gap-2 rounded bg-violet px-4 py-2 text-sm font-semibold text-white hover:brightness-110"
+                >
+                  {copyStatus === "copied" ? "✓ Copied" : "Copy CSS"}
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="inline-flex items-center gap-2 rounded border border-violet px-4 py-2 text-sm font-semibold text-violet-soft hover:brightness-110"
+                >
+                  Download
+                </button>
+              </div>
+
+              <details className="mt-4">
+                <summary className="cursor-pointer text-sm font-mono text-violet-soft hover:text-violet">
+                  Preview generated CSS
+                </summary>
+                <pre className="mt-3 max-h-64 overflow-y-auto rounded border border-code-border bg-slate-950 p-3 font-mono text-xs text-code-gray">
+                  {cssOutput}
+                </pre>
+              </details>
+            </>
+          )}
+        </div>
+      </dialog>
+    </>
   );
 }
