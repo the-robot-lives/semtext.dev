@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DocsShell } from "@/components/docs-shell";
+import { ExampleViewer } from "@/components/example-viewer";
 import elementsIndex from "@/data/elements.json";
 
 export const metadata: Metadata = {
@@ -211,7 +212,6 @@ export default function ReferencePage() {
           );
         })}
 
-        <script defer src="/semtext/semtext-fallback.js" />
         <script defer dangerouslySetInnerHTML={{ __html: FILTER_SCRIPT }} />
       </main>
     </DocsShell>
@@ -312,17 +312,38 @@ function TagSection({ tag }: { tag: TagRecord }) {
       ) : null}
 
       {tag.example ? (
-        <figure className="code-window mt-5 max-w-3xl" aria-label={`Authored ${tag.name} example`}>
-          <div className="code-chrome">
-            <span className="dot live" aria-hidden="true" />
-            <span className="font-mono">sem-code — authoring form</span>
-          </div>
-          <sem-code lang="html" filename={`${tag.name}.html`}>
-            <pre>
-              <code>{esc(tag.example)}</code>
-            </pre>
-          </sem-code>
-        </figure>
+        tag.name === "sem-md" ? (
+          /*
+           * sem-md's example is owned by the markdown-viewer workstream —
+           * kept byte-identical to the shared form so that branch merges
+           * cleanly. Everything below is the ExampleViewer path.
+           */
+          <figure
+            className="code-window mt-5 max-w-3xl"
+            aria-label={`Authored ${tag.name} example`}
+          >
+            <div className="code-chrome">
+              <span className="dot live" aria-hidden="true" />
+              <span className="font-mono">sem-code — authoring form</span>
+            </div>
+            <sem-code lang="html" filename={`${tag.name}.html`}>
+              <pre>
+                <code>{esc(tag.example)}</code>
+              </pre>
+            </sem-code>
+          </figure>
+        ) : (
+          /* The example is authored HTML: it goes to the viewer raw and is
+             escaped exactly once, at render (React text interpolation).
+             Toggle: every SemText element whose example the fallback tier
+             renders — sem-reader renders inert and sem-md is owned above,
+             and the NPL components have no browser vocabulary. */
+          <ExampleViewer
+            name={tag.name}
+            code={tag.example}
+            renderable={tag.family === "sem" && tag.name !== "sem-reader"}
+          />
+        )
       ) : (
         <p className="mt-5 max-w-3xl text-sm italic leading-6 text-ink-faint">
           The schema file states no authoring example for this tag.

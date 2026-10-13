@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 const DOC_HTML = `<!doctype html>
 <html lang="en" data-sem-theme="minimal-tech-light">
@@ -120,9 +120,13 @@ function tokenizeHTML(code: string): Token[][] {
         continue;
       }
 
-      // Default fallback: consume one char
-      lineTokens.push({ text: char, type: "default" });
-      pos++;
+      // Default fallback: consume one code point — UTF-16 astral chars
+      // (emoji in authored examples) must stay ONE token, or the server
+      // renders a lone surrogate as U+FFFD and hydration mismatches.
+      const cp = remaining.codePointAt(pos) ?? char.codePointAt(0)!;
+      const glyph = String.fromCodePoint(cp);
+      lineTokens.push({ text: glyph, type: "default" });
+      pos += glyph.length;
     }
 
     tokenized.push(lineTokens);
@@ -131,8 +135,31 @@ function tokenizeHTML(code: string): Token[][] {
   return tokenized;
 }
 
-export function CodeViewer() {
-  const [mounted, setMounted] = useState(false);
+/*
+ * Shared code window: HTML highlighting, line numbers, Copy and Save.
+ * Defaults keep the landing's minimal document; /reference passes the
+ * authored example per tag (code, filename, caption, label) and slots its
+ * Source/Render pills into the chrome via `actions`.
+ *
+ * The tokenized lines render on the server too — tokenizeHTML is pure and
+ * deterministic, so the static export ships highlighted code with line
+ * numbers and hydration matches with no gate.
+ */
+export interface CodeViewerProps {
+  code?: string;
+  filename?: string;
+  caption?: string;
+  label?: string;
+  actions?: React.ReactNode;
+}
+
+export function CodeViewer({
+  code = DOC_HTML,
+  filename = "doc.html",
+  caption = "minimal SemText document",
+  label = "A minimal SemText document",
+  actions,
+}: CodeViewerProps) {
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
     "idle"
   );
@@ -140,11 +167,9 @@ export function CodeViewer() {
     "idle" | "downloading" | "error"
   >("idle");
 
-  useEffect(() => setMounted(true), []);
-
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(DOC_HTML);
+      await navigator.clipboard.writeText(code);
       setCopyStatus("copied");
       setTimeout(() => setCopyStatus("idle"), 2000);
     } catch (err) {
@@ -156,11 +181,11 @@ export function CodeViewer() {
 
   const handleDownload = () => {
     try {
-      const blob = new Blob([DOC_HTML], { type: "text/html" });
+      const blob = new Blob([code], { type: "text/html" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "doc.html";
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -174,16 +199,16 @@ export function CodeViewer() {
     }
   };
 
-  const tokenized = tokenizeHTML(DOC_HTML);
+  const tokenized = tokenizeHTML(code);
 
   return (
-    <figure
-      className="code-window mt-8"
-      aria-label="A minimal SemText document"
-    >
+    <figure className="code-window mt-8" aria-label={label}>
       <div className="code-chrome">
         <span className="dot live" aria-hidden="true" />
-        <span className="flex-1">doc.html · minimal SemText document</span>
+        <span className="flex-1">
+          {filename} · {caption}
+        </span>
+        {actions}
         <button
           onClick={handleCopy}
           className="ml-2 text-xs text-violet-soft hover:text-violet-soft hover:brightness-110"
@@ -195,68 +220,62 @@ export function CodeViewer() {
         <button
           onClick={handleDownload}
           className="ml-2 text-xs text-violet-soft hover:text-violet-soft hover:brightness-110"
-          aria-label="Download doc.html"
+          aria-label={`Download ${filename}`}
           title={downloadStatus === "downloading" ? "Downloading..." : "Download"}
         >
           {downloadStatus === "downloading" ? "↓ Saving" : "Save"}
         </button>
       </div>
 
-      {mounted ? (
-        <div
-          className="code-content"
-          style={{
-            padding: "1rem 1.1rem 1.2rem",
-            fontFamily:
-              'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-            fontSize: "0.8rem",
-            lineHeight: "1.65",
-            color: "var(--ink)",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-            overflowX: "auto",
-          }}
-        >
-          {tokenized.map((lineTokens, lineIdx) => (
-            <div
-              key={lineIdx}
+      <div
+        className="code-content"
+        style={{
+          padding: "1rem 1.1rem 1.2rem",
+          fontFamily:
+            'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+          fontSize: "0.8rem",
+          lineHeight: "1.65",
+          color: "var(--ink)",
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          overflowX: "auto",
+        }}
+      >
+        {tokenized.map((lineTokens, lineIdx) => (
+          <div
+            key={lineIdx}
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+            }}
+          >
+            <span
               style={{
-                display: "flex",
-                alignItems: "flex-start",
+                display: "inline-block",
+                width: "2.5rem",
+                textAlign: "right",
+                marginRight: "1rem",
+                color: "var(--code-gray)",
+                userSelect: "none",
+                flexShrink: 0,
               }}
             >
-              <span
-                style={{
-                  display: "inline-block",
-                  width: "2.5rem",
-                  textAlign: "right",
-                  marginRight: "1rem",
-                  color: "var(--code-gray)",
-                  userSelect: "none",
-                  flexShrink: 0,
-                }}
-              >
-                {lineIdx + 1}
-              </span>
-              <span>
-                {lineTokens.map((token, tokenIdx) => {
-                  const className =
-                    token.type !== "default" ? `tok-${token.type}` : "";
-                  return (
-                    <span key={tokenIdx} className={className}>
-                      {token.text}
-                    </span>
-                  );
-                })}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <pre>
-          <code>{DOC_HTML}</code>
-        </pre>
-      )}
+              {lineIdx + 1}
+            </span>
+            <span>
+              {lineTokens.map((token, tokenIdx) => {
+                const className =
+                  token.type !== "default" ? `tok-${token.type}` : "";
+                return (
+                  <span key={tokenIdx} className={className}>
+                    {token.text}
+                  </span>
+                );
+              })}
+            </span>
+          </div>
+        ))}
+      </div>
     </figure>
   );
 }
