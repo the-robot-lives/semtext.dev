@@ -130,26 +130,42 @@ const ARTIFACTS: Array<[string, React.ReactNode]> = [
   [
     "semtext.js",
     <>
-      One bundle: Lit 3 components, the vanilla interactivity, reading
-      chrome, extraction and the Markdown renderer · global{" "}
-      <code className="font-mono">SemText</code>
+      The main module. Carries the major players and lazy-loads the heavy
+      pieces — <code className="font-mono">semtext-shell.js</code> among them —
+      instead of bundling them in.
     </>,
   ],
   [
     "semtext.css",
     <>
-      Structure for the <code className="font-mono">sem-*</code> classes.
-      Reads <code className="font-mono">--sem-*</code> tokens, declares
-      none.
+      The base stylesheet for the <code className="font-mono">sem-*</code>{" "}
+      markup.
     </>,
   ],
   [
     "semtext-theme-<name>.css",
     <>
-      Optional. Token values only, plus a{" "}
-      <code className="font-mono">prefers-color-scheme</code> block. A new
-      theme is a copy with new values.
+      A swappable theme. Point the stylesheet link at a different name for a
+      different look.
     </>,
+  ],
+  [
+    "semtext-lazy.js",
+    <>
+      The light alternative: a lazy loader that fetches only what the document
+      actually uses, for faster page loads and a smaller file.
+    </>,
+  ],
+  [
+    "semtext-shell.js",
+    <>
+      The shell. Not bundled in — <code className="font-mono">semtext.js</code>{" "}
+      lazy-loads it on demand.
+    </>,
+  ],
+  [
+    "semtext-shell.css",
+    <>Styles for the shell, loaded alongside it.</>,
   ],
 ];
 
@@ -164,7 +180,7 @@ const QUESTIONS: Array<[string, string]> = [
   ],
   [
     "Is anyone using it?",
-    "Not yet. This is a draft spec, a reference implementation and a Cypress suite. There are no users to point at, no benchmarks to quote and no production deployments beyond this page and its demos.",
+    "SemText is beta: this page and its demos run on the reference implementation, and a Cypress suite backs it. No external users yet and no benchmarks to quote — kick the tires and report what breaks.",
   ],
 ];
 
@@ -176,8 +192,8 @@ const QUESTIONS: Array<[string, string]> = [
  * would read. Raw innerHTML (rather than JSX elements) keeps attribute
  * names like key= and view-as= verbatim; React reserves key= on JSX props.
  */
-const SCOPE_NOTES = `<sem-note variant="info">SemText is a markup vocabulary and three small scripts. It is not a CMS, a site generator or an application framework, and it has no opinion about how you produce the HTML.</sem-note>
-<sem-note variant="warning">Versioning follows the open/closed principle: any version changes should not break your existing markup. New elements and attributes land alongside the ones a document already uses — never swapped out from under it — so a file authored today keeps rendering as the vocabulary grows. Pin a version when you ship.</sem-note>
+const SCOPE_NOTES = `<sem-note variant="info">SemText is a set of semantic HTML elements plus the scripts and Lit components that render them. It is not a CMS, a site generator or an application framework, and it has no opinion about how you produce the HTML.</sem-note>
+<sem-note variant="warning">SemText is beta. The elements are stable enough to build on, but names and attributes can still shift before 1.0 — pin a version when you ship.</sem-note>
 <sem-note variant="tip">There is no React in the dependency tree and there is not going to be one. Lit 3 is the only runtime dependency, and it is optional — the fallback tier has none.</sem-note>`;
 
 const SCOPE_QA = QUESTIONS.map(
@@ -365,7 +381,7 @@ export default function Home() {
         <div className="mx-auto max-w-docs">
           <SectionHead id="tiers-h" eyebrow="Degradation" title="Three tiers, and the bottom one is the contract.">
             <p className="mt-3 leading-relaxed text-ink-mute">
-              Every hide rule in the vocabulary CSS is gated on an enhancement
+              Every hide rule in the element CSS is gated on an enhancement
               marker that only a script sets. With no script, nothing is hidden
               and the document reads as prose. Each tier above that adds
               behaviour without moving content.
@@ -383,6 +399,91 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Quick start ------------------------------------------------------ */}
+      <section
+        id="start"
+        aria-labelledby="start-h"
+        className="border-b border-white/10 px-4 py-14 sm:px-6 sm:py-20"
+      >
+        <div className="mx-auto max-w-docs">
+          <SectionHead id="start-h" eyebrow="Quick start" title="What you actually write.">
+            <p className="mt-3 leading-relaxed text-ink-mute">
+              A SemText document is an HTML file. The elements are custom
+              elements with plain attributes —{" "}
+              <code className="font-mono text-violet-soft">
+                &lt;sem-facts view-as=&quot;flashcards&quot;&gt;
+              </code>
+              ,{" "}
+              <code className="font-mono text-violet-soft">
+                &lt;sem-step status=&quot;done&quot;&gt;
+              </code>{" "}
+              — so any editor, template language or generator that emits HTML
+              can emit it, and the browser parses it with or without a script.
+            </p>
+          </SectionHead>
+
+          <div className="mt-8">
+            <CodeViewer />
+          </div>
+          <p className="mt-3 text-sm text-ink-mute">
+            Save it, double-click it. That is the whole workflow. Written the
+            older way —{" "}
+            <code className="font-mono">
+              &lt;div class=&quot;sem-note&quot; data-variant=&quot;warning&quot;&gt;
+            </code>{" "}
+            — it renders and extracts the same; that spelling is the
+            compatibility alias, documented once in the spec&apos;s Appendix A.
+          </p>
+
+          <h3 className="mt-10 text-xl font-semibold tracking-tight text-ink">
+            Adding it to a project
+          </h3>
+          <ol className="mt-4 grid gap-3 sm:grid-cols-2">
+            {[
+              <>
+                Copy{" "}
+                <code className="font-mono">semtext.css</code> and one{" "}
+                <code className="font-mono">semtext-theme-&lt;name&gt;.css</code>{" "}
+                next to your document, and set{" "}
+                <code className="font-mono">data-sem-theme</code> on{" "}
+                <code className="font-mono">&lt;html&gt;</code> to that
+                theme&apos;s name.
+              </>,
+              <>
+                Add <code className="font-mono">semtext-lazy.js</code> — the
+                light loader that fetches only what the document uses. Or
+                inline <code className="font-mono">semtext.js</code> for a
+                document you intend to send as a single file.
+              </>,
+              <>
+                Write the content with{" "}
+                <code className="font-mono">sem-*</code> elements where
+                interactivity or machine-readability pays. Ordinary HTML stays
+                ordinary HTML.
+              </>,
+              <>
+                Optional: swap the light loader for{" "}
+                <code className="font-mono">semtext.js</code> to ship the major
+                players up front — the shell and other heavy pieces stay
+                lazy-loaded either way.
+              </>,
+            ].map((step, i) => (
+              <li
+                key={i}
+                className="rounded-xl border border-code-border bg-slateink-lift p-4 text-sm leading-relaxed text-ink-mute"
+              >
+                <span className="mr-2 font-mono text-xs text-violet-soft">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                {step}
+              </li>
+            ))}
+          </ol>
+
+          <ThemeGenerator />
+        </div>
+      </section>
+
       {/* Reading ---------------------------------------------------------- */}
       <section
         id="reading"
@@ -393,7 +494,7 @@ export default function Home() {
           <SectionHead id="reading-h" eyebrow="Reading" title="Long-form documents, with the reading affordances left in.">
             <p className="mt-3 leading-relaxed text-ink-mute">
               The recall elements above are one use. Most documents are read,
-              not drilled, so the vocabulary also carries what a long document
+              not drilled, so the elements also carry what a long document
               needs: a glossary whose terms preview on hover, references with
               backlinks, a dated chronology, listings with provenance, notes
               that sit in the margin, content addressed to a named audience,
@@ -543,7 +644,7 @@ export default function Home() {
                 generated from the <code className="font-mono">h2</code>{" "}
                 headings, and focus, type size, face and colour scheme are
                 attributes on <code className="font-mono">&lt;html&gt;</code>{" "}
-                that the vocabulary CSS keys on, remembered in{" "}
+                that the element CSS keys on, remembered in{" "}
                 <code className="font-mono">localStorage</code> when the
                 browser allows it.
               </p>
@@ -598,85 +699,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Quick start ------------------------------------------------------ */}
-      <section
-        id="start"
-        aria-labelledby="start-h"
-        className="border-b border-white/10 px-4 py-14 sm:px-6 sm:py-20"
-      >
-        <div className="mx-auto max-w-docs">
-          <SectionHead id="start-h" eyebrow="Quick start" title="What you actually write.">
-            <p className="mt-3 leading-relaxed text-ink-mute">
-              A SemText document is an HTML file. The vocabulary is custom
-              elements with plain attributes —{" "}
-              <code className="font-mono text-violet-soft">
-                &lt;sem-facts view-as=&quot;flashcards&quot;&gt;
-              </code>
-              ,{" "}
-              <code className="font-mono text-violet-soft">
-                &lt;sem-step status=&quot;done&quot;&gt;
-              </code>{" "}
-              — so any editor, template language or generator that emits HTML
-              can emit it, and the browser parses it with or without a script.
-            </p>
-          </SectionHead>
-
-          <div className="mt-8">
-            <CodeViewer />
-          </div>
-          <p className="mt-3 text-sm text-ink-mute">
-            Save it, double-click it. That is the whole workflow. Written the
-            older way —{" "}
-            <code className="font-mono">
-              &lt;div class=&quot;sem-note&quot; data-variant=&quot;warning&quot;&gt;
-            </code>{" "}
-            — it renders and extracts the same; that spelling is the
-            compatibility alias, documented once in the spec&apos;s Appendix A.
-          </p>
-
-          <h3 className="mt-10 text-xl font-semibold tracking-tight text-ink">
-            Adding it to a project
-          </h3>
-          <ol className="mt-4 grid gap-3 sm:grid-cols-2">
-            {[
-              <>
-                Copy{" "}
-                <code className="font-mono">semtext.css</code> — and, if you
-                want a theme,{" "}
-                <code className="font-mono">semtext-theme-&lt;name&gt;.css</code>{" "}
-                — next to your document, and set{" "}
-                <code className="font-mono">data-sem-theme</code> on{" "}
-                <code className="font-mono">&lt;html&gt;</code> to that
-                theme&apos;s name.
-              </>,
-              <>
-                Add <code className="font-mono">semtext.js</code>.
-                Link it, or paste it inline for a document you intend to send
-                as a single file.
-              </>,
-              <>
-                Write the content with{" "}
-                <code className="font-mono">sem-*</code> elements where
-                interactivity or machine-readability pays. Ordinary HTML stays
-                ordinary HTML.
-              </>,
-            ].map((step, i) => (
-              <li
-                key={i}
-                className="rounded-xl border border-code-border bg-slateink-lift p-4 text-sm leading-relaxed text-ink-mute"
-              >
-                <span className="mr-2 font-mono text-xs text-violet-soft">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                {step}
-              </li>
-            ))}
-          </ol>
-
-          <ThemeGenerator />
-        </div>
-      </section>
-
       {/* Surface ---------------------------------------------------------- */}
       <section
         id="surface"
@@ -686,12 +708,13 @@ export default function Home() {
         <div className="mx-auto max-w-docs">
           <SectionHead id="surface-h" eyebrow="Surface" title="Everything that ships.">
             <p className="mt-3 leading-relaxed text-ink-mute">
-              One script and one stylesheet, plus an optional theme file.
-              Everything rides in the single{" "}
-              <code className="font-mono">semtext.js</code> — components,
-              interactivity, reading chrome, extraction and the Markdown
-              renderer — so a document needs no other assets. Measured
-              sizes live on the{" "}
+              One main module plus a light loader, a base stylesheet plus
+              swappable themes, and the shell as a lazy-loaded pair.{" "}
+              <code className="font-mono">semtext.js</code> carries the major
+              players and lazy-loads the heavy pieces on demand;{" "}
+              <code className="font-mono">semtext-lazy.js</code> fetches only
+              what the document uses. With no script at all the document still
+              reads as prose. Measured sizes live on the{" "}
               <a
                 href="/#surface"
                 className="text-violet-soft underline-offset-4 hover:underline"
@@ -717,10 +740,11 @@ export default function Home() {
           </dl>
 
           <h3 className="mt-10 text-xl font-semibold tracking-tight text-ink">
-            The vocabulary
+            The elements
           </h3>
           <p className="mt-2 max-w-3xl leading-relaxed text-ink-mute">
-            Twenty-one element types mint records:{" "}
+            Twenty-one rich sem-text components today, and growing. These mint
+            records:{" "}
             <code className="font-mono">sem-agent</code>,{" "}
             <code className="font-mono">sem-note</code>,{" "}
             <code className="font-mono">sem-facts</code> and{" "}
