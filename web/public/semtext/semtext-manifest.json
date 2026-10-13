@@ -1,0 +1,12 @@
+{
+  "sem-code": "chunks/sem-code.js",
+  "sem-details": "chunks/sem-details.js",
+  "sem-facts": "chunks/sem-facts.js",
+  "sem-md": "chunks/sem-md.js",
+  "sem-note": "chunks/sem-note.js",
+  "sem-properties": "chunks/sem-properties.js",
+  "sem-reader": "chunks/sem-reader.js",
+  "sem-references": "chunks/sem-references.js",
+  "sem-source": "chunks/sem-source.js",
+  "sem-table": "chunks/sem-table.js"
+}
