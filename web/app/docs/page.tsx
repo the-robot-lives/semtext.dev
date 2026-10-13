@@ -18,6 +18,39 @@ const SHOWCAES_HTML = (function () {
   return `<sem-properties kind="showcase">\n${rows}\n</sem-properties>`;
 })();
 
+/*
+ * The CDN stub is illustrative: cdn.semtext.dev is the planned origin;
+ * today the same three files ship in the spec repo's dist/ (and in this
+ * site's public/semtext/). The page renders live SemText below, so the
+ * bundle is loaded WITHOUT __semJsOff — its DOMContentLoaded auto-wire
+ * enhances everything on the page.
+ */
+
+const STUB = `<!doctype html>
+<html lang="en" data-sem-theme="minimal-tech-light">
+<head>
+  <meta charset="utf-8" />
+  <title>Auth notes</title>
+  <link rel="stylesheet" href="https://cdn.semtext.dev/v0/semtext.css" />
+  <link rel="stylesheet" href="https://cdn.semtext.dev/v0/semtext-theme-minimal-tech-light.css" />
+  <script defer src="https://cdn.semtext.dev/v0/semtext.js"></script>
+</head>
+<body>
+  <sem-enhanced-document>
+    <h1 data-kind="title">Auth notes</h1>
+    <sem-note variant="tip">Readable as plain text —
+    the CDN tier makes it interactive.</sem-note>
+    <sem-facts view-as="flashcards">
+      <sem-fact id="f-rotate" kind="concept">
+        <statement>Refresh tokens rotate per use</statement>
+        <conclusion>Each exchange retires the
+        previous token.</conclusion>
+      </sem-fact>
+    </sem-facts>
+  </sem-enhanced-document>
+</body>
+</html>`;
+
 export default function DocsPage() {
   return (
     <DocsShell
@@ -33,9 +66,13 @@ export default function DocsPage() {
           Documentation
         </h1>
         <p className="mt-4 max-w-3xl text-base leading-7 text-ink-mute">
-          SemText ships as a CLI and as component bundles. Author documents as
-          plain XHTML, then read them in the browser, the terminal, or render
-          them for distribution to agents.
+          A SemText document is one XHTML file. Ship it with{" "}
+          <code className="font-mono">semtext.css</code> and a small script —
+          plus an optional theme — and the same file a model reads becomes
+          working web components — no build step, no framework, nothing
+          compiled. SemText ships as a CLI and as component bundles. Author
+          documents as plain XHTML, then read them in the browser, the
+          terminal, or render them for distribution to agents.
         </p>
 
         {/* ———— CLI commands ———— */}
@@ -54,6 +91,38 @@ export default function DocsPage() {
             The <code className="font-mono">semtext</code> command-line tool
             reads and renders SemText documents. Every command operates on local
             files and produces local output — no network, no API key, no cloud.
+          </p>
+
+          <p className="mt-3 max-w-3xl leading-relaxed text-ink-mute">
+            Author your document as XHTML using the SemText vocabulary — any
+            tool that writes HTML can write it. Then load{" "}
+            <code className="font-mono">semtext.css</code> and{" "}
+            <code className="font-mono">semtext.js</code>, plus an optional
+            theme. That is the whole integration:
+          </p>
+
+          <figure className="code-window mt-6" aria-label="A minimal SemText page">
+            <div className="code-chrome">
+              <span className="dot live" aria-hidden="true" />
+              <span className="dot" aria-hidden="true" />
+              <span className="dot" aria-hidden="true" />
+              <span>semtext.html</span>
+            </div>
+            <pre>
+              <code>{STUB}</code>
+            </pre>
+          </figure>
+          <p className="mt-3 font-mono text-xs leading-5 text-ink-faint">
+            cdn.semtext.dev is the planned CDN origin; today the same three
+            files ship in the spec repo&apos;s dist/ — and in this site&apos;s
+            public/semtext/, which the examples on{" "}
+            <a
+              href="/elements/"
+            className="text-violet-soft underline-offset-4 hover:underline"
+            >
+              /elements/
+            </a>{" "}
+            render with.
           </p>
 
           <h3 className="mt-10 text-lg font-semibold tracking-tight text-ink">
@@ -170,7 +239,7 @@ $`}
           <Sem className="mt-4 flex max-w-3xl flex-col gap-3" html={SHOWCAES_HTML} />
         </section>
 
-        <script defer src="/semtext/semtext-fallback.js" />
+        <script defer src="/semtext/semtext.js" />
       </main>
     </DocsShell>
   );

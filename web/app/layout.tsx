@@ -64,7 +64,7 @@ export default function RootLayout({
         <link
           rel="stylesheet"
           precedence="semtext"
-          href="/semtext/themes/_vocabulary.css"
+          href="/semtext/semtext.css"
         />
         <link
           rel="stylesheet"

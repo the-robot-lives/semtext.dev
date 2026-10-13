@@ -6,8 +6,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schema — sem-md</title>
-  <link rel="stylesheet" href="/semtext/themes/_vocabulary.css" />
-  <link rel="stylesheet" href="/semtext/themes/minimal-tech-light.css" />
+  <link rel="stylesheet" href="/semtext/semtext.css" />
+  <link rel="stylesheet" href="/semtext/semtext-theme-minimal-tech-light.css" />
 </head>
 <body>
 <sem-enhanced-document role="main">
@@ -52,7 +52,7 @@
 
   <ul>
     <li>Fallback: renders the Markdown with the bundled minimal renderer (headings, lists, emphasis, links, fenced code, tables — no raw HTML passthrough, sanitization default-deny); the toggle flips to a <code>&lt;pre&gt;</code> of the raw source. Tables are real <code>&lt;table&gt;</code> elements with <code>&lt;thead&gt;</code>, <code>&lt;th scope="col"&gt;</code> and <code>&lt;tbody&gt;</code>; links get <code>target="_blank"</code> + <code>rel="noopener"</code>.</li>
-    <li>Upgraded: same DOM contract; the same renderer by default so the two tiers agree.</li>
+    <li>Upgraded: same DOM contract; the same renderer by default.</li>
     <li>JS-off: the raw source is readable; the rendered view appears on first run.</li>
   </ul>
 
