@@ -31,13 +31,17 @@
  * runtime exists.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = resolve(root, 'public/semtext/semtext-manifest.json');
 const FALLBACK = resolve(root, 'public/semtext/semtext-fallback.js');
+const VOCAB = resolve(root, 'public/semtext/themes/_vocabulary.css');
+const THEME = resolve(root, 'public/semtext/themes/minimal-tech-light.css');
+const FULL_BUNDLE = resolve(root, 'public/semtext/semtext.js');
+const NPL_BUNDLE = resolve(root, 'public/semtext/npl.js');
 const ELEMENTS = resolve(root, 'data/elements.json');
 const GLOSSARY = resolve(root, 'data/reference-glossary.ts');
 const OUT = resolve(root, 'data/bundles.json');
@@ -91,6 +95,59 @@ for (const m of fallbackSrc.matchAll(/\bM\("([a-z0-9-]+)"\)/g)) {
 }
 const lazyTags = new Set(Object.keys(manifest));
 
+// ---------- theme-CSS provenance (cssOnly) ----------
+
+/** Selector text of the shipped theme stylesheets: comments stripped, every
+ * rule's selector run joined. A missing sheet (not yet synced) contributes
+ * nothing instead of failing the map — the shipped copy is the truth about
+ * what the site can paint today, and the phase-2 sync regenerates the map
+ * with the fresh sheet. */
+function selectorCorpus(files) {
+  const parts = [];
+  for (const f of files) {
+    let src = '';
+    try {
+      src = readFileSync(f, 'utf8');
+    } catch {
+      continue;
+    }
+    const css = src.replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const m of css.matchAll(/(^|\})([^{}@]+)\{/g)) parts.push(m[2]);
+  }
+  return parts.join('\n');
+}
+
+/** Tags the shipped theme stylesheets paint with zero JavaScript: the tag's
+ * name (element or class form — both are the same name token) appears in a
+ * selector. Boundary-bounded like the fallback pass, so `.sem-md-label`
+ * never matches `sem-md` and `sem-details` never matches `sem-detail`. The
+ * vocabulary sheet carries the structural paint, the theme file the
+ * colours; the render pane loads both for every example, so a tag matched
+ * here renders truthfully in a JS-off browser (the sem-event /
+ * sem-chronology / sem-procedure / sem-step family — and any display-only
+ * npl-* tag once the vocabulary sync lands its blocks). */
+const cssPainted = new Set();
+const cssCorpus = selectorCorpus([VOCAB, THEME]);
+if (cssCorpus) {
+  for (const name of byName.keys()) {
+    if (new RegExp(`(^|[^a-z0-9-])${name}(?![a-z0-9-])`).test(cssCorpus)) {
+      cssPainted.add(name);
+    }
+  }
+}
+
+/** Class-form alias wiring for the example pane. The sem lazy tier's scan
+ * is tag-shaped (custom-element names only), so a `div.sem-<tag>` class
+ * host enhances only under the FULL bundle, whose reading-tier selectors
+ * cover both spellings. The npl namespace needs no entry: its class-form
+ * aliases upgrade under npl-lazy.js as well as npl.js, so an npl tag's own
+ * runtime already covers them. A namespace appears here only while the
+ * extra file actually ships in public/semtext/ — until the bundle sync
+ * lands, class-form examples keep the honest note instead of a dead
+ * script tag. */
+const aliasRuntime = {};
+if (existsSync(FULL_BUNDLE)) aliasRuntime.sem = 'semtext.js';
+
 // ---------- per-tag provenance ----------
 
 /** Runtime provided to a generated primary tag: chunk first (the Lit
@@ -99,7 +156,11 @@ const lazyTags = new Set(Object.keys(manifest));
 function primaryBundles(name) {
   const out = [];
   if (manifest[name]) {
-    out.push({ file: 'semtext-lazy.js', detail: `loads ${manifest[name]}` });
+    out.push({
+      file: 'semtext-lazy.js',
+      detail: `loads ${manifest[name]}`,
+      chunk: manifest[name],
+    });
   }
   if (fallbackTags.has(name)) {
     out.push({ file: 'semtext-fallback.js', detail: 'enhancement tier' });
@@ -134,6 +195,16 @@ for (const [name, rec] of byName) {
     const primary = sharedWith(name, rec);
     if (primary && (manifest[primary] || fallbackTags.has(primary))) {
       tags[name] = { shipped: true, sharedWith: primary, bundles: primaryBundles(primary) };
+    } else if (cssPainted.has(name)) {
+      // Zero-JS by contract, painted by the shipped theme CSS: the render
+      // pane mounts for these (the vocabulary sheet styles the authored
+      // markup), so the gate and the RuntimeLine must not claim the example
+      // "renders as plain HTML".
+      tags[name] = {
+        shipped: false,
+        cssOnly: true,
+        note: 'no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example',
+      };
     } else {
       tags[name] = {
         shipped: false,
@@ -150,8 +221,12 @@ const out = {
   generatedFrom: {
     manifest: 'public/semtext/semtext-manifest.json',
     fallback: 'public/semtext/semtext-fallback.js',
+    themeCss: 'public/semtext/themes/_vocabulary.css',
   },
   notShippedUpstream: ['semtext.js', 'npl.js', 'npl-lazy.js', 'npl-chunks/', 'semtext-js-shell.js', 'semtext-agent.js'],
+  // Class-form alias wiring for the render pane (see the aliasRuntime
+  // section above). Empty until the full bundle ships in public/semtext/.
+  aliasRuntime,
   tags,
 };
 

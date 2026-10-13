@@ -92,8 +92,8 @@ requirements:
       must_show:
         - the same two passages and the same words, highlights replaced by
           solid slate occlusion chips (#475569), rounded, min 3ch wide, no glyphs
-        - one chip revealed beside a still-occluded chip: the accent-tinted,
-          fully legible word from the plain page
+        - "one chip revealed beside a still-occluded chip: the accent-tinted,
+          fully legible word from the plain page"
         - keyboard/click reveal affordance implied, one-way per item
       must_never:
         - leave quiz-view occlusion on the plain page

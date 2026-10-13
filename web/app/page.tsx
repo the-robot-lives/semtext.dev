@@ -223,7 +223,7 @@ export default function Home() {
     <main id="main">
       {/* Hero ------------------------------------------------------------- */}
       <section className="border-b border-white/10">
-        <div className="mx-auto grid max-w-docs gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.18fr)] lg:py-16">
+        <div className="mx-auto grid max-w-docs grid-cols-1 gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.18fr)] lg:py-16">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.22em] text-violet-soft">
               a semantic text format
@@ -335,8 +335,11 @@ export default function Home() {
           <div className="mt-8">
             <TryViews facts={FACTS} />
             <p className="mt-3 text-sm text-ink-mute">
-              The view toggle and flashcards in the browser pane are live —
-              this page is the showcase. More sample documents sit in the{" "}
+              The browser pane renders{" "}
+              <code className="font-mono">demo/example-deck.sem.html</code>{" "}
+              itself — the same file double-clicking opens. The shell panes
+              type their first commands once the shell bundle lands. More
+              sample documents sit in the{" "}
               <a
                 href="#scope"
                 className="text-violet-soft underline-offset-4 hover:underline"
@@ -404,7 +407,7 @@ export default function Home() {
             </p>
           </SectionHead>
 
-          <div className="mt-10 grid gap-12 lg:grid-cols-2">
+          <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-2">
             <div>
               <h3 className="text-xl font-semibold tracking-tight text-ink">
                 Glossary
@@ -937,7 +940,7 @@ export default function Home() {
           after the deferred bundle has loaded. The hero window re-checks
           the html[data-sem-fallback] marker before touching anything. */}
       <script dangerouslySetInnerHTML={{ __html: "window.__semJsOff=true;" }} />
-      <script defer src="/semtext/semtext.js" />
+      <script defer src="/semtext/semtext-fallback.js" />
       <script
         dangerouslySetInnerHTML={{
           __html:

@@ -1,0 +1,135 @@
+# sem-event — UX design sheet prompt
+# One dated event in a `sem-chronology`, shown across the forms the reader
+# meets: timeline marker card (authored <time> label), attribute-label forms
+# (bare `when`, `when`–`until` period), and the list-mode row. Dark
+# minimal-tech theme. Reference attachments are the judged renders from the
+# snap harness (see reports/tag-sem-event.md).
+
+schema: "0.4"
+id: sem-event-ux-sheet
+type: image
+quality: high
+
+prompt:
+  text: |
+    A precise UX design sheet for the SemText vocabulary element
+    `sem-event` (one dated assertion inside a `sem-chronology` timeline),
+    rendered as THREE side-by-side example pages on a dark minimal-tech
+    canvas (background #0f172a, card surface #1e293b, hairline borders
+    #334155, blue accent #60a5fa, green success #34d399, red error
+    #f87171, muted grey #cbd5e1 for dates).
+
+    LEFT PAGE — event on the TIMELINE rail: a 2px vertical rail with one
+    rounded-right card per event; each card's own left border is its
+    status marker and rides ON the rail so rail and marker read as one
+    continuous line. The human-readable date label (authored `<time>`)
+    sits ABOVE the event prose, all-small-caps, muted ("3 FEB 2026").
+    Show every status value: DONE (green marker, " ✓"), CURRENT (blue
+    marker, " →"), BLOCKED (red marker, muted body, " ⛔"), TODO (grey
+    DASHED marker, " ○", fully visible), and one UNANNOTATED event (plain
+    grey border, no glyph — neutral, not todo).
+
+    MIDDLE PAGE — events whose date label comes from ATTRIBUTES: same
+    rail, no `<time>` authored. One card's label is the bare `when`
+    rendered verbatim ("2026-05-19"); one card's label is a period joined
+    by an en dash ("2026-Q3 – 2026-Q4"); one card shows that when both a
+    `when` attribute and a `<time>` child exist, only the human `<time>`
+    label ("Nov 2026") appears — the attribute never doubles it.
+
+    RIGHT PAGE — the same events in LIST mode: no rail, no cards — plain
+    stacked rows on the canvas; each row keeps a thin status marker on
+    its left edge (colour + dash pattern survive) and the small-caps date
+    sits INLINE before the prose ("22 JUN 2026  Reading-experience
+    overhaul. →").
+
+    Typography: clean humanist sans for prose, all-small-caps muted date
+    labels, no monospace. Generous vertical rhythm (0.75rem gaps). Flat,
+    engineered, restrained — a documentation specimen, not an
+    illustration. The same event authored as `div.sem-event` with
+    `data-*` parameters must be render-identical to the element form.
+  negative: |
+    no hidden or faded events, no occluded text, no solid colour blocks
+    over words, no decorative photos or icons, no gradient glows, no
+    watermarks, no UI browser chrome, no arrows drawn across cards, no
+    doubled date label on one event, no empty label where `when` should
+    render, no dangling " – " with a missing second date, no light-mode
+    canvas.
+  style: flat dark technical documentation specimen, minimal-tech design system
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-event/sem-event-status-vocabulary-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-event/sem-event-date-labels-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-event/sem-event-class-form-render-1280.png
+    role: reference
+
+output:
+  formats:
+    - format: png
+      filename: sem-event-ux-sheet.png
+  dimensions:
+    width: 1536
+    height: 1024
+
+requirements:
+  modes:
+    - name: timeline event (authored <time> label)
+      must_show:
+        - one continuous vertical rail; every event's status marker rides on it
+        - date label above the event body, all-small-caps, muted colour
+        - done = green marker + " ✓"; current = blue marker + " →"; todo = grey DASHED marker + " ○"; blocked = red marker + " ⛔" + muted body; unannotated = plain border, no glyph
+        - prose fully readable on the card surface
+      must_never:
+        - never hide, dim to illegibility, or drop the todo event
+        - never render todo identical to done (dash + glyph must differ)
+        - never let a card surface occlude its text (occlusion belongs to sem-spoiler)
+        - never mark an unannotated event with a glyph — absence means unannotated, not todo
+    - name: attribute date labels
+      must_show:
+        - a `when`-only event labelling verbatim ("2026-05-19")
+        - a `when`/`until` period as ONE en-dash range ("2026-Q3 – 2026-Q4"), both ends present
+        - an event with both `<time>` and `when` showing only the `<time>` text
+      must_never:
+        - never stack the attribute label under an authored `<time>` label
+        - never show a range with a missing or empty endpoint
+    - name: list-mode event
+      must_show:
+        - no rail, no card backgrounds — plain stacked rows
+        - date label INLINE before the prose
+        - status marker survives the mode change: thin coloured/dashed left edge plus glyph in every row
+      must_never:
+        - never fall back to timeline cards in list mode
+        - never drop the status marker or the inline date on narrow rows
+    - name: class form
+      must_show:
+        - `div.sem-event[data-*]` renders pixel-identical to `<sem-event>` in every mode
+      must_never:
+        - never restyle or restructure the class form — it is the same contract, different spelling
+
+eval:
+  pass_threshold: 0.7
+  criteria:
+    marker_completeness:
+      weight: 0.3
+      description: All five marker states (done/current/blocked/todo/unannotated) visible and distinguishable; todo is a dashed grey marker with a ring glyph, fully legible.
+      fail_signals: [todo absent or identical to done, unannotated marked with a glyph]
+    label_fidelity:
+      weight: 0.25
+      description: Each event shows exactly one date label; period ranges show both ends; time-vs-attribute precedence respected.
+      fail_signals: [doubled date label, dangling " – " range, machine ISO date shown where a human <time> was authored]
+    mode_fidelity:
+      weight: 0.25
+      description: Timeline page (rail + cards, label above body) vs list page (no rail/cards, inline label) match their contracts; class form identical.
+      fail_signals: [list page shows a rail or cards, class form looks different from element form]
+    restraint:
+      weight: 0.2
+      description: Flat documentation specimen; no ornament, glow, browser chrome, or occluding fills.
+      fail_signals: [decorative background art, text hidden behind a solid block]
+  reject_if:
+    - any event prose is unreadable or occluded
+    - the timeline lacks a continuous rail or its markers float detached from it
+    - colour alone distinguishes any two statuses (glyph/dash/tint must co-signal)
+    - watermarks or UI chrome appear anywhere
+
+tags: [semtext, vocabulary, event, timeline, chronology, list, dark, specimen]

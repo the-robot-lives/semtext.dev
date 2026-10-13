@@ -21,6 +21,7 @@ import {
   ALL_TAGS,
   GAP_MISSING,
   NPL_TAGS,
+  aliasRuntime,
   bundlesFor,
   tagBySlug,
   tagHref,
@@ -130,6 +131,29 @@ function dedupeVariants(variants: ExampleVariant[], primary?: string) {
   return p ? variants.filter((v) => key(v.code) !== p) : variants;
 }
 
+/*
+ * The generator's description usually restates the summary verbatim (48
+ * of 49 tags do), so rendering both repeats the lead sentence. Render
+ * the description with a leading duplicate of the summary — or of its
+ * first sentence — stripped; when nothing survives, drop the paragraph.
+ * Match is prefix-exact on the trimmed strings: if the description does
+ * not actually open with the summary (or its first sentence), it is
+ * rendered untouched.
+ */
+function dedupeDescription(description?: string, summary?: string): string | null {
+  const body = (description ?? "").trim();
+  const s = (summary ?? "").trim();
+  if (!body || !s || !body.startsWith(s)) {
+    const m = s ? s.match(/^[\s\S]*?[.!?](?=\s|$)/) : null;
+    const lead = m ? m[0] : s;
+    if (!body || !lead || !body.startsWith(lead)) return body || null;
+    const rest = body.slice(lead.length).trim();
+    return rest || null;
+  }
+  const rest = body.slice(s.length).trim();
+  return rest || null;
+}
+
 function ElementBody({ tag: t }: { tag: TagRecord }) {
   const missing = GAP_MISSING.get(t.name) ?? [];
   const gapNote = missing.includes("summary") || missing.includes("description");
@@ -141,12 +165,18 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
    * lands; until then they render source-side with the note below.
    */
   const bundles = bundlesFor(t.name);
-  const renderable = bundles?.shipped ?? false;
+  /*
+   * cssOnly counts as renderable: the shipped theme CSS paints the
+   * authored example, so the render pane mounts (TagBundle.cssOnly in
+   * data/reference-tags.ts). NPL tags still wait for the bundle sync.
+   */
+  const renderable = (bundles?.shipped || bundles?.cssOnly) ?? false;
   const renderNote =
     t.family === "npl"
       ? "Render is available once the npl bundle ships."
       : "No shipped runtime for this element — the authored example renders as plain HTML.";
   const variants = dedupeVariants(EXAMPLE_VARIANTS[t.name] ?? [], t.example);
+  const description = dedupeDescription(t.description, t.summary);
 
   return (
     <>
@@ -166,8 +196,8 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
         </p>
       ) : null}
 
-      {t.description && t.description !== t.summary ? (
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">{t.description}</p>
+      {description ? (
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">{description}</p>
       ) : null}
 
       {t.optionsIn ? (
@@ -181,7 +211,7 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
       ) : null}
 
       {t.attributes.length > 0 ? (
-        <div className="mt-5 max-w-3xl overflow-x-auto">
+        <div className="mt-5 max-w-none overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-white/15 text-xs uppercase tracking-wide text-ink-faint">
@@ -234,7 +264,7 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
             Example
           </h2>
           {t.example ? (
-            <div id="example-primary" className="mt-3 max-w-3xl">
+            <div id="example-primary" className="mt-3 max-w-none">
               {t.name === "sem-md" ? (
                 /* The one example that IS Markdown: a Render/Source toggle
                    over the same authored block, like the landing's view
@@ -259,13 +289,14 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
                   code={t.example}
                   renderable={renderable}
                   bundles={bundles?.bundles ?? []}
+                  aliasRuntime={aliasRuntime()}
                   renderNote={renderNote}
                 />
               )}
             </div>
           ) : null}
           {variants.map((v) => (
-            <div key={v.id} id={`example-${v.id}`} className="mt-8 max-w-3xl">
+            <div key={v.id} id={`example-${v.id}`} className="mt-8 max-w-none">
               <p className="g-nav-title">{v.label}</p>
               {v.note ? (
                 <p className="mt-1 text-sm leading-6 text-ink-mute">{v.note}</p>
@@ -276,6 +307,7 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
                   code={v.code}
                   renderable={v.renderable ?? renderable}
                   bundles={bundles?.bundles ?? []}
+                  aliasRuntime={aliasRuntime()}
                   exampleLabel={v.label}
                   renderNote={renderNote}
                 />
@@ -325,6 +357,13 @@ function RuntimeLine({ tag: t }: { tag: TagRecord }) {
         not in the shipped site bundles — the npl-* namespace ships upstream
         as {code("npl.js")} / {code("npl-lazy.js")} + {code("npl-chunks/")}, not
         copied into {code("public/semtext/")}
+      </>
+    );
+  } else if (b.cssOnly && !b.shipped) {
+    body = (
+      <>
+        none — the shipped theme CSS ({code("themes/_vocabulary.css")}) paints
+        the authored example
       </>
     );
   } else if (!b.shipped) {

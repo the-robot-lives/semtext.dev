@@ -8,7 +8,10 @@
   --bg-panel: #1e293b;
   --ink: #e2e8f0;
   --mute: #94a3b8;
-  --faint: #64748b;
+  /* 4.57:1 minimum on --bg-panel (#1e293b), the lightest surface faint text
+     sits on (integration-card mocks); 5.5+:1 on --bg/--bg-lift/--code-bg.
+     #64748b managed only 3.07:1 there — 12px labels failed AA. */
+  --faint: #8291a7;
   --accent: #7c3aed;
   --accent-soft: #a78bfa;
   --accent-dim: #5b21b6;

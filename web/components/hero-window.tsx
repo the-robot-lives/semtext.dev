@@ -51,15 +51,15 @@ const RENDERED_HTML = `<sem-note variant="warning">
 declare global {
   interface Window {
     // The bundle's enhance(root) accepts a Document or any element subtree
-    // (it only calls root.querySelectorAll — see semtext.js K()).
+    // (it only calls root.querySelectorAll — see semtext-fallback.js K()).
     SemTextFallback?: { enhance: (root: Document | HTMLElement) => void };
     __semJsOff?: boolean;
   }
 }
 
 const THEME_CSS = [
-  "/semtext/semtext.css",
-  "/semtext/semtext-theme-minimal-tech-light.css",
+  "/semtext/themes/_vocabulary.css",
+  "/semtext/themes/minimal-tech-light.css",
 ];
 
 function pillClasses(active: boolean) {
@@ -98,9 +98,9 @@ export function HeroWindow() {
           window.__semJsOff = true;
           await new Promise<void>((resolve, reject) => {
             const script = document.createElement("script");
-            script.src = "/semtext/semtext.js";
+            script.src = "/semtext/semtext-fallback.js";
             script.onload = () => resolve();
-            script.onerror = () => reject(new Error("semtext.js failed to load"));
+            script.onerror = () => reject(new Error("semtext-fallback.js failed to load"));
             document.head.appendChild(script);
           });
         }

@@ -54,6 +54,7 @@ interface FallbackBundle {
   enhanceViews?: EnhanceFn;
   enhanceReveal?: EnhanceFn;
   enhanceProgress?: EnhanceFn;
+  enhanceAudience?: EnhanceFn;
 }
 
 interface LazyBundle {
@@ -87,16 +88,22 @@ const THEME_CSS = [
  */
 let booted = false;
 const loadedScripts = new Set<string>();
+/** Boot token: the latest ensureRuntime() call; stale timers no-op on it. */
+let bootSeq = 0;
 
 function loadScript(src: string): Promise<void> {
   if (loadedScripts.has(src)) return Promise.resolve();
   return new Promise<void>((resolve, reject) => {
     const script = document.createElement("script");
     script.src = src;
-    // The lazy loaders (and their chunks, which they import themselves)
+    // The lazy loaders and everything under their chunk directories (the
+    // chunks themselves, which import their shared siblings relatively)
     // are module builds — a classic script tag throws on their
-    // import.meta. The IIFE bundles and the fallback tier are classic.
-    if (/-lazy\.js$/.test(src)) script.type = "module";
+    // import.meta. The IIFE bundles (full bundles, shell, fallback tier)
+    // are classic.
+    if (/-lazy\.js$/.test(src) || /(^|\/)[a-z-]*chunks\//.test(src)) {
+      script.type = "module";
+    }
     script.onload = () => {
       loadedScripts.add(src);
       resolve();
@@ -148,16 +155,48 @@ const PANE_HANDLERS = [
   "enhanceViews",
   "enhanceReveal",
   "enhanceProgress",
+  // Pane-safe since the runtime split the audiences lane shipped (the
+  // handler scopes its profile collection to the given root now), so the
+  // render pane stops showing the all-visible state after the sync.
+  "enhanceAudience",
 ] as const;
 
-function wirePane(pane: HTMLDivElement | null) {
-  const fb = fallbackBundle();
+/*
+ * Which loaded bundle the pane wires with. The legacy fallback tier and
+ * the full bundle export the same per-pane handler surface, so either
+ * drives the chain; class-form panes prefer the full bundle first (its
+ * reading tier covers `.sem-<tag>` hosts, which the tag-shaped lazy scan
+ * never matches). Tier markers make the handlers idempotent, so a pane
+ * re-checked against a different surface later is still safe.
+ */
+function handlerBundle(classForm: boolean): FallbackBundle | null {
+  const w = window as unknown as Record<string, FallbackBundle | undefined>;
+  const order = classForm
+    ? ["SemText", "SemTextFallback"]
+    : ["SemTextFallback", "SemText"];
+  for (const g of order) {
+    const b = w[g];
+    if (b && typeof b.enhance === "function") return b;
+  }
+  return null;
+}
+
+function wirePane(pane: HTMLDivElement | null, classForm = false) {
+  const fb = handlerBundle(classForm);
   if (!pane || !fb) return;
   if (pane.querySelector("[data-sem-fallback], [data-sem-upgraded]")) return;
   if (PANE_HANDLERS.every((h) => typeof fb[h] === "function")) {
     for (const h of PANE_HANDLERS) fb[h]!(pane);
   } else {
-    fb.enhance(pane);
+    // A surface missing part of the chain still gets the handlers it has —
+    // only when it exports none of them do we fall back to the whole-pane
+    // enhance() (which runs the document-shaped passes last).
+    const present = PANE_HANDLERS.filter((h) => typeof fb[h] === "function");
+    if (present.length) {
+      for (const h of present) fb[h]!(pane);
+    } else {
+      fb.enhance(pane);
+    }
   }
 }
 
@@ -165,6 +204,16 @@ function hydratePane(pane: HTMLDivElement | null) {
   const lz = lazyBundle();
   if (!pane || !lz) return;
   lz.hydrate!(pane);
+}
+
+/*
+ * A class-form example (`div.sem-<tag>` / `div.npl-<tag>` hosts). The lazy
+ * scans are tag-shaped (custom-element names only), so these wire only
+ * under the alias runtime bundles.json lists (see aliasRuntime in
+ * data/reference-tags.ts).
+ */
+function usesClassForm(code: string): boolean {
+  return /class\s*=\s*["'`][^"'`]*\b(sem|npl)-[a-z0-9-]+/.test(code);
 }
 
 /* The landing's view-control pills. */
@@ -185,6 +234,7 @@ export function ExampleViewer({
   code,
   renderable,
   bundles = [],
+  aliasRuntime,
   exampleLabel,
   renderNote,
 }: {
@@ -193,6 +243,10 @@ export function ExampleViewer({
   renderable: boolean;
   /** Shipped bundle files data/bundles.json lists for this tag. */
   bundles?: BundleEntry[];
+  /** Extra bundle files class-form examples need (bundles.json's
+   * aliasRuntime — passed down as a prop so the client bundle never
+   * embeds the tag JSON). */
+  aliasRuntime?: Record<string, string>;
   /** Distinguishes variant examples of one tag in labels and AT names. */
   exampleLabel?: string;
   /** Why the render pane is a note instead of a live render. */
@@ -201,31 +255,100 @@ export function ExampleViewer({
   const [js, setJs] = useState(false);
   const [view, setView] = useState<ViewMode>("split");
   const paneRef = useRef<HTMLDivElement>(null);
+  // The pane follows the page's color mode: the vocabulary theme keys its
+  // paint off the pane's data-color-mode, and the page chrome owns the real
+  // choice (dark is the site default; the attribute wins once mounted).
+  const [colorMode, setColorMode] = useState("dark");
 
   useEffect(() => setJs(true), []);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const sync = () =>
+      setColorMode(root.getAttribute("data-color-mode") ?? "dark");
+    sync();
+    const obs = new MutationObserver(sync);
+    obs.observe(root, { attributes: true, attributeFilter: ["data-color-mode"] });
+    return () => obs.disconnect();
+  }, []);
+
+  /*
+   * Everything served from /semtext/ for this tag: the map's bundle files
+   * (minus any namespace loader we must not run — npl-lazy.js has no off
+   * switch and would document-scan the whole page) plus every chunk the map
+   * names. Chunks self-define their elements on import (the sem lazy
+   * loader re-imports its own chunk through the same module cache, so the
+   * duplicate load is free); loading chunks directly is what lets an npl
+   * tag wire pane-scoped without its document scanner.
+   */
+  const SEM_LAZY = "semtext-lazy.js";
   const files = bundles.map((b) => b.file);
-  const lazyCovered = files.includes("semtext-lazy.js");
+  const lazyCovered = files.includes(SEM_LAZY);
+  const chunkFiles = bundles
+    .map((b) => b.chunk)
+    .filter((c): c is string => typeof c === "string");
+  const classForm = usesClassForm(code);
+  const aliasFiles =
+    classForm && aliasRuntime
+      ? Object.values(aliasRuntime).filter((f) => f && !files.includes(f))
+      : [];
+  const loadFiles = [
+    ...files.filter((f) => f === SEM_LAZY || !/-lazy\.js$/.test(f)),
+    ...chunkFiles,
+    ...aliasFiles,
+  ];
 
   function ensureRuntime() {
     if (!renderable) return;
-    bootElementRuntime(files)
+    const pane = paneRef.current;
+    const boot = ++bootSeq;
+    if (pane) {
+      // Boot guard (the sem-source lane's race): interacting with the pane
+      // mid-boot snapshots a half-wired tree. Freeze pointer interaction
+      // until wiring settles — the pane's first tier marker, the last
+      // re-check, or a failed boot, whichever lands first (bounded ~2.5s).
+      pane.dataset.semBooting = "";
+      pane.style.pointerEvents = "none";
+    }
+    const release = (p: HTMLDivElement | null) => {
+      if (!p) return;
+      delete p.dataset.semBooting;
+      p.style.pointerEvents = "";
+    };
+    bootElementRuntime(loadFiles)
       .then(() => {
-        if (lazyCovered) hydratePane(paneRef.current);
-        wirePane(paneRef.current);
+        const checks = [150, 500, 1200, 2500];
+        const wire = () => {
+          const p = paneRef.current;
+          if (lazyCovered) hydratePane(p);
+          wirePane(p, classForm);
+          return p;
+        };
+        wire();
         // Hydration may reset this pane around boot (the hero window's
         // hazard); each re-check is a no-op once the pane carries the
         // bundle's tier markers. The lazy chunk's Lit upgrade lands
-        // asynchronously after hydrate(), so keep re-checking.
-        for (const ms of [150, 500, 1200, 2500])
+        // asynchronously after hydrate(), so keep re-checking; release the
+        // boot guard early once a marker is on the pane. Timers from a
+        // superseded boot (view switch) no-op on the boot token.
+        checks.forEach((ms, i) =>
           setTimeout(() => {
-            if (lazyCovered) hydratePane(paneRef.current);
-            wirePane(paneRef.current);
-          }, ms);
+            if (boot !== bootSeq) return;
+            const p = wire();
+            if (
+              p &&
+              (i === checks.length - 1 ||
+                p.querySelector("[data-sem-fallback], [data-sem-upgraded]"))
+            ) {
+              release(p);
+            }
+          }, ms),
+        );
       })
       .catch(() => {
         // Without the bundle the rendered pane still shows every element:
         // the vocabulary CSS hides nothing until a tier marker is set.
+        release(paneRef.current);
       });
   }
 
@@ -245,7 +368,9 @@ export function ExampleViewer({
   const labelSuffix = exampleLabel ? ` — ${exampleLabel}` : "";
   const toggle =
     js && (renderable || view !== "render") ? (
-      <span className="ml-2 flex items-center gap-1.5">
+      /* Below sm the pills take their own full-width chrome row (order-last
+         keeps them after filename/actions there); sm+ unchanged. */
+      <span className="ml-2 flex items-center gap-1.5 max-sm:order-last max-sm:ml-0 max-sm:w-full">
         <button
           type="button"
           onClick={() => show("split")}
@@ -280,7 +405,8 @@ export function ExampleViewer({
    * example, the view toggle, Copy/Save) over the pane(s). The chrome
    * never wraps mid-word or stretches the card: the filename truncates
    * with a tooltip, the pill labels are short and nowrap, and below 640px
-   * Copy/Save drop to a second chrome row instead of overflowing.
+   * the pills drop to one full-width second row while Copy/Save become
+   * icon buttons beside the filename (ViewerActions below).
    */
   const chrome = (
     <div className="code-chrome flex-wrap gap-y-1">
@@ -292,7 +418,7 @@ export function ExampleViewer({
         {name}.html · authored example
       </span>
       {toggle}
-      <CopySaveButtons code={code} filename={`${name}.html`} />
+      <ViewerActions code={code} filename={`${name}.html`} />
     </div>
   );
 
@@ -319,7 +445,7 @@ export function ExampleViewer({
       <div
         ref={paneRef}
         data-sem-theme="minimal-tech-light"
-        data-color-mode="dark"
+        data-color-mode={colorMode}
         className="min-h-24 px-4 py-4 sm:px-5"
         dangerouslySetInnerHTML={{ __html: code }}
       />
@@ -381,5 +507,99 @@ export function ExampleViewer({
         </div>
       </div>
     </figure>
+  );
+}
+
+/*
+ * The viewer's Copy/Save pair. Same actions as code-viewer's shared
+ * CopySaveButtons — copy the authored source, download `filename` — but
+ * below `sm` they render as icon buttons (fixed 28px targets, constant
+ * aria-labels, status in `title` and a live region) so the chrome row
+ * keeps filename + actions on one line at 390 instead of wrapping text
+ * buttons mid-row; at `sm` and up they fall back to the shared text
+ * pair. Icons are inline SVG (no font-glyph surprises).
+ */
+function ViewerActions({ code, filename }: { code: string; filename: string }) {
+  const [status, setStatus] = useState<"idle" | "copied" | "saved" | "error">(
+    "idle"
+  );
+  const flash = (next: typeof status) => {
+    setStatus(next);
+    window.setTimeout(() => setStatus("idle"), 2000);
+  };
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      flash("copied");
+    } catch {
+      flash("error");
+    }
+  };
+
+  const save = () => {
+    try {
+      const blob = new Blob([code], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      flash("saved");
+    } catch {
+      flash("error");
+    }
+  };
+
+  const iconBtn =
+    "inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border transition-colors sm:hidden";
+  const idle = "border-code-border text-code-gray hover:border-violet-soft hover:text-ink";
+  const done = "border-violet text-violet-soft";
+
+  return (
+    <span className="ml-2 flex items-center gap-1.5" role="group" aria-label="Example actions">
+      {/* Icon buttons below sm; display:none removes them from the a11y
+          tree, so exactly one Copy and one Save are ever exposed. */}
+      <button
+        type="button"
+        onClick={copy}
+        aria-label="Copy code"
+        title={status === "copied" ? "Copied" : "Copy code"}
+        className={`${iconBtn} ${status === "copied" ? done : idle}`}
+      >
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <rect x="4.5" y="4.5" width="8" height="8" rx="1.5" stroke="currentColor" />
+          <path d="M9.5 2.5h-6a1 1 0 0 0-1 1v6" stroke="currentColor" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        onClick={save}
+        aria-label={`Save ${filename}`}
+        title={`Save ${filename}`}
+        className={`${iconBtn} ${status === "saved" ? done : idle}`}
+      >
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M7 1.5v7m0 0L4.2 5.7M7 8.5l2.8-2.8" stroke="currentColor" strokeLinecap="round" />
+          <path d="M1.5 9.5v2a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2" stroke="currentColor" strokeLinecap="round" />
+        </svg>
+      </button>
+      {/* Text pair at sm+; hidden below sm. */}
+      <span className="hidden items-center sm:flex">
+        <CopySaveButtons code={code} filename={filename} />
+      </span>
+      <span aria-live="polite" className="sr-only">
+        {status === "copied"
+          ? "Copied to clipboard"
+          : status === "saved"
+            ? "Download started"
+            : status === "error"
+              ? "Action failed"
+              : ""}
+      </span>
+    </span>
   );
 }

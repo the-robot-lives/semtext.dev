@@ -109,10 +109,10 @@ sem-agent > :is(name, bio, instructions), sem-fact > :is(statement, conclusion, 
 :is(sem-fact, .sem-fact) :is(conclusion, .sem-conclusion) { margin: .5rem 0 0; color: var(--sem-muted); }
 /* distractors are quiz decoys: hidden once a script drives the document,
    labelled and readable when none does (D12) */
-:root:is([data-sem-fallback], [data-sem-upgraded]) :is(sem-fact, .sem-fact) :is(incorrect-statement, .sem-incorrect-statement) { display: none; }
-:root:not([data-sem-fallback], [data-sem-upgraded]) :is(sem-fact, .sem-fact) :is(incorrect-statement, .sem-incorrect-statement) {
+:root:is([data-sem-fallback], [data-sem-upgraded]) :is(sem-fact, .sem-fact) :is(incorrect-statement, .incorrect-statement) { display: none; }
+:root:not([data-sem-fallback], [data-sem-upgraded]) :is(sem-fact, .sem-fact) :is(incorrect-statement, .incorrect-statement) {
   margin: .5rem 0 0; color: var(--sem-muted); font-size: .875rem; }
-:root:not([data-sem-fallback], [data-sem-upgraded]) :is(sem-fact, .sem-fact) :is(incorrect-statement, .sem-incorrect-statement)::before {
+:root:not([data-sem-fallback], [data-sem-upgraded]) :is(sem-fact, .sem-fact) :is(incorrect-statement, .incorrect-statement)::before {
   content: "incorrect statement · "; font-variant-caps: all-small-caps; letter-spacing: .05em; }
 /* quiz + flashcards (hide rules gated on the tier marker — JS-off stays readable) */
 :is(sem-facts, .sem-facts):is([data-sem-fallback], [data-sem-upgraded])[data-view-as="quiz"] :is(sem-fact, .sem-fact) :is(conclusion, .sem-conclusion) { display: none; }

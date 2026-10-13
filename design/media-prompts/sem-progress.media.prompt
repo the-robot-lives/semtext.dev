@@ -1,0 +1,165 @@
+schema: "0.4"
+id: sem-progress-ux-design
+type: image
+quality: high
+product_targets:
+  - semtext.dev
+tags:
+  - semtext
+  - sem-progress
+  - ux-design
+  - reference
+
+prompt:
+  text: |
+    UX design sheet for the SemText `<sem-progress>` completion meter, one
+    labeled example card per display mode, rendered in the minimal-tech
+    dark theme (bg #0f172a, surface #1e293b, fg #e2e8f0, accent #60a5fa,
+    correct-green #34d399) inside browser-chrome frames with small mono
+    uppercase captions. The sheet shows FIVE stacked example cards, each a
+    calm documentation surface, generous margins, no dashboard clutter.
+
+    Card 1 — caption "METER (default)". One line of muted text
+    `coverage :: 62%` above a slim pill track (8px tall, rounded, track a
+    hairline slate #334155 at reduced contrast) with an accent-blue fill
+    spanning exactly 62% of the track, rounded caps. The number in the
+    caption and the fill width agree exactly.
+
+    Card 2 — caption "DEFAULT LABEL". The same meter at 42%, caption
+    reading `progress :: 42%` — the element names itself when no label is
+    authored. Identical geometry to card 1.
+
+    Card 3 — caption "CLASS FORM". The identical 62% meter as card 1,
+    visually indistinguishable, demonstrating the `div.sem-progress`
+    alias renders the same component from data-attributes.
+
+    Card 4 — caption "CLAMP". A meter at value 1.4: the fill spans the
+    full track width and the caption reads `cache warm :: 100%`. A small
+    muted annotation under the card, in mono: `raw attr stays 1.4 — the
+    render clamps, the data never lies`.
+
+    Card 5 — caption "DONE". A completed meter: full-width accent fill,
+    caption `cutover :: 100%` followed by a small green checkmark
+    (#34d399) after the percentage. Nothing else is added — no confetti,
+    no progress ring, no percentage dial.
+
+    Typography: clean system sans (Inter-like), 16px body, muted captions
+    in slate-400, mono for the `label :: N%` strings. Restrained: the
+    meter is the only accent object on each card.
+
+  negative: >
+    animated or glowing bars; gradient fills; multi-color progress rings;
+    circular dials; percent bubbles; oversized hero bars filling the card;
+    more or fewer than five example cards; light background; dashboard
+    KPI clutter; drop shadows on text; watermark; lorem ipsum.
+
+  style: >
+    Flat UI spec sheet, minimal-tech aesthetic, restrained single-accent
+    palette, crisp 12px card radius, hairline #334155 borders, generous
+    negative space. Looks like a panel from a design-system guide.
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-progress/sem-progress-primary-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-progress/sem-progress-clamp-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-progress/sem-progress-done-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-progress/sem-progress-fullpage-1280.png
+    role: reference
+
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+    aspect_ratio: "3:2"
+  formats:
+    - format: png
+      filename: sem-progress-ux-design.png
+
+requirements:
+  modes:
+    - id: meter-default
+      label: "METER (default)"
+      must_show:
+        - caption `label :: N%` above the track, N the rounded percentage
+        - slim pill track (hairline slate) with accent-blue rounded fill
+        - fill width exactly matching the caption percentage
+      must_never:
+        - let the fill width disagree with the caption number
+        - occlude the caption or render the bar over text
+        - animate, glow, or gradient the fill
+    - id: default-label
+      label: "DEFAULT LABEL"
+      must_show:
+        - the self-naming caption `progress :: N%` when no label authored
+        - identical geometry to the default meter
+      must_never:
+        - invent a different default name
+        - drop the caption when the label attribute is absent
+    - id: class-form
+      label: "CLASS FORM"
+      must_show:
+        - the alias spelling rendering the identical meter
+      must_never:
+        - restyle the alias differently from the element form
+    - id: clamp
+      label: "CLAMP"
+      must_show:
+        - full-width fill with caption reading `100%` for an out-of-range
+          authored value
+        - the muted mono annotation that the raw attribute stays as
+          authored (the render clamps, the data never lies)
+      must_never:
+        - render a partial bar for the out-of-range value
+        - alter or round the raw attribute value in the annotation
+    - id: done
+      label: "DONE"
+      must_show:
+        - full accent fill and a single green checkmark after the caption
+        - caption `label :: 100%`
+      must_never:
+        - add celebration effects, rings, or extra chrome
+        - show a partial fill on the done state
+        - use a red or warning color for the completion state
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    meter-fidelity:
+      weight: 0.35
+      description: >
+        Every meter's fill width matches its caption percentage; captions
+        read `label :: N%` in mono above slim rounded tracks.
+      fail_signals:
+        - fill width and caption number disagree
+        - caption missing or not in `label :: N%` shape
+    mode-coverage:
+      weight: 0.3
+      description: >
+        Exactly five labeled cards: METER, DEFAULT LABEL, CLASS FORM,
+        CLAMP, DONE — each matching its mode contract.
+      fail_signals:
+        - missing or duplicated modes
+        - clamp card shows a partial fill
+        - done card shows a partial fill or missing checkmark
+    theme-fidelity:
+      weight: 0.25
+      description: >
+        Dark minimal-tech palette (#0f172a bg, #60a5fa accent, #34d399
+        correct-green), hairline borders, mono captions, five calm cards.
+      fail_signals:
+        - light background, neon glow, or extra accent hues
+        - dashboard clutter, KPI tiles, or dials
+    spec-sheet-quality:
+      weight: 0.1
+      description: >
+        Reads as a design-system panel: aligned cards, consistent type
+        scale, restrained negative space.
+      fail_signals:
+        - misaligned or clipped cards
+        - inconsistent typography across cards
+  reject_if:
+    - any meter's fill width contradicts its caption percentage
+    - the done state shows a partial fill
+    - more or fewer than five labeled cards

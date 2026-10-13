@@ -1,0 +1,40 @@
+schema: '0.4'
+id: sem-view-ux-design
+type: image
+quality: high
+product_targets:
+- semtext.dev
+tags:
+- semtext
+- sem-view
+- ux-design
+- reference
+prompt:
+  text: "UX design sheet for the SemText \\`<sem-view>\\` element — the VIEW: one\npanel of a tab family (\\`<sem-views>\\`) that shows the SAME subject under named\nperspectives. FIVE stacked example pages, each inside a browser-chrome frame\nwith a small mono uppercase caption, in the minimal-tech theme on a dark slate\ncanvas (bg #0f172a, surface #1e293b, fg #e2e8f0, hairline #334155 borders,\n12px card radius). A view family is a tab strip of text buttons joined to a\nsingle bordered panel below; the active tab carries the accent color, a\nvisible top+side border of its own and merges seamlessly into the panel top\nedge; inactive tabs are muted text with no fill.\n\nPage 1 — caption \"TAB STATES\". One family, tabs \"HELM\" and \"ARGOCD\", shown\ntwice side by side. Left: Helm active — accent text, panel showing one short\nsentence. Right: ArgoCD active — SAME panel geometry, a different one-sentence\nbody. The two panels are the same size and style; only the words change.\nNothing about the page around them moves between the two states.\n\nPage 2 — caption \"RICH CONTENT\". One family, tabs \"PLAN\" and \"CHECKLIST\",\nPlan active. The panel holds a paragraph of prose AND, inside it, a warning\ncallout card (3px amber #fbbf24 left border, small-caps \"WARNING\" label) with\none legible sentence. The callout is inside the panel, indented with the\npanel padding, fully readable — it never pops out of, above or beside the\npanel.\n\nPage 3 — caption \"DEEP LINK\". The same Helm/ArgoCD family rendered with a\nbrowser address bar above it reading \"...runbook#shipping/argocd\", ArgoCD\nactive. The address bar is plain mono text on the page background, not a\nfaithful browser screenshot.\n\nPage 4 — caption \"NO SCRIPT\". The SAME Helm/ArgoCD content with JavaScript\noff: NO tab strip at all; instead both views stack vertically, each panel a\nfull rounded card, and each card is headed by its name as a small muted\nsmall-caps label line (\"HELM\", then \"ARGOCD\") above its sentence. Both\nsentences fully visible and readable — stacked, not accordion, not collapsed,\nnot paginated, no toggle affordance.\n\nPage 5 — caption \"CLASS FORM\". The class alias of Page 1 (same geometry, same\ntheme) with tabs \"STAGING\" and \"PRODUCTION\" where PRODUCTION is the active\none — same tab strip and panel rendering as the element form, demonstrating\nthat the alias is indistinguishable once rendered.\n\nTypography: clean system sans (Inter-like), 16px body, 1.6 line height,\ngenerous margins, mono uppercase captions. No icons, no emoji, no drop\nshadows on text, no buttons other than the tab strip the element itself\nrenders.\n"
+  negative: 'tab panels shown as modals, tooltips, popovers, drawers or accordion sections; a view whose
+    content changed, dropped a sentence or shows placeholder text after a switch; two panels visible at
+    once in a tab state; an occluded, blurred, struck-through or redaction-barred panel body; the
+    no-script page rendered as an accordion with chevrons, a select dropdown, or collapsed/paginated
+    views; missing name labels on the stacked no-script cards; warning triangles, icons or emoji next
+    to tab labels; neon glow; light background; more or fewer than five example pages; watermark; lorem
+    ipsum in captions.
+
+    '
+  style: 'Flat UI spec sheet, minimal-tech aesthetic, restrained palette where the only color is the
+    active-tab accent and the one amber warning callout, crisp 12px card radius, hairline #334155
+    borders, generous negative space. Looks like a panel from a design-system guide.
+
+    '
+attachments:
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-view/sem-view-primary-split-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-view/sem-view-default-active-render-timeline-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-view/sem-view-rich-content-render-plan-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-view/sem-view-class-form-render-production-1280.png
+  role: reference
+output:
+  formats:
+  - format: png
+    quality: high

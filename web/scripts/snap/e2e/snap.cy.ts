@@ -189,7 +189,8 @@ function shotElement(sel: string, shotName: string): void {
  * shot. Two reasons: fullPage stitches composite by scrolling, so sticky
  * elements repeat down the image; and Cypress re-scrolls a subject into
  * view before an element screenshot, which can park the element under the
- * sticky header. Restores visibility after.
+ * sticky header. Scope: PAGE CHROME ONLY — nothing inside main#main is ever
+ * hidden. Restores visibility after.
  */
 function withStickyHidden(shot: () => void): void {
   cy.window({ log: false }).then((win) => {
@@ -197,10 +198,13 @@ function withStickyHidden(shot: () => void): void {
     win.document.querySelectorAll("*").forEach((n) => {
       const el = n as HTMLElement;
       const pos = win.getComputedStyle(el).position;
-      if (pos === "sticky" || pos === "fixed") {
-        el.style.visibility = "hidden";
-        hidden.push(el);
-      }
+      if (pos !== "sticky" && pos !== "fixed") return;
+      // Page chrome only: the docs header / side nav live OUTSIDE main#main.
+      // Never hide sticky chrome inside the captured content itself — a
+      // sticky thead inside an example (sem-table) is content under review.
+      if (el.closest("main#main")) return;
+      el.style.visibility = "hidden";
+      hidden.push(el);
     });
     (win as unknown as { __snapHidden?: HTMLElement[] }).__snapHidden = hidden;
   });

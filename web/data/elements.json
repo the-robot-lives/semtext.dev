@@ -1677,7 +1677,7 @@
       "children": [
         {
           "name": "time",
-          "note": "**Recommended first child `<time datetime>`**: the human-readable date. When present it is the date the reader sees; when absent the CSS renders `when` verbatim as the date label (`:not(:has(time))`)."
+          "note": "Recommended first child `<time datetime>`: the human-readable date. When present it is the date the reader sees; when absent the CSS renders `when` verbatim as the date label (`:not(:has(time))`)."
         }
       ],
       "example": "<sem-chronology kind=\"release-history\" view-as=\"timeline\" role=\"list\">\n  <sem-event role=\"listitem\" when=\"2026-03-02\" status=\"done\">\n    <time datetime=\"2026-03-02\">2 Mar 2026</time> v0.1 tagged — Lit bundle ships.\n  </sem-event>\n  <sem-event role=\"listitem\" when=\"2026-06\" until=\"2026-08\" status=\"current\">\n    <time datetime=\"2026-06\">Jun–Aug 2026</time> Reading-experience waves.\n  </sem-event>\n  <sem-event role=\"listitem\" when=\"2026-Q4\">Theme pipeline.</sem-event>\n</sem-chronology>",
@@ -1704,7 +1704,7 @@
           "note": "optional, quiz view only; an explicit wrong candidate. Without one, sibling conclusions serve as distractors."
         }
       ],
-      "example": "<sem-facts id=\"auth-facts\" view-as=\"flashcards\">\n  <sem-fact id=\"f-jwt\">\n    <statement>JWTs rotate per session</statement>\n    <conclusion>Short-lived access tokens; the refresh\n      grant issues a new pair.</conclusion>\n    <incorrect-statement>Store tokens in localStorage.</incorrect-statement>\n  </sem-fact>\n</sem-facts>",
+      "example": "<sem-facts id=\"auth-facts\" view-as=\"flashcards\">\n  <sem-fact id=\"f-rotate\">\n    <statement>JWTs rotate per session</statement>\n    <conclusion>Short-lived access tokens; the refresh\n      grant issues a new pair.</conclusion>\n    <incorrect-statement>Store tokens in localStorage.</incorrect-statement>\n  </sem-fact>\n  <sem-fact id=\"f-expiry\">\n    <statement>Access tokens expire after 15 minutes</statement>\n    <conclusion>The client mints a new pair from the refresh\n      grant; the user never re-signs-in mid-session.</conclusion>\n    <incorrect-statement>The user must sign in again every 15\n      minutes.</incorrect-statement>\n  </sem-fact>\n  <sem-fact id=\"f-secret\">\n    <statement>Client secrets never reach the browser</statement>\n    <conclusion>The confidential client holds the secret\n      server-side; the browser only ever sees tokens.</conclusion>\n    <incorrect-statement>Embed the client secret in the SPA\n      bundle.</incorrect-statement>\n  </sem-fact>\n</sem-facts>",
       "optionsIn": "sem-facts"
     },
     {
@@ -1732,11 +1732,11 @@
           "type": "",
           "allowedValues": [],
           "default": null,
-          "description": "on the container and on facts: required for citation (`#auth-facts/f-jwt`); `kind`, `tags` global."
+          "description": "on the container and on facts: required for citation (`#auth-facts/f-rotate`); `kind`, `tags` global."
         }
       ],
       "children": [],
-      "example": "<sem-facts id=\"auth-facts\" view-as=\"flashcards\">\n  <sem-fact id=\"f-jwt\">\n    <statement>JWTs rotate per session</statement>\n    <conclusion>Short-lived access tokens; the refresh\n      grant issues a new pair.</conclusion>\n    <incorrect-statement>Store tokens in localStorage.</incorrect-statement>\n  </sem-fact>\n</sem-facts>"
+      "example": "<sem-facts id=\"auth-facts\" view-as=\"flashcards\">\n  <sem-fact id=\"f-rotate\">\n    <statement>JWTs rotate per session</statement>\n    <conclusion>Short-lived access tokens; the refresh\n      grant issues a new pair.</conclusion>\n    <incorrect-statement>Store tokens in localStorage.</incorrect-statement>\n  </sem-fact>\n  <sem-fact id=\"f-expiry\">\n    <statement>Access tokens expire after 15 minutes</statement>\n    <conclusion>The client mints a new pair from the refresh\n      grant; the user never re-signs-in mid-session.</conclusion>\n    <incorrect-statement>The user must sign in again every 15\n      minutes.</incorrect-statement>\n  </sem-fact>\n  <sem-fact id=\"f-secret\">\n    <statement>Client secrets never reach the browser</statement>\n    <conclusion>The confidential client holds the secret\n      server-side; the browser only ever sees tokens.</conclusion>\n    <incorrect-statement>Embed the client secret in the SPA\n      bundle.</incorrect-statement>\n  </sem-fact>\n</sem-facts>"
     },
     {
       "name": "sem-md",
@@ -1869,28 +1869,15 @@
         }
       ],
       "children": [],
-      "example": "<sem-note variant=\"warning\">body HTML</sem-note>\n<sem-note variant=\"tip\" collapsed>body HTML</sem-note>"
+      "example": "<sem-note variant=\"warning\">The migration job expects the MinIO port-forward on 127.0.0.1:9000 — start it before you apply.</sem-note>\n<sem-note variant=\"tip\" collapsed>Snapshot the volume first; once the rotation job starts, the old keys are gone for good.</sem-note>"
     },
     {
       "name": "sem-procedure",
       "family": "sem",
       "source": "spec/schema/sem-procedure.md",
       "summary": "An ordered, status-annotated procedure.",
-      "description": "An ordered, status-annotated procedure. Each `sem-step` is one instruction and `status` is its lifecycle annotation (`done` | `current` | `todo` default | `blocked`); DOM order is execution order — no step-number attribute, ordinals are positional and rendered with CSS counters. Status sugar (`✅/→/❌`) is display-only: `status` is canonical. Zero-JS element — pure CSS rendering. `kind` is a free token (`runbook`, `recipe`, `migration` …).",
+      "description": "An ordered, status-annotated procedure. Children: one `sem-step` per instruction, each carrying a `status` attribute. A step's `status` is its lifecycle annotation — `done` | `current` | `todo` default | `blocked`; DOM order is execution order — no step-number attribute, ordinals are positional and rendered with CSS counters. Status sugar (`✅/→/❌`) is display-only: `status` is canonical. Zero-JS element — pure CSS rendering. `kind` is a free token (`runbook`, `recipe`, `migration` …).",
       "attributes": [
-        {
-          "name": "status",
-          "required": null,
-          "type": "",
-          "allowedValues": [
-            "done",
-            "current",
-            "todo",
-            "blocked"
-          ],
-          "default": "todo",
-          "description": "`done` | `current` | `todo` (default) | `blocked`."
-        },
         {
           "name": "kind",
           "required": null,
@@ -1935,15 +1922,15 @@
       "family": "sem",
       "source": "spec/schema/sem-progress.md",
       "summary": "A completion meter — one scalar completion assertion.",
-      "description": "A completion meter — one scalar completion assertion. `value` is required, canonical unit 0..1: out-of-range values clamp for rendering while the raw attribute stays untouched; `label` is optional (default `progress`). The Lit component builds a meter (track + fill + `label :: N%`); JS-off the value reads as text via CSS `attr()` — no fake bar. `status=\"done\"` ⇔ value 1 by convention.",
+      "description": "A completion meter — one scalar completion assertion. `value` is required, canonical unit 0..1: out-of-range values clamp for rendering while the raw attribute stays untouched; `label` is optional (default `progress`). The runtime builds a meter (track + fill + `label :: N%`); JS-off the value reads as text via CSS `attr()` — no fake bar. `status=\"done\"` ⇔ value 1 by convention.",
       "attributes": [
         {
           "name": "value",
           "required": true,
-          "type": "",
+          "type": "number",
           "allowedValues": [],
           "default": null,
-          "description": "**required, canonical unit 0..1.** Out-of-range values clamp for rendering; the raw attr stays untouched (machine readers see the author's value, the render shows the clamp)."
+          "description": "required, canonical unit 0..1. Out-of-range values clamp for rendering; the raw attr stays untouched (machine readers see the author's value, the render shows the clamp)."
         },
         {
           "name": "label",
@@ -1951,7 +1938,17 @@
           "type": "",
           "allowedValues": [],
           "default": "progress",
-          "description": "optional;"
+          "description": "optional meter caption;"
+        },
+        {
+          "name": "status",
+          "required": false,
+          "type": "",
+          "allowedValues": [
+            "done"
+          ],
+          "default": null,
+          "description": "optional completion state — pairs with value 1 and renders the full/accent state (same catalog as `sem-step`)."
         },
         {
           "name": "id",
@@ -1994,25 +1991,41 @@
           "type": "",
           "allowedValues": [],
           "default": null,
-          "description": "required, free text (the term). Property text = the value."
+          "description": "(on each `sem-property`): required, free text (the term). The property text is the value."
         },
         {
           "name": "kind",
+          "required": false,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "(optional): free token (`config`, `spec`, `env` …)."
+        },
+        {
+          "name": "id",
           "required": null,
           "type": "",
           "allowedValues": [],
           "default": null,
-          "description": "free token (`config`, `spec`, `env` …); `id`, `tags` global."
+          "description": "per the global attribute catalog (conventions.md §2)"
+        },
+        {
+          "name": "tags",
+          "required": null,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "per the global attribute catalog (conventions.md §2)"
         },
         {
           "name": "view-as",
-          "required": null,
+          "required": false,
           "type": "",
           "allowedValues": [
             "glossary"
           ],
           "default": null,
-          "description": "(R/W1): the block is a glossary. Each property should carry an `id`; prose elsewhere links a term with a plain anchor (`<a href=\"#g-jwt\">JWT</a>`), optionally wrapping it in `<dfn>` at its defining use."
+          "description": "(optional; R/W1): the block is a glossary. Each property should carry an `id`; prose elsewhere links a term with a plain anchor (`<a href=\"#g-jwt\">JWT</a>`), optionally wrapping it in `<dfn>` at its defining use."
         }
       ],
       "children": [],
@@ -2033,24 +2046,32 @@
       "name": "sem-reader",
       "family": "sem",
       "source": "spec/schema/sem-reader.md",
-      "summary": "The reading chrome of a long document: an outline, a reading-progress bar, and the reader-side controls a browser can offer that a printed page cannot — focus mode, type size and face, colour scheme, ",
-      "description": "The reading chrome of a long document: an outline, a reading-progress bar, and the reader-side controls a browser can offer that a printed page cannot — focus mode, type size and face, colour scheme, print, audience. It is **chrome, not content**: it mints no record, its outline is derived from the document's headings, and a document without it loses nothing a machine could read. It exists as one element (rather than one per control) because every control shares a host, a persistence policy and an a11y contract, and because the planned `sem-themes` picker collapses into its `theme` control (R/W3 — not in this wave).",
+      "summary": "The reading chrome of a long document: an outline, a reading-progress bar, and the reader-side controls a printed page cannot offer — focus mode, type size and face, colour scheme, print, audience.",
+      "description": "The reading chrome of a long document: an outline, a reading-progress bar, and the reader-side controls a printed page cannot offer — focus mode, type size and face, colour scheme, print, audience. It is **chrome, not content**: it mints no record, its outline is derived from the document's headings, and a document without it loses nothing a machine could read. It exists as one element (rather than one per control) because every control shares a host, a persistence policy and an a11y contract, and because the planned `sem-themes` picker collapses into its `theme` control (R/W3 — not in this wave).",
       "attributes": [
         {
           "name": "controls",
           "required": false,
           "type": "",
-          "allowedValues": [],
-          "default": null,
-          "description": "(optional): comma flags, in any order, from `outline`, `progress`, `focus`, `type`, `color`, `print`, `audience`. Unknown flags (including `theme`, reserved for R/W3) are ignored. Controls render in the **canonical order** above, not in attribute order."
+          "allowedValues": [
+            "outline",
+            "progress",
+            "focus",
+            "type",
+            "color",
+            "print",
+            "audience"
+          ],
+          "default": "outline,progress",
+          "description": "optional. Comma flags, in any order, one of `outline`, `progress`, `focus`, `type`, `color`, `print`, `audience` — unknown flags, including the theme flag reserved for R/W3, are ignored. Controls render in the **canonical order** above, not in attribute order."
         },
         {
           "name": "outline-depth",
           "required": false,
-          "type": "",
+          "type": "integer",
           "allowedValues": [],
           "default": "3",
-          "description": "(optional): deepest heading level in the generated outline, `2`–`6`; The outline always starts at `h2` — `h1` is the document title."
+          "description": "optional. Deepest heading level in the generated outline, `2`–`6`; The outline always starts at `h2` — `h1` is the document title."
         },
         {
           "name": "id",
@@ -2128,15 +2149,15 @@
       "family": "sem",
       "source": "spec/schema/sem-reveal.md",
       "summary": "A Q→A disclosure, `<details>`-backed — the non-assertive counterpart to the `sem-fact` Q/A shape (a reveal is exposition, not an assertion).",
-      "description": "A Q→A disclosure, `<details>`-backed — the non-assertive counterpart to the `sem-fact` Q/A shape (a reveal is exposition, not an assertion). `summary` labels the closed state; when absent the first body line (max 60 chars) derives it, by the one rule in `src/shared/summary.ts` that render and extraction share. `collapsed` starts hidden; without it the reveal starts open. The Lit component wraps the element in native `<details>/<summary>` — click/keyboard toggling is native; JS-off the content is fully visible (summary as a small-caps heading).",
+      "description": "A Q→A disclosure, `<details>`-backed — the non-assertive counterpart to the `sem-fact` Q/A shape (a reveal is exposition, not an assertion). `summary` labels the closed state; when absent the leading body text (max 60 chars, cut at the last word boundary) derives it, by the one rule in `src/shared/summary.ts` that render and extraction share. `collapsed` starts hidden; without it the reveal starts open. The runtime's fallback handler — this element has no Lit component, like `sem-views` and `sem-progress` — wraps the element in native `<details>/<summary>`: click/keyboard toggling is the platform's; JS-off the content is fully visible (summary as a small-caps heading).",
       "attributes": [
         {
           "name": "summary",
           "required": false,
-          "type": "",
+          "type": "string",
           "allowedValues": [],
           "default": null,
-          "description": "optional label. **Default: first line of body (max 60 chars) acts as summary when absent.**"
+          "description": "optional label for the closed state. Default: the leading body text (max 60 chars, cut at the last word boundary, trailing punctuation dropped) acts as summary when absent."
         },
         {
           "name": "collapsed",
@@ -2178,16 +2199,19 @@
       "name": "sem-source",
       "family": "sem",
       "source": "spec/schema/sem-source.md",
-      "summary": "A transparent wrapper around ordinary SemText content that lets a reader flip between the **rendered** section and its **markup as parsed, before any enhancement** (the pre-enhancement serialisation o",
-      "description": "A transparent wrapper around ordinary SemText content that lets a reader flip between the **rendered** section and its **markup as parsed, before any enhancement** (the pre-enhancement serialisation of the section) of the same section. It exists for documents that teach or demonstrate the vocabulary: the reader sees what a fact deck renders as, then sees exactly what was written to get it, without a second copy of the markup that could drift. It is a wrapper, not content: it mints no record, its children extract exactly as they would without it, and a document without it loses nothing a machine could read. The verbatim source is the one thing it adds, and that is a *derived* view of the children, never a second authoring.",
+      "summary": "A transparent wrapper around ordinary SemText content: the reader can flip between the section as rendered and its markup as parsed, before any enhancement.",
+      "description": "A transparent wrapper around ordinary SemText content: the reader can flip between the section as rendered and its markup as parsed, before any enhancement. It exists for documents that teach or demonstrate the vocabulary: the reader sees what a fact deck renders as, then sees exactly what was written to get it, without a second copy of the markup that could drift. It is a wrapper, not content: it mints no record, its children extract exactly as they would without it, and a document without it loses nothing a machine could read. The verbatim source is the one thing it adds, and that is a derived view of the children, never a second authoring.",
       "attributes": [
         {
           "name": "view-as",
-          "required": false,
+          "required": null,
           "type": "",
-          "allowedValues": [],
+          "allowedValues": [
+            "html",
+            "source"
+          ],
           "default": "html",
-          "description": "(optional): `html` (default) or `source` — the initial mode. **Mutable presentation**: the toggle rewrites `data-view-as` at runtime (the authored bare attribute is left alone), and extraction ignores it (spec/extraction.md §5c)."
+          "description": "`html` (default) | `source`. The initial mode. Mutable presentation: the toggle rewrites `data-view-as` at runtime (the authored bare attribute is left alone), and extraction ignores it (spec/extraction.md §5c)."
         },
         {
           "name": "label",
@@ -2215,16 +2239,21 @@
         }
       ],
       "children": [],
-      "example": "<sem-source id=\"s-facts\" label=\"Facts — flashcards\">\n  <h2>Facts — flashcards</h2>\n  <sem-facts view-as=\"flashcards\">…</sem-facts>\n</sem-source>"
+      "example": "<sem-source id=\"s-facts\" label=\"Authored vs rendered\">\n  <h2>Facts — flashcards</h2>\n  <sem-facts id=\"s-facts-deck\" view-as=\"flashcards\">\n    <sem-fact id=\"s-facts-parse\">\n      <statement>SemText snapshots the section before enhancement</statement>\n      <conclusion>The fence shows the parsed markup, never the file bytes.</conclusion>\n    </sem-fact>\n  </sem-facts>\n</sem-source>"
     },
     {
       "name": "sem-step",
       "family": "sem",
       "source": "spec/schema/sem-procedure.md",
       "summary": "An ordered, status-annotated procedure.",
-      "description": "An ordered, status-annotated procedure. Each `sem-step` is one instruction and `status` is its lifecycle annotation (`done` | `current` | `todo` default | `blocked`); DOM order is execution order — no step-number attribute, ordinals are positional and rendered with CSS counters. Status sugar (`✅/→/❌`) is display-only: `status` is canonical. Zero-JS element — pure CSS rendering. `kind` is a free token (`runbook`, `recipe`, `migration` …).",
+      "description": "An ordered, status-annotated procedure. Children: one `sem-step` per instruction, each carrying a `status` attribute. A step's `status` is its lifecycle annotation — `done` | `current` | `todo` default | `blocked`; DOM order is execution order — no step-number attribute, ordinals are positional and rendered with CSS counters. Status sugar (`✅/→/❌`) is display-only: `status` is canonical. Zero-JS element — pure CSS rendering. `kind` is a free token (`runbook`, `recipe`, `migration` …).",
       "attributes": [],
-      "children": [],
+      "children": [
+        {
+          "name": "sem-step",
+          "note": "status: `done` | `current` | `todo` (default) | `blocked`."
+        }
+      ],
       "example": "<sem-procedure kind=\"runbook\" role=\"list\">\n  <sem-step role=\"listitem\" status=\"done\">provision Infisical path</sem-step>\n  <sem-step role=\"listitem\" status=\"current\">port-forward MinIO</sem-step>\n  <sem-step role=\"listitem\">run migrations</sem-step>\n  <sem-step role=\"listitem\" status=\"blocked\">cut release — waiting on CI</sem-step>\n</sem-procedure>",
       "optionsIn": "sem-procedure"
     },
@@ -2247,9 +2276,12 @@
           "name": "controls",
           "required": false,
           "type": "",
-          "allowedValues": [],
+          "allowedValues": [
+            "sort",
+            "filter"
+          ],
           "default": "sort",
-          "description": "(optional): comma flags from `sort`, `filter`; Unknown flags are ignored."
+          "description": "(optional): one of the comma flags `sort`, `filter`; Unknown flags are ignored."
         },
         {
           "name": "sticky",
@@ -2257,7 +2289,7 @@
           "type": "boolean",
           "allowedValues": [],
           "default": null,
-          "description": "(boolean, optional): the header row sticks to the top of the scroll container. CSS only — works with scripts off."
+          "description": "(boolean, optional): the header row sticks to the top of the scroll container. Opting in also caps the element at `max-height: 24rem` so a long table scrolls inside itself — the stick needs an internal scroll container to engage, and without it a page-level table never gains one and the header would scroll away like any other row. CSS only — works with scripts off."
         },
         {
           "name": "id",
@@ -2295,48 +2327,28 @@
       "children": [
         {
           "name": "table",
-          "note": "Child: **exactly one `<table>`** with a `<thead>` whose header row uses `<th scope=\"col\">`, one `<tbody>`, and optionally a `<caption>`. A table without a `<thead>` gets no sort control. Anything else inside the table (`<tfoot>`, `colgroup`) is left alone."
-        },
-        {
-          "name": "thead",
-          "note": "Child: **exactly one `<table>`** with a `<thead>` whose header row uses `<th scope=\"col\">`, one `<tbody>`, and optionally a `<caption>`. A table without a `<thead>` gets no sort control. Anything else inside the table (`<tfoot>`, `colgroup`) is left alone."
-        },
-        {
-          "name": "th",
-          "note": "Child: **exactly one `<table>`** with a `<thead>` whose header row uses `<th scope=\"col\">`, one `<tbody>`, and optionally a `<caption>`. A table without a `<thead>` gets no sort control. Anything else inside the table (`<tfoot>`, `colgroup`) is left alone."
-        },
-        {
-          "name": "tbody",
-          "note": "Child: **exactly one `<table>`** with a `<thead>` whose header row uses `<th scope=\"col\">`, one `<tbody>`, and optionally a `<caption>`. A table without a `<thead>` gets no sort control. Anything else inside the table (`<tfoot>`, `colgroup`) is left alone."
-        },
-        {
-          "name": "caption",
-          "note": "Child: **exactly one `<table>`** with a `<thead>` whose header row uses `<th scope=\"col\">`, one `<tbody>`, and optionally a `<caption>`. A table without a `<thead>` gets no sort control. Anything else inside the table (`<tfoot>`, `colgroup`) is left alone."
-        },
-        {
-          "name": "tfoot",
-          "note": "Child: **exactly one `<table>`** with a `<thead>` whose header row uses `<th scope=\"col\">`, one `<tbody>`, and optionally a `<caption>`. A table without a `<thead>` gets no sort control. Anything else inside the table (`<tfoot>`, `colgroup`) is left alone."
+          "note": "Child: **exactly one `<table>`**, holding exactly one thead (its first row: header cells carrying `scope=\"col\"`), one tbody, and optionally a caption first. A table without a thead gets no sort control. Anything else inside the table — tfoot, colgroup — is left alone."
         }
       ],
-      "example": "<sem-table id=\"t-tokens\" kind=\"comparison\" controls=\"sort,filter\" sticky>\n  <table>\n    <caption>Token lifetimes</caption>\n    <thead><tr><th scope=\"col\">Token</th><th scope=\"col\">Lifetime</th><th scope=\"col\">Rotates</th></tr></thead>\n    <tbody>\n      <tr><td>access</td><td data-value=\"900\">15 min</td><td>no</td></tr>\n      <tr><td>refresh</td><td data-value=\"2592000\">30 days</td><td>yes</td></tr>\n    </tbody>\n  </table>\n</sem-table>"
+      "example": "<sem-table id=\"t-tokens\" kind=\"comparison\" controls=\"sort,filter\" sticky>\n  <table>\n    <caption>Token lifetimes</caption>\n    <thead><tr><th scope=\"col\">Token</th><th scope=\"col\">Lifetime</th><th scope=\"col\">Rotates</th></tr></thead>\n    <tbody>\n      <tr><td>access</td><td data-value=\"900\">15 min</td><td>no</td></tr>\n      <tr><td>device</td><td data-value=\"604800\">7 days</td><td>yes</td></tr>\n      <tr><td>refresh</td><td data-value=\"2592000\">30 days</td><td>yes</td></tr>\n    </tbody>\n  </table>\n</sem-table>"
     },
     {
       "name": "sem-view",
       "family": "sem",
       "source": "spec/schema/sem-views.md",
-      "summary": "❓ Q3 resolved for v1: **`sem-views`** (not `sem-perspectives`) — shorter, `name` reads naturally, tab-family semantics are the intent.",
-      "description": "❓ Q3 resolved for v1: **`sem-views`** (not `sem-perspectives`) — shorter, `name` reads naturally, tab-family semantics are the intent.",
+      "summary": "`sem-views` holds one subject under named perspectives: a tab bar of `sem-view` names shows one view at a time; with no script all views render stacked under their names.",
+      "description": "`sem-views` holds one subject under named perspectives: a tab bar of `sem-view` names shows one view at a time; with no script all views render stacked under their names. Switching is by click, arrow keys or hash, and never moves or rewrites the content itself. ❓ Q3 resolved for v1: **`sem-views`** (not `sem-perspectives`) — shorter, `name` reads naturally, tab-family semantics are the intent.",
       "attributes": [],
       "children": [],
-      "example": "<sem-views id=\"deploy\">\n  <sem-view name=\"Helm\" active role=\"tabpanel\">content…</sem-view>\n  <sem-view name=\"ArgoCD\" role=\"tabpanel\">content…</sem-view>\n</sem-views>",
+      "example": "<sem-views id=\"deploy\">\n  <sem-view name=\"Helm\" active>content…</sem-view>\n  <sem-view name=\"ArgoCD\">content…</sem-view>\n</sem-views>",
       "optionsIn": "sem-views"
     },
     {
       "name": "sem-views",
       "family": "sem",
       "source": "spec/schema/sem-views.md",
-      "summary": "❓ Q3 resolved for v1: **`sem-views`** (not `sem-perspectives`) — shorter, `name` reads naturally, tab-family semantics are the intent.",
-      "description": "❓ Q3 resolved for v1: **`sem-views`** (not `sem-perspectives`) — shorter, `name` reads naturally, tab-family semantics are the intent.",
+      "summary": "`sem-views` holds one subject under named perspectives: a tab bar of `sem-view` names shows one view at a time; with no script all views render stacked under their names.",
+      "description": "`sem-views` holds one subject under named perspectives: a tab bar of `sem-view` names shows one view at a time; with no script all views render stacked under their names. Switching is by click, arrow keys or hash, and never moves or rewrites the content itself. ❓ Q3 resolved for v1: **`sem-views`** (not `sem-perspectives`) — shorter, `name` reads naturally, tab-family semantics are the intent.",
       "attributes": [
         {
           "name": "name",
@@ -2360,11 +2372,11 @@
           "type": "",
           "allowedValues": [],
           "default": null,
-          "description": "required for deep-links (`#deploy/argocd`); `kind`, `tags` global."
+          "description": "required **for enhancement, not only for deep links** — the handler selects `.sem-views[id]`, so a container without an id never upgrades and stays stacked (the JS-off form) even with script running. Also the deep-link head (`#deploy/argocd`); `kind`, `tags` global."
         }
       ],
       "children": [],
-      "example": "<sem-views id=\"deploy\">\n  <sem-view name=\"Helm\" active role=\"tabpanel\">content…</sem-view>\n  <sem-view name=\"ArgoCD\" role=\"tabpanel\">content…</sem-view>\n</sem-views>"
+      "example": "<sem-views id=\"deploy\">\n  <sem-view name=\"Helm\" active>content…</sem-view>\n  <sem-view name=\"ArgoCD\">content…</sem-view>\n</sem-views>"
     }
   ],
   "tagCount": 49,

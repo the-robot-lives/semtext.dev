@@ -1,0 +1,134 @@
+# sem-profile — UX design sheet prompt
+# Display modes: the labeled profile chip; the id-fallback chip (no label);
+# the implies closure shown through gating (operator sees reader content);
+# class-form parity. One example page per mode on one sheet.
+# Reference attachments are the judged renders from the snap harness
+# (see reports/tag-sem-profile.md). Never run this generation from the
+# tag lane — it is handed to the image model as written.
+
+schema: "0.4"
+id: sem-profile-ux-sheet
+type: image
+quality: high
+
+prompt:
+  text: |
+    A precise UX design sheet for the SemText vocabulary element
+    `sem-profile` (one named reader profile inside a declaration block),
+    rendered as FOUR example pages in a 2x2 grid on a dark minimal-tech
+    canvas (background #0f172a, card surface #1e293b, hairline borders
+    #334155, violet accent, blue note markers).
+
+    PAGE 1 — THE LABELED CHIP: one quiet horizontal metadata row inside a
+    short document excerpt: a small-caps muted label "AUDIENCES ·"
+    followed by two fully-rounded pill chips reading "Reader" and
+    "Operator" — 1px hairline border, surface background, small legible
+    text. The chip carries the profile's human label. This is metadata
+    like a byline: no button affordance, no hover ring, no checkmark.
+
+    PAGE 2 — THE ID-FALLBACK CHIP: the same strip spelling where one
+    profile declares no label: its chip shows the bare id "operator" in
+    lowercase beside a labeled "Reader" chip. The two chips must look
+    identical in style — only the text differs; the id fallback is a
+    first-class rendering, not a degraded or placeholder state.
+
+    PAGE 3 — THE IMPLIES CLOSURE, SHOWN THROUGH GATING: the strip with
+    "Reader" and "Operator" chips on top; beneath it ONE callout note
+    (left accent border, rounded card) marked as reader content, fully
+    legible; above the page a small muted monospace URL caption
+    "…#sem-audience=operator". An annotation arrow or caption notes the
+    operator chip satisfies reader content — the closure is the point.
+    The page demonstrates the ACTIVE state: as operator, the reader note
+    is present.
+
+    PAGE 4 — CLASS FORM, IDENTICAL RENDER: the same strip spelled as
+    `div.sem-audiences > div.sem-profile[id][data-label][data-implies]`,
+    visually indistinguishable from page 1: same "AUDIENCES ·" label,
+    same chips, same quiet metadata row.
+
+    Typography: clean humanist sans for prose, small-caps muted strip
+    label, monospace only for the URL caption and the attribute names.
+    Flat, engineered, restrained — a documentation specimen, not an
+    illustration.
+  negative: |
+    no chips rendered as buttons with shadows, hover, pressed or selected
+    states; no toggle switches, dropdowns, or profile-picker UI anywhere —
+    the strip is inert metadata and the profile is chosen by URL, not by
+    clicking a chip; no occluded, blurred, black-barred or covered text —
+    hidden content is absent from flow, never redacted in place; no
+    "click to reveal" controls; no light-mode canvas; no decorative
+    photos, icons, gradient glows, watermarks or browser chrome; no
+    arrows drawn from the chips that imply the chips are clickable.
+  style: flat dark technical documentation specimen, minimal-tech design system
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-profile/sem-profile-primary-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-profile/sem-profile-id-chip-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-profile/sem-profile-implies-closure-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-profile/sem-profile-class-form-split-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-profile/sem-profile-implies-closure-render-390.png
+    role: reference
+
+output:
+  formats:
+    - format: png
+      filename: sem-profile-ux-sheet.png
+  dimensions:
+    width: 2048
+    height: 1152
+    aspect_ratio: "16:9"
+
+eval:
+  pass_threshold: 0.7
+  criteria:
+    chip_metadata_not_control:
+      weight: 0.25
+      description: >
+        Every profile chip reads as quiet metadata (hairline pill, small
+        label text); nothing looks pressable, selected, or interactive.
+      fail_signals:
+        - chips with shadows, hover rings, or a checked/pressed state
+        - a picker, toggle, or dropdown drawn beside the strip
+    id_fallback_not_degraded:
+      weight: 0.25
+      description: >
+        Page 2's id chip ("operator") is styled exactly like the labeled
+        chip; only the text casing/content differs.
+      fail_signals:
+        - the id chip dimmed, dashed, greyed, or drawn as a placeholder
+        - the two chips differing in shape or weight
+    closure_shown_through_gating:
+      weight: 0.2
+      description: >
+        Page 3 shows the operator-active state: the reader-content note
+        present and legible, with the hash-parameter caption tying the
+        state to navigation.
+      fail_signals:
+        - the reader note missing or occluded on the operator page
+        - a visible picker that "chose" operator on the page itself
+    form_parity:
+      weight: 0.15
+      description: >
+        The class-form page is visually indistinguishable from page 1.
+      fail_signals:
+        - chips styled differently on the class-form page
+    absence_not_occlusion:
+      weight: 0.15
+      description: >
+        Wherever content is gated out, it is fully absent from flow — no
+        reserved gap, outline, blur, or cover remains.
+      fail_signals:
+        - empty reserved boxes where hidden content would sit
+        - blurred or blacked-out text blocks
+  reject_if:
+    - any chip looks clickable, selected, or hovered
+    - any text is occluded, blurred, or covered by an opaque block
+    - light-mode canvas
+    - watermark or browser chrome present
+
+tags: [semtext, sem-profile, ux-sheet, audience-profiles, reference]
+product_targets: [semtext.dev/reference]
