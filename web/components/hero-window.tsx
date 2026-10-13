@@ -76,41 +76,48 @@ export function HeroWindow() {
 
   async function show(next: "source" | "rendered") {
     setView(next);
-    if (next !== "rendered" || bootedRef.current) return;
-    bootedRef.current = true;
+    if (next !== "rendered") return;
     try {
-      for (const href of THEME_CSS) {
-        if (document.querySelector(`link[href="${href}"]`)) continue;
-        const link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.href = href;
-        document.head.appendChild(link);
-      }
-      if (!window.SemTextFallback) {
-        // Keep the bundle from auto-wiring the document on injection;
-        // wiring is explicit below.
-        window.__semJsOff = true;
-        await new Promise<void>((resolve, reject) => {
-          const script = document.createElement("script");
-          script.src = "/semtext/semtext-fallback.js";
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error("semtext-fallback.js failed to load"));
-          document.head.appendChild(script);
-        });
+      if (!bootedRef.current) {
+        for (const href of THEME_CSS) {
+          if (document.querySelector(`link[href="${href}"]`)) continue;
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = href;
+          document.head.appendChild(link);
+        }
+        if (!window.SemTextFallback) {
+          // Keep the bundle from auto-wiring the document on injection;
+          // wiring is explicit below.
+          window.__semJsOff = true;
+          await new Promise<void>((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = "/semtext/semtext-fallback.js";
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("semtext-fallback.js failed to load"));
+            document.head.appendChild(script);
+          });
+        }
+        bootedRef.current = true;
       }
       // Enhance ONLY this window's pane, and only if its deck is not
-      // already wired. The home page's DOMContentLoaded pass may have
-      // enhanced the whole document already — but React hydration then
-      // resets this client component's dangerouslySetInnerHTML pane,
-      // which discards that wiring. The pane deck carries the bundle's
-      // own data-sem-fallback marker, so a scoped re-enhance is safe:
-      // never a second full-document pass (that would double-wrap the
-      // scope section's sem-reveals).
-      const pane = paneRef.current;
-      const deck = pane?.querySelector("sem-facts");
-      if (pane && deck && !deck.hasAttribute("data-sem-fallback")) {
-        window.SemTextFallback?.enhance(pane);
-      }
+      // already wired — never a second full-document pass (that would
+      // double-wrap the scope section's sem-reveals). React hydration
+      // resets this client component's dangerouslySetInnerHTML pane at
+      // an unpredictable point around the DOMContentLoaded document pass
+      // (discarding any wiring on it), so after wiring we re-check the
+      // pane's own marker on a short schedule: each re-check is a no-op
+      // once the deck carries data-sem-fallback, and any toggle back to
+      // Render re-wires a wiped pane.
+      const wirePane = () => {
+        const pane = paneRef.current;
+        const deck = pane?.querySelector("sem-facts");
+        if (pane && deck && !deck.hasAttribute("data-sem-fallback")) {
+          window.SemTextFallback?.enhance(pane);
+        }
+      };
+      wirePane();
+      for (const ms of [150, 500, 1200]) setTimeout(wirePane, ms);
     } catch {
       // Without the bundle the rendered view still shows every element:
       // the vocabulary CSS hides nothing until a tier marker is set.
