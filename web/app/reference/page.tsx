@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { DocsShell } from "@/components/docs-shell";
 import { ExampleViewer } from "@/components/example-viewer";
+import { SemMdExample } from "@/components/sem-md-example";
+import { REFERENCE_SEM_MD_RENDERED } from "@/components/sem-md-rendered";
 import elementsIndex from "@/data/elements.json";
 import {
   GLOSSARY_TAGS,
@@ -75,9 +77,6 @@ const FAMILIES: Array<{ family: TagFamily; title: string; blurb: string }> = [
       "The npl-* components — display renders of NPL prompt blocks (agent introspection, critique, reasoning).",
   },
 ];
-
-const esc = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 function attrType(a: TagAttr): string {
   const parts: string[] = [];
@@ -314,31 +313,25 @@ function TagSection({ tag }: { tag: TagRecord }) {
 
       {tag.example ? (
         tag.name === "sem-md" ? (
-          /*
-           * sem-md's example is owned by the markdown-viewer workstream —
-           * kept byte-identical to the shared form so that branch merges
-           * cleanly. Everything below is the ExampleViewer path.
-           */
-          <figure
-            className="code-window mt-5 max-w-3xl"
-            aria-label={`Authored ${tag.name} example`}
-          >
-            <div className="code-chrome">
-              <span className="dot live" aria-hidden="true" />
-              <span className="font-mono">sem-code — authoring form</span>
-            </div>
-            <sem-code lang="html" filename={`${tag.name}.html`}>
-              <pre>
-                <code>{esc(tag.example)}</code>
-              </pre>
-            </sem-code>
-          </figure>
+          /* The one example that IS Markdown: a Render/Source toggle over
+             the same authored block, like the landing's view control.
+             Render (the default) renders the table — statically for the
+             zero-JS export, live via the chunks/sem-md.js upgrade once
+             the lazy loader hydrates this example. */
+          <div className="mt-5 max-w-3xl">
+            <SemMdExample
+              source={tag.example}
+              renderedHtml={REFERENCE_SEM_MD_RENDERED}
+              chromeLabel="sem-md — the authored block, rendered"
+            />
+          </div>
         ) : (
           /* The example is authored HTML: it goes to the viewer raw and is
              escaped exactly once, at render (React text interpolation).
              Toggle: every SemText element whose example the fallback tier
-             renders — sem-reader renders inert and sem-md is owned above,
-             and the NPL components have no browser vocabulary. */
+             renders — sem-reader renders inert and sem-md has its
+             Render/Source view above, and the NPL components have no
+             browser vocabulary. */
           <ExampleViewer
             name={tag.name}
             code={tag.example}

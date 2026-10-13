@@ -1,0 +1,1 @@
+import{S as e}from"./base-4lDQJN-W.js";import{e as r}from"./references-xnryzbku.js";import"./attr-EimdvHQb.js";class s extends e{#e=!1;updated(){this.#e||(this.#e=!0,this.whenChildrenReady(":scope > :is(sem-reference, .sem-reference)").then(()=>{r(this),this.setAttribute("data-sem-upgraded","")}))}}e.register("sem-references",s);

@@ -606,3 +606,121 @@ label.g-pill.is-active {
 .g-muted {
   color: var(--faint);
 }
+
+/* —— sem-md example (reference + elements pages) ————————————————————
+   The example ships two views of one authored block (components/
+   sem-md-rendered.ts): a static table for the zero-JS HTML, and the
+   authored <sem-md> element, which the chunks/sem-md.js upgrade builds
+   into the real component (live chrome + rendered body + raw fence).
+   The upgrade marker keys the swap, so exactly one table is ever visible.
+   Scoped to .ref-md-example — nothing else on the site changes. */
+.ref-md-example sem-md:not([data-sem-upgraded]) {
+  display: none;
+}
+.ref-md-example .ref-md-static {
+  display: block;
+}
+.ref-md-example:has(sem-md[data-sem-upgraded]) .ref-md-static {
+  display: none;
+}
+
+/* the table, static or component-rendered — the vocabulary sheet's rules,
+   retinted to the site palette (the theme vars are not loaded here) */
+.ref-md-example table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.75rem 0;
+  font-size: 0.875rem;
+}
+.ref-md-example th,
+.ref-md-example td {
+  border: 1px solid var(--code-border);
+  padding: 0.4rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+}
+.ref-md-example th {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.05em;
+  color: var(--code-gray);
+  font-weight: 500;
+}
+.ref-md-static-label {
+  padding: 0.4rem 0;
+  font-size: 0.75rem;
+  color: var(--mute);
+}
+
+/* the upgraded component's chrome and its two views */
+.ref-md-example sem-md[data-sem-upgraded] {
+  display: block;
+  margin: 0;
+  border: 1px solid var(--code-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+.ref-md-example .sem-md-chrome {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid var(--code-border);
+  font-size: 0.75rem;
+  color: var(--mute);
+}
+.ref-md-example .sem-md-label {
+  font-weight: 600;
+  color: var(--ink);
+}
+.ref-md-example .sem-md-chrome button {
+  border: 1px solid var(--code-border);
+  background: var(--code-bg);
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 0.15rem 0.6rem;
+  cursor: pointer;
+  font: inherit;
+}
+.ref-md-example .sem-md-chrome button:first-of-type {
+  margin-left: auto;
+}
+.ref-md-example .sem-md-chrome button[aria-pressed="true"] {
+  border-color: var(--accent-soft);
+  color: var(--accent-soft);
+}
+.ref-md-example .sem-md-status {
+  min-width: 3.5rem;
+  font-size: 0.7rem;
+}
+.ref-md-example .sem-md-body {
+  padding: 0.75rem 1rem;
+}
+.ref-md-example sem-md[data-sem-upgraded]:not([data-view-as="raw"]) > .sem-md-raw {
+  display: none;
+}
+.ref-md-example sem-md[data-sem-upgraded][data-view-as="raw"] > .sem-md-body {
+  display: none;
+}
+.ref-md-example .sem-md-raw .sem-code pre {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  color: var(--mute);
+}
+
+/* the Source view's line numbers */
+.ref-md-line {
+  display: block;
+  white-space: pre;
+}
+.ref-md-ln {
+  display: inline-block;
+  width: 2ch;
+  margin-right: 1.25ch;
+  text-align: right;
+  color: var(--faint);
+  user-select: none;
+}
