@@ -153,13 +153,28 @@ export interface CodeViewerProps {
   actions?: React.ReactNode;
 }
 
-export function CodeViewer({
-  code = DOC_HTML,
-  filename = "doc.html",
-  caption = "minimal SemText document",
-  label = "A minimal SemText document",
-  actions,
-}: CodeViewerProps) {
+const ACTION_BUTTON_CLASS =
+  "ml-2 text-xs text-violet-soft hover:text-violet-soft hover:brightness-110";
+
+/*
+ * The chrome's Copy and Save pair, shared by the code window and the
+ * example viewer's Render pane: Copy writes `code` (the authored source,
+ * never a rendered view) to the clipboard; Save downloads it as
+ * `filename`. Both actions need script, so zero-JS-critical callers gate
+ * this component behind hydration (ExampleViewer does) — rendered here
+ * unguarded only where the chrome is already script-only.
+ */
+export function CopySaveButtons({
+  code,
+  filename,
+  mimeType = "text/html",
+  buttonClassName = ACTION_BUTTON_CLASS,
+}: {
+  code: string;
+  filename: string;
+  mimeType?: string;
+  buttonClassName?: string;
+}) {
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
     "idle"
   );
@@ -181,7 +196,7 @@ export function CodeViewer({
 
   const handleDownload = () => {
     try {
-      const blob = new Blob([code], { type: "text/html" });
+      const blob = new Blob([code], { type: mimeType });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -199,6 +214,35 @@ export function CodeViewer({
     }
   };
 
+  return (
+    <>
+      <button
+        onClick={handleCopy}
+        className={buttonClassName}
+        aria-label="Copy code"
+        title={copyStatus === "copied" ? "Copied!" : "Copy"}
+      >
+        {copyStatus === "copied" ? "✓ Copied" : "Copy"}
+      </button>
+      <button
+        onClick={handleDownload}
+        className={buttonClassName}
+        aria-label={`Download ${filename}`}
+        title={downloadStatus === "downloading" ? "Downloading..." : "Download"}
+      >
+        {downloadStatus === "downloading" ? "↓ Saving" : "Save"}
+      </button>
+    </>
+  );
+}
+
+export function CodeViewer({
+  code = DOC_HTML,
+  filename = "doc.html",
+  caption = "minimal SemText document",
+  label = "A minimal SemText document",
+  actions,
+}: CodeViewerProps) {
   const tokenized = tokenizeHTML(code);
 
   return (
@@ -209,22 +253,7 @@ export function CodeViewer({
           {filename} · {caption}
         </span>
         {actions}
-        <button
-          onClick={handleCopy}
-          className="ml-2 text-xs text-violet-soft hover:text-violet-soft hover:brightness-110"
-          aria-label="Copy code"
-          title={copyStatus === "copied" ? "Copied!" : "Copy"}
-        >
-          {copyStatus === "copied" ? "✓ Copied" : "Copy"}
-        </button>
-        <button
-          onClick={handleDownload}
-          className="ml-2 text-xs text-violet-soft hover:text-violet-soft hover:brightness-110"
-          aria-label={`Download ${filename}`}
-          title={downloadStatus === "downloading" ? "Downloading..." : "Download"}
-        >
-          {downloadStatus === "downloading" ? "↓ Saving" : "Save"}
-        </button>
+        <CopySaveButtons code={code} filename={filename} />
       </div>
 
       <div

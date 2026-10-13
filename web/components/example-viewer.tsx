@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CodeViewer } from "@/components/code-viewer";
+import { CodeViewer, CopySaveButtons } from "@/components/code-viewer";
 
 /*
  * One authored example on /reference: the code viewer (highlighting, line
@@ -219,9 +219,15 @@ export function ExampleViewer({
       >
         <div className="code-chrome">
           <span className="dot live" aria-hidden="true" />
-          <span>
-            {name}.html · rendered — fallback tier
+          <span className="flex-1">
+            {name}.html · rendered
           </span>
+          {toggle}
+          {/* Same action pair, same bar slots as the Source view's chrome:
+              Copy and Save always address the authored source. Both need
+              script, so they exist only after hydration (the pills'
+              pattern) — the static export carries neither. */}
+          {js && <CopySaveButtons code={code} filename={`${name}.html`} />}
         </div>
         <div
           ref={paneRef}
