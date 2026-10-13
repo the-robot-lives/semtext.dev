@@ -203,17 +203,19 @@ body {
   display: none;
 }
 
-#tab-browser:checked ~ .tab-bar label[for="tab-browser"],
-#tab-model:checked ~ .tab-bar label[for="tab-model"],
-#tab-text:checked ~ .tab-bar label[for="tab-text"] {
+#tab-raw:checked ~ .tab-bar label[for="tab-raw"],
+#tab-web:checked ~ .tab-bar label[for="tab-web"],
+#tab-viewer:checked ~ .tab-bar label[for="tab-viewer"],
+#tab-renderer:checked ~ .tab-bar label[for="tab-renderer"] {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
 }
 
-#tab-browser:checked ~ .panels #panel-browser,
-#tab-model:checked ~ .panels #panel-model,
-#tab-text:checked ~ .panels #panel-text {
+#tab-raw:checked ~ .panels #panel-raw,
+#tab-web:checked ~ .panels #panel-web,
+#tab-viewer:checked ~ .panels #panel-viewer,
+#tab-renderer:checked ~ .panels #panel-renderer {
   display: block;
 }
 

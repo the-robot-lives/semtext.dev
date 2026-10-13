@@ -1,4 +1,5 @@
 import { HeroWindow } from "@/components/hero-window";
+import { TryViews } from "@/components/try-views";
 import { Sem, SAMPLE_DOCS, INTEGRATIONS } from "@/components/docs-shell";
 
 const SHOWCASE = "http://localhost:4173";
@@ -301,16 +302,16 @@ export default function Home() {
                 See it work
               </a>
               <a
-                href={`${SPEC}/conventions.md`}
+                href="/spec/semtext.html"
                 className="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft"
               >
                 Read the spec
               </a>
               <a
-                href={`${SHOWCASE}/demo/`}
+                href="#start"
                 className="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft"
               >
-                Open the demo
+                Get started
               </a>
             </div>
             <dl className="mt-8 grid grid-cols-3 gap-3 font-mono text-xs text-ink-mute">
@@ -320,7 +321,7 @@ export default function Home() {
               </div>
               <div>
                 <dt className="text-ink-faint">readers</dt>
-                <dd className="mt-1 text-ink">browser · model · text</dd>
+                <dd className="mt-1 text-ink">raw · web · cli viewer · cli renderer</dd>
               </div>
               <div>
                 <dt className="text-ink-faint">build step</dt>
@@ -377,79 +378,101 @@ export default function Home() {
             className="api-radio"
             type="radio"
             name="reader-tab"
-            id="tab-browser"
+            id="tab-raw"
             defaultChecked
           />
           <input
             className="api-radio"
             type="radio"
             name="reader-tab"
-            id="tab-model"
+            id="tab-web"
           />
           <input
             className="api-radio"
             type="radio"
             name="reader-tab"
-            id="tab-text"
+            id="tab-viewer"
+          />
+          <input
+            className="api-radio"
+            type="radio"
+            name="reader-tab"
+            id="tab-renderer"
           />
 
           <div className="tab-bar flex flex-wrap gap-2">
             <label
-              htmlFor="tab-browser"
+              htmlFor="tab-raw"
               className="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink"
             >
-              browser
+              raw
             </label>
             <label
-              htmlFor="tab-model"
+              htmlFor="tab-web"
               className="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink"
             >
-              model
+              web
             </label>
             <label
-              htmlFor="tab-text"
+              htmlFor="tab-viewer"
               className="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink"
             >
-              plain text
+              cli viewer
+            </label>
+            <label
+              htmlFor="tab-renderer"
+              className="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink"
+            >
+              cli renderer
             </label>
           </div>
 
           <div className="panels mt-4">
-            <article id="panel-browser" className="panel">
-              <p className="sig mb-3">view: the browser</p>
+            <article id="panel-raw" className="panel">
+              <p className="sig mb-3">view: raw</p>
               <p className="max-w-2xl leading-relaxed text-ink-mute">
-                The theme CSS styles the vocabulary directly, so a document is
-                readable the moment it opens. Flashcards flip, quizzes score,
-                tabs switch and disclosures expand — driven by roughly 7 KB of
-                vanilla JavaScript with no dependencies and no network calls.
+                The file as authored: XHTML you can open in an editor, a diff
+                or a terminal — prose in document order, each qualifier
+                written beside the thing it qualifies, no generated markup to
+                skip past. A model reads and writes this same text, with no
+                conversion step in either direction.
               </p>
             </article>
 
-            <article id="panel-model" className="panel">
-              <p className="sig mb-3">view: the model</p>
+            <article id="panel-web" className="panel">
+              <p className="sig mb-3">view: the web page</p>
               <p className="max-w-2xl leading-relaxed text-ink-mute">
-                The same file read as XHTML. Attributes qualify every datum:{" "}
-                <code className="font-mono text-violet-soft">data-kind</code>{" "}
-                says what a thing is,{" "}
-                <code className="font-mono text-violet-soft">data-status</code>{" "}
-                says where it stands,{" "}
-                <code className="font-mono text-violet-soft">.sem-conclusion</code>{" "}
-                and{" "}
-                <code className="font-mono text-violet-soft">.sem-distractor</code>{" "}
-                distinguish an answer from a decoy. A model does not have to
-                infer the structure, because the structure is written down.
+                The in-browser render: open the file and the markup becomes
+                the page you are reading. The theme CSS styles the vocabulary
+                directly, so a document is readable the moment it opens.
+                Flashcards flip, quizzes score, tabs switch and disclosures
+                expand — driven by roughly 7 KB of vanilla JavaScript with no
+                dependencies and no network calls.
               </p>
             </article>
 
-            <article id="panel-text" className="panel">
-              <p className="sig mb-3">view: the text</p>
+            <article id="panel-viewer" className="panel">
+              <p className="sig mb-3">view: the CLI viewer</p>
               <p className="max-w-2xl leading-relaxed text-ink-mute">
-                The file opened in an editor, a diff, or a terminal is readable
-                as it is: prose in document order, each qualifier written
-                beside the thing it qualifies, no generated markup to skip
-                past. A model writes the same text back. When a condensed
-                record view is useful, an optional script derives one from the
-                markup, but nothing depends on it.
+                <code className="font-mono text-violet-soft">
+                  semtext tui
+                </code>{" "}
+                — an interactive terminal viewer for people: the same file
+                with flashcards, a data visualizer and graphs, without
+                leaving the terminal.
+              </p>
+            </article>
+
+            <article id="panel-renderer" className="panel">
+              <p className="sig mb-3">view: the CLI renderer</p>
+              <p className="max-w-2xl leading-relaxed text-ink-mute">
+                <code className="font-mono text-violet-soft">
+                  semtext --render
+                </code>{" "}
+                — rendered output from the --render mode: it renders and
+                loads embeds, with collapse, expand and filtering for agents.
+                Summaries expand in place, so a file is effectively its own
+                summary view.
               </p>
             </article>
           </div>
@@ -504,30 +527,7 @@ export default function Home() {
 
           <div className="mt-8 grid gap-8 lg:grid-cols-2">
             <div>
-              <ul className="flex flex-col gap-3">
-                {FACTS.map((fact) => (
-                  <li
-                    key={fact.id}
-                    className="rounded-xl border border-code-border bg-slateink-lift p-4"
-                  >
-                    <p className="font-mono text-[0.68rem] uppercase tracking-[0.16em] text-ink-faint">
-                      &lt;sem-fact&gt; · {fact.id}
-                    </p>
-                    <p className="mt-1.5 font-semibold text-ink">
-                      {fact.statement}
-                    </p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-ink-mute">
-                      {fact.conclusion}
-                    </p>
-                    <p className="mt-2 border-t border-white/5 pt-2 text-sm leading-relaxed text-ink-faint">
-                      <span className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-rose-300/80">
-                        &lt;sem-distractor&gt;
-                      </span>{" "}
-                      — {fact.distractor}
-                    </p>
-                  </li>
-                ))}
-              </ul>
+              <TryViews facts={FACTS} />
               <p className="mt-3 text-sm text-ink-mute">
                 The live toggle — list, flashcards, quiz — runs on the{" "}
                 <a
