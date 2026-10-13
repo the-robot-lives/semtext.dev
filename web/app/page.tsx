@@ -1,4 +1,5 @@
 import { HeroWindow } from "@/components/hero-window";
+import { Sem, SAMPLE_DOCS, INTEGRATIONS } from "@/components/docs-shell";
 
 const SHOWCASE = "http://localhost:4173";
 const REPO = "https://github.com/noizu-labs-ml/npl-enhanced-content";
@@ -197,6 +198,40 @@ const QUESTIONS: Array<[string, string]> = [
     "Not yet. This is a draft spec, a reference implementation and a Cypress suite. There are no users to point at, no benchmarks to quote and no production deployments beyond this page and its demos.",
   ],
 ];
+
+/*
+ * The Scope section and the two platform sections below are rendered with
+ * the real vocabulary — sem-note, sem-reveal, sem-properties, sem-procedure
+ * — through the Sem() themed block, not with lookalike divs. The strings
+ * are the authored SemText source: what the DOM ships is what a model
+ * would read. Raw innerHTML (rather than JSX elements) keeps attribute
+ * names like key= and view-as= verbatim; React reserves key= on JSX props.
+ */
+const SCOPE_NOTES = `<sem-note variant="info">SemText is a markup vocabulary and three small scripts. It is not a CMS, a site generator or an application framework, and it has no opinion about how you produce the HTML.</sem-note>
+<sem-note variant="warning">Versioning follows the open/closed principle: any version changes should not break your existing markup. New elements and attributes land alongside the ones a document already uses — never swapped out from under it — so a file authored today keeps rendering as the vocabulary grows. Pin a version when you ship.</sem-note>
+<sem-note variant="tip">There is no React in the dependency tree and there is not going to be one. Lit 3 is the only runtime dependency, and it is optional — the fallback tier has none.</sem-note>`;
+
+const SCOPE_QA = QUESTIONS.map(
+  ([q, a]) => `<sem-reveal summary="${q}" collapsed>${a}</sem-reveal>`
+).join("\n");
+
+const ADDONS_HTML = `<sem-note variant="info">Add Ons unlock behind an account key. The vocabulary itself stays open — every add-on embeds into or extends a document, and none of them change how one is read.</sem-note>
+<sem-properties kind="add-ons">
+  <sem-property key="Ticket embedding" role="definition">An account key enables ticket embedding — live tickets from your tracker, cited inline like any other datum. <b class="g-status">planned</b></sem-property>
+  <sem-property key="The Robot Knows hookup" role="definition">Point a document at your knowledge base, so facts and procedures draw on live KB entries. <b class="g-status">planned</b></sem-property>
+  <sem-property key="The Robot Learns courses" role="definition">Courses load as SemText and track each reader's quiz progress; sign-in is prompted when tracking starts. <b class="g-status">planned</b></sem-property>
+  <sem-property key="Embedded exams &amp; quizzes" role="definition">Private exams and quizzes from The Robot Learns embed in your pages, beside an always-available catalogue of public embedded quizzes. <b class="g-status">planned</b></sem-property>
+  <sem-property key="Draftamo renders" role="definition">Mockups and UML renders from Draftamo-hosted projects, or from local Draftamo XML. <b class="g-status">planned</b></sem-property>
+  <sem-property key="Issue submission" role="definition">Submit an issue from the page itself — The Robot Plans files it in Jira, ClickUp, or GitHub. <b class="g-status">planned</b></sem-property>
+</sem-properties>`;
+
+const EXTEND_HTML = `<sem-note variant="info">The vocabulary is open at the edges: an organisation can define its own elements for what its documents say over and over — a runbook step type, a compliance datum, a product fact.</sem-note>
+<sem-note variant="warning">The submission flow below is planned, not shipped — nothing here clicks yet. Custom elements are Lit components with a vocabulary entry, and the AI submission tool assembles both.</sem-note>
+<sem-procedure kind="submission" role="list">
+  <sem-step role="listitem" status="todo">Describe the element to the submission agent — a name, what it means, one example.</sem-step>
+  <sem-step role="listitem" status="todo">The agent drafts the vocabulary entry and builds the Lit component.</sem-step>
+  <sem-step role="listitem" status="todo">Review the render, then submit — the component ships in your org's bundle with its submission flow attached.</sem-step>
+</sem-procedure>`;
 
 function Note({
   variant,
@@ -995,53 +1030,79 @@ export default function Home() {
         <div className="mx-auto max-w-docs">
           <SectionHead id="scope-h" eyebrow="Scope" title="What it is not." />
 
-          <div className="mt-6 flex max-w-3xl flex-col gap-3">
-            <Note variant="info">
-              SemText is a markup vocabulary and three small scripts. It is not
-              a CMS, a site generator or an application framework, and it has
-              no opinion about how you produce the HTML.
-            </Note>
-            <Note variant="warning">
-              The spec is a draft. The class-based vocabulary is the current
-              baseline and the custom-element form is arriving alongside it, so
-              element names and attributes can still change. Pin a version.
-            </Note>
-            <Note variant="tip">
-              There is no React in the dependency tree and there is not going
-              to be one. Lit 3 is the only runtime dependency, and it is
-              optional — the fallback tier has none.
-            </Note>
-          </div>
+          <Sem
+            className="mt-6 flex max-w-3xl flex-col gap-3"
+            html={SCOPE_NOTES}
+          />
 
           <h3 className="mt-10 text-xl font-semibold tracking-tight text-ink">
             Reasonable questions
           </h3>
-          <div className="mt-4 flex max-w-3xl flex-col gap-3">
-            {QUESTIONS.map(([q, a]) => (
-              <details
-                key={q}
-                className="qa group rounded-xl border border-code-border bg-slateink-lift"
-              >
-                <summary className="cursor-pointer list-none px-5 py-3.5 font-medium text-ink marker:hidden">
-                  <span className="mr-2 font-mono text-violet-soft group-open:rotate-90 inline-block transition-transform">
-                    ›
-                  </span>
-                  {q}
-                </summary>
-                <p className="px-5 pb-4 text-sm leading-relaxed text-ink-mute">
-                  {a}
-                </p>
-              </details>
-            ))}
-          </div>
+          <Sem
+            className="mt-4 flex max-w-3xl flex-col gap-3"
+            html={SCOPE_QA}
+          />
 
           <div className="mt-14 flex flex-wrap items-center gap-3">
-            <a
-              href={`${SHOWCASE}/site/`}
-              className="inline-flex min-h-11 items-center bg-violet px-5 py-2 text-sm font-semibold text-white hover:brightness-110"
-            >
-              Open the showcase
-            </a>
+            {/* The showcase CTA is a menu of sample SemText docs (plus the
+                portfolio integrations) — same lists the /docs/ sidebar and
+                Sample docs section use, so they cannot drift. */}
+            <details className="showcase-menu">
+              <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 bg-violet px-5 py-2 text-sm font-semibold text-white marker:hidden hover:brightness-110">
+                Open the showcase
+                <span aria-hidden="true" className="text-xs">
+                  ▾
+                </span>
+              </summary>
+              <div className="showcase-menu-panel">
+                <p className="g-nav-title">Sample docs</p>
+                <ul className="mt-2 flex flex-col gap-1.5" role="list">
+                  {SAMPLE_DOCS.map((d) => (
+                    <li key={d.label} className="text-sm leading-6">
+                      {d.href ? (
+                        <a
+                          href={d.href}
+                          className="font-mono text-violet-soft underline-offset-4 hover:underline"
+                        >
+                          {d.label}
+                        </a>
+                      ) : (
+                        <span className="font-mono text-ink-faint">
+                          {d.label}
+                        </span>
+                      )}
+                      <span className="text-ink-mute"> — {d.note}</span>
+                      {d.planned && (
+                        <b className="g-status">planned</b>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <p className="g-nav-title mt-5">Integrations</p>
+                <ul className="mt-2 flex flex-col gap-1.5" role="list">
+                  {INTEGRATIONS.map((d) => (
+                    <li key={d.label} className="text-sm leading-6">
+                      {d.href ? (
+                        <a
+                          href={d.href}
+                          className="font-mono text-violet-soft underline-offset-4 hover:underline"
+                        >
+                          {d.label}
+                        </a>
+                      ) : (
+                        <span className="font-mono text-ink-faint">
+                          {d.label}
+                        </span>
+                      )}
+                      <span className="text-ink-mute"> — {d.note}</span>
+                      {d.planned && (
+                        <b className="g-status">planned</b>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </details>
             <a
               href={`${SHOWCASE}/demo/`}
               className="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft"
@@ -1054,6 +1115,70 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Add Ons ---------------------------------------------------------- */}
+      <section
+        id="addons"
+        aria-labelledby="addons-h"
+        className="border-b border-white/10 px-4 py-14 sm:px-6 sm:py-20"
+      >
+        <div className="mx-auto max-w-docs">
+          <SectionHead
+            id="addons-h"
+            eyebrow="Add Ons"
+            title="Super Charge with Add Ons."
+          >
+            <p className="mt-4 leading-relaxed text-ink-mute">
+              The reading and extraction core is free and static. The add-ons
+              are where documents start doing things — every one of them is
+              planned, none of them change how a document reads.
+            </p>
+          </SectionHead>
+          <Sem
+            className="mt-8 flex max-w-3xl flex-col gap-4"
+            html={ADDONS_HTML}
+          />
+        </div>
+      </section>
+
+      {/* Extend ----------------------------------------------------------- */}
+      <section
+        id="extend"
+        aria-labelledby="extend-h"
+        className="border-b border-white/10 px-4 py-14 sm:px-6 sm:py-20"
+      >
+        <div className="mx-auto max-w-docs">
+          <SectionHead
+            id="extend-h"
+            eyebrow="Extend"
+            title="Extend the vocabulary."
+          >
+            <p className="mt-4 leading-relaxed text-ink-mute">
+              Org-specific components, and a submission tool where you talk an
+              element into existence: the agent drafts the vocabulary entry,
+              builds the Lit component, and wires the submission flow.
+            </p>
+          </SectionHead>
+          <Sem
+            className="mt-8 flex max-w-3xl flex-col gap-4"
+            html={EXTEND_HTML}
+          />
+        </div>
+      </section>
+
+      {/* SemText runtime for the Scope / Add Ons / Extend blocks above.
+          __semJsOff keeps the bundle from auto-wiring on injection; the
+          one-shot listener below enhances the whole document exactly once,
+          after the deferred bundle has loaded. The hero window re-checks
+          the html[data-sem-fallback] marker before touching anything. */}
+      <script dangerouslySetInnerHTML={{ __html: "window.__semJsOff=true;" }} />
+      <script defer src="/semtext/semtext-fallback.js" />
+      <script
+        dangerouslySetInnerHTML={{
+          __html:
+            "document.addEventListener('DOMContentLoaded',function(){if(window.SemTextFallback&&!document.documentElement.hasAttribute('data-sem-fallback')){window.SemTextFallback.enhance(document);}});",
+        }}
+      />
     </main>
   );
 }
