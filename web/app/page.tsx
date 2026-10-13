@@ -1,6 +1,6 @@
 import { HeroWindow } from "@/components/hero-window";
 import { TryViews } from "@/components/try-views";
-import { Sem, SAMPLE_DOCS, INTEGRATIONS } from "@/components/docs-shell";
+import { Sem, SHOWCASE_ITEMS, INTEGRATIONS } from "@/components/docs-shell";
 
 const SHOWCASE = "http://localhost:4173";
 const REPO = "https://github.com/noizu-labs-ml/npl-enhanced-content";
@@ -1055,9 +1055,9 @@ export default function Home() {
                 </span>
               </summary>
               <div className="showcase-menu-panel">
-                <p className="g-nav-title">Sample docs</p>
+                <p className="g-nav-title">Showcase</p>
                 <ul className="mt-2 flex flex-col gap-1.5" role="list">
-                  {SAMPLE_DOCS.map((d) => (
+                  {SHOWCASE_ITEMS.map((d) => (
                     <li key={d.label} className="text-sm leading-6">
                       {d.href ? (
                         <a
