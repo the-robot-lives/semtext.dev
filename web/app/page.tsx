@@ -340,7 +340,7 @@ export default function Home() {
             <p className="mt-3 text-sm text-ink-mute">
               The live toggle — list, flashcards, quiz — runs on the{" "}
               <a
-                href={`${SHOWCASE}/site/#try`}
+                href="/#try"
                 className="text-violet-soft underline-offset-4 hover:underline"
               >
                 showcase
@@ -396,7 +396,7 @@ export default function Home() {
               are the real content; the live affordances — hover previews,
               sorting, the reader bar — run on the{" "}
               <a
-                href={`${SHOWCASE}/site/#reading`}
+                href="/#reading"
                 className="text-violet-soft underline-offset-4 hover:underline"
               >
                 showcase
@@ -557,7 +557,7 @@ export default function Home() {
                 and filter; there is no JSON payload, the markup is the data.
                 All three run live on the{" "}
                 <a
-                  href={`${SHOWCASE}/site/#reading`}
+                  href="/#reading"
                   className="text-violet-soft underline-offset-4 hover:underline"
                 >
                   showcase
@@ -688,7 +688,7 @@ export default function Home() {
               renderer — so a document needs no other assets. Measured
               sizes live on the{" "}
               <a
-                href={`${SHOWCASE}/site/#surface`}
+                href="/#surface"
                 className="text-violet-soft underline-offset-4 hover:underline"
               >
                 showcase

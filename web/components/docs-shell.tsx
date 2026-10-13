@@ -6,13 +6,11 @@ import React from "react";
  * examples rail beside it. Pure server component — no client JS.
  *
  * The showcase list below feeds both this sidebar's Showcase group and the
- * landing page's "Open the showcase" menu, so the two cannot drift. The
- * showcase is its own page: these entries are sections of that page. The
- * demo documents live under the showcase's own /demo/ tree — reachable
- * from there, deliberately not menu items here.
+ * landing page's "Open the showcase" menu, so the two cannot drift. Each
+ * entry is a section of the landing page on this site (no separate
+ * showcase origin). The demo documents are not reachable from here —
+ * there is no /demo/ tree on this site.
  */
-
-export const SHOWCASE = "http://localhost:4173";
 
 export interface ShowcaseItem {
   label: string;
@@ -24,17 +22,17 @@ export interface ShowcaseItem {
 export const SHOWCASE_ITEMS: ShowcaseItem[] = [
   {
     label: "Try views",
-    href: `${SHOWCASE}/site/#try`,
+    href: "/#try",
     note: "the view toggle live — list, flashcards, quiz",
   },
   {
     label: "Reading",
-    href: `${SHOWCASE}/site/#reading`,
+    href: "/#reading",
     note: "previews, backlinks, sort and filter, live",
   },
   {
     label: "Surface sizes",
-    href: `${SHOWCASE}/site/#surface`,
+    href: "/#surface",
     note: "measured sizes of the scripts and stylesheets",
   },
 ];
