@@ -1,6 +1,5 @@
 import { HeroWindow } from "@/components/hero-window";
 import { TryViews } from "@/components/try-views";
-import { ReaderCards } from "@/components/reader-cards";
 import { Sem, SAMPLE_DOCS, INTEGRATIONS } from "@/components/docs-shell";
 
 const SHOWCASE = "http://localhost:4173";
@@ -323,48 +322,6 @@ export default function Home() {
 
           <HeroWindow />
         </div>
-      </section>
-
-      {/* Why -------------------------------------------------------------- */}
-      <section
-        id="why"
-        aria-labelledby="why-h"
-        className="border-b border-white/10 px-4 py-14 sm:px-6 sm:py-20"
-      >
-        <div className="mx-auto grid max-w-docs gap-10 lg:grid-cols-[16rem_minmax(0,1fr)]">
-          <nav className="toc hidden lg:block" aria-label="On this page">
-            <p className="font-mono text-[0.68rem] uppercase tracking-[0.2em] text-ink-faint">
-              on this page
-            </p>
-            <a href="#why">why</a>
-            <a href="#try">try it</a>
-            <a href="#tiers">degradation</a>
-            <a href="#reading">reading</a>
-            <a href="#start">quick start</a>
-            <a href="#surface">surface</a>
-            <a href="#scope">scope</a>
-          </nav>
-
-          <div>
-            <SectionHead id="why-h" eyebrow="Why this exists" title="One file, read as text, as structure, and as a page.">
-              <p className="mt-3 leading-relaxed text-ink-mute">
-                Markdown carries prose well and rich content poorly: it has no
-                place to mark a conclusion as distinct from a decoy, a step as
-                blocked, or a term as defined, so rich content ends up as a
-                page for people plus a separate structured copy for tooling,
-                and the two drift. SemText keeps one file. It stays XHTML, so a
-                browser already knows how to display it and web components can
-                enhance it in place, and it stays text, so a model can read and
-                write it directly with no conversion step in either direction.
-              </p>
-              <p className="mt-3 text-ink-mute">
-                Pick a reader to see what each one gets from the same file.
-              </p>
-            </SectionHead>
-          </div>
-        </div>
-
-        <ReaderCards />
       </section>
 
       {/* Try -------------------------------------------------------------- */}
