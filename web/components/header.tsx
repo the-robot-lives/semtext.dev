@@ -18,12 +18,6 @@ export function Header() {
         </a>
         <nav aria-label="Primary" className="flex items-center gap-4 text-sm sm:gap-6">
           <a
-            href="#why"
-            className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex"
-          >
-            Why
-          </a>
-          <a
             href="#try"
             className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex"
           >

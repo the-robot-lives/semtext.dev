@@ -304,14 +304,10 @@ export default function Home() {
                 Get started
               </a>
             </div>
-            <dl className="mt-8 grid grid-cols-3 gap-3 font-mono text-xs text-ink-mute">
+            <dl className="mt-8 grid grid-cols-2 gap-3 font-mono text-xs text-ink-mute">
               <div>
                 <dt className="text-ink-faint">files</dt>
                 <dd className="mt-1 text-ink">one, standalone</dd>
-              </div>
-              <div>
-                <dt className="text-ink-faint">readers</dt>
-                <dd className="mt-1 text-ink">raw · web · cli viewer · cli renderer</dd>
               </div>
               <div>
                 <dt className="text-ink-faint">build step</dt>
