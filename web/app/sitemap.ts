@@ -17,6 +17,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: "https://semtext.dev/reference/",
+      lastModified: new Date("2026-10-13"),
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
       url: "https://semtext.dev/docs/",
       lastModified: new Date("2026-10-13"),
       changeFrequency: "monthly",

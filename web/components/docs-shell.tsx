@@ -105,6 +105,7 @@ export function DocsShell({
   active,
   sections,
   examples,
+  groups,
   children,
 }: {
   active: string;
@@ -112,13 +113,23 @@ export function DocsShell({
   sections?: Array<{ id: string; label: string }>;
   /** Optional rail beside the main column (doc listings, rendered SemText). */
   examples?: React.ReactNode;
+  /**
+   * Override the default nav groups (a page that needs its own sidebar
+   * inventory — /reference/ lists every element tag by family). Falls back
+   * to the shared GROUPS above.
+   */
+  groups?: Array<{
+    title: string;
+    items: Array<{ key: string; label: string; href: string }>;
+  }>;
   children: React.ReactNode;
 }) {
+  const navGroups = groups ?? GROUPS;
   return (
     <div className="mx-auto flex w-full max-w-docs gap-10 px-4 pb-24 pt-12 sm:px-6">
       <aside className="hidden w-52 shrink-0 lg:block">
         <nav aria-label="Docs" className="sticky top-24 flex flex-col gap-7">
-          {GROUPS.map((group) => (
+          {navGroups.map((group) => (
             <div key={group.title}>
               <p className="g-nav-title">{group.title}</p>
               <ul className="mt-1.5 flex flex-col" role="list">
