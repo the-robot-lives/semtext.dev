@@ -1,6 +1,8 @@
 import { HeroWindow } from "@/components/hero-window";
 import { TryViews } from "@/components/try-views";
 import { ReaderCards } from "@/components/reader-cards";
+import { CodeViewer } from "@/components/code-viewer";
+import { ThemeGenerator } from "@/components/theme-generator";
 import { Sem, SHOWCASE_ITEMS, INTEGRATIONS } from "@/components/docs-shell";
 
 const SHOWCASE = "http://localhost:4173";
@@ -694,48 +696,9 @@ export default function Home() {
             </p>
           </SectionHead>
 
-          <figure
-            className="code-window mt-8"
-            aria-label="A minimal SemText document"
-          >
-            <div className="code-chrome">
-              <span className="dot live" aria-hidden="true" />
-              <span>doc.html · minimal SemText document</span>
-            </div>
-            <pre>
-              <code>
-                {`<!doctype html>
-<html lang="en" data-sem-theme="minimal-tech-light">
-<head>
-  <meta charset="utf-8">
-  <title>Auth notes</title>
-  <link rel="stylesheet" href="semtext/themes/_vocabulary.css">
-  <link rel="stylesheet" href="semtext/themes/minimal-tech-light.css">
-  <script src="semtext/semtext-fallback.js"></script>
-</head>
-<body>
-<sem-enhanced-document>
-
-  <h1>Auth notes</h1>
-
-  <sem-note variant="warning">
-    Refresh tokens rotate per use — each exchange retires the last one.
-  </sem-note>
-
-  <sem-facts view-as="flashcards">
-    <sem-fact id="f-jwt" kind="concept">
-      <statement>JWTs rotate per session</statement>
-      <conclusion>Short-lived access tokens; the refresh grant issues a new pair.</conclusion>
-      <sem-distractor>Store the token in localStorage for durability.</sem-distractor>
-    </sem-fact>
-  </sem-facts>
-
-</sem-enhanced-document>
-</body>
-</html>`}
-              </code>
-            </pre>
-          </figure>
+          <div className="mt-8">
+            <CodeViewer />
+          </div>
           <p className="mt-3 text-sm text-ink-mute">
             Save it, double-click it. That is the whole workflow. Written the
             older way —{" "}
@@ -752,17 +715,16 @@ export default function Home() {
           <ol className="mt-4 grid gap-3 sm:grid-cols-2">
             {[
               <>
-                Copy{" "}
-                <code className="font-mono">themes/_vocabulary.css</code> and
-                one theme file next to your document, and set{" "}
-                <code className="font-mono">data-sem-theme</code> on{" "}
-                <code className="font-mono">&lt;html&gt;</code> to that
-                theme&apos;s name.
+                Link <code className="font-mono">semtext.css</code> and{" "}
+                <code className="font-mono">semtext.js</code> in your
+                document&apos;s head — or paste them inline for a single-file
+                distribution.
               </>,
               <>
-                Add <code className="font-mono">semtext-fallback.js</code>.
-                Link it, or paste it inline for a document you intend to send
-                as a single file.
+                Optional: add{" "}
+                <code className="font-mono">semtext-theme-&lt;name&gt;.css</code>{" "}
+                to override colours and tokens. Omit it or use a built-in
+                theme.
               </>,
               <>
                 Write the content with{" "}
@@ -771,10 +733,9 @@ export default function Home() {
                 ordinary HTML.
               </>,
               <>
-                Optional: add <code className="font-mono">semtext.js</code> for
-                the Lit tier, and{" "}
+                Optional: add{" "}
                 <code className="font-mono">semtext-extract.js</code> where a
-                tool needs the records.
+                tool needs the extraction records from the DOM.
               </>,
             ].map((step, i) => (
               <li
@@ -788,6 +749,8 @@ export default function Home() {
               </li>
             ))}
           </ol>
+
+          <ThemeGenerator />
         </div>
       </section>
 
