@@ -1,16 +1,19 @@
-const SHOWCASE = "http://localhost:4173";
 const REPO = "https://github.com/noizu-labs-ml/npl-enhanced-content";
 const SPEC = `${REPO}/blob/develop/spec`;
 const TRL = "https://therobotlives.com";
 
+/* All links stay on this site: the demo documents live on the dev preview
+   origin only and are not part of the site export, so these point at the
+   closest local content — the /elements/ vocabulary, and the landing
+   Try / Reading / Tiers sections (live views and the no-JS tier). */
 const LINKS: Array<[string, string]> = [
   ["Format spec", `${SPEC}/conventions.md`],
   ["Extraction contract", `${SPEC}/extraction.md`],
   ["Repository", REPO],
-  ["Vocabulary demo", `${SHOWCASE}/demo/`],
-  ["Lit demo", `${SHOWCASE}/demo/standalone-lit.html`],
-  ["Reading demo", `${SHOWCASE}/demo/reading.html`],
-  ["Scripts stripped", `${SHOWCASE}/demo/index.nojs.html`],
+  ["Vocabulary", `/elements/`],
+  ["Lit views", `/#try`],
+  ["Reading", `/#reading`],
+  ["Scripts-off tier", `/#tiers`],
 ];
 
 export function Footer() {

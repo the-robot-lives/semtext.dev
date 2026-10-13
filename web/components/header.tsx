@@ -1,4 +1,3 @@
-const SHOWCASE = "http://localhost:4173";
 const TRL = "https://therobotlives.com";
 
 export function Header() {
@@ -18,40 +17,28 @@ export function Header() {
         </a>
         <nav aria-label="Primary" className="flex items-center gap-4 text-sm sm:gap-6">
           <a
-            href="#try"
+            href="/#try"
             className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex"
           >
-            Try it
+            See it work
           </a>
           <a
-            href="#reading"
-            className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink lg:inline-flex"
-          >
-            Reading
-          </a>
-          <a
-            href="#start"
-            className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink lg:inline-flex"
-          >
-            Quick start
-          </a>
-          <a
-            href="/elements/"
+            href="/reference/"
             className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex"
           >
-            Elements
+            Reference
           </a>
           <a
-            href="/docs/"
+            href="/spec/semtext.html"
             className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex"
           >
-            Docs
+            Read the spec
           </a>
           <a
-            href={`${SHOWCASE}/demo/`}
+            href="/#start"
             className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex"
           >
-            Demo
+            Get started
           </a>
           <a
             href={TRL}
