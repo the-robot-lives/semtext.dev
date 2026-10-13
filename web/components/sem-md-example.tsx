@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CopySaveButtons } from "@/components/code-viewer";
 
 /*
  * The sem-md example's Render/Source toggle — the landing hero window's
@@ -23,12 +24,14 @@ import { useEffect, useRef, useState } from "react";
  * sem-* markup. A failed chunk load changes nothing: the static table is
  * already the finished render.
  *
- * Source view: the authored markup as code with line numbers and a copy
- * button.
+ * Source view: the authored markup as code with line numbers. The chrome
+ * carries the same Copy and Save pair as the other /reference examples
+ * (shared CopySaveButtons) in both views — they always address the
+ * authored Markdown (`sem-md.md`), never the rendered table.
  *
  * Zero-JS: the static export renders the table, hides the authored
- * element, and renders no toggle and no copy button — they exist only
- * after hydration, the hero window's pattern.
+ * element, and renders no toggle and no Copy/Save — they exist only
+ * after hydration, the hero window's pattern (both actions need script).
  */
 
 declare global {
@@ -64,9 +67,7 @@ export function SemMdExample({
 }) {
   const [js, setJs] = useState(false);
   const [view, setView] = useState<"render" | "source">("render");
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const paneRef = useRef<HTMLDivElement>(null);
-  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => setJs(true), []);
 
@@ -103,21 +104,6 @@ export function SemMdExample({
     };
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (copyTimer.current) clearTimeout(copyTimer.current);
-    };
-  }, []);
-
-  function copySource() {
-    navigator.clipboard
-      .writeText(source)
-      .then(() => setCopyState("copied"))
-      .catch(() => setCopyState("failed"));
-    if (copyTimer.current) clearTimeout(copyTimer.current);
-    copyTimer.current = setTimeout(() => setCopyState("idle"), 1500);
-  }
-
   const lines = source.replace(/\n$/, "").split("\n");
 
   return (
@@ -147,6 +133,17 @@ export function SemMdExample({
             </button>
           </span>
         )}
+        {/* The same Copy/Save pair the other /reference examples carry in
+            this bar slot, in both views — always over the authored
+            Markdown, never the rendered table. Needs script, so it exists
+            only after hydration (zero-JS: not in the DOM at all). */}
+        {js && (
+          <CopySaveButtons
+            code={source}
+            filename="sem-md.md"
+            mimeType="text/markdown"
+          />
+        )}
       </div>
 
       {/* Render view — the default, present in the static HTML. paneRef
@@ -158,20 +155,9 @@ export function SemMdExample({
         dangerouslySetInnerHTML={{ __html: renderedHtml }}
       />
 
-      {/* Source view — the authored markup, line-numbered, with copy. */}
+      {/* Source view — the authored markup, line-numbered; Copy and Save
+          live in the chrome above, shared with the Render view. */}
       <div hidden={view !== "source"} className="ref-md-source-pane">
-        {js && (
-          <div className="flex justify-end border-b border-white/5 px-4 py-2">
-            <button
-              type="button"
-              onClick={copySource}
-              className={pill(copyState === "copied")}
-              aria-live="polite"
-            >
-              {copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy"}
-            </button>
-          </div>
-        )}
         <pre className="max-h-96 overflow-auto p-4 font-mono text-[0.74rem] leading-relaxed text-ink">
           <code>
             {lines.map((line, i) => (
