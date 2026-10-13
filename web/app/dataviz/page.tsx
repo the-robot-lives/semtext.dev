@@ -54,7 +54,7 @@ export default function DataVizPage() {
           <code className="font-mono">sem-data-source</code>,{" "}
           <code className="font-mono">sem-data-join</code>,{" "}
           <code className="font-mono">sem-data-query</code> — see{" "}
-          <a className="underline decoration-white/30 underline-offset-2 hover:decoration-white/70" href="/reference/#sem-data-visualizer">
+          <a className="underline decoration-white/30 underline-offset-2 hover:decoration-white/70" href="/reference/sem-data-visualizer/">
             the tag reference
           </a>
           ), rendered and wired by the reading bundle. Sort any column, switch
