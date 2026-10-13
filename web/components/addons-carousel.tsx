@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
 
 /*
- * The Add Ons section's carousel: one card per planned add-on, each with a
- * mock of the surface the add-on would put on a page — an embedded ticket,
+ * The Add Ons section's carousel: one card per add-on, each with a mock
+ * of the surface the add-on would put on a page — an embedded ticket,
  * a knowledge-base answer, a course panel, a scored quiz, a Draftamo UML
- * render, a filed issue. Every card's status chip reads "planned"; the
- * mocks are illustrations of planned output, not screenshots of shipped
- * product, and nothing in them is a claim of availability.
+ * render, a filed issue. No status chips: an add-on is hooked to its real
+ * logic as it is built, and until then the mocks are illustrations of
+ * planned output, not screenshots of shipped product — nothing in them is
+ * a claim of availability.
  *
  * Zero-JS: the server HTML stacks all six cards in document order and the
  * controls stay hidden (the same hidden-until-hydration pattern as
@@ -254,14 +255,9 @@ export function AddonsCarousel() {
                 className="flex h-full flex-col rounded-xl border border-code-border bg-slateink-panel p-5"
                 aria-labelledby={`addon-${addon.id}-h`}
               >
-                <div className="flex items-baseline justify-between gap-3">
-                  <h3 id={`addon-${addon.id}-h`} className="text-lg font-semibold text-ink">
-                    {addon.title}
-                  </h3>
-                  {/* <b> keeps parity with the e2e step that counts
-                      section#addons b.g-status === 6 "planned". */}
-                  <b className="g-status shrink-0">planned</b>
-                </div>
+                <h3 id={`addon-${addon.id}-h`} className="text-lg font-semibold text-ink">
+                  {addon.title}
+                </h3>
                 <p className="mt-2 text-sm leading-relaxed text-ink-mute">{addon.blurb}</p>
                 <div className="mt-4">{addon.mock}</div>
               </article>

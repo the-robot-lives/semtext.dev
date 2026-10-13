@@ -882,8 +882,9 @@ export default function Home() {
           >
             <p className="mt-4 leading-relaxed text-ink-mute">
               The reading and extraction core is free and static. The add-ons
-              are where documents start doing things — every one of them is
-              planned, none of them change how a document reads.
+              are where documents start doing things — each one gets hooked to
+              its real logic as it is built, and none of them change how a
+              document reads.
             </p>
           </SectionHead>
           <AddonsCarousel />
