@@ -2,61 +2,40 @@ import React from "react";
 
 /*
  * Shared left-menu layout for the reference pages (/elements/, /docs/),
- * Tailwind-docs style: sticky sidebar, content column on the right.
- * Pure server component — no client JS. The same sample-docs and
- * integration lists feed the Scope section's "Open the showcase" menu,
- * so the menu and this sidebar never drift.
+ * Tailwind-docs style: sticky sidebar, content column, and an optional
+ * examples rail beside it. Pure server component — no client JS.
+ *
+ * The showcase list below feeds both this sidebar's Showcase group and the
+ * landing page's "Open the showcase" menu, so the two cannot drift. The
+ * showcase is its own page: these entries are sections of that page. The
+ * demo documents live under the showcase's own /demo/ tree — reachable
+ * from there, deliberately not menu items here.
  */
 
 export const SHOWCASE = "http://localhost:4173";
 
-export interface SampleDoc {
+export interface ShowcaseItem {
   label: string;
   note: string;
   href?: string;
   planned?: boolean;
 }
 
-export const SAMPLE_DOCS: SampleDoc[] = [
+export const SHOWCASE_ITEMS: ShowcaseItem[] = [
   {
-    label: "Vocabulary demo",
-    href: `${SHOWCASE}/demo/`,
-    note: "every element on one page",
-  },
-  {
-    label: "Reading demo",
-    href: `${SHOWCASE}/demo/reading.html`,
-    note: "sem-reader chrome over a long document",
-  },
-  {
-    label: "Reading on Lit",
-    href: `${SHOWCASE}/demo/reading-lit.html`,
-    note: "the same document on the Lit tier",
-  },
-  {
-    label: "Standalone Lit components",
-    href: `${SHOWCASE}/demo/standalone-lit.html`,
-    note: "sem-* custom elements, no document shell",
-  },
-  {
-    label: "Markdown renderer",
-    href: `${SHOWCASE}/demo/md-only.html`,
-    note: "sem-md alone, without the rest of the bundle",
-  },
-  {
-    label: "Data visualizers",
+    label: "Try views",
     href: `${SHOWCASE}/site/#try`,
-    note: "shipped in the tui bundle today",
+    note: "the view toggle live — list, flashcards, quiz",
   },
   {
-    label: "Flashcards & quizzes",
-    href: `${SHOWCASE}/demo/#facts-list`,
-    note: "sem-facts as flip cards and scored quizzes",
+    label: "Reading",
+    href: `${SHOWCASE}/site/#reading`,
+    note: "previews, backlinks, sort and filter, live",
   },
   {
-    label: "Embeds & linking",
-    note: "sem-embed composition — spec'd, demo pending",
-    planned: true,
+    label: "Surface sizes",
+    href: `${SHOWCASE}/site/#surface`,
+    note: "measured sizes of the scripts and stylesheets",
   },
 ];
 
@@ -65,7 +44,7 @@ export const SAMPLE_DOCS: SampleDoc[] = [
  * descriptions promise are planned — none is shipped yet, so each row carries
  * the planned pill. Statuses verified 2026-10-13 (all four origins serve 200).
  */
-export const INTEGRATIONS: SampleDoc[] = [
+export const INTEGRATIONS: ShowcaseItem[] = [
   {
     label: "The Robot Learns",
     href: "https://therobotlearns.com",
@@ -97,15 +76,20 @@ const GROUPS: Array<{
   items: Array<{ key: string; label: string; href: string }>;
 }> = [
   {
+    title: "Guides",
+    items: [{ key: "cli", label: "CLI commands", href: "/docs/" }],
+  },
+  {
     title: "Reference",
     items: [{ key: "elements", label: "Elements", href: "/elements/" }],
   },
   {
-    title: "Guides",
-    items: [
-      { key: "getting-started", label: "Getting started", href: "/docs/#getting-started" },
-      { key: "samples", label: "Sample docs", href: "/docs/#samples" },
-    ],
+    title: "Showcase",
+    items: SHOWCASE_ITEMS.map((d) => ({
+      key: `showcase-${d.label.toLowerCase().replace(/[^a-z]+/g, "-")}`,
+      label: d.label,
+      href: d.href as string,
+    })),
   },
   {
     title: "Platform",
@@ -119,9 +103,15 @@ const GROUPS: Array<{
 
 export function DocsShell({
   active,
+  sections,
+  examples,
   children,
 }: {
   active: string;
+  /** The doc's own sections — rendered as an "On this page" anchor group. */
+  sections?: Array<{ id: string; label: string }>;
+  /** Optional rail beside the main column (doc listings, rendered SemText). */
+  examples?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -148,9 +138,33 @@ export function DocsShell({
               </ul>
             </div>
           ))}
+          {sections && sections.length > 0 && (
+            <div>
+              <p className="g-nav-title">On this page</p>
+              <ul className="mt-1.5 flex flex-col" role="list">
+                {sections.map((s) => (
+                  <li key={s.id}>
+                    <a href={`#${s.id}`} className="g-nav-link">
+                      {s.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </nav>
       </aside>
       <div className="min-w-0 flex-1">{children}</div>
+      {examples ? (
+        <aside
+          aria-label="Examples"
+          className="mt-14 w-full shrink-0 border-t border-white/10 pt-10 lg:mt-0 lg:w-72 lg:border-t-0 lg:pt-0"
+        >
+          <div className="flex flex-col gap-6 lg:sticky lg:top-24">
+            {examples}
+          </div>
+        </aside>
+      ) : null}
     </div>
   );
 }
