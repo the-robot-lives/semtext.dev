@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Fragment } from "react";
 import { DocsShell } from "@/components/docs-shell";
+import { SemMdExample } from "@/components/sem-md-example";
+import { ELEMENTS_SEM_MD_RENDERED } from "@/components/sem-md-rendered";
 import { ELEMENTS, searchIndex } from "./data";
 
 export const metadata: Metadata = {
@@ -279,6 +281,34 @@ export default function ElementsPage() {
               <h3 className="mt-6 font-mono text-[0.68rem] uppercase tracking-[0.16em] text-code-gray">
                 Example
               </h3>
+              {e.id === "sem-md" ? (
+                /* The one example that IS Markdown: a Render/Source toggle
+                   over the same authored block, like the landing's view
+                   control. Render (the default) renders the table —
+                   statically for the zero-JS export, live via the
+                   chunks/sem-md.js upgrade once the lazy loader hydrates
+                   this example. */
+                <>
+                  <div className="mt-2">
+                    <SemMdExample
+                      source={e.example}
+                      renderedHtml={ELEMENTS_SEM_MD_RENDERED}
+                      chromeLabel="sem-md — the authored example, rendered"
+                    />
+                  </div>
+                  {e.liveNote && (
+                    <p className="mt-2 text-xs leading-5 text-ink-mute">{e.liveNote}</p>
+                  )}
+                  <p className="mt-2">
+                    <a
+                      href={e.spec}
+                      className="font-mono text-xs text-violet-soft underline-offset-4 hover:underline"
+                    >
+                      spec →
+                    </a>
+                  </p>
+                </>
+              ) : (
               <div className="mt-2 grid gap-4 lg:grid-cols-2">
                 <figure>
                   <figcaption className="g-panelabel">
@@ -311,6 +341,7 @@ export default function ElementsPage() {
                   </p>
                 </figure>
               </div>
+              )}
             </section>
           </Fragment>
         ))}

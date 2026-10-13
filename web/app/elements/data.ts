@@ -546,7 +546,7 @@ export const ELEMENTS: GlossaryEntry[] = [
 | access  | 15 min   | no      |
 | refresh | per use  | yes     |
 </sem-md>`,
-    liveNote: "Markdown rendering ships in the semtext-md bundle; the fallback tier shows the authored Markdown as text — which is the point: the source is the payload.",
+    liveNote: "Rendered live by the real sem-md component — loaded as one lazy chunk, never the whole bundle. Source shows the authored block.",
     spec: `${SPEC}/schema/sem-md.md`,
   },
   {

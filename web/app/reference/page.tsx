@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { DocsShell } from "@/components/docs-shell";
+import { SemMdExample } from "@/components/sem-md-example";
+import { REFERENCE_SEM_MD_RENDERED } from "@/components/sem-md-rendered";
 import elementsIndex from "@/data/elements.json";
 
 export const metadata: Metadata = {
@@ -312,17 +314,35 @@ function TagSection({ tag }: { tag: TagRecord }) {
       ) : null}
 
       {tag.example ? (
-        <figure className="code-window mt-5 max-w-3xl" aria-label={`Authored ${tag.name} example`}>
-          <div className="code-chrome">
-            <span className="dot live" aria-hidden="true" />
-            <span className="font-mono">sem-code — authoring form</span>
+        tag.name === "sem-md" ? (
+          /* The one example that IS Markdown: a Render/Source toggle over
+             the same authored block, like the landing's view control.
+             Render (the default) renders the table — statically for the
+             zero-JS export, live via the chunks/sem-md.js upgrade once
+             the lazy loader hydrates this example. */
+          <div className="mt-5 max-w-3xl">
+            <SemMdExample
+              source={tag.example}
+              renderedHtml={REFERENCE_SEM_MD_RENDERED}
+              chromeLabel="sem-md — the authored block, rendered"
+            />
           </div>
-          <sem-code lang="html" filename={`${tag.name}.html`}>
-            <pre>
-              <code>{esc(tag.example)}</code>
-            </pre>
-          </sem-code>
-        </figure>
+        ) : (
+          <figure
+            className="code-window mt-5 max-w-3xl"
+            aria-label={`Authored ${tag.name} example`}
+          >
+            <div className="code-chrome">
+              <span className="dot live" aria-hidden="true" />
+              <span className="font-mono">sem-code — authoring form</span>
+            </div>
+            <sem-code lang="html" filename={`${tag.name}.html`}>
+              <pre>
+                <code>{esc(tag.example)}</code>
+              </pre>
+            </sem-code>
+          </figure>
+        )
       ) : (
         <p className="mt-5 max-w-3xl text-sm italic leading-6 text-ink-faint">
           The schema file states no authoring example for this tag.

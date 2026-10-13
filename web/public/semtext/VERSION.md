@@ -34,3 +34,24 @@ contrast fix NOT yet in dist commit `0f5a8cf`:
 source theme; until then, re-copying dist over `themes/` will regress
 this fix. Contrast ratios verified in headless Chrome against the
 served page (see the landing contrast commit for the numbers).
+
+## Lazy bundle (2026-10-13) — semtext-lazy.js + chunks/
+
+`semtext-lazy.js`, `semtext-manifest.json` and `chunks/` are copied
+verbatim from the `dist/` output of `noizu-labs-ml/npl-enhanced-content`:
+
+- source branch: `feat/lazy-opt-in` (commit `cdf4356`, on top of
+  `feat/semtext-lazy` which is ahead of the `feat/lit-only-bundle`
+  one-bundle surface; the sem-md Markdown renderer itself is unchanged
+  from that surface)
+- copied: 2026-10-13
+
+The reference page's sem-md example (`/reference/`, `/elements/`) loads
+the sem-md chunk through this loader, scoped to the example: the page sets
+`window.__semLazyOff` before injecting `semtext-lazy.js`, then calls
+`window.SemTextLazy.hydrate(pane)` — exactly one chunk download
+(`chunks/sem-md.js` plus its static imports), no document-wide scan, so
+the pages' other sem-* markup stays authored prose.
+
+`themes/` here is NOT overwritten by this copy and still carries the
+local contrast patch documented above — the lazy chunks need no new CSS.
