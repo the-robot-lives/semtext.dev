@@ -67,16 +67,17 @@ Then("the scope section explains what SemText is not", () => {
   cy.get("section#scope sem-note").should("have.length.at.least", 3);
 });
 
-Then("the Add Ons section lists six add-ons every one planned", () => {
+Then("the Add Ons section lists six add-on cards", () => {
   cy.get("section#addons")
     .scrollIntoView()
     .should("be.visible")
     .find("h2")
     .invoke("text")
     .should("match", /Add Ons/i);
-  cy.get("section#addons b.g-status")
-    .should("have.length", 6)
-    .each(($status) => expect($status.text().trim()).to.eq("planned"));
+  // Cards, not status chips: the add-on section carries no planned/live
+  // labels — each add-on gets its real logic as it is built.
+  cy.get("section#addons article").should("have.length", 6);
+  cy.get("section#addons b.g-status").should("have.length", 0);
 });
 
 Then("the showcase menu lists every integration marked planned", () => {

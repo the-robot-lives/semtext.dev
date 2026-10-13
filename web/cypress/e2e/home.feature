@@ -1,7 +1,8 @@
 Feature: Landing page
   The semtext.dev home page: the SemText headline, the hero render
-  toggle, and the scope / add-ons sections with every integration
-  marked planned rather than live.
+  toggle, the scope section with its showcase menu of planned
+  integrations, and the add-ons carousel — add-on cards carry no
+  planned/live status labels.
 
   Scenario: Home page loads with the SemText headline
     When I visit the landing page
@@ -17,9 +18,9 @@ Feature: Landing page
     When I visit the landing page
     Then the scope section explains what SemText is not
 
-  Scenario: Add Ons are all planned, none live
+  Scenario: Add Ons section lists six cards with no status chips
     When I visit the landing page
-    Then the Add Ons section lists six add-ons every one planned
+    Then the Add Ons section lists six add-on cards
 
   Scenario: Showcase integrations are marked planned
     When I visit the landing page
