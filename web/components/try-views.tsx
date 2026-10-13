@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from "react";
  * is visible by default; the switch buttons are only revealed after
  * hydration, and the terminal card below shows its prefilled session with
  * scripts off. The browser pane is enhanced pane-scoped with the real
- * fallback tier on first show (same pattern as hero-window.tsx).
+ * bundle on first show (same pattern as hero-window.tsx).
  */
 
 export interface TryFact {
@@ -26,8 +26,8 @@ export interface TryFact {
 }
 
 const THEME_CSS = [
-  "/semtext/themes/_vocabulary.css",
-  "/semtext/themes/minimal-tech-light.css",
+  "/semtext/semtext.css",
+  "/semtext/semtext-theme-minimal-tech-light.css",
 ];
 
 declare global {
@@ -47,15 +47,15 @@ const COLLAPSED_SECTIONS: Array<{ id: string; title: string; body: string }> = [
     id: "s-sizes",
     title: "asset sizes",
     body:
-      "vocabulary.css 4.1 KB · minimal-tech-light.css 3.8 KB ·\n" +
-      "semtext-fallback.js 7.2 KB gzipped — no other assets, no network calls",
+      "semtext.css 4.1 KB · semtext-theme-minimal-tech-light.css 3.8 KB ·\n" +
+      "semtext.js 7.2 KB gzipped — no other assets, no network calls",
   },
   {
     id: "s-procedure",
     title: "publishing a document",
     body:
       "1. author the facts, one <sem-fact> each\n" +
-      "2. link the two stylesheets and the fallback script\n" +
+      "2. link semtext.css and semtext.js — a theme is one more link\n" +
       "3. open the file — or hand it to a model as-is",
   },
 ];
@@ -220,9 +220,9 @@ function bootSemtext(): Promise<void> {
         window.__semJsOff = true;
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
-          script.src = "/semtext/semtext-fallback.js";
+          script.src = "/semtext/semtext.js";
           script.onload = () => resolve();
-          script.onerror = () => reject(new Error("fallback bundle failed to load"));
+          script.onerror = () => reject(new Error("semtext.js failed to load"));
           document.head.appendChild(script);
         });
       }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 /*
- * The rendered view uses the real SemText fallback tier, copied verbatim
+ * The rendered view uses the real SemText bundle, copied verbatim
  * from noizu-labs-ml/npl-enhanced-content dist into public/semtext/
  * (v0.1.0, dist commit 0f5a8cf, 2026-10-07 — see public/semtext/VERSION.md).
  * Assets load lazily, same-origin, on the first Render click. Until then
@@ -45,15 +45,15 @@ const RENDERED_HTML = `<sem-note variant="warning">
 declare global {
   interface Window {
     // The bundle's enhance(root) accepts a Document or any element subtree
-    // (it only calls root.querySelectorAll — see semtext-fallback.js K()).
+    // (it only calls root.querySelectorAll — see semtext.js K()).
     SemTextFallback?: { enhance: (root: Document | HTMLElement) => void };
     __semJsOff?: boolean;
   }
 }
 
 const THEME_CSS = [
-  "/semtext/themes/_vocabulary.css",
-  "/semtext/themes/minimal-tech-light.css",
+  "/semtext/semtext.css",
+  "/semtext/semtext-theme-minimal-tech-light.css",
 ];
 
 function pillClasses(active: boolean) {
@@ -92,9 +92,9 @@ export function HeroWindow() {
           window.__semJsOff = true;
           await new Promise<void>((resolve, reject) => {
             const script = document.createElement("script");
-            script.src = "/semtext/semtext-fallback.js";
+            script.src = "/semtext/semtext.js";
             script.onload = () => resolve();
-            script.onerror = () => reject(new Error("semtext-fallback.js failed to load"));
+            script.onerror = () => reject(new Error("semtext.js failed to load"));
             document.head.appendChild(script);
           });
         }

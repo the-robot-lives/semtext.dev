@@ -4,7 +4,7 @@ import { DocsShell, Sem, SAMPLE_DOCS, type SampleDoc } from "@/components/docs-s
 export const metadata: Metadata = {
   title: "Docs — SemText",
   description:
-    "Getting started with SemText: one XHTML file, two stylesheets and the fallback bundle. Sample docs to browse, themes to pick from.",
+    "Getting started with SemText: one XHTML file, semtext.css and an optional theme. Sample docs to browse, themes to pick from.",
   alternates: { canonical: "https://semtext.dev/docs/" },
 };
 
@@ -12,8 +12,8 @@ export const metadata: Metadata = {
  * The CDN stub is illustrative: cdn.semtext.dev is the planned origin;
  * today the same three files ship in the spec repo's dist/ (and in this
  * site's public/semtext/). The page renders live SemText below, so the
- * fallback bundle is loaded WITHOUT __semJsOff — its DOMContentLoaded
- * auto-wire enhances everything on the page.
+ * bundle is loaded WITHOUT __semJsOff — its DOMContentLoaded auto-wire
+ * enhances everything on the page.
  */
 
 const STUB = `<!doctype html>
@@ -21,9 +21,9 @@ const STUB = `<!doctype html>
 <head>
   <meta charset="utf-8" />
   <title>Auth notes</title>
-  <link rel="stylesheet" href="https://cdn.semtext.dev/v0/themes/_vocabulary.css" />
-  <link rel="stylesheet" href="https://cdn.semtext.dev/v0/themes/minimal-tech-light.css" />
-  <script defer src="https://cdn.semtext.dev/v0/semtext-fallback.js"></script>
+  <link rel="stylesheet" href="https://cdn.semtext.dev/v0/semtext.css" />
+  <link rel="stylesheet" href="https://cdn.semtext.dev/v0/semtext-theme-minimal-tech-light.css" />
+  <script defer src="https://cdn.semtext.dev/v0/semtext.js"></script>
 </head>
 <body>
   <sem-enhanced-document>
@@ -42,7 +42,7 @@ const STUB = `<!doctype html>
 </html>`;
 
 const THEMES_HTML = `<sem-properties kind="themes">
-  <sem-property key="_vocabulary.css" role="definition">Required base — the element defaults every theme builds on. <b class="g-status">ships</b></sem-property>
+  <sem-property key="semtext.css" role="definition">Required base — the element defaults every theme builds on. <b class="g-status">ships</b></sem-property>
   <sem-property key="minimal-tech-light" role="definition">The one themed skin today: light values plus an explicit dark block. <b class="g-status">ships</b></sem-property>
   <sem-property key="your theme here" role="definition">A theme is a token sheet over the vocabulary — the slot is open. <b class="g-status">planned</b></sem-property>
 </sem-properties>`;
@@ -73,9 +73,11 @@ export default function DocsPage() {
           Docs
         </h1>
         <p className="mt-4 max-w-3xl text-base leading-7 text-ink-mute">
-          A SemText document is one XHTML file. Ship it with two stylesheets
-          and a small script and the same file a model reads becomes working
-          web components — no build step, no framework, nothing compiled.
+          A SemText document is one XHTML file. Ship it with{" "}
+          <code className="font-mono">semtext.css</code> and a small script —
+          plus an optional theme — and the same file a model reads becomes
+          working web components — no build step, no framework, nothing
+          compiled.
         </p>
 
         {/* —— Getting started —— */}
@@ -92,8 +94,10 @@ export default function DocsPage() {
           </h2>
           <p className="mt-3 max-w-3xl leading-relaxed text-ink-mute">
             Author your document as XHTML using the SemText vocabulary — any
-            tool that writes HTML can write it. Then load the vocabulary, a
-            theme, and the fallback bundle. That is the whole integration:
+            tool that writes HTML can write it. Then load{" "}
+            <code className="font-mono">semtext.css</code> and{" "}
+            <code className="font-mono">semtext.js</code>, plus an optional
+            theme. That is the whole integration:
           </p>
 
           <figure className="code-window mt-6" aria-label="A minimal SemText page">
@@ -160,7 +164,7 @@ export default function DocsPage() {
           />
         </section>
 
-        <script defer src="/semtext/semtext-fallback.js" />
+        <script defer src="/semtext/semtext.js" />
       </main>
     </DocsShell>
   );

@@ -6,8 +6,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schema — sem-note</title>
-  <link rel="stylesheet" href="/semtext/themes/_vocabulary.css" />
-  <link rel="stylesheet" href="/semtext/themes/minimal-tech-light.css" />
+  <link rel="stylesheet" href="/semtext/semtext.css" />
+  <link rel="stylesheet" href="/semtext/semtext-theme-minimal-tech-light.css" />
 </head>
 <body>
 <sem-enhanced-document role="main">
@@ -49,7 +49,7 @@
 
   <ul>
     <li>Upgraded: <code>&lt;sem-note&gt;</code> itself (Lit <code>SemNote</code> — minimal: variant icon, collapsed behavior). No shadow root; light DOM, content searchable.</li>
-    <li>Pre-upgrade / JS-off: <code>:is(sem-note, .sem-note)</code> base in <code>themes/_vocabulary.css</code> — accent border + variant label via attribute selectors, both authoring forms from one rule (D10). The collapsed-body hide rule is gated on a tier marker, so JS-off the body is readable.</li>
+    <li>Pre-upgrade / JS-off: <code>:is(sem-note, .sem-note)</code> base in <code>semtext.css</code> — accent border + variant label via attribute selectors, both authoring forms from one rule (D10). The collapsed-body hide rule is gated on a tier marker, so JS-off the body is readable.</li>
     <li><code>view-as="margin"</code>: <code>float: right</code> at <code>min-width: 64rem</code>, right margin <code>--sem-margin-offset</code> (0 by default, negative to reach a gutter); inline otherwise and under <code>@media print</code>.</li>
     <li><code>role="note"</code>: component sets on upgrade; docs author it pre-set so machine readers see the role without JS.</li>
   </ul>

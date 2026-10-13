@@ -24,7 +24,7 @@ Then("the getting started section lists the theme sheets", () => {
     .should("match", /Getting started/i);
   // Theme keys are attributes on sem-property (rendered via CSS content,
   // not text), so assert the entries themselves.
-  ["_vocabulary.css", "minimal-tech-light", "your theme here"].forEach(
+  ["semtext.css", "minimal-tech-light", "your theme here"].forEach(
     (key) =>
       cy
         .get(`section#getting-started sem-property[key="${key}"]`)

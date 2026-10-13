@@ -138,49 +138,25 @@ const ARTIFACTS: Array<[string, React.ReactNode]> = [
   [
     "semtext.js",
     <>
-      Lit 3 components · global <code className="font-mono">SemText</code>
+      One bundle: Lit 3 components, the vanilla interactivity, reading
+      chrome, extraction and the Markdown renderer · global{" "}
+      <code className="font-mono">SemText</code>
     </>,
   ],
   [
-    "semtext-fallback.js",
+    "semtext.css",
     <>
-      Vanilla interactivity, no dependencies · global{" "}
-      <code className="font-mono">SemTextFallback</code>
+      Structure for the <code className="font-mono">sem-*</code> classes.
+      Reads <code className="font-mono">--sem-*</code> tokens, declares
+      none.
     </>,
   ],
   [
-    "semtext-reading.js",
+    "semtext-theme-<name>.css",
     <>
-      Code chrome, reference and glossary previews, the reader bar, table sort
-      and filter · global <code className="font-mono">SemTextReading</code>
-    </>,
-  ],
-  [
-    "semtext-extract.js",
-    <>
-      DOM to records and annotated text · global{" "}
-      <code className="font-mono">SemTextExtract</code>
-    </>,
-  ],
-  [
-    "semtext-md.js",
-    <>
-      The <code className="font-mono">sem-md</code> Markdown renderer · global{" "}
-      <code className="font-mono">SemTextMd</code>
-    </>,
-  ],
-  [
-    "_vocabulary.css",
-    <>
-      Structure for the <code className="font-mono">sem-*</code> classes. Reads{" "}
-      <code className="font-mono">--sem-*</code> tokens, declares none.
-    </>,
-  ],
-  [
-    "theme css",
-    <>
-      Token values only, plus a <code className="font-mono">prefers-color-scheme</code>{" "}
-      block. A new theme is a copy with new values.
+      Optional. Token values only, plus a{" "}
+      <code className="font-mono">prefers-color-scheme</code> block. A new
+      theme is a copy with new values.
     </>,
   ],
 ];
@@ -838,9 +814,9 @@ export default function Home() {
 <head>
   <meta charset="utf-8">
   <title>Auth notes</title>
-  <link rel="stylesheet" href="semtext/themes/_vocabulary.css">
-  <link rel="stylesheet" href="semtext/themes/minimal-tech-light.css">
-  <script src="semtext/semtext-fallback.js"></script>
+  <link rel="stylesheet" href="semtext/semtext.css">
+  <link rel="stylesheet" href="semtext/semtext-theme-minimal-tech-light.css">
+  <script src="semtext/semtext.js"></script>
 </head>
 <body>
 <sem-enhanced-document>
@@ -882,14 +858,16 @@ export default function Home() {
             {[
               <>
                 Copy{" "}
-                <code className="font-mono">themes/_vocabulary.css</code> and
-                one theme file next to your document, and set{" "}
+                <code className="font-mono">semtext.css</code> — and, if you
+                want a theme,{" "}
+                <code className="font-mono">semtext-theme-&lt;name&gt;.css</code>{" "}
+                — next to your document, and set{" "}
                 <code className="font-mono">data-sem-theme</code> on{" "}
                 <code className="font-mono">&lt;html&gt;</code> to that
                 theme&apos;s name.
               </>,
               <>
-                Add <code className="font-mono">semtext-fallback.js</code>.
+                Add <code className="font-mono">semtext.js</code>.
                 Link it, or paste it inline for a document you intend to send
                 as a single file.
               </>,
@@ -898,12 +876,6 @@ export default function Home() {
                 <code className="font-mono">sem-*</code> elements where
                 interactivity or machine-readability pays. Ordinary HTML stays
                 ordinary HTML.
-              </>,
-              <>
-                Optional: add <code className="font-mono">semtext.js</code> for
-                the Lit tier, and{" "}
-                <code className="font-mono">semtext-extract.js</code> where a
-                tool needs the records.
               </>,
             ].map((step, i) => (
               <li
@@ -929,11 +901,11 @@ export default function Home() {
         <div className="mx-auto max-w-docs">
           <SectionHead id="surface-h" eyebrow="Surface" title="Everything that ships.">
             <p className="mt-3 leading-relaxed text-ink-mute">
-              Five independent classic scripts, each installing one global,
-              plus two stylesheets. They are separate on purpose: the fallback
-              tier has to run in a document that never loads Lit, a document
-              with no listings or references need not carry the reading bundle,
-              and one with no Markdown need not carry the parser. Measured
+              One script and one stylesheet, plus an optional theme file.
+              Everything rides in the single{" "}
+              <code className="font-mono">semtext.js</code> — components,
+              interactivity, reading chrome, extraction and the Markdown
+              renderer — so a document needs no other assets. Measured
               sizes live on the{" "}
               <a
                 href={`${SHOWCASE}/site/#surface`}
@@ -989,8 +961,8 @@ export default function Home() {
             nothing.
           </p>
           <p className="mt-3 text-sm text-ink-mute">
-            Browse all of them — purpose, attributes, a live render from the
-            fallback tier, and the authored markup — in the{" "}
+            Browse all of them — purpose, attributes, a live render, and the
+            authored markup — in the{" "}
             <a
               href="/elements/"
               className="font-mono text-violet-soft underline-offset-4 hover:underline"
