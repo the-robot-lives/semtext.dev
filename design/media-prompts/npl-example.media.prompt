@@ -1,0 +1,166 @@
+# SemText npl-example — the two rendered states of the NPL pattern demo
+# Direction A "Slate Console". One reference-page frame, two panels: the
+# enhanced state and the JS-off state, so the tag's whole render contract is
+# readable at a glance. npl-example is the reference implementation every
+# other npl-* component is copied from, so the drawing must make the PATTERN
+# legible: a generated label leads, authored content follows, and nothing is
+# ever hidden.
+#
+# MODE 1 — enhanced (Lit component active, the authored example
+#           `<npl-example label="hello">authored children survive</npl-example>`):
+#   visible: a small block-level generated LABEL element sitting on its own
+#     line at the TOP of the block (a squared violet-accented chip — the
+#     generated chrome), and the authored body content beneath it, fully
+#     readable, untouched. The label and the body are on separate lines.
+#   must never: hide, dim, or occlude the authored body; fuse the label
+#     inline with the body text on one run (the label is block-level and
+#     leads); repeat the label; render the label as a heading or title.
+#
+# MODE 2 — JS-off (no script: the same authored markup, nothing generated):
+#   visible: the SAME block, but with NO label chip at all — only the
+#     authored body content, reading as plain prose in a block box. Nothing
+#     is hidden and nothing is added.
+#   must never: show a label chip or any generated chrome; hide or reorder
+#     the authored content; insert placeholder chrome.
+#
+# The two panels must be pixel-comparable in body placement: the ONLY
+# difference is the presence (enhanced) or absence (JS-off) of the label
+# chip above the body.
+#
+# Reference snapshots come from the snapshot-harness lane
+# (`npm run snap:tag -- npl-example`, output into
+# .tmp/semtext-docs-overhaul/snaps/npl-example/). The harness was not runnable
+# when this prompt was written (its driver fails to parse — see
+# reports/tag-npl-example.md), so the attachments block below is left
+# commented out; attach the best `-render-` PNGs there once it is fixed.
+schema: '0.4'
+id: reference-npl-example
+type: image
+quality: high
+service: gemini
+model: gemini-2.5-flash-image
+
+prompt:
+  text: |
+    Dark-mode UI mockup of two side-by-side reference-page panels illustrating
+    one display-only element in its two rendered states, wide 16:9, flat
+    technical illustration (screenshot-like, not 3D). Dark slate navy
+    background (#0F172A) with a barely visible thin grid and a faint violet
+    radial glow upper-left. Two equal panels sit side by side, separated by a
+    thin slate hairline divider, each panel a dark slate card (#1E293B) with a
+    thin slate hairline border, squared corners, deep soft shadow; a small dim
+    caption bar sits above each panel.
+
+    Left panel — ENHANCED (the script/custom-element active). Inside, aligned
+    to the panel's left content column: at the TOP a single small block-level
+    LABEL chip — a compact squared rectangle with a thin violet (#7C3AED)
+    hairline border and a soft-violet (#A78BFA) fill at low opacity, sized for
+    one short word, containing two or three short muted placeholder bars that
+    stand for the label text (no real letters). Directly BENEATH the chip,
+    separated by a clear vertical gap so it clearly sits on its own line, the
+    authored BODY: three or four muted slate placeholder bars of varying
+    length forming a short paragraph, at full opacity and clearly legible as
+    the dominant content. The chip is visibly smaller and secondary to the
+    body; the body is never tinted, dimmed, or crossed by any overlay.
+
+    Right panel — JS-OFF (no script). The same panel layout and the same
+    authored BODY bars in exactly the same position and length as the left
+    panel, at the same full opacity — but with NO label chip above it and no
+    generated chrome of any kind: the top of the panel's content column is
+    empty space where the chip would be, and the body simply reads as plain
+    prose in the block. Nothing is hidden, nothing is added.
+
+    The two panels must be pixel-comparable: the body bars align to the same
+    baseline and length, and the ONLY difference between the panels is the
+    presence (left) or absence (right) of the label chip. All copy is abstract
+    placeholder bars — strictly no letters, digits, or words anywhere.
+  negative: legible text, letters, numbers, digits, words, captions,
+    typography, watermark, logo, light mode, white cards, rounded corners,
+    3D, photorealism, faces, avatars, robot mascots, more than two panels,
+    a label chip inline with the body on one run, a label chip rendered as a
+    heading or oversized title, a repeated label, a hidden or dimmed body,
+    any overlay or blur crossing the body text
+  style: flat dark-mode product UI illustration, squared corners, hairline
+    borders, slate and violet palette, two-panel state comparison
+
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 1600
+    height: 900
+    aspect_ratio: '16:9'
+
+# attachments:
+#   - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-example/npl-example-render-1280.png
+#     role: reference
+#     description: enhanced state — generated label chip leads, authored body beneath
+#   - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-example/npl-example-source-1280.png
+#     role: reference
+#     description: the authored markup and its reference-page chrome
+
+requirements:
+  subject: two panels of one display-only element — left enhanced with a small
+    generated label chip above the authored body, right JS-off with the same
+    body and no generated chrome
+  palette: slate navy background, slate panels, hairline borders, one violet
+    label chip (thin violet border, soft-violet low-opacity fill)
+  composition: two equal panels side by side, body content aligned to the same
+    baseline and length in both, label chip present only in the left panel and
+    leading the body on its own line
+  do:
+    - place the label chip on its own line above the body in the enhanced panel
+    - keep the authored body identical and fully legible in both panels
+    - remove all generated chrome in the JS-off panel
+  dont:
+    - any legible text, digits, or logos
+    - the label chip fused inline with the body text
+    - a hidden, dimmed, or occluded body
+    - a label chip in the JS-off panel
+
+eval:
+  pass_threshold: 0.7
+  required_pass:
+    - render_states
+    - body_intact
+  criteria:
+    render_states:
+      weight: 3
+      description: Left panel shows the enhanced state (a generated label chip
+        leading, on its own line, above the body); right panel shows the JS-off
+        state (the same body, no generated chrome at all)
+      fail_signals:
+        - a label chip present in the JS-off panel
+        - no label chip in the enhanced panel
+        - the two panels otherwise identical such that the states are
+          indistinguishable
+    body_intact:
+      weight: 3
+      description: The authored body is fully visible, legible and identically
+        placed in both panels — never hidden, dimmed, or occluded
+      fail_signals:
+        - body dimmed, blurred, crossed by an overlay, or hidden
+        - body text changed in length or position between panels
+    label_not_fused:
+      weight: 2
+      description: In the enhanced panel the label chip is block-level — it sits
+        on its own line and leads the body, never run inline with the body text
+      fail_signals:
+        - label chip rendered inline on the same line as the body
+        - label chip rendered as a heading or oversized title
+    theme_fidelity:
+      weight: 1
+      description: Dark slate + violet, squared hairline panels, flat style
+      fail_signals:
+        - light theme
+        - glossy 3D look
+        - rounded corners
+  reject_if:
+    - any legible text, letters, digits, words, watermark, or logo
+    - a hidden, dimmed, or occluded authored body
+    - more than two panels or a chaotic layout
+
+tags:
+  - semtext
+  - reference
+  - npl-example

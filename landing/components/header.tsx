@@ -30,16 +30,16 @@ export function Header() {
             Try it
           </a>
           <a
-            href="#reading"
-            className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink lg:inline-flex"
-          >
-            Reading
-          </a>
-          <a
             href="#start"
             className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink lg:inline-flex"
           >
             Quick start
+          </a>
+          <a
+            href="#reading"
+            className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink lg:inline-flex"
+          >
+            Reading
           </a>
           <a
             href={`${SHOWCASE}/demo/`}

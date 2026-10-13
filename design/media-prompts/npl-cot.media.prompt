@@ -1,0 +1,145 @@
+# SemText npl-cot — chain-of-thought disclosure, both display modes
+# Direction A "Slate Console". Two example panels in one frame: the expanded
+# (default) state and the `collapsed` state, so the disclosure semantics and
+# the outcome-stays-visible invariant are both readable at a glance.
+#
+# MODE 1 — expanded (default, `collapsed` absent):
+#   visible: the disclosure summary row (chevron pointing DOWN + a step-count
+#     chip) and the numbered reasoning-step rows beneath it, then the outcome
+#     block at the foot of the panel.
+#   must never: hide the steps while open; reorder the outcome above the steps;
+#     add a second summary row.
+# MODE 2 — collapsed (`<npl-cot collapsed>`):
+#   visible: the same summary row with the chevron pointing RIGHT, the step
+#     area compacted away, and the outcome block STILL present and fully
+#     readable at the foot — this is the invariant (the answer stays visible
+#     while the reasoning is folded).
+#   must never: drop or dim the outcome; reveal any step row; turn the toggle
+#     into a custom button (it is a native details/summary affordance).
+#
+# Reference snapshots are produced by the snapshot-harness lane
+# (`npm run snap:tag -- npl-cot`, output into
+# .tmp/semtext-docs-overhaul/snaps/npl-cot/). Attach the best `-render-`
+# PNGs from that directory before generation; the attachments block below is
+# left commented out because the harness was not yet available when this
+# prompt was written (see reports/tag-npl-cot.md).
+schema: '0.4'
+id: reference-npl-cot
+type: image
+quality: high
+service: gemini
+model: gemini-2.5-flash-image
+
+prompt:
+  text: |
+    Dark-mode UI mockup of two side-by-side reference-page panels illustrating
+    one disclosure element in its two display states, wide 16:9, flat
+    technical illustration (screenshot-like, not 3D). Dark slate navy
+    background (#0F172A) with a barely visible thin grid and a faint violet
+    radial glow upper-left. Two equal panels sit side by side, separated by a
+    thin slate hairline divider, each panel a dark slate card (#1E293B) with a
+    thin slate hairline border, squared corners, deep soft shadow; a small
+    dim caption bar sits above each panel.
+
+    Left panel — EXPANDED (the default state). Top row: a disclosure summary
+    row made of a small violet (#7C3AED) chevron pointing DOWN, a wide pale
+    placeholder bar for the summary label, and a small soft-violet (#A78BFA)
+    rounded chip holding three tiny dots (an abstract step count, never
+    digits). Beneath it, three stacked step rows separated by 1px slate
+    hairlines: each row has a thin vertical violet (#7C3AED) rule on its left
+    edge, a small solid soft-violet bullet, and one or two muted slate
+    placeholder bars of varying length. At the foot of the panel, set apart by
+    a slightly wider gap and a soft-violet tinted fill (#312E81 at low
+    opacity) with a violet left edge accent, the outcome block: two brighter
+    near-white placeholder bars, clearly more prominent than the step bars.
+
+    Right panel — COLLAPSED (the `collapsed` state). Identical summary row at
+    the top, except the chevron points RIGHT, signalling folded. The step area
+    beneath it is empty — the three step rows and their violet rules are gone,
+    leaving compact clean space. At the foot of the panel the outcome block is
+    UNCHANGED: the same soft-violet tinted fill, violet left edge accent and
+    two bright bars, still fully visible and readable. The two panels' outcome
+    blocks must be pixel-comparable, the only difference between panels being
+    the chevron direction and the presence or absence of the step rows. All
+    copy is abstract placeholder bars — strictly no letters, digits, or words
+    anywhere.
+  negative: legible text, letters, numbers, digits, words, captions,
+    typography, watermark, logo, light mode, white cards, rounded corners,
+    3D, photorealism, faces, avatars, robot mascots, more than two panels,
+    a second summary row, a hidden or dimmed outcome block, a visible step row
+    in the collapsed panel, checkbox or blur-out occlusion overlays
+  style: flat dark-mode product UI illustration, squared corners, hairline
+    borders, slate and violet palette, two-panel state comparison
+
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 1600
+    height: 900
+    aspect_ratio: '16:9'
+
+# attachments:
+#   - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-cot/npl-cot-expanded-render-1280.png
+#     role: reference
+#     description: expanded state — summary row, step rows, outcome at foot
+#   - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-cot/npl-cot-collapsed-render-1280.png
+#     role: reference
+#     description: collapsed state — chevron folded right, outcome still visible
+
+requirements:
+  subject: two panels of one chain-of-thought block — left expanded with three
+    numbered-rule step rows plus an outcome block, right collapsed with the
+    step rows removed and the identical outcome block still visible
+  palette: slate navy background, slate panels, hairline borders, violet
+    chevron and rules, one soft-violet outcome fill
+  composition: two equal panels side by side, consistent summary row height,
+    outcome blocks aligned at the same baseline in both panels
+  do:
+    - keep the outcome block visually identical in both panels
+    - make the collapsed panel's step area clearly empty
+    - differentiate the summary chevron by direction only (down vs right)
+  dont:
+    - any legible text, digits, or logos
+    - a missing, dimmed, or occluded outcome in the collapsed panel
+    - a step row visible in the collapsed panel
+
+eval:
+  pass_threshold: 0.7
+  required_pass:
+    - disclosure_semantics
+    - outcome_invariant
+  criteria:
+    disclosure_semantics:
+      weight: 3
+      description: Left panel shows an opened disclosure (chevron down, step
+        rows present); right panel shows it closed (chevron right, step rows
+        absent)
+      fail_signals:
+        - both chevrons point the same way
+        - step rows visible in the collapsed panel
+        - toggle drawn as a button rather than a disclosure row
+    outcome_invariant:
+      weight: 3
+      description: The outcome block is present, equally prominent and
+        readable in both panels
+      fail_signals:
+        - outcome missing or dimmed when collapsed
+        - outcome sits inside the folded area
+        - outcome styled differently between panels
+    theme_fidelity:
+      weight: 2
+      description: Dark slate + violet, squared hairline panels, flat style
+      fail_signals:
+        - light theme
+        - glossy 3D look
+        - rounded corners
+  reject_if:
+    - any legible text, letters, digits, words, watermark, or logo
+    - a hidden, dimmed, or absent outcome block in the collapsed panel
+    - more than two panels or a chaotic layout
+
+tags:
+  - semtext
+  - reference
+  - npl-cot
