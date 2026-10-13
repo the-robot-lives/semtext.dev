@@ -4,13 +4,13 @@ const TRL = "https://therobotlives.com";
 
 /* All links stay on this site: the demo documents live on the dev preview
    origin only and are not part of the site export, so these point at the
-   closest local content — the /elements/ vocabulary, and the landing
+   closest local content — the /reference/ tag reference, and the landing
    Try / Reading / Tiers sections (live views and the no-JS tier). */
 const LINKS: Array<[string, string]> = [
   ["Format spec", `${SPEC}/conventions.md`],
   ["Extraction contract", `${SPEC}/extraction.md`],
   ["Repository", REPO],
-  ["Vocabulary", `/elements/`],
+  ["Vocabulary", `/reference/`],
   ["Lit views", `/#try`],
   ["Reading", `/#reading`],
   ["Scripts-off tier", `/#tiers`],

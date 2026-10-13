@@ -117,10 +117,10 @@ export default function DocsPage() {
             files ship in the spec repo&apos;s dist/ — and in this site&apos;s
             public/semtext/, which the examples on{" "}
             <a
-              href="/elements/"
+              href="/reference/"
             className="text-violet-soft underline-offset-4 hover:underline"
             >
-              /elements/
+              /reference/
             </a>{" "}
             render with.
           </p>

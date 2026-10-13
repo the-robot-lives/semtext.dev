@@ -746,13 +746,13 @@ export default function Home() {
             nothing.
           </p>
           <p className="mt-3 text-sm text-ink-mute">
-            Browse all of them — purpose, attributes, a live render, and the
-            authored markup — in the{" "}
+            Browse all of them — purpose, options, and the authored markup —
+            in the{" "}
             <a
-              href="/elements/"
+              href="/reference/"
               className="font-mono text-violet-soft underline-offset-4 hover:underline"
             >
-              elements glossary
+              tag reference
             </a>
             .
           </p>
@@ -861,13 +861,13 @@ export default function Home() {
               </div>
             </details>
             <a
-              href="/elements/"
+              href="/reference/"
               className="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft"
             >
-              Browse the elements
+              Browse the reference
             </a>
             <span className="font-mono text-xs text-ink-faint">
-              every tag, rendered live on this site
+              every tag, from the spec
             </span>
           </div>
         </div>
