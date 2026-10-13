@@ -7,9 +7,9 @@ const DOC_HTML = `<!doctype html>
 <head>
   <meta charset="utf-8">
   <title>Auth notes</title>
-  <link rel="stylesheet" href="https://cdn.semtext.dev/semtext.css">
-  <link rel="stylesheet" href="https://cdn.semtext.dev/semtext-theme-minimal-tech-light.css">
-  <script src="https://cdn.semtext.dev/semtext.js"></script>
+  <link rel="stylesheet" href="semtext/semtext.css">
+  <link rel="stylesheet" href="semtext/semtext-theme-minimal-tech-light.css">
+  <script src="semtext/semtext-lazy.js"></script>
 </head>
 <body>
 <sem-enhanced-document>
