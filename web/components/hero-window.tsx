@@ -44,7 +44,9 @@ const RENDERED_HTML = `<sem-note variant="warning">
 
 declare global {
   interface Window {
-    SemTextFallback?: { enhance: (root: Document) => void };
+    // The bundle's enhance(root) accepts a Document or any element subtree
+    // (it only calls root.querySelectorAll — see semtext-fallback.js K()).
+    SemTextFallback?: { enhance: (root: Document | HTMLElement) => void };
     __semJsOff?: boolean;
   }
 }
@@ -68,6 +70,7 @@ export function HeroWindow() {
   const [view, setView] = useState<"source" | "rendered">("source");
   const [js, setJs] = useState(false);
   const bootedRef = useRef(false);
+  const paneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setJs(true), []);
 
@@ -85,7 +88,7 @@ export function HeroWindow() {
       }
       if (!window.SemTextFallback) {
         // Keep the bundle from auto-wiring the document on injection;
-        // we call its own enhance(document) entry below instead.
+        // wiring is explicit below.
         window.__semJsOff = true;
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
@@ -95,7 +98,19 @@ export function HeroWindow() {
           document.head.appendChild(script);
         });
       }
-      window.SemTextFallback?.enhance(document);
+      // Enhance ONLY this window's pane, and only if its deck is not
+      // already wired. The home page's DOMContentLoaded pass may have
+      // enhanced the whole document already — but React hydration then
+      // resets this client component's dangerouslySetInnerHTML pane,
+      // which discards that wiring. The pane deck carries the bundle's
+      // own data-sem-fallback marker, so a scoped re-enhance is safe:
+      // never a second full-document pass (that would double-wrap the
+      // scope section's sem-reveals).
+      const pane = paneRef.current;
+      const deck = pane?.querySelector("sem-facts");
+      if (pane && deck && !deck.hasAttribute("data-sem-fallback")) {
+        window.SemTextFallback?.enhance(pane);
+      }
     } catch {
       // Without the bundle the rendered view still shows every element:
       // the vocabulary CSS hides nothing until a tier marker is set.
@@ -136,8 +151,10 @@ export function HeroWindow() {
         <code>{SOURCE}</code>
       </pre>
       {/* data-sem-theme keys the copied theme's tokens; data-color-mode="dark"
-          pins the dark token block so the card sits on the page's own palette. */}
+          pins the dark token block so the card sits on the page's own palette.
+          paneRef scopes the Render enhancement to THIS pane only (see show()). */}
       <div
+        ref={paneRef}
         hidden={view !== "rendered"}
         data-sem-theme="minimal-tech-light"
         data-color-mode="dark"
