@@ -1,0 +1,195 @@
+# SemText npl-flags — preset-flagged runtime config block, six render modes
+# Direction A "Slate Console" (house style shared with the other tag prompts).
+# npl-flags is a display-only container: its ONE interactive affordance is
+# click-to-apply on its npl-flag children (that tag's lane, see npl-flag).
+# Its own chrome is a single generated badge, `.npl-flags-preset`, which leads
+# the block; its "view modes" are the preset states the schema and the badge
+# promise. One example page per mode, one frame.
+#
+# MODE 1 — element form, preset="production" (canonical):
+#   visible: one card; a small accent-tinted pill badge reading
+#     "preset:production" (small-caps mono) at the top-left, then the authored
+#     flag rows beneath (a monospace name and its value, one row per flag) and
+#     a muted note line ("tuning notes…") at the foot.
+#   must never: place the badge after the flag rows; make the badge an opaque
+#     or inverted block; hide or dim the authored flags or note text.
+# MODE 2 — element form, the prefixed source spelling preset="preset:minimal":
+#   visible: byte-identical badge treatment to mode 1, reading
+#     "preset:minimal" — the source spelling `preset:<name>` is normalized for
+#     display, so the two spellings render the same badge shape.
+#   must never: render a doubled prefix ("preset:preset:minimal"); shift the
+#     badge or rows relative to mode 1.
+# MODE 3 — element form, an unknown preset preset="turbo":
+#   visible: the same pill badge in the note-warning colour with a DASHED
+#     border, reading "preset:turbo — unknown" — the "unknown" suffix is the
+#     non-colour cue, so the warning never rides on colour alone.
+#   must never: render as an error state (no red, no icon, no thrown look);
+#     drop the badge; match mode 1's accent colour exactly.
+# MODE 4 — element form, no preset authored:
+#   visible: the card with NO badge at all — only the flag rows and the note.
+#   must never: render an empty badge pill, a placeholder chip, or a gap where
+#     the badge would sit.
+# MODE 5 — class-alias container (`<div class="npl-flags" data-preset>`) with
+#     element-form flag rows:
+#   visible: the same card frame as mode 1, no badge (the badge is
+#     element-form component chrome; the class form carries the preset as
+#     `data-preset` for CSS/extraction only).
+#   must never: show a badge on the class-alias container; render a different
+#     card frame from mode 1.
+# MODE 6 — JS-off (vocabulary-only, light theme):
+#   visible: both container forms as plain light cards — border, subtle
+#     surface fill, authored rows and notes as ordinary prose, no badge.
+#   must never: show any badge, upgrade chrome, or loading affordance; differ
+#     structurally from the dark cards.
+#
+# Reference snapshots: private-fixture captures of the shipped vocabulary CSS
+# in .tmp/semtext-docs-overhaul/snaps/npl-flags/ (render-dark.jpg,
+# render-light-jsoff.jpg, render-dark-badges-zoom.png). The reference-page
+# harness capture is pending (see reports/tag-npl-flags.md). Attachments below
+# are live paths.
+schema: '0.4'
+id: reference-npl-flags
+type: image
+quality: high
+service: gemini
+model: gemini-2.5-flash-image
+
+prompt:
+  text: |
+    Dark-mode UI mockup of six reference-page panels in a three-by-two grid
+    illustrating one runtime-flags configuration block in its six render
+    modes, wide 16:9, flat technical illustration (screenshot-like, not 3D).
+    Dark slate navy background (#0F172A) with a barely visible thin grid and
+    a faint blue radial glow upper-left. Each panel is a dark slate card
+    (#1E293B) with a thin slate hairline border, rounded corners, deep soft
+    shadow, and a small dim caption bar above it; panels are separated by thin
+    slate hairlines.
+
+    Every panel shows the same block anatomy, top to bottom: an optional
+    pill-shaped badge at the top-left, then one to two short flag rows (a
+    monospace label bar followed by a shorter monospace value bar on the same
+    line), one row per flag, then a muted note line. All copy is abstract
+    placeholder bars — strictly no letters, digits, or words.
+
+    Top-left panel — MODE 1, preset badge present: a small pill badge with a
+    soft blue tint fill and a blue hairline border, containing a short
+    small-caps monospace label bar; below it two flag rows; below that one
+    muted note bar. Top-middle panel — MODE 2, the same badge pill in exactly
+    the same position, size, and blue treatment (the point is that the
+    alternative source spelling renders the same badge). Top-right panel —
+    MODE 3, the badge pill in a desaturated amber (#FBBF24) with a DASHED
+    amber border and a slightly longer label bar (the extra "unknown" suffix),
+    same size and position as the others. Bottom-left panel — MODE 4, the
+    card with NO badge: the flag rows start at the card's top padding edge
+    (no chip, no gap). Bottom-middle panel — MODE 5, the same badge-less card
+    as mode 4, at identical padding and row rhythm (an alternative authoring
+    spelling). Bottom-right panel — MODE 6, the light theme: the same
+    badge-less card on a light near-white page (#FAFAFA panel), dark slate
+    text bars, slate hairline border, muted note bar.
+  negative: legible text, letters, numbers, digits, words, captions,
+    typography, watermark, logo, 3D, photorealism, faces, avatars, robot
+    mascots, more than six panels, buttons, toggles, switches, sliders,
+    progress spinners, error icons, red error styling, an empty or dashed
+    placeholder badge in the badge-less panels, a badge placed below the flag
+    rows, a doubled preset prefix
+  style: flat dark-mode product UI illustration, rounded card corners,
+    hairline borders, slate palette with a soft blue badge accent and an amber
+    warning accent, six-panel mode comparison
+
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 1600
+    height: 900
+    aspect_ratio: '16:9'
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-flags/render-dark.jpg
+    role: reference
+    description: shipped vocabulary render, dark theme — modes 1 to 5 stacked,
+      badge leading each block that has one
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-flags/render-light-jsoff.jpg
+    role: reference
+    description: JS-off light-theme render — both container forms as plain
+      cards from the vocabulary CSS alone, no badge
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-flags/render-dark-badges-zoom.png
+    role: reference
+    description: zoom on the three badge states — accent preset badge, prefixed
+      source spelling, and the dashed amber invalid badge with its "unknown" cue
+
+requirements:
+  subject: six panels of one flag-configuration block — canonical preset badge,
+    prefixed source spelling, unknown-preset warning badge, no-preset card,
+    class-alias card, and the light-theme JS-off card
+  palette: slate navy background, slate panels, hairline borders, soft blue
+    badge accent, desaturated amber for the invalid badge only
+  composition: three-by-two grid, equal panels, identical card padding and row
+    rhythm across the badge-less modes, badge always at the top-left of its card
+  do:
+    - lead each block with its badge when it has one, ahead of every flag row
+    - keep the "unknown" cue non-colour (dashed border plus the extra label
+      segment) so the warning never rides on colour alone
+    - render modes 1 and 2 badges at the same size, position, and colour
+    - keep all rows, notes, and badges legible; badges are low-opacity tints
+      with high-contrast label bars
+  dont:
+    - any legible text, digits, logos, or watermark
+    - a badge below the flag rows, an opaque badge, or a doubled preset prefix
+    - an empty badge chip or reserved gap in the no-preset and JS-off panels
+    - error styling (red, icons) for the unknown-preset badge — it is a
+      warning, not a failure
+    - interactive chrome beyond the flag rows themselves (no separate apply
+      button, no toggle switch)
+
+eval:
+  pass_threshold: 0.7
+  required_pass:
+    - badge_leads
+    - invalid_is_warning
+    - no_phantom_badge
+  criteria:
+    badge_leads:
+      weight: 3
+      description: Every panel that shows a badge places it at the top-left of
+        its card, ahead of the flag rows
+      fail_signals:
+        - badge rendered below or between flag rows
+        - badge detached from its card
+        - flag rows overlapping the badge
+    dual_form_parity:
+      weight: 2
+      description: Modes 1 and 2 badges are identical in size, position, and
+        colour; mode 5's card matches the other badge-less cards in padding and
+        row rhythm
+      fail_signals:
+        - different badge size or position between modes 1 and 2
+        - a doubled preset prefix in the mode 2 badge
+        - different card padding in mode 5
+    invalid_is_warning:
+      weight: 2
+      description: Mode 3 reads as a warning — amber, dashed border, longer
+        label segment — never as an error
+      fail_signals:
+        - red or iconographic error treatment
+        - mode 3 badge identical to the accent badges
+    no_phantom_badge:
+      weight: 3
+      description: Modes 4, 5 and 6 carry no badge and no gap where one would
+        sit
+      fail_signals:
+        - empty or dashed chip in a badge-less panel
+        - reserved blank space above the rows
+    theme_fidelity:
+      weight: 1
+      description: Slate Console house palette and hairline borders throughout;
+        mode 6 legibly light
+      fail_signals:
+        - white cards among the dark panels or a dark mode 6 panel
+        - saturated neon accents
+
+tags:
+  - semtext
+  - reference
+  - npl-flags
+  - media-prompt

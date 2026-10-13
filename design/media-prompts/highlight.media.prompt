@@ -1,0 +1,129 @@
+schema: "0.4"
+id: highlight-ux-design
+type: image
+quality: high
+product_targets:
+  - semtext.dev
+tags:
+  - semtext
+  - highlight
+  - ux-design
+  - reference
+
+prompt:
+  text: |
+    UX design sheet for the SemText `<highlight>` element, one example
+    reading page per display mode, rendered in the minimal-tech-light
+    theme on a dark slate canvas (bg #0f172a, surface #1e293b, fg #e2e8f0,
+    accent #60a5fa). The sheet shows TWO stacked example pages, each a
+    card-walled prose passage inside a browser-chrome frame, labeled with
+    a small mono uppercase caption.
+
+    Page 1 — caption "PLAIN (default)". A short prose passage: "The OIDC
+    token travels in the Authorization header." The word "Authorization"
+    carries the highlight treatment: an accent-blue tint behind the text
+    at 18% opacity (a soft luminous wash, color(srgb 0.376 0.647 0.980 / 0.18)),
+    slightly rounded 4px corners, a few pixels of horizontal padding, the
+    glyphs fully saturated foreground color and completely legible. The
+    highlight reads as marker-pen emphasis, never as a redaction.
+
+    Page 2 — caption "QUIZ". The identical passage, but "Authorization" is
+    occluded: a solid slate chip (#475569), rounded 4px, minimum 3ch wide,
+    no visible glyphs — a self-check recall mask with a subtle pointer
+    cursor affordance. Beside it a small secondary state shows the chip
+    after reveal: the same accent-tinted, fully legible word as page 1,
+    demonstrating the one-way per-item reveal.
+
+    Typography: clean system sans (Inter-like), 16px body, 1.6 line
+    height, generous margins. No extra chrome, no buttons other than the
+    caption labels, no pointer cursors drawn as graphics.
+  negative: >
+    occluded or blurred text on the plain page; black bars over text;
+    strikethrough; redaction-marker aesthetic on page 1; neon glow;
+    drop shadows on text; italic highlight text; more than two example
+    pages; light background; watermark; lorem ipsum in the caption
+    labels.
+  style: >
+    Flat UI spec sheet, minimal-tech aesthetic, restrained single-accent
+    palette, crisp 12px card radius, hairline #334155 borders, generous
+    negative space. Looks like a panel from a design-system guide.
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/highlight/highlight-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/highlight/highlight-source-1280.png
+    role: reference
+
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+    aspect_ratio: "3:2"
+  formats:
+    - format: png
+      filename: highlight-ux-design.png
+
+requirements:
+  modes:
+    - id: plain
+      label: "PLAIN (default)"
+      must_show:
+        - the full prose passage with every word readable
+        - the highlight as an accent-blue tint behind the text at reduced
+          opacity (18%), 4px rounded corners, horizontal padding
+        - highlighted glyphs in the normal foreground color, full contrast
+      must_never:
+        - occlude, blur, bar or mask the highlighted text
+        - render the highlight as an opaque filled block that hides glyphs
+        - italicize or restyle the highlighted text beyond the tint
+    - id: quiz
+      label: "QUIZ"
+      must_show:
+        - the same prose with the highlight replaced by a solid slate
+          occlusion chip (#475569), rounded, min 3ch wide, no glyphs
+        - a revealed state beside it: accent-tinted, fully legible word
+        - keyboard/click reveal affordance implied, one-way per item
+      must_never:
+        - leave quiz-view occlusion on the plain page
+        - reveal more than the demonstrated item at once
+        - use transparency or partial legibility for the occluded chip
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    plain-legibility:
+      weight: 0.4
+      description: >
+        Page 1's highlighted word is fully readable — normal foreground
+        glyphs over a light accent tint; the tint reads as emphasis.
+      fail_signals:
+        - highlighted text hidden behind an opaque block
+        - highlighted text blurred, crossed out, or lower-contrast
+        - occlusion chip present on the plain page
+    quiz-occlusion:
+      weight: 0.3
+      description: >
+        Page 2 occludes the recall target as a solid rounded chip with no
+        visible glyphs, and shows the accent-tinted revealed state.
+      fail_signals:
+        - quiz chip shows ghosted or partially readable glyphs
+        - revealed state missing or occluded
+    theme-fidelity:
+      weight: 0.2
+      description: >
+        Dark minimal-tech palette (#0f172a bg, #60a5fa accent), hairline
+        borders, mono uppercase captions, two labeled example pages.
+      fail_signals:
+        - light background or multiple accent hues
+        - more or fewer than two labeled pages
+    spec-sheet-quality:
+      weight: 0.1
+      description: >
+        Reads as a component design sheet: clean prose passage, consistent
+        typography, no invented UI chrome.
+      fail_signals:
+        - watermark, lorem ipsum, decorative noise
+        - invented buttons, nav bars or pointer-art unrelated to the spec
+  reject_if:
+    - the plain page occludes or hides any text
+    - any page shows illegible body copy
