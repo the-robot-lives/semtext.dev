@@ -35,6 +35,11 @@ export const SHOWCASE_ITEMS: ShowcaseItem[] = [
     href: "/#surface",
     note: "measured sizes of the scripts and stylesheets",
   },
+  {
+    label: "Data visualizer",
+    href: "/dataviz/",
+    note: "tables from inline, CSV and YAML sources — sort, views, join, editable query, live",
+  },
 ];
 
 /*
