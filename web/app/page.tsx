@@ -45,35 +45,35 @@ const FACTS: Array<{
   id: string;
   statement: string;
   conclusion: string;
-  distractor: string;
+  incorrectStatement: string;
 }> = [
   {
     id: "f-view-as",
     statement: "view-as is a parameter, not an identity",
     conclusion:
       "A fact is a fact in every view; the attribute only selects a rendering.",
-    distractor: "Each view is a different element type.",
+    incorrectStatement: "Each view is a different element type.",
   },
   {
     id: "f-light-dom",
     statement: "Components render into light DOM",
     conclusion:
       "Content stays in the page, so find-in-page, copy and plain CSS all still reach it.",
-    distractor: "Content moves into a shadow root for encapsulation.",
+    incorrectStatement: "Content moves into a shadow root for encapsulation.",
   },
   {
     id: "f-invariant",
     statement: "Extraction reads the authored document",
     conclusion:
       "Generated chrome is skipped, so records do not depend on the view on screen.",
-    distractor: "Extraction reads whatever is currently rendered.",
+    incorrectStatement: "Extraction reads whatever is currently rendered.",
   },
   {
     id: "f-no-build",
     statement: "Authoring needs no build step",
     conclusion:
       "One stylesheet and one script tag in a plain HTML file; a theme is optional.",
-    distractor: "A bundler compiles the vocabulary down to HTML.",
+    incorrectStatement: "A bundler compiles the vocabulary down to HTML.",
   },
 ];
 
@@ -237,7 +237,7 @@ export default function Home() {
               SemText is a semantic text format: a single XHTML file that a
               language model reads and writes the way it writes Markdown
               today. The difference is what the text can say. A fact, a step,
-              a caveat, a distractor, a term and its definition are each
+              a caveat, an incorrect statement, a term and its definition are each
               written as what they <em>are</em> — a tag and a few attributes —
               so the structure is in the text itself, not inferred from it.
             </p>
@@ -302,7 +302,7 @@ export default function Home() {
               <code className="font-mono">&lt;sem-fact&gt;</code> elements
               holding a <code className="font-mono">&lt;statement&gt;</code>, a{" "}
               <code className="font-mono">&lt;conclusion&gt;</code> and a{" "}
-              <code className="font-mono">&lt;sem-distractor&gt;</code>.{" "}
+              <code className="font-mono">&lt;incorrect-statement&gt;</code>.{" "}
               <code className="font-mono">view-as</code> on the{" "}
               <code className="font-mono">&lt;sem-facts&gt;</code> element
               selects how they render — switching it rewrites nothing, and the

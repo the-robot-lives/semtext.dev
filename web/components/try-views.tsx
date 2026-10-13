@@ -29,7 +29,7 @@ export interface TryFact {
   id: string;
   statement: string;
   conclusion: string;
-  distractor: string;
+  incorrectStatement: string;
 }
 
 const THEME_CSS = [
@@ -130,7 +130,7 @@ function factsListing(facts: TryFact[], mode: ViewMode): string[] {
     facts.forEach((f, i) => {
       out.push(`  Q${i + 1} ${f.statement}`);
       out.push(...wrap("✓ " + f.conclusion, TERM_W - 4, "    "));
-      out.push(...wrap("✗ " + f.distractor, TERM_W - 4, "    "));
+      out.push(...wrap("✗ " + f.incorrectStatement, TERM_W - 4, "    "));
     });
   }
   return out;
@@ -155,7 +155,7 @@ function cliRender(facts: TryFact[], st: TermState): string[] {
   out.push("");
   const shown = st.filter
     ? facts.filter((f) =>
-        (f.statement + " " + f.conclusion + " " + f.distractor)
+        (f.statement + " " + f.conclusion + " " + f.incorrectStatement)
           .toLowerCase()
           .includes(st.filter.toLowerCase())
       )
@@ -175,7 +175,7 @@ function cliRender(facts: TryFact[], st: TermState): string[] {
       if (st.filter && !shown.includes(f)) return;
       out.push(`  Q${i + 1} ${f.statement}`);
       out.push(...wrap("✓ " + f.conclusion, TERM_W - 4, "    "));
-      out.push(...wrap("✗ " + f.distractor, TERM_W - 4, "    "));
+      out.push(...wrap("✗ " + f.incorrectStatement, TERM_W - 4, "    "));
     });
   } else {
     for (const f of shown) {
@@ -276,7 +276,7 @@ function sourceMarkup(facts: TryFact[]): string {
         `  <sem-fact id="${f.id}" kind="rule">\n` +
         `    <statement>${f.statement}</statement>\n` +
         `    <conclusion>${f.conclusion}</conclusion>\n` +
-        `    <sem-distractor>${f.distractor}</sem-distractor>\n` +
+        `    <incorrect-statement>${f.incorrectStatement}</incorrect-statement>\n` +
         `  </sem-fact>`
     )
     .join("\n");

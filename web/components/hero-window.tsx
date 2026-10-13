@@ -28,8 +28,8 @@ const SOURCE = `<sem-note variant="warning">
     <statement>JWTs rotate per session</statement>
     <conclusion>Short-lived access tokens;
     the refresh grant issues a new pair.</conclusion>
-    <sem-distractor>Store the token in
-    localStorage for durability.</sem-distractor>
+    <incorrect-statement>Store the token in
+    localStorage for durability.</incorrect-statement>
   </sem-fact>
 </sem-facts>`;
 
@@ -43,8 +43,8 @@ const RENDERED_HTML = `<sem-note variant="warning">
     <statement>JWTs rotate per session</statement>
     <conclusion>Short-lived access tokens;
     the refresh grant issues a new pair.</conclusion>
-    <sem-distractor>Store the token in
-    localStorage for durability.</sem-distractor>
+    <incorrect-statement>Store the token in
+    localStorage for durability.</incorrect-statement>
   </sem-fact>
 </sem-facts>`;
 

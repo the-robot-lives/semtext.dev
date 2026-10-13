@@ -1,0 +1,112 @@
+# sem-chronology — UX design sheet prompt
+# Two display modes (timeline, list) shown as one example page per mode,
+# dark minimal-tech theme. Reference attachments are the judged renders
+# from the snap harness (see reports/tag-sem-chronology.md).
+
+schema: "0.4"
+id: sem-chronology-ux-sheet
+type: image
+quality: high
+
+prompt:
+  text: |
+    A precise UX design sheet for the SemText vocabulary element
+    `sem-chronology` (a CSS-only dated-event timeline), rendered as TWO
+    side-by-side example pages on a dark minimal-tech canvas
+    (background #0f172a, card surface #1e293b, hairline borders #334155,
+    blue accent #60a5fa, green success #34d399, red error #f87171).
+
+    LEFT PAGE — the TIMELINE mode: a vertical rail (2px line) running
+    down the page; each dated event is a rounded-right card whose own
+    left border is a status marker riding ON the rail so rail and marker
+    read as one continuous line. Small-caps muted date label above the
+    event prose (e.g. "2 MAR 2026"). Show the full status vocabulary:
+    a DONE event (green marker, " ✓" after the text), a CURRENT event
+    (blue marker, " →"), a TODO event (grey DASHED marker, " ○" — fully
+    visible, never ghosted), a BLOCKED event (red marker, muted body,
+    " ⛔"), and one UNANNOTATED event (plain grey border, no glyph).
+    One card's date shows a period ("2026-Q1 – 2026-Q2").
+
+    RIGHT PAGE — the LIST mode: the same kind of changelog with NO rail
+    and NO cards — plain stacked rows on the canvas, each row a thin
+    status marker at its left edge, then the small-caps date INLINE with
+    the prose ("11 FEB 2026  Export pipeline lands. ✓"). All five marker
+    states appear here too, colour plus glyph plus dash pattern.
+
+    Typography: clean humanist sans for prose, all-small-caps muted
+    date labels, monospace reserved for nothing here. Generous vertical
+    rhythm (0.75rem gaps between events). Flat, engineered, restrained —
+    a documentation specimen, not an illustration.
+  negative: |
+    no hidden or faded events, no occluded text, no solid colour blocks
+    over words, no decorative photos or icons, no gradient glows, no
+    watermarks, no UI browser chrome, no timeline arrows drawn across
+    cards, no duplicated date label above an event that already has an
+    inline date, no light-mode canvas.
+  style: flat dark technical documentation specimen, minimal-tech design system
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-chronology-fixture/sem-chronology-primary-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-chronology-fixture/sem-chronology-view-list-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-chronology-fixture/sem-chronology-class-form-render-1280.png
+    role: reference
+
+output:
+  formats:
+    - format: png
+      filename: sem-chronology-ux-sheet.png
+  dimensions:
+    width: 1536
+    height: 1024
+
+requirements:
+  modes:
+    - name: timeline
+      must_show:
+        - one continuous vertical rail; every event's status marker rides on it
+        - date label above the event body, all-small-caps, muted colour
+        - done = green marker + " ✓"; current = blue marker + " →"; todo = grey DASHED marker + " ○"; blocked = red marker + " ⛔" + muted body; unannotated = plain border, no glyph
+        - period events render as one range label ("X – Y"), both endpoints present
+      must_never:
+        - never hide, dim to illegibility, or drop the todo event — unstarted is visible, just not coloured
+        - never render todo identical to done (dash pattern + glyph must differ)
+        - never let the card surface cover the text (occlusion belongs to sem-spoiler, not here)
+        - never show the date twice (authored <time> label and attr fallback never stack)
+    - name: list
+      must_show:
+        - no rail, no card backgrounds — plain stacked rows
+        - date label INLINE before the prose
+        - status marker survives the mode change: thin coloured/dashed left edge plus glyph, in every row
+      must_never:
+        - never fall back to timeline cards in list mode
+        - never drop the status marker or the inline date on narrow rows
+        - never colour alone carries status — glyph/dash/text-tint stay present
+
+eval:
+  pass_threshold: 0.7
+  criteria:
+    mode_fidelity:
+      weight: 0.3
+      description: Both pages match their mode contract (rail + cards vs rail-less inline rows).
+      fail_signals: [list page still shows a rail or cards, timeline page shows inline-only rows]
+    status_completeness:
+      weight: 0.25
+      description: All five marker states visible and distinguishable in each page; todo is a dashed grey marker with a ring glyph, fully legible.
+      fail_signals: [todo absent or identical to done, unannotated marked with a glyph]
+    label_legibility:
+      weight: 0.2
+      description: Date labels small-caps muted yet readable (AA on dark); no doubled date label; period ranges show both ends.
+      fail_signals: [date text illegible, "X – " dangling dash with empty second end]
+    restraint:
+      weight: 0.25
+      description: Flat documentation specimen; no ornament, glow, browser chrome, or occluding fills.
+      fail_signals: [decorative background art, text hidden behind a solid block]
+  reject_if:
+    - any event prose is unreadable or occluded
+    - the timeline lacks a continuous rail or its markers float detached from it
+    - a light-mode canvas is generated
+    - watermarks or UI chrome appear anywhere
+
+tags: [semtext, vocabulary, timeline, chronology, list, dark, specimen]

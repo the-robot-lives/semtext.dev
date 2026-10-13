@@ -841,11 +841,14 @@
       "attributes": [
         {
           "name": "variant",
-          "required": null,
+          "required": false,
           "type": "",
-          "allowedValues": [],
+          "allowedValues": [
+            "full",
+            "compact"
+          ],
           "default": "full",
-          "description": "`full|compact` — `full` renders each section as a labelled block; `compact` renders one emoji line per section. Any other value resolves to `full`, and the resolved variant mirrors to `data-variant` (deferred past parse via afterParse, like sem-note, so a sem-source snapshot never sees runtime writes). The variant is read at upgrade; it is display-only and not switched after wiring."
+          "description": "one of `full`, `compact`, optional — `full` renders each section as a labelled block; `compact` renders one emoji line per section. Any other value resolves to `full`, and the resolved variant mirrors to `data-variant` (dual-form contract; the mirror is deferred past parse via afterParse, like sem-note, so a sem-source snapshot never sees runtime writes). The variant is read at upgrade; it is display-only and not switched after wiring."
         },
         {
           "name": "id",
@@ -875,23 +878,23 @@
       "children": [
         {
           "name": "assessment",
-          "note": ""
+          "note": "what held and what did not across the finished turn."
         },
         {
           "name": "improvements",
-          "note": ""
+          "note": "concrete changes the next run should carry."
         },
         {
           "name": "validation",
-          "note": ""
+          "note": "how the result was checked."
         },
         {
           "name": "eval",
-          "note": ""
+          "note": "the measured outcome (scores, counts, diffs)."
         },
         {
           "name": "fine-tune",
-          "note": ""
+          "note": "training or retrieval follow-ups."
         }
       ],
       "example": "<npl-ref variant=\"full\">\n  <assessment>the approach held; one gap in the eval loop</assessment>\n  <improvements>add a regression harness before the next run</improvements>\n  <validation>checked against three traces</validation>\n  <eval>quality 0.82 vs 0.71 baseline</eval>\n  <fine-tune>retrain on the two rejected traces</fine-tune>\n</npl-ref>"
@@ -1048,15 +1051,18 @@
       "name": "npl-vos",
       "family": "npl",
       "source": "spec/schema/npl/npl-vos.md",
-      "summary": "Display-only bracket for an NPL vector-of-self block (`src/lit/npl/npl-vos.ts`): the psychodynamic state an NPL persona brackets each substantive response with — id, ego, mood, super-ego, optional col",
+      "summary": "Display-only bracket for an NPL vector-of-self block (`src/lit/npl/npl-vos.ts`): the psychodynamic state (id, ego, mood, super-ego, optional collective) an NPL persona brackets each substantive response with.",
       "description": "Display-only bracket for an NPL vector-of-self block (`src/lit/npl/npl-vos.ts`): the psychodynamic state an NPL persona brackets each substantive response with — id, ego, mood, super-ego, optional collective (source: NPL `vos` blocks, npl-full.md \"Psychodynamic State\"). One component renders one bracket; `phase` marks which half of the bracket it is. When vector-of-self is active it subsumes standalone `<npl-mood>` — do not author both.",
       "attributes": [
         {
           "name": "phase",
           "required": null,
           "type": "string",
-          "allowedValues": [],
-          "default": "",
+          "allowedValues": [
+            "entry",
+            "exit"
+          ],
+          "default": null,
           "description": "`entry` or `exit`; rendered as the bracket label (`.npl-vos-phase`) and mirrored to `data-phase` (dual-form contract; the mirror is deferred past parse via afterParse so a sem-source snapshot never sees runtime writes)."
         },
         {
@@ -1084,7 +1090,28 @@
           "description": "per the global attribute catalog (conventions.md §2)"
         }
       ],
-      "children": [],
+      "children": [
+        {
+          "name": "id",
+          "note": "part name — authored as data-vos=\"id\" on a direct child element (bare vos=\"id\" also read); raw impulse, what the first instinct wants"
+        },
+        {
+          "name": "ego",
+          "note": "part name — authored as data-vos=\"ego\"; the reality-tested approach, what is actually done and why"
+        },
+        {
+          "name": "mood",
+          "note": "part name — authored as data-vos=\"mood\"; the emoji-led affective state"
+        },
+        {
+          "name": "super-ego",
+          "note": "part name — authored as data-vos=\"super-ego\"; internalized standards, what should be upheld here"
+        },
+        {
+          "name": "collective",
+          "note": "part name — authored as data-vos=\"collective\"; optional, include only when the system-level perspective has something the persona cannot see"
+        }
+      ],
       "example": "<npl-vos phase=\"entry\">\n  <p data-vos=\"id\">raw impulse — what the first instinct wants to do</p>\n  <p data-vos=\"ego\">reality-tested approach — what is actually done and why</p>\n  <p data-vos=\"mood\">🔥 — energized by the profiling work</p>\n  <p data-vos=\"super-ego\">internalized standards — what should be upheld here</p>\n  <p data-vos=\"collective\">system-level observation from outside the persona</p>\n</npl-vos>"
     },
     {
@@ -1114,8 +1141,8 @@
       "name": "sem-audiences",
       "family": "sem",
       "source": "spec/schema/sem-audiences.md",
-      "summary": "Closes the forward declaration in `spec/extraction.md` §7.",
-      "description": "Closes the forward declaration in `spec/extraction.md` §7. Two halves, one contract: a **declaration block** names the profiles a document knows about, and an **`audience` qualifier** on any content element says which of those profiles the element is for. The reader picks a profile; the script hides what is not for them. Nothing is ever removed from the document, and extraction never looks at the result.",
+      "summary": "Two halves, one contract: a declaration block (`sem-audiences`) names the profiles a document knows about, and an `audience` qualifier says who each element is for.",
+      "description": "Two halves, one contract: a declaration block (`sem-audiences`) names the profiles a document knows about, and an `audience` qualifier says who each element is for. The reader picks a profile; the script hides what is not for them. Nothing is ever removed from the document, and extraction never looks at the result.",
       "attributes": [
         {
           "name": "id",
@@ -1380,7 +1407,7 @@
         }
       ],
       "children": [],
-      "example": "<sem-data-join name=\"user-orders\" left=\"Users\" right=\"Orders\" on=\"user-id\">\n</sem-data-join>"
+      "example": "<sem-data-visualizer id=\"dv-user-orders\">\n  <sem-data-source data-name=\"Users\" data-format=\"table\">\n    | user-id | name | plan |\n    | :------ | :--- | :--- |\n    | u1      | Ada  | team |\n    | u2      | Bao  | free |\n    | u3      | Cleo | team |\n  </sem-data-source>\n  <sem-data-source data-name=\"Orders\" data-format=\"table\">\n    | order | user-id | total |\n    | :---- | :------ | ----: |\n    | o-101 | u2      |   120 |\n    | o-102 | u1      |    80 |\n    | o-103 | u2      |    45 |\n  </sem-data-source>\n  <sem-data-join name=\"user-orders\" left=\"Users\" right=\"Orders\" on=\"user-id\">\n  </sem-data-join>\n  <sem-data-query>SELECT name, total FROM user-orders ORDER BY total DESC</sem-data-query>\n</sem-data-visualizer>"
     },
     {
       "name": "sem-data-query",
@@ -1415,7 +1442,7 @@
         }
       ],
       "children": [],
-      "example": "<sem-data-query>SELECT name, port FROM services WHERE ready = true ORDER BY port LIMIT 5</sem-data-query>"
+      "example": "<sem-data-visualizer id=\"dv-services\">\n  <sem-data-source data-name=\"services\" data-format=\"table\">\n    | name    | port | ready |\n    | :------ | ---: | :---- |\n    | api     | 8443 | true  |\n    | web     | 8080 | true  |\n    | metrics | 9090 | false |\n  </sem-data-source>\n  <sem-data-query>SELECT name, port FROM services WHERE ready = true ORDER BY port LIMIT 5</sem-data-query>\n</sem-data-visualizer>"
     },
     {
       "name": "sem-data-source",
@@ -1544,7 +1571,7 @@
         }
       ],
       "children": [],
-      "example": "<sem-data-source data-name=\"Token lifetimes\" data-format=\"table\"\n                 data-views=\"core=token,max-uses; all=*\" data-view=\"all\">\n  | Token | Max uses | Lifetime | Rotates | Since      |\n  | :---- | -------: | :------- | :------ | :--------- |\n  | access | 200     | 15 min   | true    | 2026-01-05 |\n  | id     | 1000    | 1 hour   | false   | 2026-02-14 |\n</sem-data-source>"
+      "example": "<sem-data-visualizer>\n  <sem-data-source data-name=\"Token lifetimes\" data-format=\"table\"\n                   data-views=\"core=token,max-uses; all=*\" data-view=\"all\">\n    | Token | Max uses | Lifetime | Rotates | Since      |\n    | :---- | -------: | :------- | :------ | :--------- |\n    | access | 200     | 15 min   | true    | 2026-01-05 |\n    | id     | 1000    | 1 hour   | false   | 2026-02-14 |\n  </sem-data-source>\n</sem-data-visualizer>"
     },
     {
       "name": "sem-data-visualizer",
@@ -1555,11 +1582,11 @@
       "attributes": [
         {
           "name": "id",
-          "required": true,
+          "required": false,
           "type": "",
           "allowedValues": [],
           "default": null,
-          "description": "required for the modal deep link (`#dv=<visualizer-id>`); a container with no id and no single named source mints no copy-link button."
+          "description": "optional — names the container for the modal deep link (`#dv=<visualizer-id>`). The copy-link chrome prefers the container's id; with none it falls back to the container's sole named source (`#bucket=<name>`), and a container with neither mints no copy-link button."
         },
         {
           "name": "kind",
@@ -1601,8 +1628,13 @@
       "summary": "Prose with occludable content.",
       "description": "Prose with occludable content. Recall-oriented prose, distinct from `sem-reveal` (block disclosure) and `sem-views` (perspective switching): same prose, a different interaction model per view. Each `sem-detail` is one prose passage; a `<highlight>` child marks a recall target (`[[cloze]]` sugar maps to `<highlight>`) — `<em>` in plain view, occluded and revealed per item in the `quiz` view (self-check model). `view-as` is display-only sugar (`plain` default, `quiz`): the prose is identical under both.",
       "attributes": [],
-      "children": [],
-      "example": "<sem-details id=\"oidc-details\" view-as=\"quiz\">\n  <sem-detail>\n    The OIDC token travels in the\n    <highlight>Authorization</highlight> header.\n  </sem-detail>\n</sem-details>",
+      "children": [
+        {
+          "name": "highlight",
+          "note": "the recall targets of the passage, zero or more; emphasized and fully legible in the `plain` view, occluded and revealed per item in the `quiz` view."
+        }
+      ],
+      "example": "<sem-details id=\"oidc-docs\">\n  <sem-detail>\n    The OIDC token travels in the\n    <highlight>Authorization</highlight> header.\n  </sem-detail>\n</sem-details>",
       "optionsIn": "sem-details"
     },
     {
@@ -1633,7 +1665,7 @@
         }
       ],
       "children": [],
-      "example": "<sem-details id=\"oidc-details\" view-as=\"quiz\">\n  <sem-detail>\n    The OIDC token travels in the\n    <highlight>Authorization</highlight> header.\n  </sem-detail>\n</sem-details>"
+      "example": "<sem-details id=\"oidc-docs\">\n  <sem-detail>\n    The OIDC token travels in the\n    <highlight>Authorization</highlight> header.\n  </sem-detail>\n</sem-details>"
     },
     {
       "name": "sem-event",
@@ -1661,18 +1693,18 @@
       "children": [
         {
           "name": "statement",
-          "note": "`<statement>` + `<conclusion>`: required per fact."
+          "note": "required per fact; the claim itself."
         },
         {
           "name": "conclusion",
-          "note": "`<statement>` + `<conclusion>`: required per fact."
+          "note": "required per fact; the assertion the statement resolves to (the back of the card, the quiz answer)."
         },
         {
-          "name": "sem-distractor",
-          "note": "`<sem-distractor>`: optional, quiz view only — explicit wrong candidate. Without one, sibling conclusions serve as distractors."
+          "name": "incorrect-statement",
+          "note": "optional, quiz view only; an explicit wrong candidate. Without one, sibling conclusions serve as distractors."
         }
       ],
-      "example": "<sem-facts id=\"auth-facts\" view-as=\"flashcards\">\n  <sem-fact id=\"f-jwt\">\n    <statement>JWTs rotate per session</statement>\n    <conclusion>Short-lived access tokens; the refresh\n      grant issues a new pair.</conclusion>\n    <sem-distractor>Store tokens in localStorage.</sem-distractor>\n  </sem-fact>\n</sem-facts>",
+      "example": "<sem-facts id=\"auth-facts\" view-as=\"flashcards\">\n  <sem-fact id=\"f-jwt\">\n    <statement>JWTs rotate per session</statement>\n    <conclusion>Short-lived access tokens; the refresh\n      grant issues a new pair.</conclusion>\n    <incorrect-statement>Store tokens in localStorage.</incorrect-statement>\n  </sem-fact>\n</sem-facts>",
       "optionsIn": "sem-facts"
     },
     {
@@ -1704,7 +1736,7 @@
         }
       ],
       "children": [],
-      "example": "<sem-facts id=\"auth-facts\" view-as=\"flashcards\">\n  <sem-fact id=\"f-jwt\">\n    <statement>JWTs rotate per session</statement>\n    <conclusion>Short-lived access tokens; the refresh\n      grant issues a new pair.</conclusion>\n    <sem-distractor>Store tokens in localStorage.</sem-distractor>\n  </sem-fact>\n</sem-facts>"
+      "example": "<sem-facts id=\"auth-facts\" view-as=\"flashcards\">\n  <sem-fact id=\"f-jwt\">\n    <statement>JWTs rotate per session</statement>\n    <conclusion>Short-lived access tokens; the refresh\n      grant issues a new pair.</conclusion>\n    <incorrect-statement>Store tokens in localStorage.</incorrect-statement>\n  </sem-fact>\n</sem-facts>"
     },
     {
       "name": "sem-md",
@@ -1891,8 +1923,8 @@
       "name": "sem-profile",
       "family": "sem",
       "source": "spec/schema/sem-audiences.md",
-      "summary": "Closes the forward declaration in `spec/extraction.md` §7.",
-      "description": "Closes the forward declaration in `spec/extraction.md` §7. Two halves, one contract: a **declaration block** names the profiles a document knows about, and an **`audience` qualifier** on any content element says which of those profiles the element is for. The reader picks a profile; the script hides what is not for them. Nothing is ever removed from the document, and extraction never looks at the result.",
+      "summary": "Two halves, one contract: a declaration block (`sem-audiences`) names the profiles a document knows about, and an `audience` qualifier says who each element is for.",
+      "description": "Two halves, one contract: a declaration block (`sem-audiences`) names the profiles a document knows about, and an `audience` qualifier says who each element is for. The reader picks a profile; the script hides what is not for them. Nothing is ever removed from the document, and extraction never looks at the result.",
       "attributes": [],
       "children": [],
       "example": "<sem-audiences>\n  <sem-profile id=\"reader\" label=\"Reader\"></sem-profile>\n  <sem-profile id=\"operator\" label=\"Operator\" implies=\"reader\"></sem-profile>\n</sem-audiences>",

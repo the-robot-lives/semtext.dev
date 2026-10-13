@@ -42,7 +42,6 @@ const BUCKET_DEFS: Array<Omit<ReferenceBucket, "tags"> & { names: string[] }> = 
       "sem-audiences",
       "sem-profile",
       "agent",
-      "sem-embed",
     ],
   },
   {
@@ -77,7 +76,7 @@ const BUCKET_DEFS: Array<Omit<ReferenceBucket, "tags"> & { names: string[] }> = 
       "sem-fact",
       "statement",
       "conclusion",
-      "sem-distractor",
+      "incorrect-statement",
       "sem-question",
       "sem-option",
     ],

@@ -8,15 +8,15 @@ import {
 export const metadata: Metadata = {
   title: "Embedding — SemText showcase",
   description:
-    "Reusing one document's sections inside another: the sem-embed contract — source, a selected block, a card mode. Catalogued by the spec; renderer not yet shipped.",
+    "Reusing one document's sections inside another: the sem-embed pattern — source, a selected block, a card mode. A vocabulary proposal; not a spec element yet.",
   alternates: { canonical: "https://semtext.dev/showcase/embedding/" },
 };
 
 /*
- * sem-embed is catalogued in the spec's tag catalog (spec/conventions.md)
- * but its renderer is not yet implemented in any tier — so this page is
- * honest about that: the example stays in source view, and the copy says
- * exactly what exists today.
+ * sem-embed is NOT a spec element: the spec's catalog has no schema file
+ * for it and no shipped tier knows it. The page is honest about that —
+ * the example stays in source view and the copy says exactly what exists
+ * today: an authored pattern proposed for the vocabulary, nothing more.
  */
 
 const EXAMPLE = `<h2>Shared glossary</h2>
@@ -69,20 +69,24 @@ export default function EmbeddingShowcasePage() {
           Status
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-ink-mute">
-          The element is catalogued by the spec and its contract is written,
-          but no shipped tier renders it yet — this page deliberately does
-          not fake a render. Until a tier wires it, an embedded reference
-          reads as its authored markup, which is a record, not a broken
-          page.
+          This is a proposal, not a catalogued element: the spec states no
+          schema for <code className="font-mono">sem-embed</code> and no
+          shipped tier renders it — this page deliberately does not fake a
+          render. Until a schema lands, an embedded reference reads as its
+          authored markup, which is a record, not a broken page.
         </p>
       </section>
 
       <ShowcaseFooter>
-        The element&apos;s attributes are on its{" "}
-        <a href="/reference/sem-embed/" className="text-violet-soft underline-offset-4 hover:underline">
-          reference page
+        There is no reference page for this pattern — it has no schema file
+        in the spec. Vocabulary proposals land in{" "}
+        <a
+          href="https://github.com/noizu-labs-ml/npl-enhanced-content"
+          className="text-violet-soft underline-offset-4 hover:underline"
+        >
+          npl-enhanced-content
         </a>
-        , sourced from the spec&apos;s tag catalog.
+        &apos;s spec catalog.
       </ShowcaseFooter>
     </ShowcaseFrame>
   );

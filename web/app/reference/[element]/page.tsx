@@ -9,7 +9,10 @@ import type {
   TagAttr,
   TagRecord,
 } from "@/data/reference-glossary";
-import { EXAMPLE_VARIANTS } from "@/data/reference-example-variants";
+import {
+  EXAMPLE_VARIANTS,
+  type ExampleVariant,
+} from "@/data/reference-example-variants";
 import {
   bucketOf,
   REFERENCE_BUCKETS,
@@ -113,11 +116,37 @@ export default async function ReferenceElementPage({
  * The section body, one page's worth of the former /reference/ tag
  * sections (same field presentation, own URL now).
  */
+/*
+ * A variant whose example IS the primary example (whitespace-normalised
+ * comparison) is the same figure and is not rendered twice. The variants
+ * file carries the whole plain+quiz pair for tags like <highlight> so it
+ * survives every generator sync, while the generator decides which of the
+ * two the page presents as the primary example; the page shows one or the
+ * other exactly once.
+ */
+function dedupeVariants(variants: ExampleVariant[], primary?: string) {
+  const key = (s: string) => s.replace(/\s+/g, " ").trim();
+  const p = primary ? key(primary) : null;
+  return p ? variants.filter((v) => key(v.code) !== p) : variants;
+}
+
 function ElementBody({ tag: t }: { tag: TagRecord }) {
   const missing = GAP_MISSING.get(t.name) ?? [];
   const gapNote = missing.includes("summary") || missing.includes("description");
-  const variants = EXAMPLE_VARIANTS[t.name] ?? [];
-  const defaultRenderable = t.family === "sem" && t.name !== "sem-reader";
+  /*
+   * The Render gate is data-driven: an element is renderable when a
+   * shipped bundle provides it (web/data/bundles.json — regenerate after
+   * every public/semtext/ sync). NPL tags flip to renderable — and their
+   * render panes wire the npl runtime — automatically when that sync
+   * lands; until then they render source-side with the note below.
+   */
+  const bundles = bundlesFor(t.name);
+  const renderable = bundles?.shipped ?? false;
+  const renderNote =
+    t.family === "npl"
+      ? "Render is available once the npl bundle ships."
+      : "No shipped runtime for this element — the authored example renders as plain HTML.";
+  const variants = dedupeVariants(EXAMPLE_VARIANTS[t.name] ?? [], t.example);
 
   return (
     <>
@@ -205,7 +234,7 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
             Example
           </h2>
           {t.example ? (
-            <div className="mt-3 max-w-3xl">
+            <div id="example-primary" className="mt-3 max-w-3xl">
               {t.name === "sem-md" ? (
                 /* The one example that IS Markdown: a Render/Source toggle
                    over the same authored block, like the landing's view
@@ -228,7 +257,9 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
                 <ExampleViewer
                   name={t.name}
                   code={t.example}
-                  renderable={defaultRenderable}
+                  renderable={renderable}
+                  bundles={bundles?.bundles ?? []}
+                  renderNote={renderNote}
                 />
               )}
             </div>
@@ -243,7 +274,10 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
                 <ExampleViewer
                   name={t.name}
                   code={v.code}
-                  renderable={v.renderable ?? defaultRenderable}
+                  renderable={v.renderable ?? renderable}
+                  bundles={bundles?.bundles ?? []}
+                  exampleLabel={v.label}
+                  renderNote={renderNote}
                 />
               </div>
             </div>
@@ -324,9 +358,18 @@ function RuntimeLine({ tag: t }: { tag: TagRecord }) {
       parts.push(<span key="file">{code(files[0].file)}</span>);
     }
     if (files.some((f) => f.file === "semtext-fallback.js")) {
+      // The fallback tier IS the listed bundle on fallback-only tags —
+      // say it once ("semtext-fallback.js enhancement tier"), not the
+      // filename twice.
+      const alreadyListed = !chunk && files[0]?.file === "semtext-fallback.js";
       parts.push(
         <span key="fallback">
-          {code("semtext-fallback.js")} enhancement tier
+          {alreadyListed ? null : (
+            <>
+              {code("semtext-fallback.js")}{" "}
+            </>
+          )}
+          enhancement tier
         </span>,
       );
     }
