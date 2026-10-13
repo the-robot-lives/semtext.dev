@@ -1,0 +1,177 @@
+# SemText npl-mood — affective-state chip, all display modes
+# Direction A "Slate Console" (house convention). Three example panels in one
+# frame, one per display mode the tag provides: the enhanced full form (chip +
+# generated detail panel), the enhanced chip-only form (self-closing), and the
+# JS-off degraded form (no chrome). The invariant the design must broadcast:
+# npl-mood is display-only and QUIET — a small rounded badge that shows the
+# mood at a glance, never an opaque accent block, and it never occludes or
+# hides the authored text (occlusion belongs to the sem-spoiler / quiz tier).
+#
+# MODE 1 — enhanced, full form (chip + detail panel):
+#   visible: a compact rounded-pill badge at the left — a small emoji-scale
+#     glyph slot, then the qualifier as small-caps accent-tinted text; below
+#     it, a grouped detail panel of up to three small-caps labelled lines
+#     (tone · / context · / approach ·), each label muted and dimmer than its
+#     value.
+#   must never: fill the chip opaque; render the qualifier as part of the
+#     value sentences; hide or drop the detail lines; put the chip after the
+#     panel.
+# MODE 2 — enhanced, chip-only (self-closing / lone emoji):
+#   visible: the same rounded badge, glyph plus (optional) small-caps
+#     qualifier, alone — no detail panel, no leading label line.
+#   must never: invent a panel, a label, or extra chrome the tag does not
+#     define; restyle the chip differently from mode 1.
+# MODE 3 — JS-off degraded:
+#   visible: the mood as a plain lead line (glyph + qualifier, normal
+#     weight, foreground colour) followed by the authored tone / context /
+#     approach children as ordinary unstyled prose lines — no badge, no
+#     labels, no border.
+#   must never: show a pill/badge, generated small-caps labels, or any chrome
+#     when the script has not run; hide any authored line.
+#
+# The emoji is the mood's glyph — it is the one place a real character may
+# appear; everywhere else the mock uses abstract placeholder bars, never
+# letters, digits, or words.
+#
+# Reference renders: the site's /reference/npl-mood/ page is source-view only
+# today, so the enhanced form is judged from a throwaway fixture captured with
+# the room's headless Chrome (fixture HTML + current themes/_vocabulary.css +
+# the built npl.js). The `npl-mood-render-*` references below are those
+# fixture captures; `npl-mood-fullpage-1280.png` is the site page (source view
+# + page chrome) from `npm run snap:tag -- npl-mood`.
+schema: '0.4'
+id: reference-npl-mood
+type: image
+quality: high
+service: gemini
+model: gemini-2.5-flash-image
+
+prompt:
+  text: |
+    Dark-mode UI mockup of three side-by-side reference-page panels
+    illustrating one affective-state chip element in its three display
+    modes, wide 16:9, flat technical illustration (screenshot-like, not
+    3D). Dark slate navy background (#0F172A) with a barely visible thin
+    grid and a faint violet radial glow upper-left. Three equal panels sit
+    side by side, separated by thin slate hairline dividers, each panel a
+    dark slate card (#1E293B) with a thin slate hairline border, squared
+    corners, deep soft shadow; a small dim caption bar sits above each
+    panel.
+
+    LEFT panel — ENHANCED FULL FORM. At the panel's top-left sits a small
+    rounded-pill badge (fully rounded ends, hairline slate border, a barely
+    there lighter slate fill over the card, NOT solid colour): inside it a
+    single soft-violet rounded glyph square holding one abstract spark
+    shape (never a real emoji), followed by one short small-caps scale
+    placeholder bar in a light violet tint — the qualifier. Below the badge,
+    indented slightly, sit three stacked lines, each led by a short, muted,
+    dimmer small-caps placeholder label bar followed by a wider brighter
+    near-white value bar of differing length; the labels are clearly dimmer
+    than their values.
+
+    MIDDLE panel — ENHANCED CHIP-ONLY. The identical rounded-pill badge
+    alone, glyph square plus the single small-caps qualifier bar, centred in
+    generous empty card space; no lines beneath it, no labels, no border
+    change — pixel-comparable to the left panel's badge.
+
+    RIGHT panel — JS-OFF DEGRADED. No badge and no chrome: the mood reads
+    as one plain foreground-coloured lead line at the panel's top-left — a
+    glyph square (a neutral, un-tinted outline square holding the abstract
+    spark) followed by a normal-weight near-white placeholder bar of the
+    qualifier's length — and beneath it two or three plain prose lines of
+    near-white placeholder bars with NO small-caps labels, NO pill, NO
+    tint, NO border. It must read as unstyled authored prose.
+
+    Across all three panels the mood glyph square stays small and quiet; the
+    chips/badges are tinted, never filled opaque, and no line of text in any
+    panel is occluded, blurred, or dimmed below its label.
+  negative: legible text, letters, numbers, digits, words, captions,
+    typography, watermark, logo, light mode, white cards, 3D, photorealism,
+    faces, avatars, robot mascots, more than three panels, an opaque filled
+    badge, a solid colour-block chip, a badge in the right panel, small-caps
+    labels in the right panel, real emoji characters, a detail panel in the
+    middle panel, a qualifier bar fused with its value sentences
+  style: flat dark-mode product UI illustration, squared corners, hairline
+    borders, slate and violet palette, three-panel mode comparison
+
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 1600
+    height: 900
+    aspect_ratio: '16:9'
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-mood/npl-mood-render-enhanced-900.png
+    role: reference
+    description: enhanced render — chip + detail panel, chip-only, lone emoji, data-mood spelling (fixture)
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-mood/npl-mood-render-jsoff-900.png
+    role: reference
+    description: JS-off render — mood as a plain lead line, authored children as prose (fixture)
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-mood/npl-mood-fullpage-1280.png
+    role: reference
+    description: site reference page (source view) — chrome, attribute table, example placement
+
+requirements:
+  subject: three panels of one affective-state chip — left enhanced full form
+    with a rounded badge and a three-line detail panel, middle enhanced
+    chip-only badge, right JS-off plain lead line plus prose
+  palette: slate navy background, slate panels, hairline borders, violet
+    accent on the qualifier and glyph, near-white value bars, muted labels
+  composition: three equal panels side by side, each badge/lead line at a
+    consistent top-left position, identical chip anatomy across the two
+    enhanced panels
+  do:
+    - keep the chip a small tinted rounded-pill badge, never an opaque block
+    - keep every value bar brighter than its muted small-caps label
+    - differentiate modes only by panel presence and chrome presence
+  dont:
+    - any legible text, digits, real emoji (but the single mood glyph), or logos
+    - occluding, blurring, or dimming any line in any panel
+    - a badge, border, or generated label in the right (JS-off) panel
+    - extra chrome (badges, counts, buttons) the tag does not define
+
+eval:
+  pass_threshold: 0.7
+  required_pass:
+    - mode_differentiation
+    - quiet_not_opaque
+  criteria:
+    mode_differentiation:
+      weight: 3
+      description: Left panel shows the badge plus a three-line labelled detail
+        panel; middle shows the badge alone; right shows a plain lead line and
+        unstyled prose with no badge or label
+      fail_signals:
+        - badge or pill present in the right panel
+        - detail panel present in the middle panel
+        - small-caps labels in the right panel
+        - chip anatomy differs between the two enhanced panels
+    quiet_not_opaque:
+      weight: 3
+      description: The chip is a small tinted rounded-pill badge, never a solid
+        opaque colour block, and no text is occluded, blurred, or dimmed below
+        its label in any panel
+      fail_signals:
+        - opaque or solid accent-filled chip
+        - value bars dimmer than their labels
+        - blur, redaction, or occlusion overlays on any bar
+    theme_fidelity:
+      weight: 2
+      description: Dark slate + violet, squared hairline panels, flat style
+      fail_signals:
+        - light theme
+        - glossy 3D look
+        - rounded card corners
+  reject_if:
+    - any legible text, letters, digits, real emoji beyond the mood glyph,
+      watermark, or logo
+    - an occluded, blurred, or hidden line in any panel
+    - a badge, border, or generated label in the JS-off panel
+    - more than three panels or a chaotic layout
+
+tags:
+  - semtext
+  - reference
+  - npl-mood

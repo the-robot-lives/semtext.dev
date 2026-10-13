@@ -1,15 +1,20 @@
 import React from "react";
 
+import { NPL_TAGS, tagHref } from "@/data/reference-tags";
+import { REFERENCE_BUCKETS } from "@/data/reference-buckets";
+
 /*
- * Shared left-menu layout for the reference pages (/reference/, /docs/),
- * Tailwind-docs style: sticky sidebar, content column, and an optional
- * examples rail beside it. Pure server component — no client JS.
+ * Shared left-menu layout for the reference pages (/reference/, /docs/,
+ * /showcase/*, /integrations/, /extend/, /themes/), Tailwind-docs style:
+ * sticky sidebar, content column, and an optional examples rail beside it.
+ * Pure server component — no client JS.
  *
- * The showcase list below feeds both this sidebar's Showcase group and the
- * landing page's "Open the showcase" menu, so the two cannot drift. Each
- * entry is a section of the landing page on this site (no separate
- * showcase origin). The demo documents are not reachable from here —
- * there is no /demo/ tree on this site.
+ * Sidebar IA: every link stays inside the docs/reference section of the
+ * site — the landing page's sections are marketing surface and are never
+ * sidebar targets (no /#… anchors here). SHOWCASE_ITEMS below feeds this
+ * sidebar's Showcase group, the landing page's "Open the showcase" menu
+ * and the /docs/ sample list, so the three cannot drift: each entry is a
+ * real page under /showcase/<slug>/.
  */
 
 export interface ShowcaseItem {
@@ -17,28 +22,68 @@ export interface ShowcaseItem {
   note: string;
   href?: string;
   planned?: boolean;
+  /** URL slug under /showcase/ — also the sidebar key (`showcase-<slug>`). */
+  slug?: string;
 }
 
+/*
+ * One entry per showcase page (web/app/showcase/<slug>/). Every example on
+ * those pages is authored SemText built only from tags the spec defines.
+ */
 export const SHOWCASE_ITEMS: ShowcaseItem[] = [
   {
-    label: "Try views",
-    href: "/#try",
-    note: "the view toggle live — list, flashcards, quiz",
+    slug: "claude-md",
+    label: "CLAUDE.md",
+    href: "/showcase/claude-md/",
+    note: "repo guidance one file serves to an agent and to a human",
   },
   {
-    label: "Reading",
-    href: "/#reading",
-    note: "previews, backlinks, sort and filter, live",
+    slug: "documentation",
+    label: "Documentation",
+    href: "/showcase/documentation/",
+    note: "long-form docs with callouts, listings and citations",
   },
   {
-    label: "Surface sizes",
-    href: "/#surface",
-    note: "measured sizes of the scripts and stylesheets",
+    slug: "onboarding",
+    label: "Onboarding",
+    href: "/showcase/onboarding/",
+    note: "a checklist that tracks itself — steps, progress, facts",
   },
   {
-    label: "Data visualizer",
-    href: "/dataviz/",
-    note: "tables from inline, CSV and YAML sources — sort, views, join, editable query, live",
+    slug: "agent",
+    label: "Agent",
+    href: "/showcase/agent/",
+    note: "an agent record and the facts it answers from",
+  },
+  {
+    slug: "command",
+    label: "Command",
+    href: "/showcase/command/",
+    note: "a command spec: arguments, steps, invariants",
+  },
+  {
+    slug: "skill",
+    label: "Skill",
+    href: "/showcase/skill/",
+    note: "a skill file with tabbed reference and examples",
+  },
+  {
+    slug: "data-viewer",
+    label: "Data viewer",
+    href: "/showcase/data-viewer/",
+    note: "sort and filter a table authored in the document",
+  },
+  {
+    slug: "embedding",
+    label: "Embedding",
+    href: "/showcase/embedding/",
+    note: "reuse one document's sections inside another",
+  },
+  {
+    slug: "sem-shell",
+    label: "sem-shell",
+    href: "/showcase/sem-shell/",
+    note: "the interactive terminal element over a virtual file system",
   },
 ];
 
@@ -79,19 +124,52 @@ export interface NavGroup {
   items: Array<{ key: string; label: string; href: string; dataRef?: string }>;
 }
 
+const GITHUB_REPO = "https://github.com/noizu-labs-ml/npl-enhanced-content";
+
+/*
+ * The SemText reference group comes from REFERENCE_BUCKETS
+ * (web/data/reference-buckets.ts) — one reader-facing group per bucket, in
+ * the module's validated display order, with companions and aliases beside
+ * their primary tag. NPL tags are not bucketed (one display family) and
+ * keep their own group. The bucket module throws at import if a SemText tag
+ * is missing from or duplicated across buckets, so the sidebar cannot
+ * silently drop an element.
+ */
+function referenceGroups(): NavGroup[] {
+  const bucketGroups: NavGroup[] = REFERENCE_BUCKETS.map((bucket) => ({
+    title: bucket.label,
+    items: bucket.tags.map((t) => ({
+      key: `ref-${t.name}`,
+      label: t.name,
+      href: tagHref(t.name),
+      dataRef: t.name.toLowerCase(),
+    })),
+  }));
+  const nplGroup: NavGroup = {
+    title: "NPL elements",
+    items: NPL_TAGS.map((t) => ({
+      key: `ref-${t.name}`,
+      label: t.name,
+      href: tagHref(t.name),
+      dataRef: t.name.toLowerCase(),
+    })),
+  };
+  return [...bucketGroups, nplGroup];
+}
+
 const GROUPS: NavGroup[] = [
   {
     title: "Guides",
-    items: [{ key: "cli", label: "CLI commands", href: "/docs/" }],
+    items: [
+      { key: "docs", label: "Docs", href: "/docs/" },
+      { key: "cli", label: "CLI commands", href: "/docs/#cli-commands" },
+    ],
   },
-  {
-    title: "Reference",
-    items: [{ key: "reference", label: "Tag reference", href: "/reference/" }],
-  },
+  ...referenceGroups(),
   {
     title: "Showcase",
     items: SHOWCASE_ITEMS.map((d) => ({
-      key: `showcase-${d.label.toLowerCase().replace(/[^a-z]+/g, "-")}`,
+      key: `showcase-${d.slug}`,
       label: d.label,
       href: d.href as string,
     })),
@@ -99,10 +177,14 @@ const GROUPS: NavGroup[] = [
   {
     title: "Platform",
     items: [
-      { key: "addons", label: "Add Ons", href: "/#addons" },
-      { key: "extend", label: "Extend", href: "/#extend" },
-      { key: "scope", label: "Scope", href: "/#scope" },
+      { key: "integrations", label: "Integrations", href: "/integrations/" },
+      { key: "extend", label: "Extend", href: "/extend/" },
+      { key: "themes", label: "Themes", href: "/themes/" },
     ],
+  },
+  {
+    title: "Project",
+    items: [{ key: "github", label: "GitHub", href: GITHUB_REPO }],
   },
 ];
 

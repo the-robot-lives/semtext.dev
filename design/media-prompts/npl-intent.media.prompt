@@ -1,0 +1,103 @@
+# npl-intent UX design board — one example page per display mode.
+# Reference attachments point at the snapshot set for this tag; the snapshot
+# harness was still pending when this prompt was authored (see
+# .tmp/semtext-docs-overhaul/reports/tag-npl-intent.md). Attach the PNGs from
+# .tmp/semtext-docs-overhaul/snaps/npl-intent/ once the harness lands, or
+# delete the attachments block to run without references.
+schema: "0.4"
+id: npl-intent-ux-board
+type: image
+quality: high
+
+prompt:
+  text: |
+    Design board for the SemText `<npl-intent>` element: two example pages,
+    one per display mode, stacked vertically with a clear mode caption above
+    each. Dark documentation-site aesthetic (near-black background, light
+    text, one restrained accent color), precise technical typography, no
+    decorative illustration — this is a UI design specification, not
+    marketing art.
+
+    MODE 1 — Enhanced render (JavaScript on). One labelled brief card titled
+    by its host page. Four labelled sections inside one bordered block:
+    "Goal", "Scope", "Outcomes", "Assumptions", each label visually distinct
+    from its text (small uppercase label style, clear vertical separation —
+    a label must never sit glued to the first word of its text). Goal: one
+    sentence ("Ship the fleet dashboard to stage."). Scope: one sentence.
+    Outcomes: a short two-item bullet list. Assumptions: a clean two-column
+    table with a visible header row "Assumption | Confidence" and three
+    body rows — statement text left, confidence value right: "high",
+    "medium", and an em dash for the row with no authored confidence (the
+    default marker must be visibly present, never an empty cell).
+
+    MODE 2 — JS-off reading form. The same authored content with no
+    generated chrome: plain prose blocks in modest boxes, the assumption
+    rows as three plain lines of text, no table, no labels, nothing hidden.
+    It must read as honest structured prose that survives without
+    JavaScript.
+
+    Both pages must communicate the element's intent at a glance: what the
+    effort is trying to do, where its boundaries are, and which beliefs it
+    rests on with what confidence.
+  negative: >
+    occluded or blurred text, spoiler-style hidden content, hover-to-reveal
+    panels, truncated statements, empty confidence cells, glued inline
+    labels, drop shadows on text, decorative gradients, photorealism,
+    watermarks, lorem ipsum
+  style: >
+    Minimal tech documentation UI: flat surfaces, 1px borders, subtle
+    surface elevation for the block card, generous line height, monospace
+    only for tag names and the confidence values.
+
+# Pending: snapshot PNGs from the snap harness, e.g.
+# attachments:
+#   - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-intent/example-render-1280.png
+#     role: reference
+
+output:
+  dimensions:
+    width: 1600
+    height: 1200
+    aspect_ratio: "4:3"
+  formats:
+    - format: png
+      filename: npl-intent-ux-board.png
+
+eval:
+  pass_threshold: 0.8
+  criteria:
+    mode-coverage:
+      weight: 0.3
+      description: Both display modes present as separate labelled example pages.
+      fail_signals:
+        - only one page shown
+        - modes blended into one hybrid panel
+    label-separation:
+      weight: 0.25
+      description: Goal/Scope/Outcomes/Assumptions labels are distinct from their text.
+      fail_signals:
+        - label runs into the text it labels
+        - labels missing
+    assumptions-table:
+      weight: 0.25
+      description: Enhanced mode shows the Assumption | Confidence table with high, medium and an em-dash default row.
+      fail_signals:
+        - table missing header row
+        - fewer than three rows
+        - empty confidence cell instead of an em dash
+    js-off-fidelity:
+      weight: 0.2
+      description: JS-off mode shows plain prose with no generated chrome and nothing hidden.
+      fail_signals:
+        - second page still shows a table or labels
+        - any content occluded or collapsed
+  reject_if:
+    - any statement text is hidden, blurred, or occluded (occlusion belongs to spoiler/quiz elements, never to npl-intent)
+    - any visible lorem ipsum or invented SemText tags
+
+tags:
+  - semtext
+  - npl-intent
+  - reference-ux
+product_targets:
+  - semtext.dev

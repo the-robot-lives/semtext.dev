@@ -193,7 +193,7 @@ function cliRender(facts: TryFact[], st: TermState): string[] {
   out.push("SKELETON");
   out.push("sem-enhanced-document");
   out.push(`├── sem-facts #${DECK_ID}   view-as: ${st.view}`);
-  out.push(`└── sem-view-more ×${COLLAPSED_SECTIONS.length}`);
+  out.push(`└── sem-details ×${COLLAPSED_SECTIONS.length}`);
   for (const s of COLLAPSED_SECTIONS) {
     if (st.expanded.has(s.id)) {
       out.push(`  ▾ ${s.id}  ${s.title}`);
@@ -513,8 +513,9 @@ export function TryViews({ facts }: { facts: TryFact[] }) {
           </pre>
         </figure>
         <p className="mt-3 text-sm text-ink-mute">
-          The tui view — the interactive terminal below is the same session,
-          live.
+          The <code className="font-mono">semtext tui</code> view — the
+          terminal below is the same session. Type{" "}
+          <code className="font-mono">help</code> to drive it.
         </p>
       </div>
 
@@ -533,7 +534,8 @@ export function TryViews({ facts }: { facts: TryFact[] }) {
           </pre>
         </figure>
         <p className="mt-3 text-sm text-ink-mute">
-          The --render output — expand and filter it in the terminal below.
+          The <code className="font-mono">semtext --render</code> output —
+          expand and filter it in the terminal below.
         </p>
       </div>
 

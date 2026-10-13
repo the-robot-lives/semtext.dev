@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Fragment, type ReactNode } from "react";
 import { DocsShell } from "@/components/docs-shell";
 import { ExampleViewer } from "@/components/example-viewer";
 import { SemMdExample } from "@/components/sem-md-example";
@@ -8,12 +9,16 @@ import type {
   TagAttr,
   TagRecord,
 } from "@/data/reference-glossary";
+import { EXAMPLE_VARIANTS } from "@/data/reference-example-variants";
+import {
+  bucketOf,
+  REFERENCE_BUCKETS,
+} from "@/data/reference-buckets";
 import {
   ALL_TAGS,
   GAP_MISSING,
   NPL_TAGS,
-  SEM_TAGS,
-  SPEC_VERSION,
+  bundlesFor,
   tagBySlug,
   tagHref,
   tagSlug,
@@ -58,9 +63,7 @@ export default async function ReferenceElementPage({
   const { element } = await params;
   const t = tagBySlug(element);
   if (!t) notFound();
-
-  const semTags = SEM_TAGS;
-  const nplTags = NPL_TAGS;
+  const bucket = bucketOf(t.name);
 
   const familyGroup = (title: string, tags: TagRecord[]) => ({
     title,
@@ -73,19 +76,30 @@ export default async function ReferenceElementPage({
   });
 
   const groups = [
-    { title: "Guides", items: [{ key: "cli", label: "CLI commands", href: "/docs/", dataRef: undefined }] },
+    { title: "Guides", items: [{ key: "cli", label: "CLI commands", href: "/docs/" }] },
     {
       title: "Reference",
-      items: [{ key: "reference", label: "Tag reference", href: "/reference/", dataRef: undefined }],
+      items: [{ key: "reference", label: "Tag reference", href: "/reference/" }],
     },
-    familyGroup("SemText elements", semTags),
-    familyGroup("NPL elements", nplTags),
+    ...REFERENCE_BUCKETS.map((bucket) => ({
+      title: bucket.label,
+      items: bucket.tags.map((tag) => ({
+        key: `ref-${tag.name}`,
+        label: tag.name,
+        href: tagHref(tag.name),
+        dataRef: tag.name.toLowerCase(),
+      })),
+    })),
+    familyGroup("NPL elements", NPL_TAGS),
   ];
 
   return (
     <DocsShell active={`ref-${t.name}`} groups={groups}>
       <main id="main">
-        <p className="g-eyebrow">Reference · {t.family === "sem" ? "SemText" : "NPL"}</p>
+        <p className="g-eyebrow">
+          Reference · {t.family === "sem" ? "SemText" : "NPL"}
+          {bucket ? ` · ${bucket.label}` : null}
+        </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
           <code className="font-mono">&lt;{t.name}&gt;</code>
         </h1>
@@ -102,6 +116,8 @@ export default async function ReferenceElementPage({
 function ElementBody({ tag: t }: { tag: TagRecord }) {
   const missing = GAP_MISSING.get(t.name) ?? [];
   const gapNote = missing.includes("summary") || missing.includes("description");
+  const variants = EXAMPLE_VARIANTS[t.name] ?? [];
+  const defaultRenderable = t.family === "sem" && t.name !== "sem-reader";
 
   return (
     <>
@@ -176,38 +192,70 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
         </div>
       ) : null}
 
-      {t.example ? (
-        t.name === "sem-md" ? (
-          /* The one example that IS Markdown: a Render/Source toggle over
-             the same authored block, like the landing's view control.
-             Render (the default) renders the table — statically for the
-             zero-JS export, live via the chunks/sem-md.js upgrade once
-             the lazy loader hydrates this example. */
-          <div className="mt-5 max-w-3xl">
-            <SemMdExample
-              source={t.example}
-              renderedHtml={REFERENCE_SEM_MD_RENDERED}
-              chromeLabel="sem-md — the authored block, rendered"
-            />
-          </div>
-        ) : (
-          /* The example is authored HTML: it goes to the viewer raw and is
-             escaped exactly once, at render (React text interpolation).
-             Toggle: every SemText element whose example the fallback tier
-             renders — sem-reader renders inert and sem-md has its
-             Render/Source view above, and the NPL components have no
-             browser vocabulary. */
-          <ExampleViewer
-            name={t.name}
-            code={t.example}
-            renderable={t.family === "sem" && t.name !== "sem-reader"}
-          />
-        )
+      {t.example || variants.length ? (
+        /*
+         * The stable example slot: one labelled section that holds the
+         * primary authored example plus every view mode / variant the tag
+         * exposes (data/reference-example-variants.ts). Per-tag reviewers
+         * fill the variants; the section, its heading and the per-variant
+         * anchors (#example-<id>) are fixed so pages stay uniform.
+         */
+        <section aria-labelledby="example-h" className="mt-8">
+          <h2 id="example-h" className="g-nav-title max-w-3xl">
+            Example
+          </h2>
+          {t.example ? (
+            <div className="mt-3 max-w-3xl">
+              {t.name === "sem-md" ? (
+                /* The one example that IS Markdown: a Render/Source toggle
+                   over the same authored block, like the landing's view
+                   control. Render (the default) renders the table —
+                   statically for the zero-JS export, live via the
+                   chunks/sem-md.js upgrade once the lazy loader hydrates
+                   this example. */
+                <SemMdExample
+                  source={t.example}
+                  renderedHtml={REFERENCE_SEM_MD_RENDERED}
+                  chromeLabel="sem-md — the authored block, rendered"
+                />
+              ) : (
+                /* The example is authored HTML: it goes to the viewer raw
+                   and is escaped exactly once, at render (React text
+                   interpolation). Toggle: every SemText element whose
+                   example the fallback tier renders — sem-reader renders
+                   inert and sem-md has its Render/Source view above, and
+                   the NPL components have no browser vocabulary. */
+                <ExampleViewer
+                  name={t.name}
+                  code={t.example}
+                  renderable={defaultRenderable}
+                />
+              )}
+            </div>
+          ) : null}
+          {variants.map((v) => (
+            <div key={v.id} id={`example-${v.id}`} className="mt-8 max-w-3xl">
+              <p className="g-nav-title">{v.label}</p>
+              {v.note ? (
+                <p className="mt-1 text-sm leading-6 text-ink-mute">{v.note}</p>
+              ) : null}
+              <div className="mt-3">
+                <ExampleViewer
+                  name={t.name}
+                  code={v.code}
+                  renderable={v.renderable ?? defaultRenderable}
+                />
+              </div>
+            </div>
+          ))}
+        </section>
       ) : (
         <p className="mt-5 max-w-3xl text-sm italic leading-6 text-ink-faint">
           The schema file states no authoring example for this tag.
         </p>
       )}
+
+      <RuntimeLine tag={t} />
 
       <p className="mt-4 text-xs text-ink-faint">
         Source:{" "}
@@ -222,16 +270,81 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
           ← All tags in the reference
         </a>
       </p>
-
-      <p className="mt-6 max-w-3xl text-xs leading-5 text-ink-faint">
-        Generated from the normative schema files of spec v{SPEC_VERSION}
-        {" "}(<code className="font-mono">spec/schema/sem-*.md</code>,{" "}
-        <code className="font-mono">spec/schema/npl/*.md</code>) so the page
-        cannot drift from the spec; eight elements the schema files do not
-        cover come from the spec&apos;s tag catalog. Fields a source does not
-        state stay empty and the page says so.
-      </p>
     </>
+  );
+}
+
+/*
+ * Shipped-runtime provenance, derived from the built artefacts in
+ * public/semtext/ (data/bundles.json — see scripts/build-bundle-map.mjs).
+ * States which shipped JS file provides the element, when the fallback
+ * enhancement tier also covers it, or honestly that nothing shipped does.
+ */
+function RuntimeLine({ tag: t }: { tag: TagRecord }) {
+  const b = bundlesFor(t.name);
+  if (!b) return null;
+  const code = (s: string) => <code className="font-mono">{s}</code>;
+  let body: ReactNode;
+  if (t.family === "npl") {
+    body = (
+      <>
+        not in the shipped site bundles — the npl-* namespace ships upstream
+        as {code("npl.js")} / {code("npl-lazy.js")} + {code("npl-chunks/")}, not
+        copied into {code("public/semtext/")}
+      </>
+    );
+  } else if (!b.shipped) {
+    body = <>none — the authored example renders as plain HTML</>;
+  } else {
+    const files = b.bundles ?? [];
+    const lazy = files.find((f) => f.file === "semtext-lazy.js");
+    const chunk = lazy?.detail.replace(/^loads\s+/, "");
+    const parts: ReactNode[] = [];
+    if (b.sharedWith) {
+      parts.push(
+        <span key="shared">
+          same runtime as{" "}
+          <a
+            href={tagHref(b.sharedWith)}
+            className="underline decoration-white/30 underline-offset-2 hover:decoration-white/70"
+          >
+            <code className="font-mono">&lt;{b.sharedWith}&gt;</code>
+          </a>
+          {": "}
+        </span>,
+      );
+    }
+    if (chunk) {
+      parts.push(
+        <span key="lazy">
+          {code("semtext-lazy.js")} loads {code(chunk)}
+        </span>,
+      );
+    } else if (files[0]) {
+      parts.push(<span key="file">{code(files[0].file)}</span>);
+    }
+    if (files.some((f) => f.file === "semtext-fallback.js")) {
+      parts.push(
+        <span key="fallback">
+          {code("semtext-fallback.js")} enhancement tier
+        </span>,
+      );
+    }
+    body = (
+      <>
+        {parts.map((p, i) => (
+          <Fragment key={i}>
+            {i > 0 ? " · " : null}
+            {p}
+          </Fragment>
+        ))}
+      </>
+    );
+  }
+  return (
+    <p className="mt-4 max-w-3xl text-xs leading-5 text-ink-faint">
+      Shipped runtime: {body}
+    </p>
   );
 }
 

@@ -1,5 +1,10 @@
-# CHANGELOG
+# Changelog
 
+## 2026-10-14
+- release: landing + docs IA overhaul → develop, release 1 (#14): landing polish 16d2476, docs IA befb6bb, snapshot harness f1efe2b, tag-data checkpoint c4c7a98, merged with develop c192a93
+- landing: section-by-section copy, tone and display polish (hero, the idea, degradation, reading, quick start, surface, scope); "Add-ons" renamed "Integrations" with a link to `/integrations`; tier-2 size claim corrected to "Under 14 KB"; `semtext.js` contents corrected (integration/landing-preview)
+- docs: sidebar rebuilt (Guides, SemText element buckets, Showcase, Platform, GitHub; no landing links); header search over tags + CLI; 9 showcase pages; new /integrations, /extend (scaffold + vocab-proposal wizard), /themes; reference grouped into 7 buckets, shipped-bundle line per tag, provenance footer removed; elements.json resynced (49 tags) (integration/landing-preview)
+- web: render snapshot harness (`npm run snap:tag`; managed dev server, concurrent-safe, <10px gate) (integration/landing-preview)
 ## 2026-10-13
 - Landing: Quick start moved before Reading (nav matches); Surface artifact copy corrected to the current distribution (semtext.js majors + lazy-loaded shell, semtext-lazy.js light loader, semtext-shell pair); "the vocabulary" renamed "the elements" page-wide; Scope states the Lit-components reality; draft-spec hedges replaced with beta positioning (#9).
 - Consolidated the SemText format code from noizu-labs-ml/npl-enhanced-content @ 0d8a708 (main, content fd4a166): spec/, src/, site/ (ex web/site), demo/ (ex web/demo), themes/, bin/, scripts/, test/, root package.json, helm/semtext — the flat production chart, byte-identical render to what prod runs (#3).

@@ -11,6 +11,7 @@
  */
 
 import elementsIndex from "@/data/elements.json";
+import bundlesIndex from "@/data/bundles.json";
 import {
   GLOSSARY_TAGS,
   type TagRecord,
@@ -26,6 +27,31 @@ type ElementsIndex = {
 };
 
 const INDEX = elementsIndex as ElementsIndex;
+
+/*
+ * Shipped-runtime provenance per tag, generated from the built artefacts in
+ * public/semtext/ by scripts/build-bundle-map.mjs (which file provides the
+ * tag: the lazy loader and its chunk, the fallback bundle, or nothing).
+ * Regenerate that JSON whenever public/semtext/ is re-synced.
+ */
+export interface BundleEntry {
+  file: string;
+  detail: string;
+}
+
+export interface TagBundle {
+  shipped: boolean;
+  bundles?: BundleEntry[];
+  sharedWith?: string;
+  note?: string;
+}
+
+const BUNDLES = bundlesIndex as { tags: Record<string, TagBundle> };
+
+/** Which shipped JS file(s) provide a tag, or undefined if the map predates it. */
+export function bundlesFor(name: string): TagBundle | undefined {
+  return BUNDLES.tags[name];
+}
 
 /** Spec version the generated half of the inventory was built from. */
 export const SPEC_VERSION = INDEX.specVersion;

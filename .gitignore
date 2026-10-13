@@ -7,6 +7,9 @@
 _build/
 deps/
 node_modules/
+web/scripts/snap/.next-snap/
+*.tsbuildinfo
+
 # showcase build output
 dist/
 coverage/
