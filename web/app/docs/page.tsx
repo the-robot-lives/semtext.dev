@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DocsShell, Sem, SHOWCASE_ITEMS } from "@/components/docs-shell";
+import { SEMTEXT_VERSION } from "@/lib/semtext-version";
 
 export const metadata: Metadata = {
   title: "Docs — SemText",
@@ -239,7 +240,7 @@ $`}
           <Sem className="mt-4 flex max-w-3xl flex-col gap-3" html={SHOWCAES_HTML} />
         </section>
 
-        <script defer src="/semtext/semtext.js" />
+        <script defer src={`/semtext/semtext.js?v=${SEMTEXT_VERSION}`} />
       </main>
     </DocsShell>
   );

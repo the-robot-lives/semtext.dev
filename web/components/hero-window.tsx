@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { SEMTEXT_VERSION } from "@/lib/semtext-version";
 
 /*
  * The rendered view uses the real SemText bundle, copied verbatim
@@ -92,7 +93,7 @@ export function HeroWindow() {
           window.__semJsOff = true;
           await new Promise<void>((resolve, reject) => {
             const script = document.createElement("script");
-            script.src = "/semtext/semtext.js";
+            script.src = `/semtext/semtext.js?v=${SEMTEXT_VERSION}`;
             script.onload = () => resolve();
             script.onerror = () => reject(new Error("semtext.js failed to load"));
             document.head.appendChild(script);

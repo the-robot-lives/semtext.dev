@@ -55,3 +55,17 @@ the pages' other sem-* markup stays authored prose.
 
 `themes/` here is NOT overwritten by this copy and still carries the
 local contrast patch documented above — the lazy chunks need no new CSS.
+
+## Local patch (2026-10-13) — cache-bust propagation
+
+`semtext-lazy.js` carries a one-function local patch NOT in the dist build
+it was copied from: the chunk importer appends `?v=` — the value the host
+page put on the loader URL — to every chunk URL it dynamically imports
+(`function h(e){const n=new URL(e,import.meta.url),v=new URL(import.meta
+.url).searchParams.get("v");…}`). Landing pages load the bundles (full,
+fallback, lazy, reading) with `?v=${SEMTEXT_VERSION}`, generated per build
+by `scripts/gen-version.mjs` (content hash over this directory); the
+loader forwards the same token to `chunks/*`, so chunks are revalidated on
+every rebuild too. An upstream dist build (feat/cache-bust in
+npl-enhanced-content) inlines the build hash directly; adopting it makes
+this hand patch unnecessary — re-copy then removes it.

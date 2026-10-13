@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CopySaveButtons } from "@/components/code-viewer";
+import { SEMTEXT_VERSION } from "@/lib/semtext-version";
 
 /*
  * The sem-md example's Render/Source toggle — the landing hero window's
@@ -41,7 +42,9 @@ declare global {
   }
 }
 
-const LAZY_JS = "/semtext/semtext-lazy.js";
+/** `?v=` is the generated build hash (scripts/gen-version.mjs); the loader
+ *  forwards it to every chunk it imports, so chunks are cache-busted too. */
+const LAZY_JS = `/semtext/semtext-lazy.js?v=${SEMTEXT_VERSION}`;
 
 function pill(active: boolean): string {
   return [

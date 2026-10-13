@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { SEMTEXT_VERSION } from "@/lib/semtext-version";
 
 /*
  * The Try section's four view surfaces — code, browser, tui, cli — over the
@@ -248,7 +249,7 @@ function bootSemtext(): Promise<void> {
         window.__semJsOff = true;
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
-          script.src = "/semtext/semtext.js";
+          script.src = `/semtext/semtext.js?v=${SEMTEXT_VERSION}`;
           script.onload = () => resolve();
           script.onerror = () => reject(new Error("semtext.js failed to load"));
           document.head.appendChild(script);

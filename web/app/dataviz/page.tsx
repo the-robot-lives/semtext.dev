@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { DocsShell, Sem } from "@/components/docs-shell";
+import { SEMTEXT_VERSION } from "@/lib/semtext-version";
 
 export const metadata: Metadata = {
   title: "Data visualizer — SemText showcase",
@@ -102,7 +103,7 @@ export default function DataVizPage() {
         precedence="semtext-dataviz"
         href="/dataviz/vocabulary.css"
       />
-      <Script src="/dataviz/semtext-reading.js" strategy="afterInteractive" />
+      <Script src={`/dataviz/semtext-reading.js?v=${SEMTEXT_VERSION}`} strategy="afterInteractive" />
     </DocsShell>
   );
 }

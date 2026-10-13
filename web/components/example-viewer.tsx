@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CodeViewer, CopySaveButtons } from "@/components/code-viewer";
+import { SEMTEXT_VERSION } from "@/lib/semtext-version";
 
 /*
  * One authored example on /reference: the code viewer (highlighting, line
@@ -76,7 +77,7 @@ function bootElementRuntime(): Promise<void> {
         window.__semJsOff = true;
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
-          script.src = "/semtext/semtext-fallback.js";
+          script.src = `/semtext/semtext-fallback.js?v=${SEMTEXT_VERSION}`;
           script.onload = () => resolve();
           script.onerror = () =>
             reject(new Error("semtext-fallback.js failed to load"));
