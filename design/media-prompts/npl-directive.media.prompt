@@ -1,0 +1,170 @@
+# SemText npl-directive — instruction chip, all display modes
+# Direction A "Slate Console" (house convention). Three example panels in one
+# frame, one per display mode the tag provides: the default `directive` chip
+# with qualifier, the `prefix` chip, and the minimal chip. The invariant the
+# design must broadcast: an instruction is ACCENTED, never occluded — the
+# text stays fully readable in every mode (occlusion belongs to the
+# sem-spoiler / quiz tier).
+#
+# MODE 1 — directive (default `kind`):
+#   visible: a leading emoji-size glyph slot, the instruction as the chip's
+#     prominent body, and a trailing small-caps qualifier label after a
+#     middot separator; a 3px violet accent bar on the left edge and a faint
+#     violet tint behind the whole chip.
+#   must never: render the qualifier as part of the sentence; let the glyph
+#     crowd or replace the instruction; fill the chip opaque.
+# MODE 2 — prefix (`kind="prefix"`):
+#   visible: the same chip, with a ➤ arrow between the glyph and the
+#     instruction — the prefix form of the source grammar.
+#   must never: drop the arrow, move it after the instruction, or restyle
+#     the chip body differently from mode 1.
+# MODE 3 — minimal (no `qualifier`, no elaboration):
+#   visible: glyph + instruction only — the smallest legal chip, identical
+#     accent treatment, no trailing label.
+#   must never: grow extra chrome (badge, count, border) the tag does not
+#     define.
+#
+# All modes: the `| elaboration` half of the grammar rides the title tooltip
+# and must NOT appear as visible text in the chip; where the mock wants to
+# show the tooltip contract, use one small annotation callout above mode 1
+# only (a thin leader line to an empty rounded tooltip ghost).
+#
+# Reference snapshots are produced by the snapshot-harness lane
+# (`npm run snap:tag -- npl-directive`, output into
+# .tmp/semtext-docs-overhaul/snaps/npl-directive/). Attach the best
+# `-source-` and `-fullpage-` PNGs from that directory before generation; the
+# attachments block below is left commented out because the harness was not
+# runnable when this prompt was written (driver + export build both broken;
+# see reports/tag-npl-directive.md).
+schema: '0.4'
+id: reference-npl-directive
+type: image
+quality: high
+service: gemini
+model: gemini-2.5-flash-image
+
+prompt:
+  text: |
+    Dark-mode UI mockup of three side-by-side reference-page panels
+    illustrating one instruction-chip element in its three display modes,
+    wide 16:9, flat technical illustration (screenshot-like, not 3D). Dark
+    slate navy background (#0F172A) with a barely visible thin grid and a
+    faint violet radial glow upper-left. Three equal panels sit side by
+    side, separated by thin slate hairline dividers, each panel a dark slate
+    card (#1E293B) with a thin slate hairline border, squared corners, deep
+    soft shadow; a small dim caption bar sits above each panel.
+
+    Every panel shows the SAME chip anatomy at its centre: a full-width
+    rectangular chip with a 3px violet (#7C3AED) accent bar on its left
+    edge, a barely-there violet tint fill (#7C3AED at 10% opacity over the
+    card), squared 6px corners. Inside the chip a large emoji-scale glyph
+    slot (a soft-violet #A78BFA rounded square with a single abstract spark
+    shape, never a real emoji) is followed by two brighter near-white
+    placeholder bars of differing length — the instruction, the most
+    prominent text in the panel. All copy is abstract placeholder bars —
+    strictly no letters, digits, or words anywhere.
+
+    Left panel — DIRECTIVE (default). The chip carries glyph plus two
+    instruction bars, then, after a small middot separator, a trailing
+    label: one short muted slate placeholder bar in small-caps scale,
+    clearly separated and dimmer than the instruction bars. Above this
+    panel only, a thin leader line rises from the chip to a small empty
+    rounded tooltip ghost (hairline outline, no content) — the annotation
+    for the hover elaboration.
+
+    Middle panel — PREFIX. The identical chip, with one addition: a small
+    solid violet (#7C3AED) right-pointing arrowhead sits between the glyph
+    slot and the first instruction bar. Everything else — tint, accent bar,
+    bar lengths, spacing — matches the left panel exactly.
+
+    Right panel — MINIMAL. The identical chip with glyph plus instruction
+    bars only: no middot, no trailing label, no arrow. The chip is
+    visually narrower but the accent treatment is identical.
+
+    The three chips must be pixel-comparable: same left accent bar, same
+    tint, same glyph slot, the only differences being the trailing
+    qualifier (left), the arrow (middle), and neither (right). Each panel's
+    chip sits on generous empty card space with one dim slate line of
+    context bars above it.
+  negative: legible text, letters, numbers, digits, words, captions,
+    typography, watermark, logo, light mode, white cards, 3D, photorealism,
+    faces, avatars, robot mascots, more than three panels, opaque filled
+    chip, solid color-block chip hiding its text, blurred or redacted
+    instruction bars, real emoji characters, a qualifier bar fused with the
+    instruction bars, an arrow in the left or right panel
+  style: flat dark-mode product UI illustration, squared corners, hairline
+    borders, slate and violet palette, three-panel mode comparison
+
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 1600
+    height: 900
+    aspect_ratio: '16:9'
+
+# attachments:
+#   - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-directive/npl-directive-source-1280.png
+#     role: reference
+#     description: primary example source view (directive kind, qualifier, elaboration)
+#   - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-directive/npl-directive-fullpage-1280.png
+#     role: reference
+#     description: full reference page — chrome, attribute table, example placement
+
+requirements:
+  subject: three panels of one instruction chip — left directive with
+    trailing qualifier and tooltip annotation, middle prefix with arrowhead
+    between glyph and instruction, right minimal with neither
+  palette: slate navy background, slate panels, hairline borders, violet
+    accent bar and tint, near-white instruction bars, muted slate qualifier
+  composition: three equal panels side by side, chips at a consistent
+    vertical position, identical accent anatomy across panels
+  do:
+    - keep the instruction bars the most prominent element in every panel
+    - keep the chip fill a faint tint over the card, never opaque
+    - differentiate modes only by qualifier presence and arrow presence
+  dont:
+    - any legible text, digits, real emoji, or logos
+    - occluding, blurring, or dimming the instruction bars
+    - a qualifier that reads as part of the instruction sentence
+    - extra chrome (badges, counts, buttons) the tag does not define
+
+eval:
+  pass_threshold: 0.7
+  required_pass:
+    - mode_differentiation
+    - legibility_invariant
+  criteria:
+    mode_differentiation:
+      weight: 3
+      description: Left panel has middot + trailing label + tooltip ghost;
+        middle has the arrowhead; right has neither — chips otherwise
+        identical
+      fail_signals:
+        - arrow present in the left or right panel
+        - qualifier present in the middle or right panel
+        - chip anatomy differs beyond the mode marker
+    legibility_invariant:
+      weight: 3
+      description: Instruction bars are bright, prominent and unoccluded in
+        all three panels; the chip is tinted, not filled
+      fail_signals:
+        - instruction bars dimmer than the qualifier
+        - opaque or solid chip fill
+        - blur, redaction, or occlusion overlays on any bar
+    theme_fidelity:
+      weight: 2
+      description: Dark slate + violet, squared hairline panels, flat style
+      fail_signals:
+        - light theme
+        - glossy 3D look
+        - rounded card corners
+  reject_if:
+    - any legible text, letters, digits, real emoji, watermark, or logo
+    - an occluded, blurred, or hidden instruction in any panel
+    - more than three panels or a chaotic layout
+
+tags:
+  - semtext
+  - reference
+  - npl-directive

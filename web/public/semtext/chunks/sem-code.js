@@ -1,0 +1,1 @@
+import{S as e}from"./base-4lDQJN-W.js";import{e as t}from"./code-DFvRNOxk.js";import"./attr-EimdvHQb.js";class s extends e{#e=!1;updated(){this.#e||(this.#e=!0,this.whenChildrenReady(":scope > pre").then(()=>{t(this),this.setAttribute("data-sem-upgraded","")}))}}e.register("sem-code",s);

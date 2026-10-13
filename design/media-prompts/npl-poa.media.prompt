@@ -1,0 +1,193 @@
+# SemText npl-poa — plan-of-action block, all display states
+# Direction A "Slate Console" (house convention). Three example panels in one
+# frame, one per display state the tag provides: the enhanced render of the
+# default `direction="lr"` block, the enhanced `direction="td"` variant, and
+# the JS-off degrade (no bundle). The invariants the design must broadcast:
+# the decision tree is ALWAYS readable mermaid source in a code block (the
+# component never renders a diagram — no mermaid runtime, ever), the chosen
+# path is featured ONCE prominently as a generated "selected" block, and the
+# authored `<selected>` line stays visible beneath it (quieter, never hidden).
+#
+# MODE 1 — enhanced, direction="lr" (default):
+#   visible: a bordered dark code block holding three lines of mermaid
+#     source (graph LR + two weighted edges), below it two short prose lines
+#     — one per weighted path — then one dim small line (the authored
+#     selected path), and the panel's most prominent element: a full-width
+#     "selected" block with a 3px violet accent bar on its left edge, a
+#     faint violet tint fill, a small-caps violet "selected" label followed
+#     by a middot and the chosen path in brighter text.
+#   must never: render the fence as an actual diagram, chart, boxes-and-
+#     arrows figure, or anything but monospace source; fuse the small-caps
+#     label into the sentence (the middot separator is mandatory); hide,
+#     blur, or remove the authored selected line; fill the choice block
+#     opaque.
+# MODE 2 — enhanced, direction="td":
+#   visible: the identical anatomy — code block (graph TD source), reasoning
+#     prose lines, quiet authored line, prominent selected block. The ONLY
+#     difference from mode 1 is the fence's first source line (top-down
+#     spelling); no visual direction arrow, no rotated layout.
+#   must never: restyle any element differently from mode 1 or add a visual
+#     flow diagram to "express" the direction.
+# MODE 3 — JS-off degrade (no bundle):
+#   visible: the same fence code block, the weighted-path prose lines, and
+#     the selected path as one plain prose line — NO accent bar, NO tint, NO
+#     small-caps label, NO generated block of any kind.
+#   must never: keep any enhanced chrome in this panel (that would break the
+#     nothing-hidden-nothing-generated JS-off contract); collapse the prose
+#     into a run-on paragraph (weighted paths read one per line).
+#
+# Reference snapshots are harness output in
+# .tmp/semtext-docs-overhaul/snaps/npl-poa/ (npm run snap:tag -- npl-poa;
+# per-figure source shots failed capture this run — see
+# reports/tag-npl-poa.md — so the fullpage PNGs are attached; they show the
+# reference page, attribute table and authored source context).
+schema: '0.4'
+id: reference-npl-poa
+type: image
+quality: high
+service: gemini
+model: gemini-2.5-flash-image
+
+prompt:
+  text: |
+    Dark-mode UI mockup of three side-by-side reference-page panels
+    illustrating one plan-of-action block in its three display states, wide
+    16:9, flat technical illustration (screenshot-like, not 3D). Dark slate
+    navy background (#0F172A) with a barely visible thin grid and a faint
+    violet radial glow upper-left. Three equal panels sit side by side,
+    separated by thin slate hairline dividers, each panel a dark slate card
+    (#1E293B) with a thin slate hairline border, squared corners, deep soft
+    shadow; a small dim caption bar sits above each panel.
+
+    Every panel stacks the SAME three-row anatomy top to bottom. Row 1: a
+    dark bordered code block (hairline slate border, squared 8px corners,
+    slightly darker fill than the card) holding three short lines of
+    placeholder monospace source bars — a lead line then two indented
+    branch lines, each branch line ending in a small violet weight chip
+    (a tiny rounded bar suggesting "90%" / "40%" weights). Row 2: two short
+    near-white prose lines, one per branch, each carrying a small violet
+    weight chip — the weighted reasoning, one path per line, never a fused
+    paragraph. Row 3 differs by panel.
+
+    Left panel — ENHANCED, default direction. Row 3a: one very short dim
+    muted slate prose line (the authored record of the choice). Row 3b, the
+    most prominent element in the panel: a full-width block with a 3px
+    violet (#7C3AED) accent bar on its left edge, a barely-there violet tint
+    fill (#7C3AED at 12% over the card), squared 6px corners; inside it a
+    small-caps violet label bar (short), then a middot separator, then one
+    bright near-white placeholder bar (the chosen path) — label clearly
+    separated, never fused with the path.
+
+    Middle panel — ENHANCED, top-down variant. Identical to the left panel
+    in every measure (accent bar, tint, label, brightness, spacing); only
+    the code block's lead source line differs (same placeholder-bar look).
+    Nothing else changes.
+
+    Right panel — JS-OFF DEGRADE. Rows 1 and 2 identical; row 3 is a single
+    plain dim prose line aligned with the reasoning lines — no accent bar,
+    no tint, no small-caps label, no generated block. The panel must read
+    as the same document with the enhancement layer switched off.
+
+    The three panels must be pixel-comparable in rows 1-2; only row 3
+    differentiates them. All copy stays abstract placeholder bars —
+    strictly no letters, digits, or words anywhere; weight chips are
+    abstract violet ticks, not numerals.
+  negative: legible text, letters, numbers, digits, words, captions,
+    typography, watermark, logo, light mode, white cards, 3D, photorealism,
+    faces, avatars, robot mascots, more than three panels, a rendered flow
+    diagram, boxes-and-arrows chart, graph nodes with real edges, opaque
+    filled selected block, the selected label fused with the path text,
+    enhanced chrome (accent bar, tint, label) in the right JS-off panel, a
+    missing or blurred authored selected line
+  style: flat dark-mode product UI illustration, squared corners, hairline
+    borders, slate and violet palette, three-panel state comparison
+
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 1600
+    height: 900
+    aspect_ratio: '16:9'
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-poa/npl-poa-fullpage-1280.png
+    role: reference
+    description: reference page at 1280 — chrome, attribute table, authored
+      source of the primary example (source-only view)
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-poa/npl-poa-fullpage-390.png
+    role: reference
+    description: reference page at 390 — mobile context of the same page
+
+requirements:
+  subject: three panels of one plan-of-action block — left enhanced default
+    with quiet authored line + prominent selected block, middle enhanced
+    top-down variant identical except the fence source, right JS-off
+    degrade with plain prose only
+  palette: slate navy background, slate panels, hairline borders, violet
+    accent bar and tint on the selected block only, near-white prose bars,
+    muted slate authored line, violet weight chips
+  composition: three equal panels side by side, the three-row anatomy at a
+    consistent vertical rhythm, rows 1-2 pixel-comparable across panels
+  do:
+    - keep the code block unmistakably monospace source, never a diagram
+    - keep the selected block the single most prominent element in the two
+      enhanced panels
+    - keep the authored selected line visible (dimmer) beneath the selected
+      block in the enhanced panels
+    - render weighted reasoning as one line per path, never fused
+  dont:
+    - any legible text, digits, real logos, or a rendered mermaid diagram
+    - enhanced chrome of any kind in the JS-off panel
+    - hiding, blurring, or deleting the authored selected line
+    - a small-caps label fused with the chosen-path text
+
+eval:
+  pass_threshold: 0.7
+  required_pass:
+    - state_differentiation
+    - source_not_diagram
+    - choice_prominence
+  criteria:
+    state_differentiation:
+      weight: 3
+      description: Left has quiet line + selected block; middle is identical
+        except the fence source line; right has plain prose only — no
+        enhanced chrome
+      fail_signals:
+        - accent bar, tint, or label present in the right panel
+        - selected block missing from the left or middle panel
+        - panel anatomy differs beyond the row-3 difference
+    source_not_diagram:
+      weight: 3
+      description: Row 1 reads as monospace source in a bordered code block
+        in all three panels
+      fail_signals:
+        - any drawn diagram, nodes, edges, or chart shape
+        - a missing or restyled code block in any panel
+    choice_prominence:
+      weight: 3
+      description: The selected block is the most prominent element in the
+        enhanced panels; label and path are separated by a middot; the
+        authored line stays visible beneath
+      fail_signals:
+        - the authored selected line hidden, blurred, or absent
+        - label fused with the path text
+        - the selected block dimmer than the reasoning rows
+    theme_fidelity:
+      weight: 2
+      description: Dark slate + violet, squared hairline panels, flat style
+      fail_signals:
+        - light theme
+        - glossy 3D look
+        - rounded card corners
+  reject_if:
+    - any legible text, letters, digits, watermark, or logo
+    - a rendered diagram in place of the mermaid source anywhere
+    - enhanced chrome in the JS-off panel
+    - more than three panels or a chaotic layout
+
+tags:
+  - semtext
+  - reference
+  - npl-poa

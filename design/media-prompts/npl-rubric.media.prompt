@@ -1,0 +1,139 @@
+# npl-rubric - reference-page UX direction for the five display states.
+# Authored by the tag nitpick lane, 2026-10-14. Not yet generated.
+schema: "0.4"
+id: npl-rubric-reference-ux
+type: image
+quality: high
+prompt:
+  text: |
+    Design board for a reference-documentation page, dark theme (deep
+    navy-charcoal surfaces, near-white text, muted slate secondary text,
+    a single indigo-blue accent). The page documents a weighted scoring
+    rubric element: one small table of criteria, each row naming a
+    criterion with a numeric weight and a numeric score, closed by an
+    "Overall" footer row carrying a single figure. The board shows FIVE
+    stacked example sections, one per display state, each with a small
+    uppercase caption above it. No marketing chrome, no navigation, no
+    browser window - five quiet document panels on a flat dark page.
+
+    Every panel is the same card: a faint surface fill, a hairline border,
+    a 12px radius, generous but regular padding; inside sits a compact
+    two-to-three column table. Column heads are small, uppercase, widely
+    letter-spaced, muted: "CRITERION" left-aligned, "WEIGHT" and "SCORE"
+    right-aligned. Numeric cells use tabular monospace figures aligned in a
+    clean right column. Row labels are a neutral sans at full brightness. A
+    hairline rule separates the column heads from the rows and the rows from
+    the footer.
+
+    Section 1 - "STATED OVERALL": caption line "Code review", two rows
+    (Correctness 3 4, Style 1 5), then the footer row "Overall (STATED)"
+    with the figure 4.2 right-aligned. The footer row carries a thin
+    indigo-blue accent bar on its left edge and a barely-there accent tint
+    (about 12% opacity, never an opaque block) across the row; the word
+    Overall is semibold and the qualifier "(STATED)" is small-caps muted.
+    The figure itself is monospace, bold-ish, right-aligned.
+
+    Section 2 - "COMPUTED OVERALL": caption "Deployment readiness", three
+    rows (Rollback plan 2 5, Alerting 1 4, Runbook 1 5), footer
+    "Overall (COMPUTED) 4.75". The row MUST carry the parenthetical marker
+    "(COMPUTED)" in the same small-caps muted style as section 1 - a bare
+    figure with no stated/computed marker is a failure.
+
+    Section 3 - "EXCLUDED CRITERIA": caption "Triage", four rows. Impact 2 4
+    is ordinary. Confidence has its weight cell as an em dash and the score
+    5; Urgency has weight "high" and score 3; Cost has weight 1 and an em
+    dash score. Under each of those three names sits a small second line in
+    the warning red-tint - "ignored - no numeric weight" for the first two,
+    "ignored - no numeric score" for the last. Those three rows are QUIETED
+    only in the sense that the dash cells and the flag line are muted/red;
+    their names, weights and scores stay at full brightness and fully
+    legible - an excluded row is marked and kept, never hidden, dimmed to
+    illegibility, or struck through. Footer "Overall (COMPUTED) 4".
+
+    Section 4 - "CLASS-FORM (DATA-TITLE)": caption "Class-form rubric", two
+    rows (Correctness 3 4, Clarity 1 5), footer "Overall (STATED) 4.25".
+    Rendered identically to section 1 - the board shows the result, not the
+    authoring form.
+
+    Section 5 - "OVERALL WITHOUT CRITERIA": caption "Sign-off", the column
+    heads present, NO criterion rows, and the footer "Overall (STATED) 4.6"
+    directly under the head rule - a rubric that is only a title and a
+    figure still reads as a complete small table, with no empty box, no
+    placeholder row, no "0" or "n/a" filler.
+
+    Typography: monospace for figures, the em dashes and the mode captions;
+    a clean neutral sans for criterion names and the word Overall. Hairline
+    borders, small radii, spacing tight and regular. Everything must read as
+    quiet instrumentation inside a spec document, not as a dashboard widget.
+  negative: |
+    Light theme; white background; glossy gradients; neon cyberpunk glow;
+    dashboard card grids; donut, pie, gauge, radar, sparkline or bar charts;
+    progress bars; star ratings; checkmarks or crosses as scores; sliders;
+    mascots; logos; watermarks; navigation bars; browser chrome; more or
+    fewer than five named sections; a section with no caption; an overall
+    figure without its (STATED)/(COMPUTED) marker; a fully opaque accent
+    block as the footer row; hidden, struck-through, greyed-out or legible-
+    defeated excluded rows; an em-dash row rendered as zero; modal dialogs
+    or toast popups; any imagery other than the five tables.
+  style: |
+    Flat minimal dark technical documentation, minimal-tech aesthetic,
+    table-first restraint, hairline rules, monospace numerals, WCAG AA
+    contrast on all text including the warning-tinted flag lines.
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-rubric/npl-rubric-render-stated-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-rubric/npl-rubric-render-computed-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-rubric/npl-rubric-render-excluded-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-rubric/npl-rubric-render-class-form-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-rubric/npl-rubric-render-overall-only-390.png
+    role: reference
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+  formats:
+    - format: png
+      filename: npl-rubric-reference-ux.png
+eval:
+  pass_threshold: 0.75
+  criteria:
+    state-coverage:
+      weight: 0.3
+      description: Exactly five captioned sections in order - stated, computed, excluded, class-form, overall-without-criteria; overall-only has no criterion rows.
+      fail_signals:
+        - "only one or two sections visible"
+        - "sections unlabelled or mislabelled"
+        - "the overall-without-criteria section shows filler rows"
+    table-anatomy:
+      weight: 0.3
+      description: Every section is a real table - CRITERION/WEIGHT/SCORE heads, right-aligned tabular figures, hairline rules, and an Overall footer row with a (STATED)/(COMPUTED) marker.
+      fail_signals:
+        - "column heads missing"
+        - "figures not right-aligned or not tabular"
+        - "overall figure with no stated/computed marker"
+    exclusion-legibility:
+      weight: 0.25
+      description: Excluded rows keep full-brightness names and values, show an em dash for the missing cell, and carry a warning-tinted "ignored - <reason>" line; footer averages only the included criteria.
+      fail_signals:
+        - "excluded row dimmed, struck through or hidden"
+        - "missing cell rendered as 0 rather than an em dash"
+        - "no reason line under an excluded criterion"
+    theme-match:
+      weight: 0.15
+      description: Dark minimal-tech surfaces, hairline borders, mono/sans split, AA-legible text including the red-tinted flags, footer tint restrained to a light accent wash.
+      fail_signals:
+        - "light background anywhere"
+        - "neon glow or gradient gloss"
+        - "solid opaque accent block as the footer"
+  reject_if:
+    - "image is light-themed overall"
+    - "any chart, gauge or dashboard widget replaces the tables"
+    - "fewer than five captioned sections"
+tags:
+  - semtext
+  - npl-rubric
+  - reference-design
+  - dark-ui
