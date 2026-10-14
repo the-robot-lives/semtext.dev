@@ -44,6 +44,27 @@
   var statusEl = null;
   var ed = null;
 
+  // The Hologram client router rewrites the URL during hydration and
+  // drops the query string, so location.search is unreliable by the time
+  // the boot chain finishes. The navigation timing entry preserves the
+  // URL the browser actually loaded — read the params from there.
+  function originalSearch() {
+    try {
+      var entries = performance.getEntriesByType("navigation");
+      var nav = entries && entries[0];
+      if (nav && nav.name) {
+        var q = nav.name.indexOf("?");
+        if (q !== -1) return nav.name.substring(q + 1);
+      }
+    } catch (e) {
+      // performance API unavailable — fall through to location.search
+    }
+    return window.location.search;
+  }
+
+  // Snapshot at script-eval time (before any async rewrite can land).
+  var QUERY = originalSearch();
+
   function status(msg) {
     if (!statusEl) {
       statusEl = document.getElementById("editor-status");
@@ -167,7 +188,7 @@
       status("The editor mount point is missing from this page.");
       return;
     }
-    var params = new URLSearchParams(window.location.search);
+    var params = new URLSearchParams(QUERY);
     var example = params.get("example");
     var src = params.get("src");
     if (example) {
