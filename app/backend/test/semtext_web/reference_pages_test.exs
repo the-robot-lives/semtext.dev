@@ -60,6 +60,7 @@ defmodule SemtextWeb.ReferencePagesTest do
     test "responds 200 with the element title", %{conn: conn} do
       assert conn.status == 200
       body = html_response(conn, 200)
+      assert body =~ "<title>&lt;sem-note&gt; — SemText reference</title>"
       assert body =~ "&lt;sem-note&gt;"
       assert body =~ "SemText element"
     end

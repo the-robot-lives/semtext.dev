@@ -71,6 +71,11 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
       groups: Nav.groups(),
       slug: tag_slug(tag),
       name: t,
+      # Per-tag <title>/og:title. Hologram merges page state into layout
+      # props (build_layout_props_dom), so this overrides SiteLayout's
+      # static page_title — matching the Next export's "<tag> — SemText
+      # reference" (SSR escapes the angle brackets for us).
+      page_title: "<#{t}> — SemText reference",
       family_label: if(tag.family == :sem, do: "SemText", else: "NPL"),
       family_pill: if(tag.family == :sem, do: "SemText element", else: "NPL element"),
       bucket_label: bucket_label(t) || "",
