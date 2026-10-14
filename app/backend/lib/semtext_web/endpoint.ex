@@ -8,11 +8,13 @@ defmodule SemtextWeb.Endpoint do
   # Style-guide CSS + Hologram client bundles + vendored SemText islands
   # (priv/static/semtext/** — the same artefacts the Next.js site ships at
   # /semtext/**; design v2 §2.2). The js/ dir carries the island bridge.
+  # demo/ + spec/ are byte-copies of the Next.js public/ demo windows and the
+  # HTML spec the landing links to (port-landing lane).
   plug Plug.Static,
     at: "/",
     from: :semtext,
     gzip: false,
-    only: ~w(themes css hologram favicon.ico robots.txt semtext js)
+    only: ~w(themes css hologram favicon.ico robots.txt semtext js demo spec)
 
   if code_reloading? do
     plug Phoenix.CodeReloader
