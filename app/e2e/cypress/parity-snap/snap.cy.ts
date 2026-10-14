@@ -34,6 +34,13 @@
 type SnapEnv = { tag: string; route: string; base: string; dist: string; out: string };
 const snap = Cypress.env("snap") as SnapEnv;
 
+// A snapshot of a broken page IS the parity evidence — an app whose
+// runtime JS throws must still get captured (full-page + whatever
+// rendered), so the diff shows the divergence instead of aborting.
+// (The BDD suite keeps the strict uncaught-error + console policy; this
+// config runs with supportFile: false, so nothing else applies.)
+Cypress.on("uncaught:exception", () => false);
+
 const WIDTHS: Array<{ w: number; h: number }> = [
   { w: 1280, h: 800 },
   { w: 1024, h: 800 },
