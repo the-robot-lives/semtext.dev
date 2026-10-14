@@ -50,7 +50,7 @@ jobs:
       - run: npm run build
 
   unit:
-    # vitest unit tier + coverage gate (threshold in vite.config.ts). The dockerfile spec reads dist/, so build first.
+    # vitest unit tier + coverage gate (threshold in vite.config.ts).
     runs-on: ubuntu-latest
     env:
       CYPRESS_INSTALL_BINARY: 0 # no browser needed here
@@ -62,7 +62,6 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
-      - run: npm run build
       - run: npm run test:unit:cover
       - uses: actions/upload-artifact@v4
         if: always()
