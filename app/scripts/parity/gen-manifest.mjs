@@ -78,7 +78,11 @@ function stripScripts(html) {
 function extract(html) {
   const visible = stripScripts(html);
   const title = visible.match(/<title[^>]*>([\s\S]*?)<\/title>/);
-  const h1 = visible.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+  // the page h1 lives inside <main> on both sides; scoping keeps payload
+  // residue or chrome-level headings out of the seed
+  const mainScope = visible.match(/<main\b[\s\S]*<\/main>/i);
+  const h1Scope = mainScope ? mainScope[0] : visible;
+  const h1 = h1Scope.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
   return {
     title: cleanHtml(title?.[1]) || null,
     h1: cleanHtml(h1?.[1]) || null,

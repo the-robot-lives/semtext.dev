@@ -150,7 +150,15 @@ defmodule SemtextWeb.Parity.RouteParityTest do
   defp assert_h1(route, body) do
     want = route["h1"] && String.replace_suffix(route["h1"], "…", "")
 
-    case Regex.run(~r/<h1[^>]*>([\s\S]*?)<\/h1>/, body) do
+    # The page h1 lives inside <main> on both sides; scoping keeps payload
+    # residue or chrome-level headings out of the comparison.
+    scope =
+      case :binary.match(body, "<main") do
+        {pos, _} -> String.slice(body, pos..-1//1)
+        :nomatch -> body
+      end
+
+    case Regex.run(~r/<h1[^>]*>([\s\S]*?)<\/h1>/, scope) do
       [_, h1] ->
         got =
           h1

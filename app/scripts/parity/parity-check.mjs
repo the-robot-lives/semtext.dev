@@ -122,11 +122,15 @@ function stripScripts(html) {
   return html.replace(/<script\b[\s\S]*?<\/script>/gi, "");
 }
 
-/** title + first h1 + flattened text of a rendered page. */
+/** title + first h1 + flattened text of a rendered page. The page h1 is
+ * scoped to <main> when present (both sides keep it there) so payload
+ * residue or chrome-level headings never win the comparison. */
 function extract(html) {
   const visible = stripScripts(html);
   const title = visible.match(/<title[^>]*>([\s\S]*?)<\/title>/);
-  const h1 = visible.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+  const mainScope = visible.match(/<main\b[\s\S]*<\/main>/i);
+  const h1Scope = mainScope ? mainScope[0] : visible;
+  const h1 = h1Scope.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
   return {
     title: clean(title?.[1]),
     h1: clean(h1?.[1]),
