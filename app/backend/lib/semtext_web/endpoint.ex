@@ -1,0 +1,47 @@
+defmodule SemtextWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :semtext
+
+  socket "/socket", SemtextWeb.UserSocket,
+    websocket: [timeout: 45_000],
+    longpoll: false
+
+  # Style-guide CSS + Hologram client bundles + vendored SemText islands
+  # (priv/static/semtext/** — the same artefacts the Next.js site ships at
+  # /semtext/**; design v2 §2.2). The js/ dir carries the island bridge.
+  plug Plug.Static,
+    at: "/",
+    from: :semtext,
+    gzip: false,
+    only: ~w(themes css hologram favicon.ico robots.txt semtext js)
+
+  if code_reloading? do
+    plug Phoenix.CodeReloader
+    plug Phoenix.Ecto.CheckRepoStatus, otp_app: :semtext
+  end
+
+  plug SemtextWeb.Plugs.CORS
+  plug Plug.RequestId
+  plug SemtextWeb.Plugs.OtelLoggerMetadata
+  plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
+
+  plug Plug.Parsers,
+    parsers: [:urlencoded, :multipart, :json],
+    pass: ["*/*"],
+    json_decoder: Phoenix.json_library()
+
+  plug Plug.MethodOverride
+  plug Plug.Head
+  # Plug options are evaluated at compile time, so the session's signing salt
+  # is read at runtime by SemtextWeb.Plugs.Session instead of being committed
+  # here as a literal.
+  plug SemtextWeb.Plugs.Session
+
+  # Host-based dispatch (design v2 §3.1) BEFORE any page routing: the
+  # proposals host goes to its own router and unknown hosts 404, so neither
+  # ever reaches Hologram page routes.
+  plug SemtextWeb.Plugs.HostDispatch
+
+  # Hologram pages/commands BEFORE the Phoenix JSON API router
+  plug Hologram.Router
+  plug SemtextWeb.Router
+end
