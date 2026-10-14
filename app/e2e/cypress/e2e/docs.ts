@@ -5,23 +5,24 @@ import { visitOrGap, whenServed } from "../support/parity";
 
 /*
  * Port of the landing-preview docs steps to the Hologram replatform
- * (parity-harness lane). Aligned with the docs page as rebuilt by the
- * left-sidebar layout: nav groups Guides/Reference/Showcase/Platform,
- * sections cli-commands and showcase. The Reference group points at the
- * tag reference; showcase rows point at the external showcase origin, so
- * the menu assertions check hrefs without following them.
+ * (parity-harness lane), aligned with the docs page as it stands in the
+ * landing-preview export: left sidebar (Docs nav) links Docs / CLI
+ * commands / per-tag reference rows / showcase rows / Integrations /
+ * Extend / Themes; the header carries Reference (not Docs). Sections on
+ * the docs page: cli-commands and showcase.
  *
  * Trailing-slash note: the Next.js static export serves /docs/ directory
  * URLs; the Hologram app serves /docs. Location assertions accept BOTH —
  * the URL convention is not the parity surface.
  */
 
+// [label, href] pairs verified against the landing-preview docs sidebar.
 const MENU_LINKS: Array<[string, string]> = [
-  ["CLI commands", "/docs/"],
-  ["Tag reference", "/reference/"],
-  ["Add Ons", "/#addons"],
-  ["Extend", "/#extend"],
-  ["Scope", "/#scope"],
+  ["Docs", "/docs/"],
+  ["CLI commands", "/docs/#cli-commands"],
+  ["Integrations", "/integrations/"],
+  ["Extend", "/extend/"],
+  ["Themes", "/themes/"],
 ];
 
 const CLI_SUBCOMMANDS = [
@@ -60,7 +61,10 @@ Then("the docs menu links to its reference targets", () => {
   whenServed(() => {
     cy.get('nav[aria-label="Docs"]').within(() => {
       MENU_LINKS.forEach(([label, href]) =>
-        cy.contains("a", label).should("have.attr", "href", href)
+        cy
+          .get(`a[href="${href}"]`)
+          .should("have.length", 1)
+          .and("contain", label)
       );
     });
   });
@@ -68,7 +72,12 @@ Then("the docs menu links to its reference targets", () => {
 
 When("I follow the docs menu link {string}", (label: string) => {
   whenServed(() => {
-    cy.get('nav[aria-label="Docs"]').contains("a", label).click();
+    const entry = MENU_LINKS.find(([l]) => l === label);
+    const nav = () => cy.get('nav[aria-label="Docs"]');
+    // "CLI commands" exists twice in the nav (absolute + in-page anchor),
+    // so match by the mapped href when the label is known.
+    if (entry) nav().find(`a[href="${entry[1]}"]`).click();
+    else nav().contains("a", label).click();
   });
 });
 
@@ -98,26 +107,9 @@ Then("the CLI commands section is shown", () => {
   });
 });
 
-Then("I land on the landing page scope section", () => {
+Then("I land on the landing page try section", () => {
   whenServed(() => {
     cy.location("pathname").should("match", /\/(index\.html)?$/);
-    cy.location("hash").should("eq", "#scope");
-    cy.get("section#scope h2").should("exist");
-  });
-});
-
-Then("I land on the landing page add-ons section", () => {
-  whenServed(() => {
-    cy.location("pathname").should("match", /\/(index\.html)?$/);
-    cy.location("hash").should("eq", "#addons");
-    cy.get("section#addons h2").should("exist");
-  });
-});
-
-Then("I land on the landing page extend section", () => {
-  whenServed(() => {
-    cy.location("pathname").should("match", /\/(index\.html)?$/);
-    cy.location("hash").should("eq", "#extend");
-    cy.get("section#extend h2").should("exist");
+    cy.get("section#try h2").should("exist");
   });
 });
