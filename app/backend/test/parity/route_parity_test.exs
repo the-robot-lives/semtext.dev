@@ -96,10 +96,19 @@ defmodule SemtextWeb.Parity.RouteParityTest do
       # extensionless paths. The convention difference must never read as
       # a parity gap — retry de-slashed.
       conn = get(build_conn(), String.trim_trailing(path, "/"))
-      {:ok, conn.status, conn.resp_body}
+      {:ok, conn.status, extractable(conn.resp_body)}
     else
-      {:ok, conn.status, conn.resp_body}
+      {:ok, conn.status, extractable(conn.resp_body)}
     end
+  end
+
+  # Hologram's SSR embeds a large client payload (serialized VDOM +
+  # component state) in an early <script>; example SOURCE embedded in that
+  # payload carries literal markup bytes ("<h1 …"), so title/h1/keyText
+  # checks must never read inside it. Everything parity-related looks at
+  # the script-stripped body.
+  defp extractable(body) do
+    String.replace(body, ~r/<script\b[\s\S]*?<\/script>/i, "")
   end
 
   defp crash_summary(formatted) do

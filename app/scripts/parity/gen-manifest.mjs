@@ -69,9 +69,16 @@ function cleanHtml(s) {
 }
 
 /** title + first h1 from a rendered Next page. */
+// Hologram SSR (and any page embedding code samples in scripts) can carry
+// literal markup bytes inside <script> payloads — never extract from those.
+function stripScripts(html) {
+  return html.replace(/<script\b[\s\S]*?<\/script>/gi, "");
+}
+
 function extract(html) {
-  const title = html.match(/<title[^>]*>([\s\S]*?)<\/title>/);
-  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+  const visible = stripScripts(html);
+  const title = visible.match(/<title[^>]*>([\s\S]*?)<\/title>/);
+  const h1 = visible.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
   return {
     title: cleanHtml(title?.[1]) || null,
     h1: cleanHtml(h1?.[1]) || null,

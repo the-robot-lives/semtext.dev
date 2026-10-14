@@ -54,13 +54,13 @@
     {
       "path": "/elements/",
       "kind": "soft-redirect",
-      "owner": "port-docs",
+      "owner": "port-reference",
       "title": "Redirecting to the tag reference — SemText",
       "h1": "The elements moved",
       "keyText": ["/reference/"],
       "selectors": [],
       "redirectTarget": "/reference/",
-      "note": "Next serves a meta-refresh page (works from any static server; nginx 301s). Hologram parity: either a 3xx to /reference/ OR a 200 page carrying a meta refresh to /reference/."
+      "note": "Next serves a meta-refresh page (works from any static server; nginx 301s). Hologram parity: either a 3xx to /reference/ OR a 200 page carrying a meta refresh to /reference/. Owner corrected to port-reference (2026-10-14, port-docs flagged it outside their brief — reference catalog)."
     },
     {
       "path": "/extend/",

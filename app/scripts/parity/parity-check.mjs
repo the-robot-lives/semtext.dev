@@ -115,14 +115,22 @@ function clean(s) {
     .trim();
 }
 
+/** Drop <script> regions: Hologram's SSR embeds a large serialized-VDOM
+ * payload in an early script whose example SOURCE carries literal markup
+ * bytes ("<h1 …") — title/h1/text checks must never read inside it. */
+function stripScripts(html) {
+  return html.replace(/<script\b[\s\S]*?<\/script>/gi, "");
+}
+
 /** title + first h1 + flattened text of a rendered page. */
 function extract(html) {
-  const title = html.match(/<title[^>]*>([\s\S]*?)<\/title>/);
-  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+  const visible = stripScripts(html);
+  const title = visible.match(/<title[^>]*>([\s\S]*?)<\/title>/);
+  const h1 = visible.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
   return {
     title: clean(title?.[1]),
     h1: clean(h1?.[1]),
-    text: clean(html),
+    text: clean(visible),
   };
 }
 
