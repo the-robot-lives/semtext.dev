@@ -35,12 +35,12 @@
     {
       "path": "/dataviz/",
       "kind": "page",
-      "owner": "unassigned",
+      "owner": "port-reference",
       "title": "Data visualizer — SemText showcase",
       "h1": "Data visualizer",
       "keyText": [],
       "selectors": [],
-      "note": "Not named in any P0 lane's brief scope; flagged to the lead in the parity lane report."
+      "note": "Assigned to port-reference by the coordinator (2026-10-14); ported in 5e46399."
     },
     {
       "path": "/docs/",
@@ -60,7 +60,7 @@
       "keyText": ["/reference/"],
       "selectors": [],
       "redirectTarget": "/reference/",
-      "note": "Next serves a meta-refresh page (works from any static server; nginx 301s). Hologram parity: either a 3xx to /reference/ OR a 200 page carrying a meta refresh to /reference/. Owner corrected to port-reference (2026-10-14, port-docs flagged it outside their brief — reference catalog)."
+      "note": "Next serves a meta-refresh page (works from any static server; nginx 301s). Hologram parity: either a 3xx to /reference/ OR a 200 page carrying a meta refresh to /reference/. Ported by port-reference in 5e46399 (meta-refresh + manual link per the Next fallback)."
     },
     {
       "path": "/extend/",
