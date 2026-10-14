@@ -1,0 +1,206 @@
+# SemText sem-table — six display modes on one design sheet
+# House style shared with the other tag prompts (minimal-tech light theme,
+# dark slate canvas). One example page per display mode, in one frame:
+# plain sortable (default), filter, sticky internal-scroll, comparison
+# first-column stick, class-form alias, and the no-scripts plain table.
+#
+# NOTE on the attached reference renders: the snapshot harness masks every
+# position:sticky element page-wide, so the header row and pinned first
+# column are MISSING from some references. The design intent — and the
+# graded requirement — is that enhanced panels ALWAYS show a legible
+# header row (sort arrows on sortable columns) and the comparison panel
+# shows its first column pinned. Do not copy the masked state.
+schema: "0.4"
+id: sem-table-ux-design
+type: image
+quality: high
+product_targets:
+  - semtext.dev
+tags:
+  - semtext
+  - sem-table
+  - ux-design
+  - reference
+
+prompt:
+  text: |
+    UX design sheet for the SemText `<sem-table>` element: a 3x2 grid of
+    SIX labeled example pages, each a small card-framed data table in the
+    minimal-tech-light theme on a dark slate canvas (bg #0f172a, surface
+    #1e293b, fg #e2e8f0, accent #60a5fa, hairline #334155 borders, mono
+    uppercase caption labels). Every enhanced panel shows a REAL header
+    row with legible column labels.
+
+    Panel 1 — caption "SORTABLE (default)". A 3-row table, caption
+    "Token lifetimes", columns TOKEN / LIFETIME / ROTATES. Header labels
+    in small caps; each sortable header carries a tiny neutral up/down
+    arrow pair. The LIFETIME header is the active sort: accent-colored
+    label with a single filled down-arrow, and the three body rows
+    visibly ordered by duration (15 min, 7 days, 30 days). No filter
+    box, no chrome bar — with nothing but sort the element shows only
+    the table.
+
+    Panel 2 — caption "FILTER". The "Active sessions" table (3 rows,
+    columns DEVICE / LAST SEEN / REGION) inside a slim chrome bar: a
+    labelled search input reading "Filter rows" on the left, a muted
+    status text "3 rows" on the right. Header labels are plain — no
+    sort arrows on this panel.
+
+    Panel 3 — caption "STICKY". A 10-row "Recent deploys" table capped
+    at a fixed height: an internal scrollbar on the table frame's right
+    edge with the thumb pulled mid-way, five body rows visible, rows 6+
+    fading under the frame bottom — and the HEADER ROW still fully
+    visible at the top of the scroll area (surface background, hairline
+    below), pinned over the scrolled body. This is the whole point of
+    the panel: header stays, body scrolls inside its own frame.
+
+    Panel 4 — caption "COMPARISON". A narrow phone-width frame with a
+    6-column "Hosting plans" table scrolling horizontally INSIDE its own
+    frame (a short horizontal scrollbar under the body): the PLAN
+    column (Dev / Team / Scale) is PINNED at the left edge — opaque
+    surface background, a hairline shadow at its right boundary — while
+    the ROWS / STORAGE / BACKUPS columns slide beneath it, one column
+    visibly cut mid-glyph by the pinned edge. Header row fully visible.
+
+    Panel 5 — caption "CLASS FORM". Pixel-identical to panel 1 (same
+    "Token lifetimes" table, chrome-less, arrows on headers): the alias
+    authoring form renders exactly like the element form. Same table,
+    same arrows, same order.
+
+    Panel 6 — caption "NO SCRIPTS". The authored table bare: caption
+    "Token lifetimes", plain small-caps header labels with NO arrows,
+    three rows in authored order, no chrome bar, no search input, no
+    scrollbar. Everything readable, nothing interactive, nothing hidden.
+
+    Typography: clean system sans (Inter-like), 13-14px table text,
+    1.5 line height, captions in mono uppercase. Consistent card radius
+    and spacing across all six panels.
+  negative: >
+    missing or blank header row on any enhanced panel; sort arrows on the
+    no-scripts panel; filter box on the default or class-form panels;
+    table clipped by the page edge (every table scrolls inside its own
+    frame); occluded, blurred or struck-through cell text; neon glow;
+    light background; more or fewer than six labeled panels; watermark;
+    lorem ipsum; invented nav bars, buttons or pagination not described.
+
+  style: >
+    Flat UI spec sheet, minimal-tech aesthetic, restrained single-accent
+    palette, crisp 12px card radius, hairline borders, generous negative
+    space. Reads as a panel from a design-system guide, not a dashboard
+    screenshot.
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-table/sem-table-primary-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-table/sem-table-sticky-long-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-table/sem-table-comparison-wide-render-390.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-table-live/filter-1280.png
+    role: reference
+
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+
+requirements:
+  panels:
+    - id: sortable
+      visible:
+        - caption and legible small-caps header labels
+        - neutral up/down affordance on every sortable header
+        - active header: accent label + single filled arrow, rows reordered
+      must_never:
+        - show a filter box or chrome bar on the default panel
+        - leave the active sort state ambiguous
+    - id: filter
+      visible:
+        - chrome bar with labelled search input and status "3 rows"
+        - plain header labels without sort affordances
+      must_never:
+        - drop the status text
+        - add sort arrows
+    - id: sticky
+      visible:
+        - fixed-height table frame with internal vertical scrollbar mid-way
+        - header row pinned and fully legible over scrolled body rows
+      must_never:
+        - scroll the header away with the body
+        - show a page-level scrollbar doing the scrolling
+    - id: comparison
+      visible:
+        - first column pinned with surface background + right hairline
+        - body columns sliding under the pinned edge, clipped mid-glyph
+        - internal horizontal scrollbar under the body
+      must_never:
+        - hide the first column
+        - let the table overflow its card or the page
+    - id: class-form
+      visible:
+        - pixels identical to the sortable panel
+      must_never:
+        - differ visually from the element form
+    - id: no-scripts
+      visible:
+        - plain authored table: headers as plain text, authored row order
+        - no chrome, no arrows, no scrollbar
+      must_never:
+        - hide any authored row or header
+        - render interactive chrome
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    header-legibility:
+      weight: 0.25
+      description: >
+        Every enhanced panel shows a real header row with legible column
+        labels — the sort arrows ride ON the labels, never replace them.
+      fail_signals:
+        - blank or missing header band on an enhanced panel
+        - header text occluded by arrows or chrome
+    sort-affordance:
+      weight: 0.2
+      description: >
+        Sort state reads at a glance: neutral affordance on idle sortable
+        headers, accent label + single filled arrow on the active one, and
+        the body order matching the claimed sort.
+      fail_signals:
+        - arrows on the no-scripts panel
+        - active header indistinguishable from idle ones
+        - body order contradicting the active sort
+    sticky-and-containment:
+      weight: 0.25
+      description: >
+        Sticky panel: header pinned over a mid-scrolled body with an
+        internal scrollbar. Comparison panel: first column pinned while
+        others slide under it, everything inside its frame — no page-level
+        scrollbar anywhere.
+      fail_signals:
+        - header scrolled away on the sticky panel
+        - first column missing on the comparison panel
+        - a full-page scrollbar or clipped-by-page-edge table
+    mode-coverage:
+      weight: 0.2
+      description: >
+        Six labeled panels, each matching its caption; class-form pixels
+        equal to the element form; the no-scripts panel carries zero
+        interactive chrome.
+      fail_signals:
+        - wrong count of labeled panels
+        - class-form panel differing from the element-form panel
+        - chrome or arrows on the no-scripts panel
+    theme-fidelity:
+      weight: 0.1
+      description: >
+        Dark minimal-tech palette (#0f172a bg, #60a5fa accent), hairline
+        borders, mono uppercase captions, consistent card rhythm.
+      fail_signals:
+        - light background or clashing accent hues
+        - inconsistent panel sizing or caption style
+  reject_if:
+    - any enhanced panel has a missing or blank header row
+    - any cell text is occluded, blurred, or struck through
+    - a table is clipped by the page edge instead of scrolling inside its frame
+    - the no-scripts panel shows interactive chrome

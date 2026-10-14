@@ -58,13 +58,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="docs-bg min-h-screen antialiased">
-        {/* SemText vocabulary + the one shipped theme, global: the hero,
-            the home sections, /elements and /docs all render with them.
-            React 19 hoists precedence-marked stylesheets into <head>. */}
+        {/* The shipped element vocabulary (the fallback tier's authoring
+            sheet) + the one shipped theme, global: the hero, the home
+            sections, /elements and /docs all render with them, and the
+            reference pages' render panes carry them with zero JS. React 19
+            hoists precedence-marked stylesheets into <head>. */}
         <link
           rel="stylesheet"
           precedence="semtext"
-          href="/semtext/semtext.css"
+          href="/semtext/themes/_vocabulary.css"
         />
         <link
           rel="stylesheet"

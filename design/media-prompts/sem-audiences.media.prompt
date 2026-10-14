@@ -1,0 +1,140 @@
+# sem-audiences — UX design sheet prompt
+# Display modes: declaration chip strip; gated content in the three
+# profile states (none / operator / reader); class-form alias; authoring
+# error states (mixed spec, unknown token); JS-off all-visible.
+# Reference attachments are the judged renders from the snap harness and
+# the private enhanced fixture (see reports/tag-sem-audiences.md).
+
+schema: "0.4"
+id: sem-audiences-ux-sheet
+type: image
+quality: high
+
+prompt:
+  text: |
+    A precise UX design sheet for the SemText vocabulary element
+    `sem-audiences` and the `audience` qualifier (reader-profile-gated
+    visibility), rendered as FIVE example pages in a grid on a dark
+    minimal-tech canvas (background #0f172a, card surface #1e293b,
+    hairline borders #334155, violet accent, blue note markers).
+
+    PAGE 1 — THE DECLARATION STRIP: one quiet horizontal metadata row:
+    a small-caps muted label "AUDIENCES ·" followed by one pill chip per
+    profile ("Reader", "Operator") — 1px hairline border, fully rounded,
+    surface background, small legible label text. This strip is metadata
+    like a byline, not a control: no button affordance, no hover state,
+    no checkmarks. Below it, two callout notes (left accent border,
+    rounded card, prose fully readable) and one plain paragraph — all
+    three visible together is NOT this page's point; page 1 shows the
+    strip alone with a single generic line of prose beneath.
+
+    PAGE 2 — NO PROFILE ACTIVE (fallback running): the same declaration
+    strip on top; beneath it ONLY the negated note ("Everyone except
+    operators…") is present. The operator-only note and the
+    profile-listed paragraph are ABSENT from the page — the layout is
+    tight, they left no gap, no box outline, no black bar, no grey blur.
+    Hiding here means removal from flow, never occlusion.
+
+    PAGE 3 — OPERATOR ACTIVE (reader picked `#sem-audience=operator`):
+    the same strip; now the operator note and the shared paragraph are
+    present, and the negated note is absent instead. Show a small muted
+    URL caption above the page ("…#sem-audience=operator") — the switch
+    is navigation, the page carries no picker UI.
+
+    PAGE 4 — CLASS FORM, IDENTICAL RENDER: the same strip spelled as
+    `div.sem-audiences > div.sem-profile` — visually indistinguishable
+    from page 1: same label, same chips, same quiet metadata row.
+
+    PAGE 5 — FAIL-OPEN ERROR STATE: a lone callout note qualified with a
+    profile no block declares ("No reviewer profile is declared: warned,
+    and shown regardless") renders fully visible beside a subtle monospace
+    console-warn caption. Nothing is hidden for a typo — content must
+    never be unreachable.
+
+    Typography: clean humanist sans for prose, small-caps muted strip
+    label, monospace only for the URL caption and console line. Flat,
+    engineered, restrained — a documentation specimen, not an
+    illustration.
+  negative: |
+    no occluded, blurred, black-barred, or question-mark-boxed text —
+    hidden content is fully absent from flow, never redacted in place;
+    no spoiler covers, no "click to reveal" buttons, no toggle switches
+    or profile-picker dropdowns drawn as interactive controls, no
+    highlighted or pressed state on the chips, no light-mode canvas,
+    no decorative photos or icons, no gradient glows, no watermarks,
+    no browser chrome, no empty reserved gaps where hidden content was.
+  style: flat dark technical documentation specimen, minimal-tech design system
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-audiences/sem-audiences-primary-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-audiences/sem-audiences-qualifier-render-1280.png
+    role: reference
+  - path: /tmp/semtext-snap/sem-audiences/shots/aud-enhanced-no-profile.png
+    role: reference
+  - path: /tmp/semtext-snap/sem-audiences/shots/aud-enhanced-operator.png
+    role: reference
+  - path: /tmp/semtext-snap/sem-audiences/shots/aud-js-off.png
+    role: reference
+
+output:
+  formats:
+    - format: png
+      filename: sem-audiences-ux-sheet.png
+  dimensions:
+    width: 2048
+    height: 1152
+    aspect_ratio: "16:9"
+
+eval:
+  pass_threshold: 0.7
+  criteria:
+    strip_metadata_not_control:
+      weight: 0.25
+      description: >
+        The audiences strip reads as quiet metadata (label + hairline
+        pill chips); nothing on it looks pressable, selected, or
+        interactive.
+      fail_signals:
+        - chips rendered as buttons with shadows, hover, or pressed state
+        - a dropdown, toggle, or picker drawn near the strip
+    absence_not_occlusion:
+      weight: 0.3
+      description: >
+        Gated-out content is completely absent — no boxes, gaps, bars,
+        blurs, or covers where hidden notes would sit; visible text is
+        fully legible.
+      fail_signals:
+        - blacked-out or blurred text blocks
+        - reserved empty gaps inside a card layout
+        - a spoiler or reveal control anywhere on a page
+    profile_states_differ:
+      weight: 0.2
+      description: >
+        The no-profile page and the operator page show complementary
+        subsets of the same notes, and the operator page carries the
+        hash-parameter caption.
+      fail_signals:
+        - both states showing all three qualified elements
+        - a note visible in neither state
+    form_parity:
+      weight: 0.15
+      description: >
+        The class-form page is visually indistinguishable from the tag
+        form strip.
+      fail_signals:
+        - chips styled differently on the class-form page
+    fail_open_visible:
+      weight: 0.1
+      description: >
+        The unknown-token note is fully rendered, not hidden, beside a
+        console-warn caption.
+      fail_signals:
+        - the fail-open note missing or dimmed
+  reject_if:
+    - any text is occluded, blurred, or covered by an opaque block
+    - light-mode canvas
+    - watermark or browser chrome present
+
+tags: [semtext, sem-audiences, ux-sheet, audience-gating, reference]
+product_targets: [semtext.dev/reference]

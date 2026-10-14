@@ -488,7 +488,9 @@ if (!runOk && failed === 0) {
     `cypress run reported status "${result?.status}": ${JSON.stringify(
       {
         message: result?.message,
-        failures: (result?.failures || []).map((f) => f.message || f),
+        failures: Array.isArray(result?.failures)
+          ? result.failures.map((f) => f.message || f)
+          : result?.failures,
       },
       null,
       2

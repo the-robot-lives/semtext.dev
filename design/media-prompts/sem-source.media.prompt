@@ -1,0 +1,183 @@
+# SemText sem-source — provenance chrome and the rendered/source toggle
+# Direction A "Slate Console" (house reference-page look). One frame, a 2x2
+# grid of four panels showing the wrapper's whole render contract: the two
+# enhanced states (Rendered / Source), the class spelling without the reading
+# tier (plain content), and the scripts-off state (identical plain flow). The
+# drawing must make the PROVENANCE contract legible: a small chrome row
+# (caption + segmented toggle) sits IN FLOW above the section it annotates —
+# never floating over it — and the source state shows the authored markup in
+# a fenced code card. Nothing generated ever obscures the content.
+#
+# MODE 1 — rendered (the element's `html` mode, the default):
+#   visible: a small chrome row at the TOP of the panel — a short muted
+#     small-caps caption bar on the left and a two-segment toggle on the
+#     right (first segment active: thin violet border, violet text bar;
+#     second segment plain) — then, beneath it in the same card, the section
+#     content: a heading bar and a fact card with a bold statement bar and a
+#     lighter conclusion bar, all fully legible.
+#   must never: float or overlap the chrome on the content; dim or tint the
+#     content; show a code fence in this panel.
+#
+# MODE 2 — source (the element's `source` mode):
+#   visible: the SAME chrome row, but the SECOND toggle segment is now the
+#     active one (violet), and the content is replaced by a fenced code card:
+#     a dark code panel with a small "html" chip top-left and two tiny
+#     control chips (copy, wrap) top-right, holding four-to-six indented
+#     markup lines — nested tag/attribute bars suggesting HTML source —
+#     entirely inside the card, never spilling past its border.
+#   must never: render the fence lines outside or over the card edges; show
+#     any rendered card content alongside the fence; put real characters in
+#     the code lines.
+#
+# MODE 3 — class spelling without the reading tier:
+#   visible: the same section content as MODE 1, identical position and
+#     opacity, with NO chrome row and no fence — a plain block of content.
+#   must never: add a toggle, caption, or fence in this panel.
+#
+# MODE 4 — scripts off:
+#   visible: the same plain content block as MODE 3 — the degradation story:
+#   identical reading, nothing hidden, nothing added.
+#   must never: show generated chrome, or differ visually from MODE 3 beyond
+#     trivial variation.
+#
+# All copy is abstract placeholder bars — strictly no letters, digits or
+# words. Reference snapshots come from the snapshot-harness lane
+# (`npm run snap:tag -- sem-source`, output into
+# .tmp/semtext-docs-overhaul/snaps/sem-source/); the harness ran clean for
+# this tag, so the best state captures are attached below as references.
+schema: '0.4'
+id: reference-sem-source
+type: image
+quality: high
+service: gemini
+model: gemini-2.5-flash-image
+
+prompt:
+  text: |
+    Dark-mode UI mockup of a 2x2 grid of four reference-page panels on one
+    wide 16:9 frame, flat technical illustration (screenshot-like, not 3D).
+    Dark slate navy background (#0F172A) with a barely visible thin grid and
+    a faint violet radial glow upper-left. Four equal dark slate cards
+    (#1E293B) with thin slate hairline borders, squared corners, deep soft
+    shadows; a tiny dim caption bar above each card. Generous gutters; all
+    content inside each card stays fully inside its borders.
+
+    Panel 1 (top-left) — RENDERED STATE. At the top of the card's content
+    column, one slim chrome row: on the left a short muted small-caps caption
+    bar; on the right a two-segment rectangular toggle — the FIRST segment
+    active (thin violet #7C3AED hairline border, soft-violet low-opacity
+    fill) and the second segment plain. Below the chrome row, clearly
+    separated, the section content: one heading bar, then a wide fact card
+    (slightly lighter slate, hairline border) containing a bold statement bar
+    and a lighter conclusion bar. Everything crisp and legible.
+
+    Panel 2 (top-right) — SOURCE STATE. The identical chrome row, but now the
+    SECOND toggle segment is active (violet) and the first is plain. Below
+    it, in place of the content, one fenced code card: a darker panel with a
+    tiny chip top-left (thin border, one short bar standing for "html") and
+    two tiny control chips top-right, holding five indented markup lines
+    drawn as alternating tag bars and short attribute bars with clear nesting
+    indent — all lines fully inside the card, no spill, no overlay.
+
+    Panel 3 (bottom-left) — CLASS SPELLING. The same section content as
+    panel 1 (heading bar + fact card with statement and conclusion bars) in
+    the same position and opacity, with NO chrome row above it: the content
+    starts at the top of the card.
+
+    Panel 4 (bottom-right) — SCRIPTS OFF. The same plain content block as
+    panel 3, visually identical: no chrome, no fence, nothing hidden.
+
+    The chrome row (when present) is a slim in-flow strip above the content,
+    never a floating bar, never overlapping, dimming or crossing the content
+    beneath it. All copy everywhere is abstract placeholder bars — strictly
+    no letters, digits, or words anywhere.
+  negative: legible text, letters, numbers, digits, words, captions,
+    typography, watermark, logo, light mode, white cards, rounded corners,
+    3D, photorealism, faces, avatars, robot mascots, a floating chrome bar
+    overlapping the content, a code fence spilling past its card border,
+    rendered content and code fence shown together in one panel, generated
+    chrome in the plain-content panels, any overlay or blur crossing content
+  style: flat dark-mode product UI illustration, squared corners, hairline
+    borders, slate and violet palette, four-panel state comparison grid
+
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 1600
+    height: 900
+    aspect_ratio: '16:9'
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-source/sem-source-primary-render-1280.png
+    role: reference
+    description: rendered state — chrome row (caption + segmented toggle) in flow above a fact card
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-source/sem-source-primary-render-source-1280.png
+    role: reference
+    description: source state — Source segment active, fenced html code card with copy/wrap chips
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-source/sem-source-class-form-render-1280.png
+    role: reference
+    description: class spelling without the reading tier — plain content, no chrome
+
+requirements:
+  subject: four panels of one disclosure wrapper — two enhanced states (rendered
+    content, source fence) sharing one slim in-flow chrome row, and two plain
+    states (class spelling, scripts off) with no chrome at all
+  palette: slate navy background, slate panels, hairline borders, violet only
+    on the active toggle segment and the faint corner glow
+  composition: 2x2 equal panels; the chrome row leads its panel in flow and is
+    never larger than the content; the fence stays inside its card
+  do:
+    - keep the chrome row a slim strip above the content, in flow
+    - make the active toggle segment the only violet element per panel
+    - render the fence as indented markup bars fully inside its code card
+    - make panels 3 and 4 plain content, identical and un-chromed
+  dont:
+    - any legible text, digits, or logos
+    - chrome floating over, dimming, or crossing the section it annotates
+    - a fence that overflows or bleeds past its card border
+    - generated chrome of any kind in the plain-content panels
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    chrome-in-flow:
+      weight: 0.3
+      description: 'The caption + segmented toggle row sits at the top of its
+        panel as a slim in-flow strip above the section content, never
+        floating over, dimming, or crossing it.'
+      fail_signals:
+        - chrome overlaps or tints the content beneath it
+        - chrome rendered as a floating bar with content visible around it
+        - chrome larger than the content block
+    fence-contract:
+      weight: 0.3
+      description: 'The source panel shows one fenced code card (html chip,
+        two control chips) holding indented markup bars entirely inside the
+        card, with no rendered content beside it.'
+      fail_signals:
+        - fence lines spill past the card border
+        - rendered card content appears alongside the fence
+        - the code card missing its chips
+    state-differentiation:
+      weight: 0.2
+      description: 'Panel 1 active segment first/violet, panel 2 active
+        segment second/violet; panels 3 and 4 carry no chrome and match each
+        other.'
+      fail_signals:
+        - both panels show the same segment active
+        - violet on an inactive segment
+        - chrome or fence present in panels 3 or 4
+    legibility-and-palette:
+      weight: 0.2
+      description: 'All copy is abstract placeholder bars; slate navy palette
+        with violet only on active segments; squared hairline cards; nothing
+        illegible, truncated or occluded.'
+      fail_signals:
+        - any legible letters or digits
+        - light mode or white cards
+        - content bars truncated, occluded, or blurred
+  reject_if:
+    - chrome floats over or obscures the section it annotates
+    - fence renders outside its card
+    - any legible text anywhere

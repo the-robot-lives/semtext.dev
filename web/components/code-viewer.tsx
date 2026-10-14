@@ -24,7 +24,7 @@ const DOC_HTML = `<!doctype html>
     <sem-fact id="f-jwt" kind="concept">
       <statement>JWTs rotate per session</statement>
       <conclusion>Short-lived access tokens; the refresh grant issues a new pair.</conclusion>
-      <sem-distractor>Store the token in localStorage for durability.</sem-distractor>
+      <incorrect-statement>Store the token in localStorage for durability.</incorrect-statement>
     </sem-fact>
   </sem-facts>
 
@@ -139,7 +139,7 @@ function tokenizeHTML(code: string): Token[][] {
  * Shared code window: HTML highlighting, line numbers, Copy and Save.
  * Defaults keep the landing's minimal document; /reference passes the
  * authored example per tag (code, filename, caption, label) and slots its
- * Source/Render pills into the chrome via `actions`.
+ * view toggle into the chrome via `actions`.
  *
  * The tokenized lines render on the server too — tokenizeHTML is pure and
  * deterministic, so the static export ships highlighted code with line
@@ -157,12 +157,12 @@ const ACTION_BUTTON_CLASS =
   "ml-2 text-xs text-violet-soft hover:text-violet-soft hover:brightness-110";
 
 /*
- * The chrome's Copy and Save pair, shared by the code window and the
- * example viewer's Render pane: Copy writes `code` (the authored source,
- * never a rendered view) to the clipboard; Save downloads it as
- * `filename`. Both actions need script, so zero-JS-critical callers gate
- * this component behind hydration (ExampleViewer does) — rendered here
- * unguarded only where the chrome is already script-only.
+ * The chrome's Copy and Save pair, shared by every code window: Copy
+ * writes `code` (the authored source, never a rendered view) to the
+ * clipboard; Save downloads it as `filename`. Both actions need script,
+ * so zero-JS-critical callers gate this component behind hydration
+ * (ExampleViewer does) — rendered here unguarded only where the chrome is
+ * already script-only.
  */
 export function CopySaveButtons({
   code,
@@ -236,6 +236,69 @@ export function CopySaveButtons({
   );
 }
 
+/*
+ * The highlighted, line-numbered code area alone — no window chrome.
+ * CodeViewer renders it inside its figure; the reference example viewer
+ * reuses it as the source pane of the one-card side-by-side layout.
+ * Horizontal overflow stays INSIDE this element (overflowX auto) so a
+ * long authored line can never stretch a page or a grid cell.
+ */
+export function CodeBody({ code }: { code: string }) {
+  const tokenized = tokenizeHTML(code);
+
+  return (
+    <div
+      className="code-content"
+      style={{
+        padding: "1rem 1.1rem 1.2rem",
+        fontFamily:
+          'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+        fontSize: "0.8rem",
+        lineHeight: "1.65",
+        color: "var(--ink)",
+        whiteSpace: "pre-wrap",
+        wordBreak: "break-word",
+        overflowX: "auto",
+      }}
+    >
+      {tokenized.map((lineTokens, lineIdx) => (
+        <div
+          key={lineIdx}
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+          }}
+        >
+          <span
+            style={{
+              display: "inline-block",
+              width: "2.5rem",
+              textAlign: "right",
+              marginRight: "1rem",
+              color: "var(--code-gray)",
+              userSelect: "none",
+              flexShrink: 0,
+            }}
+          >
+            {lineIdx + 1}
+          </span>
+          <span>
+            {lineTokens.map((token, tokenIdx) => {
+              const className =
+                token.type !== "default" ? `tok-${token.type}` : "";
+              return (
+                <span key={tokenIdx} className={className}>
+                  {token.text}
+                </span>
+              );
+            })}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function CodeViewer({
   code = DOC_HTML,
   filename = "doc.html",
@@ -243,68 +306,20 @@ export function CodeViewer({
   label = "A minimal SemText document",
   actions,
 }: CodeViewerProps) {
-  const tokenized = tokenizeHTML(code);
-
   return (
     <figure className="code-window mt-8" aria-label={label}>
       <div className="code-chrome">
         <span className="dot live" aria-hidden="true" />
-        <span className="flex-1">
+        <span
+          className="min-w-0 flex-1 truncate"
+          title={`${filename} · ${caption}`}
+        >
           {filename} · {caption}
         </span>
         {actions}
         <CopySaveButtons code={code} filename={filename} />
       </div>
-
-      <div
-        className="code-content"
-        style={{
-          padding: "1rem 1.1rem 1.2rem",
-          fontFamily:
-            'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-          fontSize: "0.8rem",
-          lineHeight: "1.65",
-          color: "var(--ink)",
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
-          overflowX: "auto",
-        }}
-      >
-        {tokenized.map((lineTokens, lineIdx) => (
-          <div
-            key={lineIdx}
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-            }}
-          >
-            <span
-              style={{
-                display: "inline-block",
-                width: "2.5rem",
-                textAlign: "right",
-                marginRight: "1rem",
-                color: "var(--code-gray)",
-                userSelect: "none",
-                flexShrink: 0,
-              }}
-            >
-              {lineIdx + 1}
-            </span>
-            <span>
-              {lineTokens.map((token, tokenIdx) => {
-                const className =
-                  token.type !== "default" ? `tok-${token.type}` : "";
-                return (
-                  <span key={tokenIdx} className={className}>
-                    {token.text}
-                  </span>
-                );
-              })}
-            </span>
-          </div>
-        ))}
-      </div>
+      <CodeBody code={code} />
     </figure>
   );
 }

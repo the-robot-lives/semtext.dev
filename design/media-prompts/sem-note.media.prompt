@@ -1,0 +1,174 @@
+schema: '0.4'
+id: sem-note-ux-design
+type: image
+quality: high
+product_targets:
+- semtext.dev
+tags:
+- semtext
+- sem-note
+- ux-design
+- reference
+prompt:
+  text: "UX design sheet for the SemText `<sem-note>` element — the CALLOUT: prose\nset beside the main\
+    \ flow that emphasizes without interrupting. FOUR\nstacked example pages, each inside a browser-chrome\
+    \ frame with a small\nmono uppercase caption, rendered in the minimal-tech theme on a dark\nslate\
+    \ canvas (bg #0f172a, surface #1e293b, fg #e2e8f0, hairline #334155\nborders, 12px card radius). A\
+    \ note is a card with a 3px solid accent\nleft border, a muted small-caps label line above the body\
+    \ text, and a\nfully readable body.\n\nPage 1 — caption \"VARIANTS\". Four notes stacked, one per\
+    \ accent, each a\nsingle short sentence of ordinary prose, all four bodies fully legible:\n- \"INFO\"\
+    \ in accent blue (#60a5fa): \"Access tokens live 15 minutes; the\n  refresh grant issues a replacement\
+    \ pair without a new consent prompt.\"\n- \"WARNING\" in amber (#fbbf24): \"The migration job expects\
+    \ the MinIO\n  port-forward on 127.0.0.1:9000 — start it before you apply.\"\n- \"TIP\" in teal (#34d399):\
+    \ \"Snapshot the volume first; once the rotation\n  job starts, the old keys are gone for good.\"\n\
+    - \"DANGER\" in coral red (#f87171): \"The rotation drops the previous key\n  set at once — snapshot\
+    \ the store before you trigger it.\"\nThe four accents must read as four different hues at a glance;\
+    \ the card\nstructure, label style and body typography are identical across them.\n\nPage 2 — caption\
+    \ \"COLLAPSED → EXPANDED\". Two identical teal TIP notes\nside by side, same sentence in both. Left:\
+    \ collapsed — the body is\nabsent and in its place one teaser line in the accent color ending with\n\
+    an ellipsis (\"Snapshot the volume first; once the rotation job starts,\nthe …\"), styled as a quiet\
+    \ text link, no button chrome, no box around\nit. Right: expanded — the full sentence visible as the\
+    \ body, and a\nvisible accent focus ring around the body card marking where keyboard\nfocus moved\
+    \ when it opened. The two states are the same card; only the\npresence of the body and the teaser\
+    \ line differ.\n\nPage 3 — caption \"MARGIN\". A wide page: one prose paragraph of ordinary\ndark-fg\
+    \ text in the left column, and a blue INFO note floated in the\nright margin beside it — narrow (~14rem),\
+    \ slightly smaller type, sitting\nnext to the paragraph rather than interrupting it. The margin note\
+    \ is a\npeer of the prose, not an overlay; nothing overlaps and no text is\nobscured.\n\nPage 4 —\
+    \ caption \"AUDIENCE\". A row of two small rounded profile chips\nlabeled \"READER\" and \"OPERATOR\"\
+    \ with OPERATOR active, then one visible\nblue INFO note addressed to operators (\"Operators: start\
+    \ the MinIO\nport-forward before the migration apply.\"). The note addressed to\nreaders is simply\
+    \ ABSENT — empty space, no blur, no placeholder, no\nredaction marker, no ghost outline.\n\nTypography:\
+    \ clean system sans (Inter-like), 16px body, 1.6 line height,\ngenerous margins, mono uppercase captions.\
+    \ No icons, no emoji, no\nbuttons other than the caption labels.\n"
+  negative: 'occluded, blurred, struck-through or redaction-barred note text; the audience-gated note
+    drawn as a blurred, ghosted, outlined or placeholder-blocked card instead of absent; notes rendered
+    as modals, tooltips, popovers, toast notifications or speech bubbles; the teaser drawn as a boxed
+    button with border and background; warning triangles, icons or emoji next to labels; neon glow; drop
+    shadows on text; light background; more or fewer than four example pages; watermark; lorem ipsum in
+    captions.
+
+    '
+  style: 'Flat UI spec sheet, minimal-tech aesthetic, restrained palette where the only color is the four
+    note accents, crisp 12px card radius, hairline #334155 borders, generous negative space. Looks like
+    a panel from a design-system guide.
+
+    '
+attachments:
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-note/sem-note-primary-split-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-note/sem-note-primary-render-snapshot-the-volume-first-on-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-note/sem-note-variant-info-render-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-note/sem-note-variant-danger-render-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-note/sem-note-view-as-margin-render-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-note/sem-note-audience-scoped-render-1280.png
+  role: reference
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+    aspect_ratio: '3:2'
+  formats:
+  - format: png
+    filename: sem-note-ux-design
+requirements:
+  modes:
+  - id: variants
+    label: VARIANTS
+    must_show:
+    - 'four callouts with four distinct accent hues: accent blue #60a5fa, amber #fbbf24, teal #34d399,
+      coral #f87171; small-caps label line above each body'
+    - every body fully readable; identical card structure across accents
+    must_never:
+    - repeat the same hue for two variants
+    - hide or degrade any body text
+    - add icons or emoji to the labels
+  - id: collapsed-expanded
+    label: COLLAPSED → EXPANDED
+    must_show:
+    - 'collapsed state: one accent-colored teaser line ending in an ellipsis, no body, styled as quiet
+      text with a link-like feel'
+    - 'expanded state: the same card with the full body visible and a focus ring around the body'
+    - identical prose in both states
+    must_never:
+    - box the teaser as a solid button with border and fill
+    - show a partial or occluded body in the collapsed state
+    - differ the wording between the two states
+  - id: margin
+    label: MARGIN
+    must_show:
+    - the note floated in a right-hand margin column beside an ordinary prose paragraph, narrower and
+      slightly smaller than the prose
+    - no overlap between note and prose
+    must_never:
+    - overlay the note on the prose
+    - center the note in the main column
+    - obscure any prose line
+  - id: audience
+    label: AUDIENCE
+    must_show:
+    - profile chips with one active state
+    - exactly one visible addressed note; the other audience's note simply not present
+    must_never:
+    - draw the hidden note as blur, ghost, outline, lock or placeholder
+    - show more than one visible note
+eval:
+  pass_threshold: 0.75
+  criteria:
+    variant-accents:
+      weight: 0.3
+      description: 'Page 1 shows four callouts in four clearly different accent hues, each with a small-caps
+        label and a fully readable one-sentence body; structure identical across the four.
+
+        '
+      fail_signals:
+      - two variants share a hue or are hard to tell apart
+      - any body illegible, truncated or occluded
+      - icons or emoji appear next to the labels
+    teaser-expand:
+      weight: 0.3
+      description: 'Page 2 pairs a collapsed teaser line (accent color, ellipsis, quiet link feel, no
+        button chrome) with the expanded same-card state whose body is fully visible and carries a focus
+        ring.
+
+        '
+      fail_signals:
+      - teaser drawn as a boxed filled button
+      - collapsed card still shows body text
+      - expanded state missing the focus ring or missing the body
+      - wording differs between the two states
+    margin-placement:
+      weight: 0.2
+      description: 'Page 3 places the note in a right margin column beside the prose — narrower, smaller
+        type, nothing overlapping or obscured.
+
+        '
+      fail_signals:
+      - note overlaps or covers prose
+      - note sits inside the main text column
+    audience-gating:
+      weight: 0.1
+      description: 'Page 4 shows one active profile chip and exactly one visible addressed note; the other
+        note is absent rather than masked.
+
+        '
+      fail_signals:
+      - hidden note rendered as blur, ghost, lock or placeholder
+      - more than one visible note
+    theme-fidelity:
+      weight: 0.1
+      description: 'Dark minimal-tech palette (#0f172a bg, #1e293b surfaces, hairline #334155 borders),
+        mono uppercase captions, exactly four labeled example pages.
+
+        '
+      fail_signals:
+      - light background
+      - wrong page count or unlabeled pages
+      - watermark, lorem ipsum, decorative noise
+  reject_if:
+  - any note body is occluded, blurred or redacted
+  - the audience-hidden note is drawn instead of absent
+  - page count is not four

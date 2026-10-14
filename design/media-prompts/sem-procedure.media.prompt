@@ -1,0 +1,123 @@
+# sem-procedure — UX design sheet prompt
+# One display mode (a status-annotated ordered procedure) shown at two
+# widths: desktop example pane and narrow stacked mobile. Dark minimal-tech
+# page hosting the light documentation panes, exactly as the reference
+# site's example viewer stages them. Reference attachments are the judged
+# renders from the snap harness (see reports/tag-sem-procedure.md).
+
+schema: "0.4"
+id: sem-procedure-ux-sheet
+type: image
+quality: high
+
+prompt:
+  text: |
+    A precise UX design sheet for the SemText vocabulary element
+    `sem-procedure` (a CSS-only, status-annotated ordered procedure —
+    a runbook checklist with zero JavaScript), rendered as TWO example
+    pages on a dark minimal-tech canvas (page background #0f172a) whose
+    light documentation panes (card surface #f8fafc, hairline borders
+    #e2e8f0) each hold one procedure. Status colours: green success
+    #34d399, blue current #60a5fa, muted grey todo #94a3b8, red blocked
+    #f87171.
+
+    LEFT PAGE — DESKTOP procedure pane (four steps, full status
+    vocabulary). Each step is a rounded card row with, at its left edge,
+    a thin status rail and, in a separate narrow muted gutter column, a
+    positional ordinal (1, 2, 3, 4 — CSS-counter rendered, never part of
+    the step text). Show every lifecycle state as a distinct row:
+    a DONE step (green rail, " ✓" after the text), a CURRENT step
+    (blue rail, " →"), an UNANNOTATED step that simply carries no status
+    attribute and therefore renders as TODO (grey DASHED rail, " ○"),
+    an explicit TODO step written as status="todo" that looks identical
+    to the unannotated one (dashed grey rail + ring glyph), and a
+    BLOCKED step (red solid rail, muted body text, " ⛔"). Five rows in
+    all, stacked with even vertical rhythm.
+
+    RIGHT PAGE — the SAME component at narrow mobile width (390 px):
+    rows stack full-width, rails and ordinals survive, step prose wraps
+    naturally to two or three lines while the status rail and glyph stay
+    pinned to their row. Same five rows, same five states.
+
+    Typography: clean humanist sans for step prose, tabular ordinals in
+    the gutter, monospace reserved for nothing here (no code inside the
+    panes). Flat, engineered, restrained — a documentation specimen,
+    not an illustration. Ordinals, rails and glyphs are quiet; the
+    reader's eye lands on which steps are done, current, pending,
+    blocked.
+  negative: |
+    no hidden, faded-to-invisibility or dropped todo steps (unstarted is
+    visible, just grey), no hand-typed step numbers inside the prose, no
+    ordinal rendered inline with the text, no visible kind badge or
+    label ("runbook" is invisible metadata), no buttons, checkboxes,
+    collapse arrows or any interactive-looking control (the element is
+    static), no solid blocks occluding words, no decorative photos or
+    glow, no watermarks, no browser chrome, no light-mode page canvas,
+    no glyph orphaned on its own line away from its step text.
+  style: flat dark technical documentation specimen with light content panes, minimal-tech design system
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-procedure-fixture/sem-procedure-primary-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-procedure-fixture/sem-procedure-primary-render-390.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-procedure-fixture/sem-procedure-class-form-render-1280.png
+    role: reference
+
+output:
+  formats:
+    - format: png
+      filename: sem-procedure-ux-sheet.png
+  dimensions:
+    width: 1536
+    height: 1024
+
+requirements:
+  pages:
+    - name: desktop
+      must_show:
+        - ordinal numbers in a separate muted gutter column, one per step, never inside the prose
+        - 'status rail per step: green solid (done), blue solid (current), grey DASHED (todo, both the explicit and the unannotated spelling), red solid (blocked)'
+        - 'status glyph after the step text: " ✓" done, " →" current, " ○" todo (both spellings), " ⛔" blocked with muted body'
+        - unannotated and explicit-todo rows look identical
+      must_never:
+        - never hide, ghost, or drop the todo rows — unstarted is visible, just muted
+        - never render todo identical to done (dash pattern + glyph must differ)
+        - never show a kind badge, authored numbers, or interactive controls
+        - never occlude step text (occlusion belongs to sem-spoiler, not here)
+    - name: narrow
+      must_show:
+        - same component, full-width stacked rows at mobile width
+        - rail, ordinal gutter and glyph survive the narrow layout
+        - wrapped prose keeps its status rail and glyph on the same row
+      must_never:
+        - never fall back to a different component shape at narrow width
+        - never let the glyph wrap alone onto its own line detached from the text
+        - never truncate step prose with ellipsis — wrap it
+
+eval:
+  pass_threshold: 0.7
+  criteria:
+    status_completeness:
+      weight: 0.3
+      description: All five rows visible and distinguishable; unannotated and explicit todo are identical (grey dashed rail + ring glyph) and fully legible.
+      fail_signals: [todo absent or ghosted to illegibility, unannotated row missing the glyph, todo identical to done]
+    ordinal_gutter:
+      weight: 0.25
+      description: Ordinals sit in their own muted gutter column on every row, desktop and narrow alike; none are typed into the prose.
+      fail_signals: [inline step numbers in the text, duplicated numbering, missing ordinals on narrow page]
+    parity:
+      weight: 0.2
+      description: Both pages read as the same component — rails, gutters and glyphs survive the width change unchanged.
+      fail_signals: [narrow page shows a different component shape, dropped rails or gutters]
+    restraint:
+      weight: 0.25
+      description: Flat documentation specimen; no ornament, glow, controls, badges or occluding fills.
+      fail_signals: [decorative background art, buttons or collapse controls, kind badge rendered, text behind a solid block]
+  reject_if:
+    - any step prose is unreadable, truncated or occluded
+    - a todo row is hidden, ghosted or rendered identical to done
+    - an interactive control, kind badge or authored inline step number appears
+    - the page canvas is light-mode or watermarks/browser chrome appear
+
+tags: [semtext, vocabulary, procedure, runbook, steps, status, checklist, dark, specimen]
