@@ -102,8 +102,8 @@ defmodule SemtextWeb.Parity.RouteParityTest do
   defp assert_title(route, body) do
     case Regex.run(~r/<title[^>]*>([\s\S]*?)<\/title>/, body) do
       [_, title] ->
-        assert String.trim(title) == route["title"],
-               "route #{route["path"]} title #{inspect(String.trim(title))} != manifest #{inspect(route["title"])}"
+        assert unescape(title) == route["title"],
+               "route #{route["path"]} title #{inspect(unescape(title))} != manifest #{inspect(route["title"])}"
 
       nil ->
         # SSR pages must carry the layout <title>; its absence is a
@@ -120,6 +120,7 @@ defmodule SemtextWeb.Parity.RouteParityTest do
         got =
           h1
           |> String.replace(~r/<[^>]+>/, "")
+          |> unescape()
           |> String.replace(~r/\s+/, " ")
           |> String.trim()
 
@@ -129,6 +130,17 @@ defmodule SemtextWeb.Parity.RouteParityTest do
       nil ->
         flunk("route #{route["path"]} rendered no <h1> element")
     end
+  end
+
+  # Rendered pages HTML-escape their text (`<sem-note>` titles arrive as
+  # "&lt;sem-note&gt;"); the manifest stores unescaped text.
+  defp unescape(text) do
+    text
+    |> String.replace("&lt;", "<")
+    |> String.replace("&gt;", ">")
+    |> String.replace("&quot;", "\"")
+    |> String.replace("&#39;", "'")
+    |> String.replace("&amp;", "&")
   end
 
   defp assert_soft_redirect(route, status, body) do

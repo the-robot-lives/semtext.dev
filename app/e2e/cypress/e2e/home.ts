@@ -98,7 +98,7 @@ Then("the Add Ons section lists six add-on cards", () => {
       .should("be.visible")
       .find("h2")
       .invoke("text")
-      .should("match", /Add Ons/i);
+      .should("match", /Documents that do more than read/i);
     // Cards, not status chips: the add-on section carries no planned/live
     // labels — each add-on gets its real logic as it is built.
     cy.get("section#addons article").should("have.length", 6);

@@ -1,7 +1,7 @@
 {
   "$comment": [
     "semtext.dev route parity manifest — the contract the parity harness runs",
-    "against (ExUnit layer app/test/parity, Node driver app/scripts/parity/parity-check.mjs,",
+    "against (ExUnit layer app/backend/test/parity, Node driver app/scripts/parity/parity-check.mjs,",
     "Cypress layer app/e2e). Every route the Next.js site (landing-preview web/) serves",
     "at manifest-generation time, with the title/h1/key-text expectations the Hologram",
     "replatform must reach.",
@@ -29,7 +29,7 @@
       "owner": "port-landing",
       "title": "SemText — one XHTML file, in place of Markdown",
       "h1": "One XHTML file",
-      "keyText": ["What it is not", "Add Ons"],
+      "keyText": ["What it is not", "Documents that do more than read"],
       "selectors": ["figure.code-window", "section#scope", "section#addons"]
     },
     {

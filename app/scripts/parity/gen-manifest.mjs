@@ -59,6 +59,11 @@ const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 function cleanHtml(s) {
   return (s || "")
     .replace(/<[^>]+>/g, "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ")
     .trim();
 }

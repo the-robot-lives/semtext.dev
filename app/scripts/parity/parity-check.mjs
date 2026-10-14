@@ -104,7 +104,15 @@ async function fetchPage(base, routePath) {
 }
 
 function clean(s) {
-  return (s || "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+  return (s || "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** title + first h1 + flattened text of a rendered page. */
