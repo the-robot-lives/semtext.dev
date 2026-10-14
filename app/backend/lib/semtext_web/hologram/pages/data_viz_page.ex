@@ -9,8 +9,9 @@ defmodule SemtextWeb.Hologram.Pages.DataVizPage do
 
   Hologram escapes every template interpolation, so each visualizer's
   authored markup travels in a `Sem` pane's `data-sem-html` attribute
-  (lossless) and `/dataviz/sem-html-boot.js` hydrates it into the DOM
-  before the deferred reading bundle scans for
+  (lossless) and the site-wide `/js/site-chrome.js` hydration promotes it
+  into the DOM — a deferred HEAD script, so it runs before this page's
+  deferred body bundle `/dataviz/semtext-reading.js` scans for
   `<sem-data-visualizer>` elements. With scripts off the panes stay
   inert attributes — the document reads as authored, the same zero-JS
   posture the Next page documents.
@@ -121,7 +122,6 @@ defmodule SemtextWeb.Hologram.Pages.DataVizPage do
         </p>
       </main>
       <link rel="stylesheet" precedence="semtext-dataviz" href="/dataviz/vocabulary.css" />
-      <script src="/dataviz/sem-html-boot.js"></script>
       <script defer src="/dataviz/semtext-reading.js"></script>
     </DocsShell>
     """

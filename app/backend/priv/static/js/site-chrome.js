@@ -13,6 +13,16 @@
  *   4. window.SemtextSite.copyFrom(id) — clipboard helper for buttons
  *      whose copy target is plain text (used by the theme generator's
  *      copy affordances).
+ *   5. Hydrate Sem panes: the `Sem` component (components/site/sem.ex)
+ *      carries pre-rendered SemText markup in a `data-sem-html` attribute
+ *      (Hologram escapes every interpolation, so the markup travels
+ *      attribute-escaped and lossless). This promotes each attribute to
+ *      innerHTML, then re-hydrates panes that come back from a Hologram
+ *      client re-render (attribute watch, loop-safe: hydration removes
+ *      the attribute and the handler skips hosts without one). Ordering
+ *      contract: this file is a deferred HEAD script, so it runs before
+ *      any deferred BODY bundle — e.g. /dataviz/semtext-reading.js scans
+ *      for <sem-data-visualizer> only after the panes exist.
  */
 (function () {
   "use strict";
@@ -22,6 +32,48 @@
     root.classList.remove("no-js");
     root.classList.add("js");
   }
+
+  // 5. Sem pane hydration (see header note). The markup is authored in
+  // page modules at build time — never user input.
+  function hydrateSemPane(el) {
+    var html = el.getAttribute("data-sem-html");
+    if (html != null) {
+      el.innerHTML = html;
+      el.removeAttribute("data-sem-html");
+    }
+  }
+
+  function hydrateSemPanes(scope) {
+    var nodes = scope.querySelectorAll("[data-sem-html]");
+    for (var i = 0; i < nodes.length; i++) {
+      hydrateSemPane(nodes[i]);
+    }
+  }
+
+  hydrateSemPanes(document);
+  new MutationObserver(function (mutations) {
+    for (var i = 0; i < mutations.length; i++) {
+      var mutation = mutations[i];
+      if (mutation.type === "attributes") {
+        hydrateSemPane(mutation.target);
+      } else {
+        var added = mutation.addedNodes;
+        for (var j = 0; j < added.length; j++) {
+          var node = added[j];
+          if (node.nodeType !== 1) continue;
+          if (node.hasAttribute && node.hasAttribute("data-sem-html")) {
+            hydrateSemPane(node);
+          }
+          if (node.querySelectorAll) hydrateSemPanes(node);
+        }
+      }
+    }
+  }).observe(root, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["data-sem-html"],
+  });
 
   function isEditable(el) {
     if (!el) return false;
