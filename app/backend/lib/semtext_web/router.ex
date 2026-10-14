@@ -129,6 +129,15 @@ defmodule SemtextWeb.Router do
     get "/:short_id/*filename", MediaServeController, :show
   end
 
+  # Editor island data (site-editor lane): the /editor page's client-side
+  # document feed — one tag's authored reference example (+ the pane spec),
+  # fetched after load so no document markup ever rides in page state.
+  # Public read of compile-time reference data; params are lookup keys only.
+  scope "/editor", SemtextWeb do
+    pipe_through :api
+    get "/examples/:tag", EditorExampleController, :show
+  end
+
   # SAML 2.0 (Samly handles assertion consumer service, metadata, etc.)
   scope "/sso/saml" do
     pipe_through [:sso_session]

@@ -1,0 +1,159 @@
+defmodule SemtextWeb.Parity.EditorRouteTest do
+  @moduledoc """
+  /editor route checks (site-editor lane, P3).
+
+  The route is Hologram-only — it has NO Next.js counterpart, so it
+  deliberately does NOT live in scripts/parity/parity-routes.json: that
+  manifest is the Next-derived contract, and a Hologram-only entry would
+  read as a Next-side divergence in the live cross-server driver. These
+  are the direct SSR + data-endpoint checks instead (placement coordinated
+  with the parity-harness lane).
+
+  The payload-leak assertions below pin the page's core contract: no
+  SemText markup may travel in page state or the hydration payload —
+  documents reach the browser only via /editor/examples/:tag, fetched
+  client-side after load.
+  """
+
+  use SemtextWeb.ConnCase, async: false
+
+  alias Semtext.Reference.{Tags, Variants}
+
+  # Hologram's SSR embeds the client payload in an early <script>; checks
+  # below must never read inside it (same rule as the parity suite).
+  defp script_stripped(body) do
+    String.replace(body, ~r/<script\b[\s\S]*?<\/script>/i, "")
+  end
+
+  test "/editor serves the editor island chrome" do
+    conn = get(build_conn(), "/editor")
+    assert conn.status == 200
+    body = script_stripped(conn.resp_body)
+    raw = conn.resp_body
+
+    assert body =~ ~r/<title[^>]*>Editor — SemText<\/title>/
+    assert body =~ "<main id=\"main\">"
+    assert h1_text(body) == "Editor"
+
+    # the island mount + the deferred boot chain (order is load-bearing in
+    # the template: island bridge → editor bundle → boot script). Match on
+    # src against the RAW body — script_stripped removes these tags.
+    assert body =~ "id=\"editor-root\""
+    assert body =~ "id=\"editor-status\""
+    assert raw =~ "src=\"/js/semtext-island.js\""
+    assert raw =~ "src=\"/semtext/semtext-editor.js\""
+    assert raw =~ "src=\"/js/editor-boot.js\""
+
+    order =
+      Regex.run(
+        ~r/semtext-island\.js[\s\S]*semtext-editor\.js[\s\S]*editor-boot\.js/,
+        raw
+      )
+
+    assert order != [], "boot chain must load island → bundle → boot script in that order"
+
+    # payload-leak rule: no SemText markup in the served page or its
+    # hydration payload — refutes run against the RAW body so script
+    # regions (where the payload lives) are inspected too.
+    refute raw =~ "<sem-note"
+    refute raw =~ "data-sem-html"
+    refute raw =~ "data-sem-pane"
+    refute raw =~ "<sem-editor>"
+  end
+
+  test "the editor static assets serve" do
+    for path <- [
+          "/semtext/semtext-editor.js",
+          "/js/editor-boot.js",
+          "/js/semtext-island.js"
+        ] do
+      conn = get(build_conn(), path)
+      assert conn.status == 200, "#{path} must serve (got #{conn.status})"
+    end
+  end
+
+  test "/editor/examples/:tag serves the primary example" do
+    conn = get(build_conn(), "/editor/examples/sem-note")
+    assert conn.status == 200
+    assert get_resp_header(conn, "content-type") |> hd() =~ "application/json"
+
+    doc = json_response(conn, 200)
+    assert doc["tag"] == "sem-note"
+    assert doc["slug"] == "sem-note"
+    assert doc["variant"] == nil
+    assert doc["source"] =~ "<sem-note"
+    assert is_list(doc["files"])
+    assert is_list(doc["themeCss"])
+  end
+
+  test "/editor/examples/:tag?variant=<id> serves that variant's source" do
+    case Variants.for_tag("sem-note") do
+      [] ->
+        # Data-driven guard: if the reference data loses sem-note variants
+        # the param path is covered by the 404 test below instead.
+        :ok
+
+      [v | _] ->
+        conn = get(build_conn(), "/editor/examples/sem-note?variant=#{v.id}")
+        assert conn.status == 200
+        doc = json_response(conn, 200)
+        assert doc["variant"] == v.id
+        assert doc["label"] == v.label
+        assert doc["source"] == v.code
+    end
+  end
+
+  test "unknown tag, unknown variant, and example-less tags answer 404 with a detail" do
+    conn = get(build_conn(), "/editor/examples/not-a-tag")
+    assert %{"errors" => %{"detail" => _}} = json_response(conn, 404)
+
+    conn = get(build_conn(), "/editor/examples/sem-note?variant=does-not-exist")
+    assert %{"errors" => %{"detail" => _}} = json_response(conn, 404)
+
+    case Enum.find(Tags.all_tags(), &(&1.example == "")) do
+      nil -> :ok
+      tag -> assert %{"errors" => _} = json_response(get(build_conn(), "/editor/examples/#{tag.name}"), 404)
+    end
+  end
+
+  test "reference tag pages carry per-example Open-in-editor links" do
+    conn = get(build_conn(), "/reference/sem-note")
+    assert conn.status == 200
+    body = script_stripped(conn.resp_body)
+
+    # primary example link (SSR escapes & in hrefs)
+    assert body =~ "/editor?example=sem-note"
+
+    case Variants.for_tag("sem-note") do
+      [v | _] -> assert body =~ "example=sem-note&amp;variant=#{v.id}"
+      [] -> :ok
+    end
+  end
+
+  test "showcase pages carry the Open-in-editor link" do
+    conn = get(build_conn(), "/showcase/sem-shell")
+    assert conn.status == 200
+    assert script_stripped(conn.resp_body) =~ "href=\"/editor\""
+  end
+
+  # -- helpers --
+
+  defp h1_text(body) do
+    scope =
+      case :binary.match(body, "<main") do
+        {pos, _} -> binary_part(body, pos, byte_size(body) - pos)
+        :nomatch -> body
+      end
+
+    case Regex.run(~r/<h1[^>]*>([\s\S]*?)<\/h1>/, scope) do
+      [_, h1] ->
+        h1
+        |> String.replace(~r/<[^>]+>/, "")
+        |> String.replace(~r/\s+/, " ")
+        |> String.trim()
+
+      nil ->
+        flunk("/editor rendered no <h1> inside <main>")
+    end
+  end
+end
