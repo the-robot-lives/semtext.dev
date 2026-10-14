@@ -1,0 +1,123 @@
+defmodule SemtextWeb.Hologram.Components.Site.ExampleViewer do
+  @moduledoc """
+  Placeholder example viewer — the parity shell of the Next site's
+  `components/example-viewer.tsx`, pending the port-reference lane's real
+  viewer (their brief owns the split/island ExampleViewer; this lane's
+  showcase pages need the same DOM contract now).
+
+  Parity contract kept: `figure.code-window` per example with an
+  aria-label, view pills (Source / Split / Render) with aria-pressed and
+  client-side view state, a `data-sem-render-note` render pane, and the
+  `#example-<id>` anchor. What the real viewer adds and this placeholder
+  stubs: the live SemText render pane (the render side shows an honest
+  note instead), the boot-guard chain, and the chrome Copy / Save pair.
+
+  Zero-JS: without scripts the pills are hidden (html.no-js gating in
+  site.css) and the split view renders as static content — source + note,
+  nothing hidden.
+  """
+
+  use Hologram.Component
+
+  alias SemtextWeb.Hologram.Components.Site.CodeBody
+
+  prop :id, :string, required: true
+  prop :label, :string, required: true
+  prop :filename, :string, default: "doc.html"
+  prop :caption, :string, default: "authored SemText"
+  prop :lines, :list, required: true
+  prop :renderable, :boolean, default: true
+  prop :note, :string, default: ""
+
+  def init(_props, component, _server) do
+    put_state(component, :view, "split")
+  end
+
+  def action(:set_view, params, component) do
+    put_state(component, :view, params.view)
+  end
+
+  def pill_class(active) do
+    if active do
+      "sem-pill is-active inline-flex min-h-8 items-center rounded-md border border-violet/60 bg-violet/20 px-2.5 font-mono text-xs text-ink"
+    else
+      "sem-pill inline-flex min-h-8 items-center rounded-md border border-white/15 px-2.5 font-mono text-xs text-ink-mute hover:border-white/40 hover:text-ink"
+    end
+  end
+
+  def render_note(note) do
+    if note == "" do
+      "Render view: this block wires to the SemText runtime bundle in the full example viewer (port-reference lane) — the source beside it is the same file, byte for byte."
+    else
+      note
+    end
+  end
+
+  def template do
+    ~HOLO"""
+    <section id={"example-" <> @id} class="sem-example mt-6 scroll-mt-24">
+      <div class="sem-viewer-head flex items-center justify-between gap-3">
+        <p class="g-nav-title">{@label}</p>
+        {%if @renderable}
+          <div class="sem-view-pills no-js-hidden flex gap-1" role="group" aria-label="Example view">
+            <button
+              type="button"
+              class={pill_class(@view == "source")}
+              aria-pressed={if @view == "source" do "true" else "false" end}
+              $click={action: :set_view, view: "source"}
+            >
+              Source
+            </button>
+            <button
+              type="button"
+              class={pill_class(@view == "split")}
+              aria-pressed={if @view == "split" do "true" else "false" end}
+              $click={action: :set_view, view: "split"}
+            >
+              Split
+            </button>
+            <button
+              type="button"
+              class={pill_class(@view == "render")}
+              aria-pressed={if @view == "render" do "true" else "false" end}
+              $click={action: :set_view, view: "render"}
+            >
+              Render
+            </button>
+          </div>
+        {/if}
+      </div>
+      <figure class="code-window mt-8" aria-label={@label}>
+        <div class="code-chrome">
+          <span class="dot live" aria-hidden="true" />
+          <span class="min-w-0 flex-1 truncate" title={@filename <> " · " <> @caption}>
+            {@filename} · {@caption}
+          </span>
+        </div>
+        {%if @view == "render"}
+          <div class="p-4" data-color-mode="dark">
+            <p class="m-0 text-sm leading-6 text-ink-mute" data-sem-render-note>
+              {render_note(@note)}
+            </p>
+          </div>
+        {%else}
+          {%if @view == "source"}
+            <CodeBody lines={@lines} />
+          {%else}
+            <div class="grid gap-0 md:grid-cols-2">
+              <div class="min-w-0 md:border-r md:border-white/10">
+                <CodeBody lines={@lines} />
+              </div>
+              <div class="min-w-0 p-4" data-color-mode="dark">
+                <p class="m-0 text-sm leading-6 text-ink-mute" data-sem-render-note>
+                  {render_note(@note)}
+                </p>
+              </div>
+            </div>
+          {/if}
+        {/if}
+      </figure>
+    </section>
+    """
+  end
+end
