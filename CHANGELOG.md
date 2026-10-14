@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-10-14
+- release: reference split view, NPL renders, live landing shells, tag review, sem-browser → develop, release 2 [legs appended as they land]
 - release: landing + docs IA overhaul → develop, release 1 (#14): landing polish 16d2476, docs IA befb6bb, snapshot harness f1efe2b, tag-data checkpoint c4c7a98, merged with develop c192a93 → stage (#13) → main (#15) [deploy sha-1dec87d]
 - bundles: site runtime resync from the release snapshot — `semtext.js` full bundle (sem-browser promoted, registration rides the full bundle), `semtext-js-shell.js` terminal bundle, `npl.js`/`npl-lazy.js`/`npl-chunks/` (all 20 npl-* tags now renderable), fresh lazy chunks + `_vocabulary.css`; `/spec/semtext.html` rebuilt from snapshot `spec/conventions.html` @007f499; elements.json 50 tags; bundle-map derives npl entries from `npl-manifest.json` (aliases non-empty); landing try-view tabs load their runtime live (shell bundle classic, lazy loader as module); mobile menu nav relabelled "Primary menu" (duplicate landmark); 6 media prompts parse-clean under js-yaml; tier-2 size claim updated to "Up to 64 KB", tiers section gated off (integration/landing-preview)
 - landing: section-by-section copy, tone and display polish (hero, the idea, degradation, reading, quick start, surface, scope); "Add-ons" renamed "Integrations" with a link to `/integrations`; tier-2 size claim corrected to "Under 14 KB"; `semtext.js` contents corrected (integration/landing-preview)
