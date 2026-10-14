@@ -183,8 +183,10 @@ function killManaged(dir) {
  * MIX_BUILD_ROOT (four P0 lanes compile concurrently — never share a build
  * root) on a free 127.0.0.1 port. DB env is passed through: point DB_PORT
  * at your disposable test container (semtext-p0-<lane>), never at a cluster
- * database. Default build root is /private/tmp/... NOT /tmp — the /tmp
- * symlink breaks Hologram's asset PathRegistry symlinks.
+ * database. Default build root is on the Work volume — Hologram's client
+ * bundle rename needs the build root on the SAME DEVICE as the app (its
+ * rename target is :code.priv_dir(:semtext)/static/hologram), so /tmp or
+ * /private/tmp roots break asset builds here.
  */
 async function ensureManagedApp() {
   const dir = stateDirFor("app-dev", APP_BACKEND);
@@ -199,7 +201,8 @@ async function ensureManagedApp() {
     process.exit(3);
   }
   const buildRoot =
-    process.env.MIX_BUILD_ROOT || "/private/tmp/semtext-hologram/parity-harness/_build";
+    process.env.MIX_BUILD_ROOT ||
+    "/Users/keithbrings/Work/Space/Noizu/Projects/semtext.dev/.claude/mix-builds/parity-harness";
   const port = await freePort();
   const logFd = openSync(path.join(dir, "dev.log"), "a");
   const child = spawn("mix", ["phx.server"], {
