@@ -32,18 +32,28 @@ defmodule SemtextWeb.Parity.RouteParityTest do
     @route route
     test "parity #{route["path"]} (#{route["owner"]})", %{conn: conn} do
       route = @route
-      {status, body} = fetch_route(conn, route["path"])
 
-      cond do
-        status in [404, 405] ->
-          record_gap(route)
-          :ok
+      case fetch_route(conn, route["path"]) do
+        {:ok, status, body} ->
+          cond do
+            status in [404, 405] ->
+              record_gap(route)
+              :ok
 
-        route["kind"] == "soft-redirect" ->
-          assert_soft_redirect(route, status, body)
+            route["kind"] == "soft-redirect" ->
+              assert_soft_redirect(route, status, body)
 
-        true ->
-          assert_page(route, status, body)
+            true ->
+              assert_page(route, status, body)
+          end
+
+        {:crash, formatted} ->
+          # ConnCase renders in-process: a half-ported lane page's crash
+          # propagates here. Present it as a clean FAIL, not a raw stack.
+          flunk(
+            "FAIL: route #{route["path"]} crashed while rendering " <>
+              "(owner: #{route["owner"]}) — #{crash_summary(formatted)}"
+          )
       end
     end
   end
@@ -73,6 +83,12 @@ defmodule SemtextWeb.Parity.RouteParityTest do
   # -- helpers --
 
   defp fetch_route(conn, path) do
+    dispatch(conn, path)
+  rescue
+    e -> {:crash, Exception.format(:error, e)}
+  end
+
+  defp dispatch(conn, path) do
     conn = get(conn, path)
 
     if conn.status in [404, 405] and String.ends_with?(path, "/") do
@@ -80,9 +96,19 @@ defmodule SemtextWeb.Parity.RouteParityTest do
       # extensionless paths. The convention difference must never read as
       # a parity gap — retry de-slashed.
       conn = get(build_conn(), String.trim_trailing(path, "/"))
-      {conn.status, conn.resp_body}
+      {:ok, conn.status, conn.resp_body}
     else
-      {conn.status, conn.resp_body}
+      {:ok, conn.status, conn.resp_body}
+    end
+  end
+
+  defp crash_summary(formatted) do
+    formatted
+    |> String.split("\n")
+    |> Enum.find("", &String.contains?(&1, "Error"))
+    |> case do
+      "" -> formatted
+      line -> String.slice(line, 0, 220)
     end
   end
 

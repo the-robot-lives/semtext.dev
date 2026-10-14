@@ -183,7 +183,8 @@ function killManaged(dir) {
  * MIX_BUILD_ROOT (four P0 lanes compile concurrently — never share a build
  * root) on a free 127.0.0.1 port. DB env is passed through: point DB_PORT
  * at your disposable test container (semtext-p0-<lane>), never at a cluster
- * database.
+ * database. Default build root is /private/tmp/... NOT /tmp — the /tmp
+ * symlink breaks Hologram's asset PathRegistry symlinks.
  */
 async function ensureManagedApp() {
   const dir = stateDirFor("app-dev", APP_BACKEND);
@@ -197,7 +198,8 @@ async function ensureManagedApp() {
     console.error(`--start-app: ${mixBin} not found — is this the epic worktree?`);
     process.exit(3);
   }
-  const buildRoot = process.env.MIX_BUILD_ROOT || "/tmp/semtext-hologram/parity-harness/_build";
+  const buildRoot =
+    process.env.MIX_BUILD_ROOT || "/private/tmp/semtext-hologram/parity-harness/_build";
   const port = await freePort();
   const logFd = openSync(path.join(dir, "dev.log"), "a");
   const child = spawn("mix", ["phx.server"], {

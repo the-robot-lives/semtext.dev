@@ -10,7 +10,7 @@ defmodule SemtextWeb.Parity.Manifest do
   failure to run the suite.
   """
 
-  @manifest_path (Path.expand("../../../..", __DIR__)
+  @manifest_path (Path.expand("../../..", __DIR__)
                   |> Path.join("scripts/parity/parity-routes.json"))
 
   @doc "Absolute path of the manifest file (raises when the lane's file is absent)."
