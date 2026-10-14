@@ -49,7 +49,7 @@ const BUCKET_DEFS: Array<Omit<ReferenceBucket, "tags"> & { names: string[] }> = 
     label: "Prose & code",
     description:
       "Content blocks beyond plain HTML — Markdown bodies, callouts and source listings with provenance.",
-    names: ["sem-md", "sem-note", "sem-code"],
+    names: ["sem-md", "sem-note", "sem-code", "sem-browser"],
   },
   {
     id: "disclosure",

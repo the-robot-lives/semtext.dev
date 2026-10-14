@@ -99,8 +99,8 @@ requirements:
         - the same passage with the target replaced by a solid slate
           occlusion chip (#475569), rounded, min 3ch wide, no glyphs
         - the surrounding prose fully readable next to the chip
-        - a revealed state shown beside it: accent-tinted, fully legible
-          word, demonstrating the one-way per-item reveal
+        - "a revealed state shown beside it: accent-tinted, fully legible
+          word, demonstrating the one-way per-item reveal"
       must_never:
         - keep the occlusion on the plain or two-passage pages
         - reveal more than the demonstrated item at once

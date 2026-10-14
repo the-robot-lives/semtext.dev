@@ -99,32 +99,32 @@ requirements:
 
 eval:
   pass_threshold: 0.75
-    criteria:
-      mode-legibility:
-        weight: 0.3
-        description: all four lifecycle modes read distinctly at a glance; todo is visibly pending, not missing
-        fail_signals:
-          - todo row looks identical to an unstyled paragraph with no rail or glyph
-          - two modes render the same rail and glyph
-      glyph-attachment:
-        weight: 0.3
-        description: every trailing glyph sits on the same line as the step's last word, including across wrapped prose
-        fail_signals:
-          - a glyph alone on its own line
-          - a glyph separated from its text by a visible gap the width of a word
-      gutter-anatomy:
-        weight: 0.2
-        description: ordinal, rail and prose occupy separate visual channels with even rhythm
-        fail_signals:
-          - ordinals inside the prose text
-          - rails touching or crossing the prose column
-      specimen-restraint:
-        weight: 0.2
-        description: flat documentation look on the dark canvas, no illustration drift
-        fail_signals:
-          - decorative imagery, glow or gradients on the panes
-          - visible buttons or controls
-    reject_if:
-      - any status glyph is orphaned on its own line
-      - the todo step is missing, hidden, or rendered with a solid rail
-      - the blocked step's text is illegible or occluded
+  criteria:
+    mode-legibility:
+      weight: 0.3
+      description: all four lifecycle modes read distinctly at a glance; todo is visibly pending, not missing
+      fail_signals:
+        - todo row looks identical to an unstyled paragraph with no rail or glyph
+        - two modes render the same rail and glyph
+    glyph-attachment:
+      weight: 0.3
+      description: every trailing glyph sits on the same line as the step's last word, including across wrapped prose
+      fail_signals:
+        - a glyph alone on its own line
+        - a glyph separated from its text by a visible gap the width of a word
+    gutter-anatomy:
+      weight: 0.2
+      description: ordinal, rail and prose occupy separate visual channels with even rhythm
+      fail_signals:
+        - ordinals inside the prose text
+        - rails touching or crossing the prose column
+    specimen-restraint:
+      weight: 0.2
+      description: flat documentation look on the dark canvas, no illustration drift
+      fail_signals:
+        - decorative imagery, glow or gradients on the panes
+        - visible buttons or controls
+  reject_if:
+    - any status glyph is orphaned on its own line
+    - the todo step is missing, hidden, or rendered with a solid rail
+    - the blocked step's text is illegible or occluded

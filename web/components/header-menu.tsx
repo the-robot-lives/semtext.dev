@@ -75,7 +75,10 @@ export function HeaderMenu() {
           }}
           className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-56 rounded-lg border border-white/15 bg-slateink/95 p-2 shadow-2xl backdrop-blur-md"
         >
-          <nav aria-label="Primary" className="flex flex-col">
+          {/* Distinct landmark name: below sm the header's own "Primary"
+              nav (search + this toggle) stays exposed, so a second bare
+              "Primary" here would duplicate the landmark. */}
+          <nav aria-label="Primary menu" className="flex flex-col">
             {MOBILE_LINKS.map((l) => (
               <a
                 key={l.href}

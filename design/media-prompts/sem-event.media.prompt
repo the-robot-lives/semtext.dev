@@ -103,7 +103,7 @@ requirements:
         - never drop the status marker or the inline date on narrow rows
     - name: class form
       must_show:
-        - `div.sem-event[data-*]` renders pixel-identical to `<sem-event>` in every mode
+        - "div.sem-event[data-*] renders pixel-identical to <sem-event> in every mode"
       must_never:
         - never restyle or restructure the class form — it is the same contract, different spelling
 

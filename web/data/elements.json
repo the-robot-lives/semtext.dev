@@ -3,6 +3,7 @@
   "specVersion": "0.6",
   "generatedFrom": [
     "spec/schema/sem-audiences.md",
+    "spec/schema/sem-browser.md",
     "spec/schema/sem-chronology.md",
     "spec/schema/sem-code.md",
     "spec/schema/sem-data-join.md",
@@ -43,6 +44,7 @@
     "spec/schema/npl/npl-thought.md",
     "spec/schema/npl/npl-vos.md"
   ],
+  "tagCount": 50,
   "tags": [
     {
       "name": "npl-agent",
@@ -954,8 +956,8 @@
       "name": "npl-section",
       "family": "npl",
       "source": "spec/schema/npl/npl-section.md",
-      "summary": "Generic typed section for NPL prompt-section blocks (`src/lit/npl/npl-section.ts`): display-only chrome — a labelled header for known types, a warning class for unknown ones.",
-      "description": "Generic typed section for NPL prompt-section blocks (`src/lit/npl/npl-section.ts`): display-only chrome — a labelled header for known types, a warning class for unknown ones. Light DOM per the namespace recipe; content stays searchable/copyable.",
+      "summary": "Generic typed section for NPL prompt-section blocks (`src/lit/npl/npl-section.ts`): display-only chrome over untouched authored content — a labelled header for known types, a warning box for unknown o",
+      "description": "Generic typed section for NPL prompt-section blocks (`src/lit/npl/npl-section.ts`): display-only chrome over untouched authored content — a labelled header for known types, a warning box for unknown ones. Light DOM per the namespace recipe; content stays searchable/copyable.",
       "attributes": [
         {
           "name": "type",
@@ -970,10 +972,11 @@
             "logic",
             "note",
             "syntax",
-            "template"
+            "template",
+            "npl-section-warning"
           ],
           "default": null,
-          "description": "required. One of the known section types: `alg`, `alg-pseudo`, `diagram`, `example`, `format`, `logic`, `note`, `syntax`, `template`."
+          "description": "required. One of the known section types: `alg`, `alg-pseudo`, `diagram`, `example`, `format`, `logic`, `note`, `syntax`, `template`. A missing or unknown value is never fatal: the section renders with the `npl-section-warning` class, its content plain, plus one author-facing warning per offending value."
         },
         {
           "name": "id",
@@ -1001,7 +1004,7 @@
         }
       ],
       "children": [],
-      "example": "<npl-section type=\"syntax\">\n  <pre><code>section := \"&lt;npl-section\" type \"&gt;\" body \"&lt;/npl-section&gt;\"</code></pre>\n</npl-section>"
+      "example": "<npl-section type=\"example\">body HTML</npl-section>"
     },
     {
       "name": "npl-thought",
@@ -1051,7 +1054,7 @@
       "name": "npl-vos",
       "family": "npl",
       "source": "spec/schema/npl/npl-vos.md",
-      "summary": "Display-only bracket for an NPL vector-of-self block (`src/lit/npl/npl-vos.ts`): the psychodynamic state (id, ego, mood, super-ego, optional collective) an NPL persona brackets each substantive response with.",
+      "summary": "Display-only bracket for an NPL vector-of-self block (`src/lit/npl/npl-vos.ts`): the psychodynamic state an NPL persona brackets each substantive response with — id, ego, mood, super-ego, optional col",
       "description": "Display-only bracket for an NPL vector-of-self block (`src/lit/npl/npl-vos.ts`): the psychodynamic state an NPL persona brackets each substantive response with — id, ego, mood, super-ego, optional collective (source: NPL `vos` blocks, npl-full.md \"Psychodynamic State\"). One component renders one bracket; `phase` marks which half of the bracket it is. When vector-of-self is active it subsumes standalone `<npl-mood>` — do not author both.",
       "attributes": [
         {
@@ -1062,8 +1065,8 @@
             "entry",
             "exit"
           ],
-          "default": null,
-          "description": "`entry` or `exit`; rendered as the bracket label (`.npl-vos-phase`) and mirrored to `data-phase` (dual-form contract; the mirror is deferred past parse via afterParse so a sem-source snapshot never sees runtime writes)."
+          "default": "",
+          "description": "One of `entry`, `exit`; rendered as the bracket label and mirrored to data-phase (dual-form contract; the mirror is deferred past parse via afterParse so a sem-source snapshot never sees runtime writes)."
         },
         {
           "name": "id",
@@ -1090,28 +1093,7 @@
           "description": "per the global attribute catalog (conventions.md §2)"
         }
       ],
-      "children": [
-        {
-          "name": "id",
-          "note": "part name — authored as data-vos=\"id\" on a direct child element (bare vos=\"id\" also read); raw impulse, what the first instinct wants"
-        },
-        {
-          "name": "ego",
-          "note": "part name — authored as data-vos=\"ego\"; the reality-tested approach, what is actually done and why"
-        },
-        {
-          "name": "mood",
-          "note": "part name — authored as data-vos=\"mood\"; the emoji-led affective state"
-        },
-        {
-          "name": "super-ego",
-          "note": "part name — authored as data-vos=\"super-ego\"; internalized standards, what should be upheld here"
-        },
-        {
-          "name": "collective",
-          "note": "part name — authored as data-vos=\"collective\"; optional, include only when the system-level perspective has something the persona cannot see"
-        }
-      ],
+      "children": [],
       "example": "<npl-vos phase=\"entry\">\n  <p data-vos=\"id\">raw impulse — what the first instinct wants to do</p>\n  <p data-vos=\"ego\">reality-tested approach — what is actually done and why</p>\n  <p data-vos=\"mood\">🔥 — energized by the profiling work</p>\n  <p data-vos=\"super-ego\">internalized standards — what should be upheld here</p>\n  <p data-vos=\"collective\">system-level observation from outside the persona</p>\n</npl-vos>"
     },
     {
@@ -1123,19 +1105,7 @@
       "attributes": [],
       "children": [],
       "example": "<sem-details id=\"oidc-details\" view-as=\"quiz\">\n  <sem-detail>\n    The OIDC token travels in the\n    <highlight>Authorization</highlight> header.\n  </sem-detail>\n</sem-details>",
-      "optionsIn": "sem-details",
-      "examples": [
-        {
-          "view": "plain",
-          "title": "Plain reading (default) — emphasized, fully legible",
-          "code": "<sem-details id=\"oidc-docs\">\n  <sem-detail>\n    The OIDC token travels in the\n    <highlight>Authorization</highlight> header.\n  </sem-detail>\n</sem-details>"
-        },
-        {
-          "view": "quiz",
-          "title": "Quiz view — occluded, reveals per item",
-          "code": "<sem-details id=\"oidc-details\" view-as=\"quiz\">\n  <sem-detail>\n    The OIDC token travels in the\n    <highlight>Authorization</highlight> header.\n  </sem-detail>\n</sem-details>"
-        }
-      ]
+      "optionsIn": "sem-details"
     },
     {
       "name": "sem-audiences",
@@ -1171,6 +1141,73 @@
       ],
       "children": [],
       "example": "<sem-audiences>\n  <sem-profile id=\"reader\" label=\"Reader\"></sem-profile>\n  <sem-profile id=\"operator\" label=\"Operator\" implies=\"reader\"></sem-profile>\n</sem-audiences>"
+    },
+    {
+      "name": "sem-browser",
+      "family": "sem",
+      "source": "spec/schema/sem-browser.md",
+      "summary": "A chrome-like window that renders a SemText document live.",
+      "description": "A chrome-like window that renders a SemText document live. The element exists because the landing \"The Idea\" section needs a BROWSER tab that names its document (an address bar), looks like a window (the shared window-chrome standard), and still renders the deck as real, hydratable DOM rather than an isolated frame. It is the window-frame sibling of `sem-shell` and `sem-code`; all three build their chrome from `src/shared/window-chrome.ts`.",
+      "attributes": [
+        {
+          "name": "src",
+          "required": false,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "(optional): VFS path or URL of the SemText document to render. With no `src`, the element's authored children are the viewport content."
+        },
+        {
+          "name": "label",
+          "required": false,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "(optional): tab-label override. Priority: `label`, then the document's `<title>`, then the `src` basename, then `untitled`."
+        },
+        {
+          "name": "resolve",
+          "required": null,
+          "type": "string",
+          "allowedValues": [],
+          "default": null,
+          "description": "(property only, not an attribute): a host-injected `(path) => string | null | Promise<string | null>` consulted for scheme-less paths (`demo/deck.sem.html`, not `/…` or `https://…`) before any fetch. Returning a string adopts it; returning null errors without fetching."
+        },
+        {
+          "name": "id",
+          "required": null,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "per the global attribute catalog (conventions.md §2)"
+        },
+        {
+          "name": "kind",
+          "required": null,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "per the global attribute catalog (conventions.md §2)"
+        },
+        {
+          "name": "tags",
+          "required": null,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "per the global attribute catalog (conventions.md §2)"
+        },
+        {
+          "name": "audience",
+          "required": null,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "per the global attribute catalog (conventions.md §2)"
+        }
+      ],
+      "children": [],
+      "example": "<sem-browser src=\"/demo/example-deck.sem.html\" label=\"the deck\">\n  <!-- zero-JS fallback chrome: inert glyphs, address pill, framed deck -->\n  <figure class=\"code-window\">\n    <div aria-hidden=\"true\">← → ⟳</div>\n    <div>demo/example-deck.sem.html</div>\n    <iframe src=\"/demo/example-deck.sem.html\" title=\"the deck\" loading=\"lazy\"></iframe>\n  </figure>\n</sem-browser>"
     },
     {
       "name": "sem-chronology",
@@ -1333,11 +1370,15 @@
       "children": [
         {
           "name": "pre",
-          "note": "Child: **exactly one `<pre>`**, conventionally wrapping one `<code>`. The listing is the `<code>`'s text (the `<pre>`'s when no `<code>` is authored)."
+          "note": "Child: **exactly one `<pre>`**, conventionally wrapping one `<code>`. The listing is the `<code>`'s text (the `<pre>`'s when no `<code>` is authored). A `<code>` that already holds element children (author-side highlighting) is left as authored — no line spans or `<mark>` are generated over it."
         },
         {
           "name": "code",
-          "note": "Child: **exactly one `<pre>`**, conventionally wrapping one `<code>`. The listing is the `<code>`'s text (the `<pre>`'s when no `<code>` is authored)."
+          "note": "Child: **exactly one `<pre>`**, conventionally wrapping one `<code>`. The listing is the `<code>`'s text (the `<pre>`'s when no `<code>` is authored). A `<code>` that already holds element children (author-side highlighting) is left as authored — no line spans or `<mark>` are generated over it."
+        },
+        {
+          "name": "mark",
+          "note": "Child: **exactly one `<pre>`**, conventionally wrapping one `<code>`. The listing is the `<code>`'s text (the `<pre>`'s when no `<code>` is authored). A `<code>` that already holds element children (author-side highlighting) is left as authored — no line spans or `<mark>` are generated over it."
         }
       ],
       "example": "<sem-code id=\"c-rotate\" lang=\"ts\" filename=\"src/rotate.ts\" mark=\"2,4-5\" controls=\"copy,wrap\">\n<pre><code>export function rotate(pair: Pair): Pair {\n  const next = mint();\n  retire(pair.refresh);\n  return next;\n}</code></pre>\n</sem-code>"
@@ -1628,13 +1669,8 @@
       "summary": "Prose with occludable content.",
       "description": "Prose with occludable content. Recall-oriented prose, distinct from `sem-reveal` (block disclosure) and `sem-views` (perspective switching): same prose, a different interaction model per view. Each `sem-detail` is one prose passage; a `<highlight>` child marks a recall target (`[[cloze]]` sugar maps to `<highlight>`) — `<em>` in plain view, occluded and revealed per item in the `quiz` view (self-check model). `view-as` is display-only sugar (`plain` default, `quiz`): the prose is identical under both.",
       "attributes": [],
-      "children": [
-        {
-          "name": "highlight",
-          "note": "the recall targets of the passage, zero or more; emphasized and fully legible in the `plain` view, occluded and revealed per item in the `quiz` view."
-        }
-      ],
-      "example": "<sem-details id=\"oidc-docs\">\n  <sem-detail>\n    The OIDC token travels in the\n    <highlight>Authorization</highlight> header.\n  </sem-detail>\n</sem-details>",
+      "children": [],
+      "example": "<sem-details id=\"oidc-details\" view-as=\"quiz\">\n  <sem-detail>\n    The OIDC token travels in the\n    <highlight>Authorization</highlight> header.\n  </sem-detail>\n</sem-details>",
       "optionsIn": "sem-details"
     },
     {
@@ -1665,7 +1701,7 @@
         }
       ],
       "children": [],
-      "example": "<sem-details id=\"oidc-docs\">\n  <sem-detail>\n    The OIDC token travels in the\n    <highlight>Authorization</highlight> header.\n  </sem-detail>\n</sem-details>"
+      "example": "<sem-details id=\"oidc-details\" view-as=\"quiz\">\n  <sem-detail>\n    The OIDC token travels in the\n    <highlight>Authorization</highlight> header.\n  </sem-detail>\n</sem-details>"
     },
     {
       "name": "sem-event",
@@ -2139,6 +2175,30 @@
           "allowedValues": [],
           "default": null,
           "description": "`footnotes` | `bibliography` (free token; these two get distinct styling). Optional."
+        },
+        {
+          "name": "id",
+          "required": true,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "(required; on each `sem-reference`): the citation target — the global `id`."
+        },
+        {
+          "name": "href",
+          "required": false,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "(optional; on each `sem-reference`): external location (`data-href` in the class form)."
+        },
+        {
+          "name": "cite",
+          "required": false,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "(optional; on each `sem-reference`): short citation label (`RFC 6749`)."
         }
       ],
       "children": [],
@@ -2379,14 +2439,5 @@
       "example": "<sem-views id=\"deploy\">\n  <sem-view name=\"Helm\" active>content…</sem-view>\n  <sem-view name=\"ArgoCD\">content…</sem-view>\n</sem-views>"
     }
   ],
-  "tagCount": 49,
-  "gaps": [
-    {
-      "tag": "npl-agent",
-      "missing": [
-        "summary",
-        "description"
-      ]
-    }
-  ]
+  "gaps": []
 }

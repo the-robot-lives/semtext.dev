@@ -4,16 +4,18 @@ import { useEffect, useRef, useState, type HTMLAttributes } from "react";
 
 /*
  * The Try section's four view surfaces — code, browser, tui, cli — over the
- * demo documents under /demo/. The target architecture (§ product intent,
- * 2026-10-14) is a live window per tab: a <sem-shell> whose start script is
- * typed and executed in view, and a <sem-browser> rendering the document.
- * Until the shell bundle and the script runner land, this component renders
- * the placeholders that work today, zero-JS:
+ * demo documents under /demo/. Each tab is a live window: a <sem-shell>
+ * whose start script is typed and executed in view (semtext-js-shell.js,
+ * global SemTextShell), or a <sem-browser> rendering the document
+ * (semtext-lazy.js scans the page for /^sem-/ tags and loads the
+ * sem-browser chunk). Without JS the placeholders below still carry the
+ * full static content:
  *
  *   - shell tabs: a <sem-shell> placeholder carrying start-script="<site
  *     path to a demo-runner script file>" whose fallback content is a
  *     static transcript — the script's `cat` and the message file it
- *     prints, i.e. the command a visitor will run in this shell.
+ *     prints, i.e. the command a visitor will run in this shell. When the
+ *     bundle defines the element, the in-view runner takes over.
  *   - browser tab: a <sem-browser> placeholder carrying src="<site path to
  *     the .sem.html document>"; its fallback children are a framed iframe
  *     of that exact document (which renders live with the shipped fallback
@@ -33,6 +35,47 @@ import { useEffect, useRef, useState, type HTMLAttributes } from "react";
  * The tablist appears only after hydration; with scripts off all four
  * panels render stacked and readable (no interaction is promised).
  */
+
+/* ------------------------------------------------------------------ */
+/* Runtime wiring — one injection per bundle, guarded.                 */
+/* ------------------------------------------------------------------ */
+
+const SHELL_JS = "/semtext/semtext-js-shell.js";
+const LAZY_JS = "/semtext/semtext-lazy.js";
+
+/** Scripts this component asked for. Custom-element bundles throw on a
+ * second define, so a remount (React StrictMode, route return) must not
+ * inject twice — the window-global check covers other loaders, this set
+ * covers concurrent mounts of ours. */
+const requested = new Set<string>();
+
+function loadViewBundle(
+  src: string,
+  globalReady: () => boolean,
+  module: boolean,
+) {
+  if (globalReady() || requested.has(src)) return;
+  requested.add(src);
+  const script = document.createElement("script");
+  if (module) {
+    // type="module" is the artifact embedding contract for the lazy
+    // loader — it carries import.meta and throws as a classic script.
+    // (It assigns window.SemTextLazy itself, so the global survives.)
+    script.type = "module";
+  }
+  // The shell bundle stays classic: its embedding contract is a top-level
+  // `var SemTextShell`, which only reaches window from a classic script.
+  script.src = src;
+  document.head.appendChild(script);
+}
+
+/** The landing loads no SemText runtime by default (hero-window ships the
+ * frozen fallback tier only), so this component owns its own: the shell
+ * bundle for the three shell tabs, the lazy loader for the browser tab. */
+function loadViewRuntimes() {
+  loadViewBundle(SHELL_JS, () => "SemTextShell" in window, false);
+  loadViewBundle(LAZY_JS, () => "SemTextLazy" in window, true);
+}
 
 export interface TryFact {
   id: string;
@@ -215,7 +258,10 @@ export function TryViews({
   const [active, setActive] = useState<TabKey>("code");
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  useEffect(() => setJs(true), []);
+  useEffect(() => {
+    setJs(true);
+    loadViewRuntimes();
+  }, []);
 
   function onTablistKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     const idx = TABS.findIndex((t) => t.key === active);

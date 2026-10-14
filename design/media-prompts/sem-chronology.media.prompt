@@ -98,7 +98,7 @@ eval:
     label_legibility:
       weight: 0.2
       description: Date labels small-caps muted yet readable (AA on dark); no doubled date label; period ranges show both ends.
-      fail_signals: [date text illegible, "X – " dangling dash with empty second end]
+      fail_signals: [date text illegible, "X – dangling dash with empty second end"]
     restraint:
       weight: 0.25
       description: Flat documentation specimen; no ornament, glow, browser chrome, or occluding fills.

@@ -77,6 +77,9 @@ const FACTS: Array<{
   },
 ];
 
+// Degradation section is disabled on the landing page (user, 2026-10-14) — kept, not deleted.
+const SHOW_TIERS = false;
+
 const TIERS: Array<[string, string]> = [
   [
     "Tier 1 — CSS only",
@@ -84,7 +87,7 @@ const TIERS: Array<[string, string]> = [
   ],
   [
     "Tier 2 — the fallback script",
-    "Under 14 KB of vanilla JavaScript wires flashcards, quizzes, tabs and disclosure. No dependencies, no network, no build — and it is embedded in the file, so a copy you email keeps this tier.",
+    "Up to 64 KB of vanilla JavaScript wires flashcards, quizzes, tabs and disclosure. No dependencies, no network, no build — and it is embedded in the file, so a copy you email keeps this tier.",
   ],
   [
     "Tier 3 — Lit components",
@@ -352,7 +355,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Tiers ------------------------------------------------------------ */}
+      {/* Tiers (disabled: see SHOW_TIERS) ---------------------------------- */}
+      {SHOW_TIERS ? (
       <section
         id="tiers"
         aria-labelledby="tiers-h"
@@ -379,6 +383,7 @@ export default function Home() {
           </ol>
         </div>
       </section>
+      ) : null}
 
       {/* Reading ---------------------------------------------------------- */}
       <section

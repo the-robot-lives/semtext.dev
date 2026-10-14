@@ -103,7 +103,7 @@ eval:
         - modes merged into one collage page
     term_value_reading:
       weight: 0.3
-      description: every default-mode row reads unambiguously as term :: value
+      description: "every default-mode row reads unambiguously as term :: value"
       fail_signals:
         - key rendered in body weight or accent colour
         - value occluded, blurred, truncated, or styled as code

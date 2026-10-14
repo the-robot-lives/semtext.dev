@@ -77,8 +77,8 @@ requirements:
     - name: desktop
       must_show:
         - ordinal numbers in a separate muted gutter column, one per step, never inside the prose
-        - status rail per step: green solid (done), blue solid (current), grey DASHED (todo, both the explicit and the unannotated spelling), red solid (blocked)
-        - status glyph after the step text: " ✓" done, " →" current, " ○" todo (both spellings), " ⛔" blocked with muted body
+        - 'status rail per step: green solid (done), blue solid (current), grey DASHED (todo, both the explicit and the unannotated spelling), red solid (blocked)'
+        - 'status glyph after the step text: " ✓" done, " →" current, " ○" todo (both spellings), " ⛔" blocked with muted body'
         - unannotated and explicit-todo rows look identical
       must_never:
         - never hide, ghost, or drop the todo rows — unstarted is visible, just muted
