@@ -45,7 +45,9 @@ function createBundler(plugins: esbuild.Plugin[]) {
 export default defineConfig({
   e2e: {
     baseUrl: SITE_URL,
-    specPattern: "cypress/e2e/**/*.feature",
+    // Gherkin parity scenarios (.feature, cucumber-preprocessed) plus plain
+    // Cypress specs (.cy.ts — e.g. sem-hydration.cy.ts).
+    specPattern: "cypress/e2e/**/*.{feature,cy.ts}",
     supportFile: "cypress/support/e2e.ts",
     video: true,
     videosFolder: "cypress/videos",
