@@ -77,6 +77,8 @@ defmodule SemtextWeb.Hologram.Pages.DocsPage do
   $
   """
 
+  def stub_text, do: @stub
+
   def init(_params, component, _server) do
     # The Next page builds SHOWCASE_HTML in a module IIFE; same build here,
     # server-side in init. Verbatim row/keys: label, href, note.
@@ -97,7 +99,6 @@ defmodule SemtextWeb.Hologram.Pages.DocsPage do
 
     put_state(component,
       groups: NavGroups.groups(),
-      stub: @stub,
       terminal_sample: @terminal_sample,
       showcase_html: showcase_html,
       sections: [
@@ -150,7 +151,7 @@ defmodule SemtextWeb.Hologram.Pages.DocsPage do
               <span class="dot" aria-hidden="true" />
               <span>semtext.html</span>
             </div>
-            <pre><code>{@stub}</code></pre>
+            <pre><code>{stub_text()}</code></pre>
           </figure>
           <p class="mt-3 font-mono text-xs leading-5 text-ink-faint">
             cdn.semtext.dev is the planned CDN origin; today the same three

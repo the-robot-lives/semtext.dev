@@ -61,11 +61,14 @@ defmodule SemtextWeb.Hologram.Components.Landing.CodeViewer do
   prop :dom_id, :string, default: "code-viewer-text"
   prop :mime_type, :string, default: "text/html"
 
+  def code_text, do: String.trim_trailing(@doc_html)
+
+  def code_lines, do: tokenize(code_text())
+
   def init(props, component, _server) do
-    code = String.trim_trailing(props.code)
+    code = code_text()
 
     put_state(component,
-      code: code,
       filename: props.filename,
       caption: props.caption,
       label: props.label,
@@ -73,7 +76,6 @@ defmodule SemtextWeb.Hologram.Components.Landing.CodeViewer do
       mime_type: props.mime_type,
       copy_status: "idle",
       download_status: "idle",
-      lines: tokenize(code)
     )
   end
 
@@ -105,7 +107,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.CodeViewer do
         </button>
       </div>
       <div class="code-content">
-        {%for line <- @lines}
+        {%for line <- code_lines()}
           <div class="code-line">
             <span class="code-ln" aria-hidden="true">{line.num}</span>
             <span class="code-text">
@@ -116,7 +118,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.CodeViewer do
           </div>
         {/for}
       </div>
-      <textarea id={@dom_id} class="sr-only-clip" aria-hidden="true" readonly="readonly">{@code}</textarea>
+      <textarea id={@dom_id} class="sr-only-clip" aria-hidden="true" readonly="readonly">{code_text()}</textarea>
     </figure>
     """
   end
