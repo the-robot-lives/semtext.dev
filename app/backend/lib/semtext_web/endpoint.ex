@@ -9,12 +9,14 @@ defmodule SemtextWeb.Endpoint do
   # (priv/static/semtext/** — the same artefacts the Next.js site ships at
   # /semtext/**; design v2 §2.2). The js/ dir carries the island bridge.
   # demo/ + spec/ are byte-copies of the Next.js public/ demo windows and the
-  # HTML spec the landing links to (port-landing lane).
+  # HTML spec the landing links to (port-landing lane). dataviz/ is the data
+  # visualizer showcase's reading bundle + vocabulary theme + data files
+  # (port-reference lane).
   plug Plug.Static,
     at: "/",
     from: :semtext,
     gzip: false,
-    only: ~w(themes css hologram favicon.ico robots.txt semtext js demo spec)
+    only: ~w(themes css hologram favicon.ico robots.txt semtext js demo spec dataviz)
 
   if code_reloading? do
     plug Phoenix.CodeReloader
