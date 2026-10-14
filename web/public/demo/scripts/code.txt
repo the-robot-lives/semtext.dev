@@ -1,1 +1,3 @@
-cat demo/messages/code.txt
+# bat — the SemText pager
+$ bat demo/example-deck.sem.html
+@expect sem-fact
