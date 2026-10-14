@@ -1,0 +1,119 @@
+# UX design sheet for the SemText `npl-section` element — labelled section chrome
+# Lane: tag-nitpick/npl-section. Type image: one long design sheet, one panel per display mode.
+schema: "0.4"
+id: npl-section-ux-design-sheet
+type: image
+quality: high
+
+prompt:
+  text: |
+    Design sheet for a documentation-site section element called "npl-section" — a
+    generic typed section that renders one small-caps label above its authored body.
+    Render one long vertical design sheet on a warm off-white page, every panel
+    labelled with a small monospace caption. One panel per display mode, in this order:
+
+    1. Panel "type=\"algorithm\"" — the label ALGORITHM in all-small-caps, muted grey,
+       letter-spaced, sitting above a 1px hairline rule; beneath it an ordered list body.
+    2. Panel "type=\"pseudocode\"" — same chrome, label PSEUDOCODE, body is two short
+       indented prose lines.
+    3. Panel "type=\"diagram\"" — label DIAGRAM, body a small ASCII box diagram in
+       monospace.
+    4. Panel "type=\"example\"" — label EXAMPLE, body one paragraph of prose.
+    5. Panel "type=\"format\"" — label FORMAT, body one paragraph.
+    6. Panel "type=\"logic\"" — label LOGIC, body two prose lines.
+    7. Panel "type=\"note\"" — label NOTE, body one sentence; the panel stays a plain
+       labelled section, NO callout tint, NO collapse affordance, NO icon.
+    8. Panel "type=\"syntax\"" — label SYNTAX, body a monospace grammar line.
+    9. Panel "type=\"template\"" — label TEMPLATE, body an escaped template fragment.
+    10. Panel "unknown type" — a dashed amber left border 3px wide, an amber small-caps
+        label reading "MNEMONIC · UNKNOWN TYPE", body one plain sentence fully legible.
+    11. Panel "class-form alias" — the same section rendered from a plain div with a
+        data-type attribute: identical label and hairline chrome.
+    12. Panel "JS off" — the same content with no label at all: plain prose, nothing
+        generated, nothing hidden.
+
+    Style: minimal-tech documentation design system; generous whitespace; type scale
+    with 16px body, 12px small-caps labels; hairline rules at 20% grey; amber used only
+    in the unknown-type panel. Include a second column or a lower strip showing the
+    same twelve panels on a deep navy dark surface, labels switching to light grey and
+    amber staying readable.
+
+    Hard rules for every panel: the authored body text is ALWAYS fully legible and
+    never occluded, dimmed below readable contrast, blurred, or covered; the label
+    always sits ABOVE the body as the first line; panels never collapse, fold, or
+    truncate; colour never carries meaning alone — the unknown-type panel names the
+    problem in words, not just amber; no icons, no badges, no chrome beyond the label,
+    the hairline, and (unknown panel only) the dashed rule.
+  negative: >
+    no hidden or occluded text, no spoiler treatment, no collapsible carets, no
+    coloured-only status signals, no heavy cards or drop shadows, no rounded pill
+    labels, no emoji, no decorative gradients, no invented element names
+  style: >
+    flat minimal technical documentation UI, small-caps micro-typography, hairline
+    separators, monospace for code and captions, restrained single-accent palette
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-section/light-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-section/dark-1280.png
+    role: reference
+
+output:
+  formats:
+    - format: png
+      filename: npl-section-ux-design-sheet.png
+  dimensions:
+    width: 1536
+    height: 2304
+    aspect_ratio: "2:3"
+
+eval:
+  pass_threshold: 0.8
+  criteria:
+    label-above-body:
+      weight: 0.25
+      description: >
+        Every panel shows the small-caps label as the first line above the body,
+        separated by a hairline rule.
+      fail_signals:
+        - label missing on a known-type panel
+        - label rendered below or beside the body
+    body-legibility:
+      weight: 0.25
+      description: >
+        Authored body text is fully legible in all twelve panels, light and dark.
+      fail_signals:
+        - any body text occluded, blurred, or low-contrast
+        - any panel truncating its content
+    unknown-type-treatment:
+      weight: 0.2
+      description: >
+        Only the unknown-type panel carries the dashed amber rule and names the value
+        in words; other panels stay quiet.
+      fail_signals:
+        - amber or warning styling on a known-type panel
+        - unknown panel signalling by colour alone with no text
+    dark-mode-parity:
+      weight: 0.15
+      description: >
+        Dark strip mirrors the light sheet with readable labels and amber.
+      fail_signals:
+        - dark panels unreadable or missing
+    restraint:
+      weight: 0.15
+      description: >
+        No invented chrome: no collapse carets, icons, badges, or callout tints on
+        the note panel.
+      fail_signals:
+        - collapse affordance or callout styling present
+        - decorative elements not in the spec
+  reject_if:
+    - any body text hidden or occluded in any panel
+    - unknown-type panel uses colour without naming the value in words
+    - labels appear below their bodies
+
+tags:
+  - semtext
+  - npl-section
+  - design-sheet
+  - documentation-ux

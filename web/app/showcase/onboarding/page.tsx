@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 /*
  * Spec vocabulary used: sem-progress (value/label + meter roles),
- * sem-procedure/sem-step with statuses, sem-facts with a distractor in
+ * sem-procedure/sem-step with statuses, sem-facts with an incorrect statement in
  * flashcards view.
  */
 
@@ -40,7 +40,7 @@ const EXAMPLE = `<sem-enhanced-document>
     <sem-fact id="ob-main" kind="invariant">
       <statement>Who merges to main?</statement>
       <conclusion>CI only — the release path is automated.</conclusion>
-      <sem-distractor>The latest reviewer merges it by hand.</sem-distractor>
+      <incorrect-statement>The latest reviewer merges it by hand.</incorrect-statement>
     </sem-fact>
   </sem-facts>
 </sem-enhanced-document>`;
@@ -71,7 +71,7 @@ export default function OnboardingShowcasePage() {
         </h2>
         <p className="mt-3 max-w-3xl leading-relaxed text-ink-mute">
           Render it and flip the flashcards: front is the statement, back the
-          conclusion, and the distractor on{" "}
+          conclusion, and the incorrect statement on{" "}
           <code className="font-mono">ob-main</code> joins the quiz options
           when the deck is switched to quiz view.
         </p>
@@ -94,7 +94,7 @@ export default function OnboardingShowcasePage() {
             0..1 and the no-script tier renders the number, never a fake bar.
           </li>
           <li>
-            A <code className="font-mono">sem-distractor</code> is never
+            An <code className="font-mono">incorrect-statement</code> is never
             extracted as a claim — it only ever plays the wrong answer.
           </li>
         </ul>

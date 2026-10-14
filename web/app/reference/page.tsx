@@ -224,7 +224,14 @@ function BundleBadge({
   let text: string;
   let title: string;
   if (family === "npl" || !b.shipped) {
-    text = family === "npl" ? "not in site bundles" : "no shipped runtime";
+    if (b.cssOnly && family !== "npl") {
+      // Zero-JS by contract, painted by the shipped theme CSS (the
+      // cssOnly doc in data/reference-tags.ts): say what paints the
+      // example instead of implying the pane is dead.
+      text = "theme CSS only";
+    } else {
+      text = family === "npl" ? "not in site bundles" : "no shipped runtime";
+    }
     title = b.note ?? "";
   } else {
     const files = b.bundles ?? [];

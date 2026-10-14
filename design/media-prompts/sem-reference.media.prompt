@@ -1,0 +1,125 @@
+schema: "0.4"
+id: sem-reference-ux-design
+type: image
+quality: high
+product_targets: [semtext.dev]
+tags: [semtext, npl, sem-reference, references, footnotes, citations, ux-design, documentation]
+
+prompt:
+  text: |
+    A UX design presentation sheet for `sem-reference`, the citation-entry element of the
+    SemText rich-content vocabulary. Four stacked example panels on one dark-theme page
+    (deep charcoal `#16161d` surface, muted lavender accent, Inter-style humanist sans,
+    generous line height — match the reference screenshots), each panel titled with the
+    mode it shows. The audience is documentation authors evaluating how citations read.
+
+    Panel 1 — "bibliography (element form)": a short prose sentence containing a cited
+    anchor `[1]` styled with a dotted accent underline; below a hairline rule, a numbered
+    list (CSS-counter numerals, 1-based) of reference entries; the first entry is the text
+    "The OAuth 2.0 Authorization Framework, §10.4." followed by a small external-link
+    arrow (↗) and a curved return arrow (↩); the second entry has no external target and
+    therefore shows only the return arrow. MUST: entries numbered 1, 2 in DOM order;
+    authored citation text `[1]` inside the prose left untouched (never renumbered);
+    chrome arrows small, quiet, never oversized. NEVER: no occlusion of the cited prose,
+    no card boxes around entries, no visible URL strings, no table grid.
+
+    Panel 2 — "footnotes (kind="footnotes")": the same list grammar on a container with
+    a footnote kind — a compact numbered list of two notes; one note carries an external
+    arrow, one is a plain note with only a return arrow; the citing prose above mixes
+    `[1]` and superscript `¹` citation markers exactly as authored. MUST: superscript ¹
+    preserved verbatim; compact vertical rhythm tighter than Panel 1. NEVER: automatic
+    renumbering of authored markers, brackets stripped from `[1]`.
+
+    Panel 3 — "citation preview popover": one prose sentence with a cited anchor, an open
+    preview popover floating above the anchor showing the reference's text on a raised
+    surface with a subtle border and shadow; beside the anchor, the entry below shows two
+    labelled return arrows (two citing anchors share one reference). MUST: popover reads
+    as a tooltip (role=tooltip styling), anchor keeps its dotted citation underline,
+    keyboard focus ring visible on the anchor; the popover never covers the cited text
+    itself. NEVER: modal dimming, click-blocking overlay, popover wider than the text
+    column.
+
+    Panel 4 — "class form (CSS tier)": identical layout to Panel 1 but labelled as the
+    class-spelled authoring form (`div.sem-references[data-kind]` ›
+    `div.sem-reference[id][data-href][data-cite]`); the list shows numbering and the
+    accent external arrow absent — the honest CSS-only tier. MUST: number the entries
+    1-based; no interaction chrome (no arrows) in this panel. NEVER: invent hover
+    previews or backlinks in this panel — they belong to the scripted tier only.
+
+    Overall MUST: one example page per mode, four panels, consistent type scale, both
+    arrows (external ↗ / return ↩) rendered as thin 1.5px stroke glyphs in the accent
+    colour; hairline separators; dark theme only. Overall NEVER: no lorem ipsum, no
+    invented RFC titles other than OAuth 2.0 citations, no emoji, no browser chrome,
+    no watermarks, no gradients stronger than a faint surface tint.
+  negative: >
+    occluded text, hidden prose, modal overlay, light theme, cartoon style, 3D,
+    watermark, lorem ipsum, emoji, browser window frame, gradient backgrounds,
+    rainbow colors, drop caps, justified text with rivers
+  style: >
+    precise technical design-sheet aesthetic; restrained, typographic, documentation
+    grade; matches the existing SemText vocabulary pages (charcoal surfaces, lavender
+    accent, dotted citation underline convention)
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-reference/sem-reference-primary-split-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-reference/sem-reference-footnotes-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-reference/sem-reference-citation-previews-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-reference/sem-reference-class-form-split-1280.png
+    role: reference
+
+output:
+  formats:
+    - format: png
+      filename: sem-reference-ux-design.png
+  dimensions:
+    width: 1600
+    height: 2000
+    aspect_ratio: "4:5"
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    four-modes-covered:
+      weight: 0.3
+      description: >
+        Four labelled panels appear: bibliography element form, footnotes kind,
+        citation preview popover, class-form CSS tier — one example page per mode.
+      fail_signals:
+        - fewer than four panels
+        - two panels show the same mode
+        - panels unlabelled
+    citation-integrity:
+      weight: 0.3
+      description: >
+        Authored citation text ([1], ¹) appears verbatim in the prose; entries are
+        numbered 1, 2 in order; no-href entries show no external arrow.
+      fail_signals:
+        - citation markers renumbered or restyled
+        - a no-external-target entry shows an external-link arrow
+        - entry numbering starts at 0 or skips
+    popover-and-focus:
+      weight: 0.2
+      description: >
+        The preview panel shows a tooltip-like popover attached to the citing anchor
+        with a visible focus ring, and the popover never covers the cited prose.
+      fail_signals:
+        - popover overlaps the cited sentence
+        - modal dimming or click-blocking overlay
+        - no focus ring on the anchor
+    theme-and-chrome-fidelity:
+      weight: 0.2
+      description: >
+        Dark charcoal theme with lavender accent matching the reference screenshots;
+        thin-stroke ↗ / ↩ chrome glyphs; hairline rules; no invented decoration.
+      fail_signals:
+        - light theme or wrong accent hue
+        - chunky or filled-in chrome icons
+        - visible URLs, emoji, or watermark
+  reject_if:
+    - the cited prose text is occluded or struck through in any panel
+    - any panel renders a modal overlay or blocks interaction
+    - lorem ipsum or gibberish body text
+    - more than one theme (light and dark mixed)

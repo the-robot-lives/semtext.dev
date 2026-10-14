@@ -51,7 +51,7 @@ const config: Config = {
       },
       maxWidth: {
         content: "72rem",
-        docs: "80rem",
+        docs: "96rem",
       },
       boxShadow: {
         code: "0 24px 80px rgba(15, 23, 42, 0.65)",

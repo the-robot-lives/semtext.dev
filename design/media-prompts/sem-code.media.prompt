@@ -1,0 +1,165 @@
+schema: "0.4"
+id: sem-code-ux-design
+type: image
+quality: high
+product_targets:
+  - semtext.dev
+tags:
+  - semtext
+  - sem-code
+  - ux-design
+  - reference
+
+prompt:
+  text: |
+    UX design sheet for the SemText `<sem-code>` element — a verbatim source
+    listing with provenance chrome, rendered in the minimal-tech-light theme
+    on a dark slate canvas (bg #0f172a, surface #1e293b, fg #e2e8f0, muted
+    #cbd5e1, border #334155, accent #60a5fa). The sheet shows FOUR stacked
+    example cards, each a code listing inside a rounded 12px surface with a
+    hairline border and a small mono uppercase caption above it.
+
+    Every card keeps its listing byte-for-byte readable: monospace type,
+    ~14px, tab-size 2, code glyphs in normal foreground over the surface —
+    a listing is never dimmed, blurred or occluded.
+
+    Card 1 — caption "DEFAULT (COPY)". A TypeScript listing titled with a
+    filename caption "src/rotate.ts" and a small "TS" pill badge on a chrome
+    strip above the code. Lines 2, 4 and 5 are MARKED: each carries a soft
+    accent-blue tint behind the text at ~14% opacity (a low, even wash, no
+    border), with the glyphs fully saturated and legible — a marker-pen
+    emphasis, never a redaction. A single "Copy" control sits at the right
+    end of the chrome strip. No Wrap control.
+
+    Card 2 — caption "COPY + WRAP". The same listing and marks, but the
+    chrome strip carries two controls, "Copy" and "Wrap". "Wrap" is
+    unpressed (neutral hairline outline, muted label). A single very long
+    line runs past the right edge with a thin, subtle horizontal scrollbar
+    beneath it — the listing scrolls rather than folding.
+
+    Card 3 — caption "WRAP ON". The same listing with "Wrap" pressed: its
+    outline and label switch to the accent blue. The long line is soft-
+    wrapped onto two lines inside the panel width; no horizontal scrollbar
+    is visible.
+
+    Card 4 — caption "JS-OFF / LANG-ONLY". A shell listing with no filename:
+    the chrome strip carries only a small "SH" caption badge (mono,
+    uppercase, muted, hairline underline) above the code, and no controls at
+    all — the no-JavaScript state, where the language badge degrades to a
+    plain caption. Nothing is interactive and nothing is hidden.
+
+    Typography: clean system sans for captions (Inter-like), monospace for
+    code, generous margins. Chrome is minimal — filename, one pill badge,
+    small text buttons.
+  negative: >
+    occluded, dimmed, blurred or masked code lines; marked lines rendered as
+    opaque blocks that hide glyphs; redaction bars; colored syntax-
+    highlighting rainbow; neon glow; drop shadows on text; more than four
+    cards; light background; watermark; lorem ipsum in the captions; invented
+    buttons or toolbars beyond Copy and Wrap; a scrollbar drawn on the
+    wrapped card.
+  style: >
+    Flat UI spec sheet, minimal-tech aesthetic, restrained single-accent
+    palette, crisp 12px card radius, hairline #334155 borders, generous
+    negative space. Looks like a panel from a design-system guide describing
+    one component in its states.
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-code/sem-code-enhanced-fixture-900.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-code/sem-code-nojs-fixture-900.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-code/sem-code-source-1280.png
+    role: reference
+
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+    aspect_ratio: "3:2"
+  formats:
+    - format: png
+      filename: sem-code-ux-design.png
+
+requirements:
+  modes:
+    - id: default
+      label: "DEFAULT (COPY)"
+      must_show:
+        - a filename caption (src/rotate.ts) and one small "TS" pill badge
+          on the chrome strip above the code
+        - lines 2, 4 and 5 marked with a soft accent tint behind fully
+          legible glyphs
+        - a single Copy control at the right of the strip
+      must_never:
+        - occlude, dim, blur or bar any code line
+        - render a marked line as an opaque block that hides glyphs
+        - show a Wrap control
+    - id: copy-wrap
+      label: "COPY + WRAP"
+      must_show:
+        - both Copy and Wrap controls, Wrap unpressed (neutral outline)
+        - one over-long line extending past the panel with a thin horizontal
+          scrollbar beneath it
+      must_never:
+        - fold the long line (it scrolls, it does not wrap, until Wrap is on)
+        - mark the Wrap control as active
+    - id: wrap-on
+      label: "WRAP ON"
+      must_show:
+        - the Wrap control pressed (accent-blue outline and label)
+        - the long line soft-wrapped onto two lines inside the panel
+      must_never:
+        - draw a horizontal scrollbar on the wrapped card
+        - clip or truncate the wrapped line
+    - id: js-off
+      label: "JS-OFF / LANG-ONLY"
+      must_show:
+        - a single "SH" mono uppercase caption badge above the code
+        - no controls of any kind
+      must_never:
+        - show Copy/Wrap controls in the no-JavaScript state
+        - hide or dim the listing
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    marked-line-legibility:
+      weight: 0.35
+      description: >
+        Marked lines read as an even accent wash behind normal-contrast
+        glyphs; the code stays the most legible thing on the card.
+      fail_signals:
+        - marked line occluded, blurred or low-contrast
+        - opaque filled block over the marked line
+        - marked line restyled beyond the tint (italic, strike, colour swap)
+    chrome-fidelity:
+      weight: 0.3
+      description: >
+        The chrome strip carries exactly the controls each mode defines —
+        filename plus one lang badge, and Copy and/or Wrap — with Wrap's
+        pressed state set by the mode.
+      fail_signals:
+        - Wrap shown on the default or JS-off card
+        - Wrap pressed on the copy+wrap card
+        - invented buttons, tabs or toolbars beyond Copy and Wrap
+    wrap-and-overflow:
+      weight: 0.2
+      description: >
+        copy+wrap shows a long line with a horizontal scrollbar; wrap-on
+        shows the same line soft-wrapped with no scrollbar.
+      fail_signals:
+        - scrollbar drawn on the wrapped card
+        - wrapped card clips the line
+        - both wrap cards identical
+    spec-sheet-quality:
+      weight: 0.15
+      description: >
+        Reads as a component design sheet: four labeled cards, consistent
+        monospace listings, dark minimal-tech palette, no decorative noise.
+      fail_signals:
+        - watermark, lorem ipsum, rainbow syntax colouring
+        - more or fewer than four labeled cards
+  reject_if:
+    - any card occludes, bars or blurs a code line
+    - the JS-off card shows interactive controls

@@ -129,7 +129,7 @@ export const GLOSSARY_TAGS: TagRecord[] = [
 </sem-fact>`,
   },
   {
-    name: "sem-distractor",
+    name: "incorrect-statement",
     family: "sem",
     source: "spec/schema/sem-facts.md",
     summary: "Explicit wrong candidate for quiz view; never extracted as a claim.",
@@ -140,30 +140,10 @@ export const GLOSSARY_TAGS: TagRecord[] = [
     example: `<sem-fact id="g-f-storage" kind="anti-pattern">
   <statement>JWTs belong in memory or httpOnly cookies</statement>
   <conclusion>localStorage is readable by any script on the page.</conclusion>
-  <sem-distractor>localStorage is fine if the token is short-lived.</sem-distractor>
+  <incorrect-statement>localStorage is fine if the token is short-lived.</incorrect-statement>
 </sem-fact>`,
   },
-  {
-    name: "sem-embed",
-    family: "sem",
-    source: "spec/conventions.md",
-    summary: "Embed another SemText document, or one block of it.",
-    description:
-      "Renderer not yet implemented (spec/schema embed contract); the element is catalogued, not yet wired in any tier, and the validator's schema does not know it yet.",
-    attributes: [
-      attr(
-        "source",
-        "referenced document (required); may carry #section-id",
-        true,
-      ),
-      attr("view", "selected block id inside the source"),
-      attr("mode", 'e.g. "card"'),
-    ],
-    children: [],
-    example: `<sem-embed source="../glossary.sem.html"></sem-embed>
-<sem-embed source="../other.sem.html#section-id"></sem-embed>
-<sem-embed source="../glossary.sem.html" view="g-jwt" mode="card"></sem-embed>`,
-  },
+
   {
     name: "sem-question",
     family: "sem",

@@ -1,0 +1,185 @@
+# SemText npl-vos — psychodynamic bracket, all display states
+# Direction A "Slate Console" (house convention). Three example panels in one
+# frame, one per display state the tag provides: the enhanced phase'd bracket
+# (entry chip + five labelled rows), the enhanced phase-less bracket (rows
+# only, no chip, never an empty mark), and the JS-off degraded form (part
+# names as quiet lead-ins over plain authored prose). The exit phase shares
+# the phase'd panel's anatomy — only the chip's word/tint changes — so it is
+# documented, not paneled (an abstract mock cannot show a word difference).
+# The invariant the design must broadcast: npl-vos is display-only and ASIDE-
+# flavored — a quiet bracket alongside the persona's response. It never
+# occludes, blurs, or hides the authored text (occlusion belongs to the
+# sem-spoiler / quiz tier), and the phase-less state never mints an empty
+# chip.
+#
+# MODE 1 — enhanced, phase'd (phase="entry"; exit identical + different word):
+#   visible: a small fully-rounded pill chip at the panel's top-left — a
+#     hairline accent border, a barely-there accent tint fill, small-caps
+#     placeholder bar inside (bright, near-white); below it five stacked
+#     rows, each led by a short muted accent-tinted small-caps label bar
+#     (right-aligned against a consistent left label column) followed by a
+#     wider near-white value bar; a thin accent rule runs down the left of
+#     the row group.
+#   must never: fill the chip opaque; blur or dim any value bar below its
+#     label; place the chip after the rows; let label bars outweigh values.
+# MODE 2 — enhanced, phase-less (no phase attribute):
+#   visible: the identical five-row anatomy minus the chip — no pill, no
+#     empty mark where the chip would sit; the rows start at the panel top.
+#   must never: show a pill, a chip-shaped gap, or any empty placeholder
+#     mark; restyle rows differently from mode 1.
+# MODE 3 — JS-off degraded:
+#   visible: each authored line as plain foreground prose led by a short
+#     muted small-caps lead-in bar (the part name) — no pill, no rows, no
+#     accent rule, no generated chrome; reads as unstyled authored text with
+#     quiet captions.
+#   must never: show a pill, a row grid, a border rule, or any accent tint;
+#     hide or restyle any authored line.
+#
+# Reference renders: the site's /reference/npl-vos/ page is source-view only
+# today (the npl namespace ships upstream, not into the site bundle), so the
+# enhanced form is judged from a throwaway fixture captured with headless
+# Chrome (canonical example from web/data/elements.json + themes/_vocabulary.css
+# + the privately built npl.js). `npl-vos-render-enhanced-900.png` is that
+# fixture (entry / exit / phase-less blocks); `npl-vos-render-jsoff-900.png`
+# is the same fixture without the script; `npl-vos-fullpage-1280.png` is the
+# site page (source view + page chrome) from `npm run snap:tag -- npl-vos`.
+schema: '0.4'
+id: reference-npl-vos
+type: image
+quality: high
+service: gemini
+model: gemini-2.5-flash-image
+
+prompt:
+  text: |
+    Dark-mode UI mockup of three side-by-side reference-page panels
+    illustrating one psychodynamic-state bracket element in its three
+    display states, wide 16:9, flat technical illustration (screenshot-
+    like, not 3D). Dark slate navy background (#0F172A) with a barely
+    visible thin grid and a faint violet radial glow upper-left. Three
+    equal panels sit side by side, separated by thin slate hairline
+    dividers, each panel a dark slate card (#1E293B) with a thin slate
+    hairline border, squared corners, deep soft shadow; a small dim
+    caption bar sits above each panel.
+
+    LEFT panel — ENHANCED PHASE'D. At the panel's top-left sits a small
+    fully-rounded pill chip: hairline violet border, a barely-there violet
+    tint fill (never solid), and one short small-caps placeholder bar
+    inside it in bright near-white. Below the chip, a row group with a
+    thin violet accent rule running down its left edge: five stacked rows,
+    each row led by a short, muted, violet-tinted small-caps label bar
+    (all labels right-aligned against one shared label column) followed by
+    a wider brighter near-white value bar of differing length; the labels
+    stay clearly dimmer than their values.
+
+    MIDDLE panel — ENHANCED PHASE-LESS. The identical row group — same
+    five rows, same right-aligned label bars, same thin violet left rule —
+    starting at the panel's top-left with NO pill chip above it, no chip-
+    shaped gap, no empty placeholder mark. Pixel-comparable row anatomy to
+    the left panel below the chip line.
+
+    RIGHT panel — JS-OFF DEGRADED. No pill, no rows, no rule, no tint: two
+    or three plain prose lines of near-white placeholder bars, each line
+    led by a short, muted, dimmer small-caps lead-in bar (the part name)
+    sitting inline before it. It must read as unstyled authored prose with
+    quiet captions — no grid, no border, no generated chrome.
+
+    Across all three panels the bracket stays quiet and aside-flavored; no
+    line of text is occluded, blurred, or dimmed below its label; the
+    value bars always outweigh the label bars.
+  negative: legible text, letters, numbers, digits, words, captions,
+    typography, watermark, logo, light mode, white cards, 3D, photorealism,
+    faces, avatars, robot mascots, more than three panels, an opaque filled
+    chip, a solid colour-block pill, a pill or empty chip-shaped gap in the
+    middle panel, any pill/grid/rule in the right panel, a value bar dimmer
+    than its label, an occluded or blurred line
+  style: flat dark-mode product UI illustration, squared corners, hairline
+    borders, slate and violet palette, three-panel state comparison
+
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 1600
+    height: 900
+    aspect_ratio: '16:9'
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-vos/npl-vos-render-enhanced-900.png
+    role: reference
+    description: enhanced render — entry chip + five labelled rows, exit chip + four rows, phase-less rows only (fixture)
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-vos/npl-vos-render-jsoff-900.png
+    role: reference
+    description: JS-off render — part names as muted small-caps lead-ins over plain prose (fixture)
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-vos/npl-vos-fullpage-1280.png
+    role: reference
+    description: site reference page (source view) — page chrome, attribute table, example and variant placement
+
+requirements:
+  subject: three panels of one psychodynamic-state bracket — left enhanced
+    phase'd bracket (pill chip + five labelled rows with a thin accent left
+    rule), middle enhanced phase-less bracket (same rows, no chip), right
+    JS-off plain prose with muted small-caps lead-ins
+  palette: slate navy background, slate panels, hairline borders, violet
+    accent on the chip tint and left rule, near-white value bars, muted
+    violet-tinted labels
+  composition: three equal panels side by side; the row group starts at a
+    consistent top-left position in every panel; identical row anatomy
+    across the two enhanced panels; labels right-aligned to one shared
+    label column
+  do:
+    - keep the chip a small tinted pill with a hairline border, never opaque
+    - keep every value bar brighter than its small-caps label
+    - differentiate states only by chip presence (left) and chrome presence
+      (right)
+  dont:
+    - any legible text, digits, real emoji, or logos
+    - an empty chip or chip-shaped gap in the phase-less panel
+    - occluding, blurring, or dimming any line in any panel
+    - a pill, row grid, or accent rule in the JS-off panel
+    - extra chrome (counts, buttons, icons) the tag does not define
+
+eval:
+  pass_threshold: 0.7
+  required_pass:
+    - state_differentiation
+    - quiet_not_opaque
+  criteria:
+    state_differentiation:
+      weight: 3
+      description: Left panel shows the pill chip plus a five-row labelled
+        group; middle shows the identical row group with no chip and no
+        empty mark; right shows plain prose lines with small muted lead-in
+        bars and no generated chrome
+      fail_signals:
+        - pill or empty chip-shaped gap present in the middle panel
+        - row grid or accent rule present in the right panel
+        - chip missing from the left panel
+        - row anatomy differs between the two enhanced panels
+    quiet_not_opaque:
+      weight: 3
+      description: The chip is a small tinted pill with a hairline border,
+        never a solid opaque block, and no text is occluded, blurred, or
+        dimmed below its label in any panel
+      fail_signals:
+        - opaque or solid accent-filled chip
+        - value bars dimmer than their labels
+        - blur, redaction, or occlusion overlays on any bar
+    theme_fidelity:
+      weight: 2
+      description: Dark slate + violet, squared hairline panels, flat style
+      fail_signals:
+        - light theme
+        - glossy 3D look
+        - rounded card corners
+  reject_if:
+    - any legible text, letters, digits, real emoji, watermark, or logo
+    - an occluded, blurred, or hidden line in any panel
+    - an empty chip or chip-shaped gap in the phase-less panel
+    - a pill, grid, or accent rule in the JS-off panel
+    - more than three panels or a chaotic layout
+
+tags:
+  - semtext
+  - reference
+  - npl-vos

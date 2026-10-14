@@ -1,6 +1,7 @@
 const TRL = "https://therobotlives.com";
 
 import { HeaderSearch } from "@/components/search";
+import { HeaderMenu } from "@/components/header-menu";
 
 export function Header() {
   return (
@@ -45,10 +46,11 @@ export function Header() {
           <HeaderSearch />
           <a
             href={TRL}
-            className="inline-flex min-h-11 items-center font-medium text-violet-soft underline-offset-4 hover:underline"
+            className="hidden min-h-11 items-center font-medium text-violet-soft underline-offset-4 hover:underline sm:inline-flex"
           >
             The Robot Lives
           </a>
+          <HeaderMenu />
         </nav>
       </div>
     </header>

@@ -17,15 +17,22 @@
  * The discovery contract (stable selectors the /reference components
  * already ship — see components/example-viewer.tsx, code-viewer.tsx,
  * sem-md-example.tsx):
- *   - every example is a `figure.code-window` under `main#main`;
- *   - a paired example = `aria-label="Authored <name> example"` (source)
- *     plus `aria-label="<name> rendered"` (render pane);
- *   - the sem-md example is one combined figure,
- *     `aria-label="The sem-md example: rendered and authored"`;
- *   - view pills are `.code-chrome button[aria-pressed]`;
- *   - a wired fallback render carries `[data-sem-fallback]` or
+ *   - every example lives in an anchored container, `#example-<id>`
+ *     (`example-primary` for the generator's example, the variant id for
+ *     each entry in data/reference-example-variants.ts); a container's
+ *     source and render views are paired BY THAT ANCHOR, never by
+ *     occurrence order;
+ *   - inside a container: the source figure
+ *     `figure.code-window[aria-label^="Authored"]`, the render figure via
+ *     its `[data-sem-theme]` pane (a not-yet-renderable tag carries an
+ *     "… render unavailable" note figure instead), or the sem-md combined
+ *     figure `aria-label="The sem-md example: rendered and authored"`;
+ *   - the view pills are `.code-chrome button[aria-pressed]` —
+ *     Side by side (the page default) / Source / Render;
+ *   - a wired render carries `[data-sem-fallback]` or
  *     `[data-sem-upgraded]` inside the pane.
- * Figures that match none of these (a reviewer added a new widget) are
+ * Shots are named `<tag>-<exampleId>-<view>-<width>.png` (view: split |
+ * source | render | state). Figures matching none of the shapes above are
  * still captured: default state, then one shot per aria-pressed pill.
  *
  * Known limitation: mode controls inside a Lit shadow root (upgraded
@@ -38,6 +45,7 @@ const snap = Cypress.env("snap") as SnapEnv;
 
 const WIDTHS: Array<{ w: number; h: number }> = [
   { w: 1280, h: 800 },
+  { w: 1024, h: 800 },
   { w: 390, h: 844 },
 ];
 
@@ -48,8 +56,11 @@ const PANE_CONTROLS =
 
 type ExampleKind = "paired" | "source" | "semmd" | "unknown";
 type Example = {
-  name: string;
+  /** The container's stable id: `#example-<id>` anchor + shot names. */
+  exampleId: string;
   kind: ExampleKind;
+  /** the anchored container selector */
+  boxSel: string;
   /** figure selector for the source view (kind: paired | source) */
   srcSel?: string;
   /** figure selector for the render view (kind: paired) */
@@ -178,7 +189,8 @@ function shotElement(sel: string, shotName: string): void {
  * shot. Two reasons: fullPage stitches composite by scrolling, so sticky
  * elements repeat down the image; and Cypress re-scrolls a subject into
  * view before an element screenshot, which can park the element under the
- * sticky header. Restores visibility after.
+ * sticky header. Scope: PAGE CHROME ONLY — nothing inside main#main is ever
+ * hidden. Restores visibility after.
  */
 function withStickyHidden(shot: () => void): void {
   cy.window({ log: false }).then((win) => {
@@ -186,10 +198,13 @@ function withStickyHidden(shot: () => void): void {
     win.document.querySelectorAll("*").forEach((n) => {
       const el = n as HTMLElement;
       const pos = win.getComputedStyle(el).position;
-      if (pos === "sticky" || pos === "fixed") {
-        el.style.visibility = "hidden";
-        hidden.push(el);
-      }
+      if (pos !== "sticky" && pos !== "fixed") return;
+      // Page chrome only: the docs header / side nav live OUTSIDE main#main.
+      // Never hide sticky chrome inside the captured content itself — a
+      // sticky thead inside an example (sem-table) is content under review.
+      if (el.closest("main#main")) return;
+      el.style.visibility = "hidden";
+      hidden.push(el);
     });
     (win as unknown as { __snapHidden?: HTMLElement[] }).__snapHidden = hidden;
   });
@@ -205,67 +220,67 @@ function withStickyHidden(shot: () => void): void {
 
 /** Discover every example figure under main#main. */
 function discover(doc: Document): Example[] {
-  const figs = Array.from(doc.querySelectorAll("main#main figure.code-window"));
-  // The same aria-label can legitimately repeat (one figure per variant
-  // example on a tag page), which makes aria-label selectors ambiguous.
-  // Tag every figure with its DOM index and address shots by that.
-  figs.forEach((f, i) => f.setAttribute("data-snap-i", String(i)));
-  const selFor = (i: number) =>
-    `main#main figure.code-window[data-snap-i="${i}"]`;
-
-  const srcOcc = new Map<string, number[]>(); // base name -> figure idxs
-  const renOcc = new Map<string, number[]>();
+  // One anchored container per example: source and render views pair by
+  // the `#example-<id>` anchor the page guarantees, so a primary example
+  // plus N variants are N independent entries — never occurrence-matched.
+  const de = doc.documentElement;
+  if (de.scrollWidth > de.clientWidth + 1) {
+    note(
+      `horizontal overflow: scrollWidth ${de.scrollWidth} > clientWidth ${de.clientWidth} — the page must never scroll sideways`,
+      "warn"
+    );
+  }
+  const boxes = Array.from(
+    doc.querySelectorAll<HTMLElement>("main#main div[id^='example-']")
+  );
   const ordered: Example[] = [];
 
-  figs.forEach((f, i) => {
-    const label = f.getAttribute("aria-label") || "";
-    let m = label.match(/^Authored (.+) example$/);
-    if (m) {
-      const list = srcOcc.get(m[1]) || [];
-      list.push(i);
-      srcOcc.set(m[1], list);
-      return;
-    }
-    m = label.match(/^(.+) rendered$/);
-    if (m) {
-      const list = renOcc.get(m[1]) || [];
-      list.push(i);
-      renOcc.set(m[1], list);
-      return;
-    }
-    if (label === "The sem-md example: rendered and authored") {
-      ordered.push({ name: "sem-md", kind: "semmd", figSel: selFor(i) });
-      return;
-    }
-    // Unrecognised widget: capture generically.
-    ordered.push({
-      name: slug(label || `fig-${i + 1}`),
-      kind: "unknown",
-      figSel: selFor(i),
-    });
-  });
+  for (const box of boxes) {
+    const id = box.id.slice("example-".length) || "primary";
+    const boxSel = `main#main #${CSS.escape(box.id)}`;
+    // View pairing is by STABLE SHAPE, never stamped attributes: React
+    // re-renders on every view switch and re-creates the figures, so only
+    // selectors that re-resolve after a switch are safe. Within one
+    // container each shape is unique: the authored source figure, the
+    // live render figure (it owns the [data-sem-theme] pane), or the
+    // not-yet-renderable note figure.
+    const figs = Array.from(
+      box.querySelectorAll<HTMLElement>("figure.code-window")
+    );
+    const srcSel = `${boxSel} figure.code-window[aria-label^="Authored "]`;
+    const mdFig = figs.find(
+      (f) =>
+        f.getAttribute("aria-label") ===
+        "The sem-md example: rendered and authored"
+    );
+    const hasPane = figs.some((f) => f.querySelector("[data-sem-theme]"));
+    // The note pane carries a marker attribute, not a label: the one-card
+    // relabel may rename the figure, the marker never moves.
+    const hasNote = figs.some((f) =>
+      f.querySelector("[data-sem-render-note]")
+    );
+    const renSel = `${boxSel} figure.code-window:has([data-sem-theme])`;
+    const noteSel = `${boxSel} figure.code-window[aria-label$=" render unavailable"]`;
 
-  // Pair source+render by occurrence order; the k-th extra occurrence of a
-  // name (variant examples) is its own entry with an "-exN" shot prefix.
-  for (const [name, srcs] of srcOcc) {
-    const rens = renOcc.get(name) || [];
-    srcs.forEach((si, k) => {
-      const rn = rens[k];
+    if (mdFig) {
       ordered.push({
-        name: k === 0 ? name : `${name}-ex${k + 1}`,
-        kind: rn != null ? "paired" : "source",
-        srcSel: selFor(si),
-        renSel: rn != null ? selFor(rn) : undefined,
+        exampleId: id,
+        kind: "semmd",
+        boxSel,
+        figSel: `${boxSel} figure.code-window`,
+        renSel,
       });
-    });
-    // Render figures with no source counterpart: keep them visible rather
-    // than silently dropping an example.
-    for (let k = srcs.length; k < rens.length; k++) {
-      ordered.push({
-        name: `${name}-ex${k + 1}`,
-        kind: "unknown",
-        figSel: selFor(rens[k]),
-      });
+    } else if (hasPane && hasNote) {
+      note(`example #${box.id}: both a render pane and a note figure — unexpected shape`, "warn");
+      ordered.push({ exampleId: id, kind: "unknown", boxSel, figSel: `${boxSel} figure.code-window` });
+    } else if (hasPane) {
+      ordered.push({ exampleId: id, kind: "paired", boxSel, srcSel, renSel });
+    } else if (hasNote) {
+      ordered.push({ exampleId: id, kind: "source", boxSel, srcSel });
+    } else if (figs.length) {
+      ordered.push({ exampleId: id, kind: "unknown", boxSel, figSel: `${boxSel} figure.code-window` });
+    } else {
+      note(`example #${box.id}: no figure.code-window inside — nothing captured`, "warn");
     }
   }
   return ordered;
@@ -364,39 +379,55 @@ function captureControls(
   });
 }
 
-/** One example, one width: source view, render view, pane controls. */
+/** One example, one width: split (the default), source, render, controls. */
 function captureExample(ex: Example, w: number): void {
+  const id = ex.exampleId;
   if (ex.kind === "paired" || ex.kind === "source") {
     // Source view (the ExampleViewer default; click anyway to normalise
     // state after a previous width pass ended on Render).
     cy.document({ log: false }).then((doc) => {
-      const fig = doc.querySelector(ex.srcSel!);
-      if (!fig) return;
-      const pill = findPill(fig, /source/i);
+      const box = doc.querySelector(ex.boxSel);
+      if (!box) return;
+      const pill = findPill(box, /source/i);
       if (pill) pill.click();
+      else note(`${id}: no Source pill found — captured current state as source`);
     });
     cy.wait(400, { log: false });
-    shotElement(ex.srcSel!, `${ex.name}-source-${w}`);
+    shotElement(ex.srcSel!, `${snap.tag}-${id}-source-${w}`);
   }
 
   if (ex.kind === "paired") {
+    // Side by side — the page default, back to it explicitly so the shot
+    // is deterministic: source left, live render right (or the
+    // not-yet-renderable note — itself review evidence).
     cy.document({ log: false }).then((doc) => {
-      const src = doc.querySelector(ex.srcSel!);
-      const ren = doc.querySelector(ex.renSel!);
-      const pill =
-        (src && findPill(src, /render/i)) || (ren && findPill(ren, /render/i));
+      const box = doc.querySelector(ex.boxSel);
+      if (!box) return;
+      const pill = findPill(box, /split/i);
       if (pill) pill.click();
-      else note(`no Render pill found for ${ex.name} — skipping render view`);
+      else note(`${id}: no Side-by-side pill found — captured current state as split`);
+    });
+    cy.wait(400, { log: false });
+    shotElement(ex.boxSel, `${snap.tag}-${id}-split-${w}`);
+
+    cy.document({ log: false }).then((doc) => {
+      const box = doc.querySelector(ex.boxSel);
+      if (!box) return;
+      const pill = findPill(box, /render/i);
+      if (pill) pill.click();
+      else note(`no Render pill found for ${id} — skipping render view`);
     });
     settleRender(ex.renSel!, "[data-sem-theme]");
     settleFixed(700);
-    shotElement(ex.renSel!, `${ex.name}-render-${w}`);
-    captureControls(ex.renSel!, "[data-sem-theme]", `${ex.name}-render`, w);
+    shotElement(ex.renSel!, `${snap.tag}-${id}-render-${w}`);
+    captureControls(ex.renSel!, "[data-sem-theme]", `${snap.tag}-${id}-render`, w);
   }
 
   if (ex.kind === "semmd") {
-    // Combined figure; default view is Render. Capture Source first for
-    // naming parity, then Render, then pane controls.
+    // Combined figure; its default view is Render. Capture the default as
+    // the split view (its only form), then Source for naming parity, then
+    // Render, then pane controls.
+    shotElement(ex.figSel!, `${snap.tag}-${id}-split-${w}`);
     cy.document({ log: false }).then((doc) => {
       const fig = doc.querySelector(ex.figSel!);
       if (!fig) return;
@@ -404,7 +435,7 @@ function captureExample(ex: Example, w: number): void {
       if (pill) pill.click();
     });
     cy.wait(400, { log: false });
-    shotElement(ex.figSel!, `${ex.name}-source-${w}`);
+    shotElement(ex.figSel!, `${snap.tag}-${id}-source-${w}`);
 
     cy.document({ log: false }).then((doc) => {
       const fig = doc.querySelector(ex.figSel!);
@@ -429,13 +460,13 @@ function captureExample(ex: Example, w: number): void {
         if (!ok) note("sem-md custom element never defined — captured the static table");
       });
     settleFixed(1200);
-    shotElement(ex.figSel!, `${ex.name}-render-${w}`);
-    captureControls(ex.figSel!, ".ref-md-example", `${ex.name}-render`, w);
+    shotElement(ex.figSel!, `${snap.tag}-${id}-render-${w}`);
+    captureControls(ex.figSel!, ".ref-md-example", `${snap.tag}-${id}-render`, w);
   }
 
   if (ex.kind === "unknown") {
     // Generic fallback: default state, then one shot per aria-pressed pill.
-    shotElement(ex.figSel!, `${ex.name}-state-${w}`);
+    shotElement(ex.figSel!, `${snap.tag}-${id}-state-${w}`);
     cy.get("body", { log: false }).then(($b) => {
       const doc = $b[0].ownerDocument;
       const fig = doc.querySelector(ex.figSel!);
@@ -444,7 +475,7 @@ function captureExample(ex: Example, w: number): void {
         fig.querySelectorAll<HTMLElement>(PILL_SEL)
       ).filter(isVisible);
       pills.forEach((pill) => {
-        const shotName = `${ex.name}-${slug(pill.textContent || "pill")}-${w}`;
+        const shotName = `${snap.tag}-${id}-${slug(pill.textContent || "pill")}-${w}`;
         cy.then(() => pill.click());
         cy.wait(500, { log: false });
         shotElement(ex.figSel!, shotName);
