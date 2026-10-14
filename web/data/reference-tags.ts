@@ -37,12 +37,26 @@ const INDEX = elementsIndex as ElementsIndex;
 export interface BundleEntry {
   file: string;
   detail: string;
+  /** The lazy chunk that provides the tag (`chunks/<tag>.js`), when the
+   * entry is the lazy loader. The render pane loads npl chunks directly
+   * (pane-scoped element upgrade) instead of the npl namespace loader,
+   * which auto-scans the whole document with no off switch. */
+  chunk?: string;
 }
 
 export interface TagBundle {
   shipped: boolean;
   bundles?: BundleEntry[];
   sharedWith?: string;
+  /**
+   * Zero-JS by contract and painted by the shipped theme CSS: the shipped
+   * vocabulary stylesheet styles the authored markup, so the render pane
+   * mounts without any runtime (sem-event / sem-chronology / sem-procedure
+   * / sem-step, and display-only npl tags once their CSS blocks ship).
+   * Derived from the CSS selectors by scripts/build-bundle-map.mjs — never
+   * a hand list.
+   */
+  cssOnly?: boolean;
   note?: string;
 }
 
@@ -51,6 +65,17 @@ const BUNDLES = bundlesIndex as { tags: Record<string, TagBundle> };
 /** Which shipped JS file(s) provide a tag, or undefined if the map predates it. */
 export function bundlesFor(name: string): TagBundle | undefined {
   return BUNDLES.tags[name];
+}
+
+/**
+ * Class-form alias wiring emitted by scripts/build-bundle-map.mjs: the one
+ * extra bundle file a namespace's class-form examples need beyond their
+ * tag's own runtime (a `div.sem-<tag>` host enhances only under the full
+ * bundle; npl class hosts upgrade under the tag's own npl runtime). Empty
+ * until that file ships in public/semtext/.
+ */
+export function aliasRuntime(): Record<string, string> {
+  return (BUNDLES as { aliasRuntime?: Record<string, string> }).aliasRuntime ?? {};
 }
 
 /** Spec version the generated half of the inventory was built from. */

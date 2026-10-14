@@ -153,7 +153,7 @@ Facts
   JWTs rotate per session
   conclusion:
     Short-lived access tokens; the refresh grant issues a new pair.
-  distractors:
+  incorrectStatements:
     Store the token in localStorage for durability.
 
 $`}

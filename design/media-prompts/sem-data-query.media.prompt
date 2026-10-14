@@ -1,0 +1,174 @@
+schema: "0.4"
+id: sem-data-query-ux-design
+type: image
+quality: high
+product_targets:
+  - semtext.dev
+tags:
+  - semtext
+  - sem-data-query
+  - ux-design
+  - reference
+
+prompt:
+  text: |
+    UX design sheet for the SemText `<sem-data-query>` element — the editable
+    default query inside a data visualizer, rendered in the minimal-tech-light
+    theme on a dark slate canvas (bg #0f172a, surface #1e293b, fg #e2e8f0,
+    muted #cbd5e1, border #334155, accent #60a5fa). The sheet shows FOUR stacked
+    example cards, each inside a rounded 12px surface with a hairline border and
+    a small mono uppercase caption above it.
+
+    Every card opens with the same context above the query chrome: a rendered
+    data table captioned "services" with columns NAME / PORT / READY and three
+    rows (api 8443 true, web 8080 true, metrics 9090 false) — the visualizer's
+    source bucket — and, above that table, the authored markdown as a thin
+    monospace source strip. Below the table sits the query block the card is
+    about: a small mono caption line reading "QUERY — SELECT … FROM <bucket>
+    (WHERE / ORDER BY / LIMIT)", an editable multi-line monospace textarea
+    holding the query, a compact "Run" button, a status line, and a generated
+    results table.
+
+    Card 1 — caption "DEFAULT (RESULT SET)". The textarea reads
+    "SELECT name, port FROM services WHERE ready = true ORDER BY port LIMIT 5".
+    The status line reads "2 rows." and the results table shows two rows:
+    web 8080 and api 8443, with a small sort caret in each results column
+    header. The query statement stays fully legible in the textarea.
+
+    Card 2 — caption "EDITED (RE-RUN ON INPUT)". The same visualizer, but the
+    textarea now reads "SELECT name FROM services" (the user edited it). The
+    status line reads "3 rows." and the results table shows three rows
+    (api, web, metrics) under a single NAME column — the query re-ran because
+    the text was edited.
+
+    Card 3 — caption "ERROR (UNKNOWN BUCKET)". The textarea reads
+    "SELECT name FROM hosts" — a bucket this visualizer does not define. The
+    status line reads "The query failed to run." and directly beneath it, in
+    the accent-red family (#f87171 / #ef4444, not neon), a single inline error
+    line reads: `sem-data-query: unknown bucket "hosts" — buckets in this
+    visualizer: services`. No results table. The authored query text is still
+    fully readable in the textarea.
+
+    Card 4 — caption "JS-OFF / PLAIN TEXT". No chrome at all: the visualizer's
+    markdown source and the query statement appear as ordinary document text
+    (the raw `| name | port | ready |` table lines and the sentence
+    "SELECT name, port FROM services WHERE ready = true ORDER BY port LIMIT 5"),
+    nothing hidden, nothing generated, no buttons or textarea.
+
+    Typography: clean system sans for captions and status, monospace for query
+    text and table cells, generous margins. Chrome is minimal — one caption
+    line, one textarea, one button, one status line, one table.
+
+  negative: >
+    occluded, dimmed or blurred query text; the textarea rendered as a code
+    block that hides the statement; syntax-highlighting rainbow inside the
+    query; neon glow or drop shadows on text; more than four cards; light
+    background; watermark; lorem ipsum in the captions; invented buttons or
+    toolbars beyond Run; a results table drawn on the error or JS-off card;
+    a raw SQL exception/stack trace instead of the single inline error line.
+
+  style: >
+    Flat UI spec sheet, minimal-tech aesthetic, restrained single-accent
+    palette, crisp 12px card radius, hairline #334155 borders, generous
+    negative space. Looks like a panel from a design-system guide describing
+    one component in its states.
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-query/sem-data-query-enhanced-primary-960.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-query/sem-data-query-enhanced-error-960.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-query/sem-data-query-nojs-fixture-1000.png
+    role: reference
+
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+    aspect_ratio: "3:2"
+  formats:
+    - format: png
+      filename: sem-data-query-ux-design.png
+
+requirements:
+  modes:
+    - id: default
+      label: "DEFAULT (RESULT SET)"
+      must_show:
+        - an editable monospace textarea holding the full SELECT statement
+        - a "Run" button and a status line reading "2 rows."
+        - a results table with two rows (web 8080, api 8443) and sort carets
+      must_never:
+        - dim, blur or occlude the query statement
+        - show an error line or an empty results table
+    - id: edited
+      label: "EDITED (RE-RUN ON INPUT)"
+      must_show:
+        - a textarea holding "SELECT name FROM services"
+        - a status line reading "3 rows." and a three-row NAME-only results table
+      must_never:
+        - show the original WHERE/ORDER BY/LIMIT statement (it was edited)
+        - leave the results stale at two rows
+    - id: error
+      label: "ERROR (UNKNOWN BUCKET)"
+      must_show:
+        - a textarea holding "SELECT name FROM hosts"
+        - a status line "The query failed to run."
+        - one inline accent-red error line naming the unknown bucket and the
+          buckets the visualizer does define
+      must_never:
+        - render a results table in the error state
+        - hide or dim the authored query text
+        - show a stack trace or raw exception
+    - id: js-off
+      label: "JS-OFF / PLAIN TEXT"
+      must_show:
+        - the markdown table source and the query statement as ordinary text
+      must_never:
+        - show the textarea, Run button, status line or results table
+        - hide or alter the authored text
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    query-legibility:
+      weight: 0.35
+      description: >
+        The query statement reads at full contrast in the textarea on every
+        card; the query is the most legible thing in the block.
+      fail_signals:
+        - query text dimmed, blurred or occluded
+        - textarea rendered as an opaque block hiding the statement
+        - rainbow syntax colouring that lowers contrast
+    chrome-fidelity:
+      weight: 0.3
+      description: >
+        Each card carries exactly the chrome its state defines — caption line,
+        textarea, Run button, status line, results table — with the tabular
+        state matching the statement.
+      fail_signals:
+        - invented controls beyond Run
+        - status text disagreeing with the results-table row count
+        - results table shown on the error or JS-off card
+    state-distinction:
+      weight: 0.2
+      description: >
+        default (2 rows), edited (3 rows, NAME-only), error (inline message,
+        no table) and JS-off (plain text) are visually distinct and match their
+        captions.
+      fail_signals:
+        - default and edited cards identical
+        - error card missing the inline error line
+        - JS-off card showing interactive chrome
+    spec-sheet-quality:
+      weight: 0.15
+      description: >
+        Reads as a component design sheet: four labeled cards, consistent
+        monospace, dark minimal-tech palette, no decorative noise.
+      fail_signals:
+        - watermark, lorem ipsum, neon glow
+        - more or fewer than four labeled cards
+  reject_if:
+    - any card occludes, blurs or bars the query statement
+    - the error card renders a results table or a stack trace
+    - the JS-off card shows the textarea, Run button or results table

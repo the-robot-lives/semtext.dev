@@ -1,0 +1,147 @@
+# =====================================================================
+# sem-reader.media.prompt — UX design sheet for the sem-reader reading
+# chrome. Reference images come from the per-tag snapshot run:
+#   /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-reader/
+# (harness names each capture <example>-<view>-<width>.png; see index.md
+# there for the exact list). Do not invent modes: the reader's modes are
+# exactly the ones enumerated below — chrome states plus the effect of
+# each control. One example page per mode, same document in every frame.
+# =====================================================================
+schema: '0.4'
+
+id: sem-reader-ux-modes
+type: image
+quality: high
+
+prompt:
+  text: |
+    A UX design sheet for "sem-reader", the reading chrome of a long
+    technical document (outline, reading-progress bar, and reader-side
+    controls: focus mode, type size and face, colour scheme, print,
+    audience). The sheet shows the SAME document — a runbook titled
+    "Token rotation runbook" with sections "Before you start", "Run the
+    rotation", "After" — rendered once per display mode, arranged as a
+    labelled grid of browser-page mockups on one board. Visual language:
+    calm minimal dark documentation UI (near-black canvas, warm
+    off-white text, one restrained accent), system-serif body option,
+    no marketing flourishes.
+
+    Frames to include, one per mode, each clearly captioned:
+
+    1. Chrome collapsed (default) — a slim horizontal reading bar above
+       the document: a "Contents" button on the left, small preference
+       controls (focus, type down/up, serif toggle, colour select,
+       print) on the right, and a hairline progress bar along the bar's
+       bottom edge about one third filled. Document body fully readable
+       below.
+    2. Outline panel open — the same bar with a panel beneath it
+       listing the document's h2 sections as links, nested h3 entries
+       indented; the link for the section currently in view carries a
+       visible current-position marker (accent dot or underline), the
+       others plain. The panel overlays only the top of the page; the
+       document stays visible behind and below it.
+    3. Authored contents nav — same open-panel composition, but the
+       list is visibly hand-authored (different link wording, deeper
+       nesting), demonstrating that the outline can be supplied by the
+       author rather than generated.
+    4. Focus mode on — the page chrome outside the article column
+       (site header, sidebars, footers) dimmed to near-invisible while
+       the article column and the reading bar stay at full contrast;
+       text itself unchanged.
+    5. Type scale — three small side-by-side frames labelled s / m / l
+       showing the same paragraph at the three sizes; controls' minus
+       and plus buttons visibly disabled at the s and l ends.
+    6. Serif face — the same paragraph once in the sans face, once in
+       the serif face, the serif button in a pressed state.
+    7. Colour scheme — the document shown in dark and in light; the
+       reading bar and outline restyle with it, contrast maintained in
+       both; a small "auto / light / dark" select rendered on the bar.
+    8. Print — a paper-white A4 page mockup: no reading bar, no
+       progress, no controls; just the document with its outline as a
+       plain table of contents at the top.
+    9. Audience — the reading bar carrying an "Audience" select
+       offering Everyone, Reader, Operator; the document beneath
+       unchanged (selection is applied elsewhere, the control itself
+       just reflects the choice).
+    10. Mobile 390 — the bar compressed to "Contents" plus an overflow
+        control, progress hairline retained, outline panel as a full
+        width sheet from the top.
+
+    Composition: captions small and technical; frames aligned on a
+    common grid; the reading bar identical in every applicable frame
+    except for the state being demonstrated. Flat UI mockup style,
+    crisp text, no browser chrome ornament beyond a simple title bar.
+  negative: photorealistic screenshot collage, marketing hero, gradient
+    banners, stock-photo people, decorative illustrations, watermark,
+    embedded captions outside the frame grid, cluttered spacing,
+    illegible placeholder gibbering text in body copy
+  style: flat vector UI mockup, precise 1px hairlines, generous
+    whitespace, documentation-site aesthetic
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-reader/in-document-render-1280.png
+    role: reference
+    description: actual rendered reference page with the reader chrome in the collapsed state
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-reader/in-document-render-390.png
+    role: reference
+    description: mobile rendering of the same page for the mobile frame
+
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 1536
+    height: 1024
+    aspect_ratio: '3:2'
+
+requirements:
+  subject: UX mode sheet for a document reading-chrome element
+  composition: labelled grid of browser-page mockups, one per mode, same document throughout
+  palette: near-black canvas with warm off-white text and one restrained accent; light mode frames paper-white
+  do:
+    - keep body text fully legible in every frame
+    - show the progress bar as a hairline, never a banner
+    - keep control labels literal: Contents, focus, type, colour, print, audience
+    - maintain readable contrast in both colour modes
+  dont:
+    - never occlude or blur body text (occlusion is sem-spoiler's job, not the reader's)
+    - never invent controls outside the enumerated set (no bookmark, share, AI buttons)
+    - no modal dialogs, no cookie banners, no ads
+    - no emoji, no decorative icons replacing text labels
+
+eval:
+  pass_threshold: 0.75
+  required_pass:
+    - mode_coverage
+    - text_legibility
+    - control_accuracy
+  criteria:
+    mode_coverage:
+      weight: 3
+      description: all ten enumerated modes present as distinct captioned frames
+      fail_signals:
+        - missing outline panel frame
+        - missing print frame
+        - missing mobile frame
+    text_legibility:
+      weight: 3
+      description: body text readable in every frame; focus mode dims chrome, never the article
+      fail_signals:
+        - blurred or gibberish body text
+        - article text dimmed in focus-mode frame
+    control_accuracy:
+      weight: 2
+      description: only the enumerated controls appear, correctly labelled and ordered
+      fail_signals:
+        - invented controls such as share or bookmark
+        - progress bar rendered as a large filled banner
+  reject_if:
+    - watermark, logo, or signature
+    - body text occluded or replaced by placeholder stripes
+    - photorealistic collage rather than flat UI mockup
+
+tags:
+  - semtext
+  - sem-reader
+  - ux-design-sheet
+product_targets: []

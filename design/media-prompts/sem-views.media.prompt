@@ -1,0 +1,138 @@
+schema: '0.4'
+id: sem-views-ux-design
+type: image
+quality: high
+product_targets:
+- semtext.dev
+tags:
+- semtext
+- sem-views
+- ux-design
+- reference
+prompt:
+  text: "UX design sheet for the SemText `<sem-views>` container — ONE SUBJECT\nUNDER NAMED PERSPECTIVES:\
+    \ a horizontal tab bar of view names above a\nsingle content panel; switching swaps the panel and never\
+    \ moves or\nrewrites anything else. FOUR stacked example pages, each inside a\nbrowser-chrome frame\
+    \ with a small mono uppercase caption, rendered in\nthe minimal-tech theme on a dark slate canvas (bg\
+    \ #0f172a, surface\n#1e293b, fg #e2e8f0, hairline #334155 borders, 12px card radius). The\ntab bar\
+    \ is a row of quiet text tabs sitting on the panel's top edge;\nthe active tab is accent blue (#60a5fa)\
+    \ with a raised surface and the\npanel's own top border removed beneath it; inactive tabs are muted\n\
+    #94a3b8 text with no fill.\n\nPage 1 — caption \"TAB BAR\". One element, two tabs \"HELM\" and\n\"ARGOCD\"\
+    , HELM active: the bar reads as attached to the panel below\n(active tab merges into it), exactly ONE\
+    \ panel is visible with one\nshort sentence of ordinary prose, and the inactive view is simply not\n\
+    present — no ghost, no dimmed second panel, no placeholder.\n\nPage 2 — caption \"SWITCHED\". The SAME\
+    \ element after activating ARGOCD:\nthe bar sits in exactly the same position with ARGOCD now accent\n\
+    and HELM muted, a visible accent focus ring around the active tab, and\nthe panel below carries the\
+    \ ArgoCD sentence. The page around the\nelement is pixel-identical to page 1 — same margins, same caption\n\
+    chrome — because a switch changes only the active tab and the panel.\n\nPage 3 — caption \"NO SCRIPT\"\
+    . The same two views with the enhancement\nabsent: NO tab bar at all; instead both views render stacked,\
+    \ each\nheaded by its name as a small-caps accent-blue heading (\"HELM\", then\n\"ARGOCD\") with its\
+    \ full sentence below, in reading order, all four\ntext blocks fully legible. Nothing is hidden, dimmed\
+    \ or collapsed.\n\nPage 4 — caption \"CLASS FORM\". The div spelling of the same contract:\nthree tabs\
+    \ \"STAGING\", \"PRODUCTION\", \"ROLLOUT\" on one bar with\nPRODUCTION active (the authored marker,\
+    \ not the first tab), its panel\nshowing one sentence; the first tab must NOT be the active one. Same\n\
+    geometry and styles as page 1 — the spelling changes nothing visually.\n\nTypography: clean system sans\
+    \ (Inter-like), 16px body, 1.6 line\nheight, generous margins, mono uppercase captions. No icons, no\n\
+    emoji, no icons inside tabs, no close buttons, no dropdown carets.\n"
+  negative: 'both views visible at once in the tabbed pages; a hidden view drawn as ghost, blur, outline
+    or placeholder; the tab bar moving, reflowing or changing width between page 1 and page 2; tabs rendered
+    as dropdowns, segmented controls with icons, pill buttons with shadows, or close buttons; page 3 showing
+    any tab bar or hiding any view; caret or chevron glyphs on tabs; neon glow; drop shadows on text; light
+    background; more or fewer than four example pages; watermark; lorem ipsum in captions.'
+  style: 'Flat UI spec sheet, minimal-tech aesthetic, restrained palette where the only color is the accent-blue
+    active tab and small-caps view headings, crisp 12px card radius, hairline #334155 borders, generous
+    negative space. Looks like a panel from a design-system guide.'
+attachments:
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-views/sem-views-primary-render-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-views/sem-views-primary-render-argocd-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-views/sem-views-rich-content-render-plan-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-views/sem-views-default-active-render-timeline-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-views/sem-views-class-form-render-production-1280.png
+  role: reference
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+    aspect_ratio: '3:2'
+  formats:
+  - format: png
+    filename: sem-views-ux-design
+requirements:
+  modes:
+  - id: tab-bar
+    label: TAB BAR
+    must_show:
+    - 'horizontal tab row attached to the panel top edge; active tab accent blue #60a5fa with raised surface
+      and no border between it and the panel'
+    - exactly one visible panel with one readable sentence; the inactive view entirely absent
+    must_never:
+    - show a second panel, ghost panel, dimmed panel or placeholder
+    - detach the bar from the panel or float it mid-page
+  - id: switched
+    label: SWITCHED
+    must_show:
+    - the same bar in the same position with the OTHER tab now active and a visible accent focus ring on
+      it
+    - the panel carrying the other view's sentence; surrounding page identical to page 1
+    must_never:
+    - move or resize the tab bar or shift the page layout between states
+    - show both views' sentences at once
+  - id: no-script
+    label: NO SCRIPT
+    must_show:
+    - 'all views stacked in order, each headed by its name as a small-caps accent-blue heading, every body
+      fully readable'
+    - no tab bar and no hidden view
+    must_never:
+    - draw any tab control on this page
+    - collapse, dim or truncate any view
+  - id: class-form
+    label: CLASS FORM
+    must_show:
+    - three tabs on one bar with the SECOND tab active (authored marker, not the first)
+    - identical geometry and styling to page 1
+    must_never:
+    - make the first tab active
+    - restyle the bar relative to the element spelling
+eval:
+  pass_threshold: 0.75
+  criteria:
+    tab-bar-state:
+      weight: 0.3
+      description: 'Page 1 shows one bar attached to one panel, exactly one active accent tab, one readable
+        sentence, no trace of the inactive view.
+        '
+      fail_signals:
+      - a ghost, blurred or dimmed second panel
+      - the bar detached from or floating above the panel
+    switch-stability:
+      weight: 0.3
+      description: 'Page 2 mirrors page 1 with the other tab active, a focus ring on it, and a page layout
+        pixel-identical to page 1 — only the tab state and panel sentence changed.
+        '
+      fail_signals:
+      - bar position, size or page margins differ between pages 1 and 2
+      - both views visible at once
+    no-script-stacked:
+      weight: 0.25
+      description: 'Page 3 renders both views stacked under small-caps name headings with every body legible
+        and no tab chrome.
+        '
+      fail_signals:
+      - any view missing, hidden or truncated
+      - a tab bar present
+    class-form-parity:
+      weight: 0.15
+      description: 'Page 4 shows the div spelling rendering identically with a non-first tab active.
+        '
+      fail_signals:
+      - first tab active
+      - styling drifts from page 1
+  reject_if:
+  - any view body is occluded, blurred or redacted
+  - a hidden view is drawn instead of absent
+  - page count is not four

@@ -1,0 +1,117 @@
+# sem-properties — UX design sheet for its two display modes (default + glossary).
+# Reference images are live renders from the semtext.dev reference page
+# (dark theme, 1280 desktop / 390 mobile). One example page per mode.
+schema: "0.4"
+id: sem-properties-ux-modes
+type: image
+quality: high
+prompt:
+  text: |-
+    Design a UI mode sheet for `sem-properties`, a SemText documentation element
+    that renders a closed set of key/value assertions as a definition block.
+    Two panels on one dark page, labelled "default" and "glossary", each showing
+    the same three pairs from an auth-config domain: "token ttl: 15m",
+    "refresh rotation: per use", "storage: httpOnly cookie".
+
+    Panel 1 — DEFAULT: a two-column definition grid inside one rounded rectangle
+    with a hairline border. Left column: the key, set in small caps, muted colour
+    (TOKEN TTL / REFRESH ROTATION / STORAGE). Right column: the value as plain
+    body text (15m / per use / httpOnly cookie). Subtle alternating row tint
+    (every second row a slightly lighter surface). Generous row padding, keys
+    and values vertically aligned per row, no visible table ruling between
+    columns.
+
+    Panel 2 — GLOSSARY (view-as="glossary"): the same three pairs as a stacked
+    glossary inside the same rounded container. Each property stacks term over
+    definition: the term on its own line, emphasised (medium weight, normal
+    case, full-contrast ink), the definition below in body text. Above the
+    container, one line of prose where two terms are dotted-underline inline
+    links (term anchors); next to one anchor, show the open hover preview: a
+    small floating popover card (role: tooltip) holding the term in bold and
+    the definition beneath, connected toward its anchor, casting a soft shadow.
+
+    Style: match the reference screenshots — near-black page background, dark
+    elevated surfaces, off-white body ink, muted grey small-caps keys, one
+    restrained violet accent, clean grotesque sans, 8px-radius cards. Desktop
+    proportion, generous whitespace, no browser chrome.
+  negative: |-
+    no light theme, no colourful gradient backgrounds, no marketing illustration,
+    no tables with ruled column lines, no monospace key column, no occluded or
+    blurred definition text, no popovers covering content, no copy/search
+    toolbars on the block, no icons, no more than one accent colour
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-properties/sem-properties-primary-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-properties/sem-properties-glossary-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-properties/sem-properties-primary-render-390.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-properties/sem-properties-glossary-render-390.png
+    role: reference
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+    aspect_ratio: "3:2"
+  formats:
+    - format: png
+      filename: sem-properties-ux-modes.png
+requirements:
+  modes:
+    - id: default
+      must_show:
+        - key column rendered from the authored key attribute (small caps, muted, wraps)
+        - value column = the property text, full contrast, never truncated
+        - alternating row tint inside one rounded, hairline-bordered container
+        - two-column grid on desktop
+      must_never:
+        - hide or occlude the value behind an interaction
+        - add copy/search chrome to the block (spec Q2: pure definition list)
+        - render the key column in accent colour or as an all-caps heading
+    - id: glossary
+      must_show:
+        - term stacked over its definition, term emphasised, normal case
+        - dotted-underline term anchors in prose
+        - one open preview popover: term bold over definition, role tooltip, small and floating
+        - the definition text itself remains fully visible and readable
+      must_never:
+        - let the popover occlude the glossary entries
+        - restyle the block into a data table
+        - hide any entry behind hover (list renders with no script)
+eval:
+  pass_threshold: 0.75
+  criteria:
+    mode-fidelity:
+      weight: 0.35
+      description: both modes present and labelled; default is a two-column key/value grid, glossary is stacked term-over-definition
+      fail_signals:
+        - the two panels render identically
+        - glossary panel is a two-column grid
+        - default panel stacks term over definition
+    text-integrity:
+      weight: 0.3
+      description: keys, values and the prose line legible; AA contrast on dark
+      fail_signals:
+        - value text blurred, truncated or low-contrast
+        - key column brighter than the value column
+    popover-contract:
+      weight: 0.2
+      description: exactly one preview popover, anchored to a term link, term+value content, nothing occluded behind it
+      fail_signals:
+        - popover covers the glossary container's entries
+        - more than one popover
+    structure-honesty:
+      weight: 0.15
+      description: one container per panel, alternating tint, no invented chrome
+      fail_signals:
+        - multiple cards per panel
+        - search box, copy button or toolbar rendered on the block
+  reject_if:
+    - any definition text occluded or unreadable
+    - a third unlabelled mode appears
+tags:
+  - semtext
+  - sem-properties
+  - ux-modes
+product_targets:
+  - semtext.dev/reference/sem-properties

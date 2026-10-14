@@ -1,0 +1,225 @@
+# SemText npl-thought — typed associative thought bubble, all display modes
+# Direction A "Slate Console" (house convention). Six example panels in one
+# frame, one per display mode the tag provides: the enhanced canonical
+# classified set, the enhanced unknown-type warning, the enhanced no-type
+# sub-container, the enhanced class-form spelling, the enhanced light-theme
+# set, and the JS-off degraded form. The invariant the design must broadcast:
+# a thought is a QUIET margin note — an accent rule, a faint tint and a
+# small-caps type label — with its text always fully legible. The LABEL is
+# the non-colour cue: every type is told apart by its word, never by hue
+# alone. npl-thought never occludes or hides the authored text (occlusion
+# belongs to the sem-spoiler / quiz tier).
+#
+# MODE 1 — enhanced, canonical classified thought:
+#   visible: a stack of per-thought note cards, each with a left accent rule
+#     (soft violet), a faint violet tint (never opaque), squared-left /
+#     rounded-right corners; each card is led by a tiny small-caps single-word
+#     type label (muted slate) above one near-white bar of body text.
+#   must never: fill a card opaque; differ in anatomy from card to card;
+#     rely on colour alone to tell the types apart.
+# MODE 2 — enhanced, unknown type (warning):
+#   visible: one normal labelled card, then a second card whose left rule is
+#     DASHED in amber with a faint amber tint, and whose label reads the value
+#     plus an "unknown" suffix (amber-tinted) — "BALLOON · UNKNOWN".
+#   must never: hide or drop the unknown child; render it as structure; use a
+#     solid (non-dashed) rule; signal the warning by colour alone (the word
+#     "unknown" must be present).
+# MODE 3 — enhanced, no-type sub-container:
+#   visible: one labelled accent card, then its nested prose lines with NO
+#     card chrome — no rule, no tint, no label — set slightly indented; the
+#     sub-container applies nothing to itself, only its typed children carry
+#     chrome.
+#   must never: give the un-typed lines a card, a rule, a tint, or a label;
+#     change the typed card's anatomy.
+# MODE 4 — enhanced, class-form (data-type):
+#   visible: a single labelled accent card, identical in anatomy to mode 1's
+#     cards, driven by the authored data-type spelling.
+#   must never: look different from the element-form card.
+# MODE 5 — enhanced, light theme:
+#   visible: the same two-card labelled stack on a light surface — near-white
+#     card, slate text, blue accent rule — every label and body bar meeting AA
+#     contrast against its card.
+#   must never: show dark-mode cards on a light panel; drop the accent rule;
+#     dim the label below legibility.
+# MODE 6 — JS-off degraded:
+#   visible: plain authored prose only — short placeholder bars as ordinary
+#     unstyled lines, no cards, no rules, no tints, no labels.
+#   must never: show a card, an accent rule, a tint, or a generated small-caps
+#     label when the script has not run; hide any authored line.
+#
+# The type label is the one place real characters appear — one short
+# uppercase/small-caps word per typed child (OBSERVATION, QUESTION, RELATION,
+# CONCERN, AFFIRMATION, BALLOON · UNKNOWN). Everywhere else the mock uses
+# abstract placeholder bars, never letters, digits, or sentences.
+#
+# Reference renders: the site's /reference/npl-thought/ page is source-view
+# only today, so the enhanced form is judged from a throwaway fixture captured
+# with the room's headless Chrome (fixture HTML + current
+# themes/_vocabulary.css + the built npl.js). The `npl-thought-render-*`
+# references below are those fixture captures; `npl-thought-fullpage-1280.png`
+# is the site page (source view + chrome) from `npm run snap:tag -- npl-thought`.
+schema: '0.4'
+id: reference-npl-thought
+type: image
+quality: high
+service: gemini
+model: gemini-2.5-flash-image
+
+prompt:
+  text: |
+    Dark-mode UI mockup of six reference-page panels in a three-by-two grid
+    illustrating one typed thought-bubble element in its six display modes,
+    wide 16:9, flat technical illustration (screenshot-like, not 3D). Dark
+    slate navy background (#0F172A) with a barely visible thin grid and a
+    faint violet radial glow upper-left. Six equal panels sit in three
+    columns and two rows, separated by thin slate hairline dividers, each
+    panel a dark slate card (#1E293B) with a thin slate hairline border,
+    squared corners, deep soft shadow; a small dim caption bar sits above
+    each panel.
+
+    TOP-LEFT panel — ENHANCED CANONICAL. Three stacked note cards, each
+    indented from the panel's left, with a thin 3px violet left rule, a
+    barely-there violet tint over the card (NOT a solid fill), and
+    squared-left / softly rounded-right corners. Each card is led by one
+    short small-caps single-word label bar in muted slate (read it as a
+    type word), above one wider near-white bar of body text. The three cards
+    share one identical anatomy.
+
+    TOP-MIDDLE panel — ENHANCED UNKNOWN TYPE. Two stacked cards: the first a
+    normal violet-ruled labelled card; the second with a DASHED left rule in
+    amber and a faint amber tint, its label in amber-tinted small caps and
+    noticeably longer (a value word followed by an "unknown" suffix). Both
+    cards keep near-white body bars.
+
+    TOP-RIGHT panel — ENHANCED NO-TYPE SUB-CONTAINER. One violet-ruled
+    labelled card, then two plain unlabelled near-white prose bars beneath it
+    with NO rule, NO tint and NO label — set very slightly indented. The
+    un-typed lines carry no card chrome at all.
+
+    BOTTOM-LEFT panel — ENHANCED CLASS-FORM. One violet-ruled labelled card
+    alone in generous empty space — pixel-comparable in anatomy to the
+    top-left cards.
+
+    BOTTOM-MIDDLE panel — ENHANCED LIGHT THEME. On a near-white page
+    surface, two stacked note cards with slate text, a blue left rule and a
+    faint blue tint; each card led by a muted small-caps label bar above a
+    dark slate body bar; every label and bar clearly contrast AA against its
+    card.
+
+    BOTTOM-RIGHT panel — JS-OFF DEGRADED. No cards, no rules, no tint, no
+    labels: four short plain rust/slate placeholder lines of prose at the
+    panel's top-left, reading as ordinary unstyled authored text.
+
+    Across all six panels the accent rule and faint tint stay quiet (never an
+    opaque colour-block card), the type label is always a readable small-caps
+    word, and no line of text in any panel is occluded, blurred, or dimmed
+    below its label.
+  negative: legible sentences, long paragraphs, digits, watermark, logo,
+    light mode outside the bottom-middle panel, 3D, photorealism, faces,
+    avatars, robot mascots, more than six panels, an opaque filled card, a
+    solid colour-block thought, cards in the bottom-right panel, small-caps
+    labels in the bottom-right panel, colour-only type coding, a solid rule
+    on the unknown-type card
+  style: flat dark-mode product UI illustration, squared corners, hairline
+    borders, slate and violet palette (one amber warning, one light-theme
+    panel), six-panel mode comparison
+
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 1600
+    height: 900
+    aspect_ratio: '16:9'
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-thought/npl-thought-render-enhanced-900.png
+    role: reference
+    description: enhanced render — canonical classified set, unknown type (dashed amber + "· unknown"), no-type sub-container, class-form, light theme (fixture)
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-thought/npl-thought-render-jsoff-900.png
+    role: reference
+    description: JS-off render — authored thoughts as plain unstyled prose, no cards or labels (fixture)
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-thought/npl-thought-fullpage-1280.png
+    role: reference
+    description: site reference page (source view) — chrome, attribute table, example + variant placement
+
+requirements:
+  subject: six panels of one typed thought-bubble element — enhanced canonical
+    classified set, enhanced unknown-type warning, enhanced no-type
+    sub-container, enhanced class-form, enhanced light theme, JS-off plain prose
+  palette: slate navy background, slate panels, hairline borders, violet accent
+    rule and tint, one amber warning card, one light-theme panel, near-white
+    body bars, muted small-caps labels
+  composition: three-by-two grid of equal panels, each thought stack at a
+    consistent top-left position, identical card anatomy across the element-form
+    panels
+  do:
+    - keep each thought a quiet ruled note card — accent rule plus faint tint,
+      never an opaque block
+    - keep every body bar brighter and more legible than its muted type label
+    - tell the types apart by the label word, never by colour alone
+    - give the unknown-type card a DASHED amber rule and an "unknown" suffix
+    - give the no-type sub-container's lines no card chrome at all
+  dont:
+    - any legible sentence, digits, or logos (but the one-word type labels)
+    - occluding, blurring, or dimming any line in any panel
+    - a card, rule, tint, or generated label in the bottom-right (JS-off) panel
+    - an opaque or solid accent-filled thought card
+    - extra chrome (badges, counts, buttons) the tag does not define
+
+eval:
+  pass_threshold: 0.7
+  required_pass:
+    - mode_differentiation
+    - label_is_the_cue
+  criteria:
+    mode_differentiation:
+      weight: 3
+      description: The six panels are visibly distinct — canonical labelled
+        stack, dashed amber unknown card, sub-container lines without chrome,
+        single class-form card, light-theme stack, and a chrome-free JS-off
+        panel of plain lines
+      fail_signals:
+        - card, rule, tint, or label present in the bottom-right panel
+        - the unknown-type card's rule is solid, not dashed
+        - the no-type sub-container lines carry a rule, tint, or label
+        - the light-theme panel shows dark-mode cards
+        - card anatomy differs between the element-form panels
+    label_is_the_cue:
+      weight: 3
+      description: Each typed card is named by a readable small-caps type label,
+        so types are told apart by their word, never by hue alone; no text is
+        occluded, blurred, or dimmed below its label in any panel
+      fail_signals:
+        - two different types share one colour with no label word to separate them
+        - missing small-caps label on a typed card
+        - body bars dimmer than their labels
+        - blur, redaction, or occlusion overlays on any bar
+    quiet_not_opaque:
+      weight: 2
+      description: Every thought card is a faintly tinted, ruled note — never a
+        solid opaque colour block; the accent rule stays thin
+      fail_signals:
+        - opaque or solid accent-filled card
+        - thick or heavy accent rule
+        - glossy 3D look
+    theme_fidelity:
+      weight: 2
+      description: Dark slate + violet, squared hairline panels, flat style,
+        one amber warning and one light-theme panel
+      fail_signals:
+        - light theme outside the one intended panel
+        - rounded card corners
+        - no amber warning distinction on the unknown card
+  reject_if:
+    - any legible sentence, digits, watermark, or logo beyond the one-word
+      type labels
+    - an occluded, blurred, or hidden line in any panel
+    - a card, rule, tint, or generated label in the JS-off panel
+    - colour-only type coding with no label word
+    - more than six panels or a chaotic layout
+
+tags:
+  - semtext
+  - reference
+  - npl-thought

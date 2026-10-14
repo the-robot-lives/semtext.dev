@@ -1,0 +1,5 @@
+tui view — the interactive terminal over the notes file:
+
+    semtext tui demo/auth-notes.sem.html
+
+arrow keys or click: sections, flashcards, quiz · Esc exits

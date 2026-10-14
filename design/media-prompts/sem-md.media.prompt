@@ -1,0 +1,151 @@
+schema: "0.4"
+id: sem-md-ux-design
+type: image
+quality: high
+product_targets:
+  - semtext.dev
+tags:
+  - semtext
+  - sem-md
+  - ux-design
+  - reference
+
+prompt:
+  text: |
+    UX design sheet for the SemText `<sem-md>` element — a block whose content
+    is authored as Markdown and rendered to HTML in the browser: a table
+    above all, then headings, lists, emphasis, links, code and quotes. One
+    example page per display mode the element provides, rendered in the
+    minimal-tech theme on a dark slate canvas (bg #0f172a, surface #1e293b,
+    fg #e2e8f0, accent violet #7c5cff). TWO stacked example pages, each one
+    authored Markdown block inside a slim browser-chrome frame, labeled with
+    a small mono uppercase caption. The same authored block on both pages: a
+    three-column token-lifetime GFM table (Token / Lifetime / Rotates;
+    columns aligned left / right / center; rows "access · 15 min · no" and
+    "refresh · 30 days · yes").
+
+    Page 1 — caption "RENDERED (default)". A hairline #334155 rounded card
+    (12px radius). A slim chrome row across the top: the label "Token
+    lifetimes" in 600-weight sans on the left; on the right two small
+    outlined buttons, "Markdown" (the toggle, unpressed) and "Copy". Below
+    the chrome, the Markdown rendered as a real HTML table: small-caps
+    column headers TOKEN, LIFETIME, ROTATES; the first column left-aligned,
+    the second right-aligned, the third centered, exactly as the delimiter
+    row asks; hairline row rules, no zebra striping. Beneath the Copy button
+    a tiny status text "Copied" in muted foreground — the copy confirmation,
+    shown once to demonstrate the feedback. The table reads as clean
+    typographic HTML; no pipes, no backticks, no monospace anywhere in the
+    table body.
+
+    Page 2 — caption "RAW". The identical chrome row, but the "Markdown"
+    toggle is now pressed (violet outline, accent-tinted) and the body has
+    swapped to the raw view: the same table as its pipe-delimited Markdown
+    source in a monospace face, left-aligned, every pipe and delimiter dash
+    visible, content unchanged from the authored block (byte-identical,
+    common indent stripped). A second slim chrome row for the code fence
+    carries two small buttons, "Copy" and "Wrap", right-aligned. The raw
+    view reads as readable preformatted text on the same dark card — a
+    machine-faithful round trip of exactly what page 1 rendered.
+
+    Typography: clean system sans (Inter-like) for chrome and rendered
+    table, monospace only on the raw page, 16px body, 1.6 line height,
+    generous margins. No extra chrome, no decorative icons, no pointer
+    cursors drawn as graphics.
+  negative: >
+    pipes or backticks visible on the rendered page; a rendered HTML table
+    on the raw page; line numbers in the raw fence; different content
+    between the two pages; the block drawn as a form control, modal or
+    floating panel; more than two example pages; light background; neon
+    glow; drop shadows on text; lorem ipsum as table content; the status
+    text rendered as a toast or alert bubble.
+  style: >
+    Flat UI spec sheet, minimal-tech aesthetic, restrained single-accent
+    (violet #7c5cff) palette, crisp 12px card radius, hairline #334155
+    borders, generous negative space. Looks like a panel from a
+    design-system guide.
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-md/sem-md-primary-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-md/sem-md-primary-render-markdown-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-md/sem-md-primary-source-1280.png
+    role: reference
+
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+    aspect_ratio: "3:2"
+  formats:
+    - format: png
+      filename: sem-md-ux-design.png
+
+requirements:
+  modes:
+    - id: rendered
+      label: "RENDERED (default)"
+      must_show:
+        - the authored table as a real HTML table (thead, small-caps headers,
+          per-column alignment honoured — left / right / center)
+        - chrome row with the label left and unpressed "Markdown" toggle plus
+          "Copy" button right; a small muted "Copied" status beside Copy
+        - no Markdown syntax characters anywhere in the table body
+      must_never:
+        - show pipes, backticks or monospace glyphs in the rendered table
+        - render the table as preformatted text
+        - occlude, blur or dim any cell content
+    - id: raw
+      label: "RAW"
+      must_show:
+        - the same table as its pipe-delimited Markdown source in monospace,
+          byte-identical content, indentation stripped
+        - the "Markdown" toggle pressed (violet accent state)
+        - a fence chrome row with "Copy" and "Wrap" buttons
+      must_never:
+        - show a rendered HTML table on this page
+        - alter, truncate or reword the Markdown between pages
+        - show line numbers in the fence
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    rendered-fidelity:
+      weight: 0.4
+      description: >
+        Page 1 reads as clean typographic HTML — real table semantics,
+        alignment honoured, chrome with label, toggle, Copy and a small
+        "Copied" status.
+      fail_signals:
+        - pipes or backticks on the rendered page
+        - alignment ignored (all columns flush left)
+        - status drawn as a toast, modal or floating bubble
+    raw-fidelity:
+      weight: 0.3
+      description: >
+        Page 2 shows the identical content as its Markdown source:
+        monospace, pipes intact, pressed toggle, fence Copy/Wrap chrome.
+      fail_signals:
+        - raw page shows a rendered table
+        - source text differs from page 1's table
+        - line numbers present in the fence
+    round-trip-parity:
+      weight: 0.2
+      description: >
+        The two pages carry the same token-lifetime table — same columns,
+        same rows, only the representation changes.
+      fail_signals:
+        - different rows, columns or wording between pages
+        - more or fewer than two labeled pages
+    theme-fidelity:
+      weight: 0.1
+      description: >
+        Dark minimal-tech palette (#0f172a bg, #7c5cff accent), hairline
+        borders, mono uppercase captions, browser-chrome frames.
+      fail_signals:
+        - light background or multiple accent hues
+        - watermark, lorem ipsum, decorative noise
+  reject_if:
+    - the rendered page shows raw Markdown syntax
+    - the raw page shows a rendered HTML table
+    - the two pages show different table content

@@ -9,7 +9,10 @@ import type {
   TagAttr,
   TagRecord,
 } from "@/data/reference-glossary";
-import { EXAMPLE_VARIANTS } from "@/data/reference-example-variants";
+import {
+  EXAMPLE_VARIANTS,
+  type ExampleVariant,
+} from "@/data/reference-example-variants";
 import {
   bucketOf,
   REFERENCE_BUCKETS,
@@ -18,6 +21,7 @@ import {
   ALL_TAGS,
   GAP_MISSING,
   NPL_TAGS,
+  aliasRuntime,
   bundlesFor,
   tagBySlug,
   tagHref,
@@ -113,11 +117,66 @@ export default async function ReferenceElementPage({
  * The section body, one page's worth of the former /reference/ tag
  * sections (same field presentation, own URL now).
  */
+/*
+ * A variant whose example IS the primary example (whitespace-normalised
+ * comparison) is the same figure and is not rendered twice. The variants
+ * file carries the whole plain+quiz pair for tags like <highlight> so it
+ * survives every generator sync, while the generator decides which of the
+ * two the page presents as the primary example; the page shows one or the
+ * other exactly once.
+ */
+function dedupeVariants(variants: ExampleVariant[], primary?: string) {
+  const key = (s: string) => s.replace(/\s+/g, " ").trim();
+  const p = primary ? key(primary) : null;
+  return p ? variants.filter((v) => key(v.code) !== p) : variants;
+}
+
+/*
+ * The generator's description usually restates the summary verbatim (48
+ * of 49 tags do), so rendering both repeats the lead sentence. Render
+ * the description with a leading duplicate of the summary — or of its
+ * first sentence — stripped; when nothing survives, drop the paragraph.
+ * Match is prefix-exact on the trimmed strings: if the description does
+ * not actually open with the summary (or its first sentence), it is
+ * rendered untouched.
+ */
+function dedupeDescription(description?: string, summary?: string): string | null {
+  const body = (description ?? "").trim();
+  const s = (summary ?? "").trim();
+  if (!body || !s || !body.startsWith(s)) {
+    const m = s ? s.match(/^[\s\S]*?[.!?](?=\s|$)/) : null;
+    const lead = m ? m[0] : s;
+    if (!body || !lead || !body.startsWith(lead)) return body || null;
+    const rest = body.slice(lead.length).trim();
+    return rest || null;
+  }
+  const rest = body.slice(s.length).trim();
+  return rest || null;
+}
+
 function ElementBody({ tag: t }: { tag: TagRecord }) {
   const missing = GAP_MISSING.get(t.name) ?? [];
   const gapNote = missing.includes("summary") || missing.includes("description");
-  const variants = EXAMPLE_VARIANTS[t.name] ?? [];
-  const defaultRenderable = t.family === "sem" && t.name !== "sem-reader";
+  /*
+   * The Render gate is data-driven: an element is renderable when a
+   * shipped bundle provides it (web/data/bundles.json — regenerate after
+   * every public/semtext/ sync). NPL tags flip to renderable — and their
+   * render panes wire the npl runtime — automatically when that sync
+   * lands; until then they render source-side with the note below.
+   */
+  const bundles = bundlesFor(t.name);
+  /*
+   * cssOnly counts as renderable: the shipped theme CSS paints the
+   * authored example, so the render pane mounts (TagBundle.cssOnly in
+   * data/reference-tags.ts). NPL tags still wait for the bundle sync.
+   */
+  const renderable = (bundles?.shipped || bundles?.cssOnly) ?? false;
+  const renderNote =
+    t.family === "npl"
+      ? "Render is available once the npl bundle ships."
+      : "No shipped runtime for this element — the authored example renders as plain HTML.";
+  const variants = dedupeVariants(EXAMPLE_VARIANTS[t.name] ?? [], t.example);
+  const description = dedupeDescription(t.description, t.summary);
 
   return (
     <>
@@ -137,8 +196,8 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
         </p>
       ) : null}
 
-      {t.description && t.description !== t.summary ? (
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">{t.description}</p>
+      {description ? (
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">{description}</p>
       ) : null}
 
       {t.optionsIn ? (
@@ -152,7 +211,7 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
       ) : null}
 
       {t.attributes.length > 0 ? (
-        <div className="mt-5 max-w-3xl overflow-x-auto">
+        <div className="mt-5 max-w-none overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-white/15 text-xs uppercase tracking-wide text-ink-faint">
@@ -205,7 +264,7 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
             Example
           </h2>
           {t.example ? (
-            <div className="mt-3 max-w-3xl">
+            <div id="example-primary" className="mt-3 max-w-none">
               {t.name === "sem-md" ? (
                 /* The one example that IS Markdown: a Render/Source toggle
                    over the same authored block, like the landing's view
@@ -228,13 +287,16 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
                 <ExampleViewer
                   name={t.name}
                   code={t.example}
-                  renderable={defaultRenderable}
+                  renderable={renderable}
+                  bundles={bundles?.bundles ?? []}
+                  aliasRuntime={aliasRuntime()}
+                  renderNote={renderNote}
                 />
               )}
             </div>
           ) : null}
           {variants.map((v) => (
-            <div key={v.id} id={`example-${v.id}`} className="mt-8 max-w-3xl">
+            <div key={v.id} id={`example-${v.id}`} className="mt-8 max-w-none">
               <p className="g-nav-title">{v.label}</p>
               {v.note ? (
                 <p className="mt-1 text-sm leading-6 text-ink-mute">{v.note}</p>
@@ -243,7 +305,11 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
                 <ExampleViewer
                   name={t.name}
                   code={v.code}
-                  renderable={v.renderable ?? defaultRenderable}
+                  renderable={v.renderable ?? renderable}
+                  bundles={bundles?.bundles ?? []}
+                  aliasRuntime={aliasRuntime()}
+                  exampleLabel={v.label}
+                  renderNote={renderNote}
                 />
               </div>
             </div>
@@ -293,6 +359,13 @@ function RuntimeLine({ tag: t }: { tag: TagRecord }) {
         copied into {code("public/semtext/")}
       </>
     );
+  } else if (b.cssOnly && !b.shipped) {
+    body = (
+      <>
+        none — the shipped theme CSS ({code("themes/_vocabulary.css")}) paints
+        the authored example
+      </>
+    );
   } else if (!b.shipped) {
     body = <>none — the authored example renders as plain HTML</>;
   } else {
@@ -324,9 +397,18 @@ function RuntimeLine({ tag: t }: { tag: TagRecord }) {
       parts.push(<span key="file">{code(files[0].file)}</span>);
     }
     if (files.some((f) => f.file === "semtext-fallback.js")) {
+      // The fallback tier IS the listed bundle on fallback-only tags —
+      // say it once ("semtext-fallback.js enhancement tier"), not the
+      // filename twice.
+      const alreadyListed = !chunk && files[0]?.file === "semtext-fallback.js";
       parts.push(
         <span key="fallback">
-          {code("semtext-fallback.js")} enhancement tier
+          {alreadyListed ? null : (
+            <>
+              {code("semtext-fallback.js")}{" "}
+            </>
+          )}
+          enhancement tier
         </span>,
       );
     }
