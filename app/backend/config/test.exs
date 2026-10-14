@@ -18,9 +18,30 @@ config :noizu_sendgrid,
 
 config :logger, level: :warning
 
+# This app IS the Hologram site (design v2 D1): pages must SSR in tests (the
+# smoke test pins GET /). Hologram keeps its runtime (page resolver +
+# supervision tree) OFF in :dev/:test unless HOLOGRAM_START=1 — the starter's
+# convention so a plain `mix phx.server` serves the API only. Set it HERE:
+# config/test.exs is evaluated at loadconfig, BEFORE the supervision tree
+# boots (a mix.exs hook runs at :dev mixfile-load time — too early and too
+# flaky; test_helper.exs runs after boot — too late). Prod/docker set the
+# variable in the chart + compose. Works for `mix test` and `mix test
+# --cover` (CI) alike.
+System.put_env("HOLOGRAM_START", "1")
+
 config :phoenix, :plug_init_mode, :runtime
 
 config :semtext, Oban, testing: :inline
+
+# The scaffold gate-machinery suite (InviteGate/AuthController/InviteToken/
+# UserSocket/RequireInvite/RequireAuth) asserts invite-only behavior and
+# needs the gate ON to exercise it. The SHIPPED default is open signup —
+# `general_release: true` in config/config.exs (design v2 D4, pinned there).
+# NOTE: feature_flags is a MAP (config.exs ships %{...}) — InviteGate reads
+# it with Map.get; never pin a keyword list here. Tests that need
+# open-signup semantics flip the flag locally and restore
+# (see Semtext.GithubOnlyLoginTest).
+config :semtext, :feature_flags, %{general_release: false}
 
 # Phoenix.ConnTest defaults to host "www.example.com"; the host-dispatch plug
 # must treat it as the main site or every existing controller test 404s.

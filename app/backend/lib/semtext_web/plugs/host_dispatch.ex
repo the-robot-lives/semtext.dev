@@ -26,8 +26,6 @@ defmodule SemtextWeb.Plugs.HostDispatch do
   """
   @behaviour Plug
 
-  require Logger
-
   @impl true
   def init(opts), do: opts
 
@@ -47,17 +45,24 @@ defmodule SemtextWeb.Plugs.HostDispatch do
         Plug.Conn.assign(conn, :semtext_host, :probe)
 
       :unknown ->
-        Plug.Conn.send_resp(conn, :not_found, "not found")
+        # halt() is load-bearing: without it the Hologram/Phoenix routers
+        # still run on the already-sent conn and the Plug.Router 404
+        # fall-through resets it (test-visible status nil).
+        conn
+        |> Plug.Conn.send_resp(:not_found, "not found")
+        |> Plug.Conn.halt()
     end
   end
 
   # An unknown host is a 404 unless the request is a pod-internal health probe
   # (see module doc). Both branches below return before Hologram.Router.
+  # Config is a keyword list (`config :semtext, :hosts, main: [...], ...`) —
+  # never a map, so access goes through Keyword.get.
   defp dispatch_kind(host, path, config) do
     cond do
-      host in Map.get(config, :proposals, []) -> :proposals
-      host in Map.get(config, :main, []) -> :main
-      path in Map.get(config, :probe_paths, []) -> :probe
+      host in Keyword.get(config, :proposals, []) -> :proposals
+      host in Keyword.get(config, :main, []) -> :main
+      path in Keyword.get(config, :probe_paths, []) -> :probe
       true -> :unknown
     end
   end

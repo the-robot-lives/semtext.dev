@@ -13,7 +13,7 @@ defmodule Semtext.Observability do
   "portfolio", no k8s.* attrs from the app).
   """
 
-  @default_service_name "starter-backend"
+  @default_service_name "semtext-backend"
   @default_namespace "portfolio"
 
   # Env keys the resource builder consumes (all optional).

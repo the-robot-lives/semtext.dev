@@ -35,8 +35,8 @@ defmodule Semtext.Observability.Metrics do
   @endpoint_env "OTEL_EXPORTER_OTLP_ENDPOINT"
 
   # Instrumentation scope for the meter — one namespace for all instruments.
-  @meter_scope "starter.otel_metrics"
-  @handler_id "starter.otel_metrics.oban"
+  @meter_scope "semtext.otel_metrics"
+  @handler_id "semtext.otel_metrics.oban"
 
   require Record
 
