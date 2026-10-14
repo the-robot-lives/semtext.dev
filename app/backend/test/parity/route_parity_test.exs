@@ -152,9 +152,12 @@ defmodule SemtextWeb.Parity.RouteParityTest do
 
     # The page h1 lives inside <main> on both sides; scoping keeps payload
     # residue or chrome-level headings out of the comparison.
+    # :binary.match returns a BYTE offset — scope with binary_part/3
+    # (String.slice would treat it as a codepoint index and drift past
+    # the <h1> opener on multibyte-heavy chrome).
     scope =
       case :binary.match(body, "<main") do
-        {pos, _} -> String.slice(body, pos..-1//1)
+        {pos, _} -> binary_part(body, pos, byte_size(body) - pos)
         :nomatch -> body
       end
 
