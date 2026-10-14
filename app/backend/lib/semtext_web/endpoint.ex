@@ -44,6 +44,7 @@ defmodule SemtextWeb.Endpoint do
   plug SemtextWeb.Plugs.HostDispatch
 
   # Hologram pages/commands BEFORE the Phoenix JSON API router
+  plug SemtextWeb.Plugs.ReferenceCache
   plug Hologram.Router
   plug SemtextWeb.Router
 end
