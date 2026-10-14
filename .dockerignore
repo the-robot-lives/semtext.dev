@@ -1,10 +1,12 @@
 .git
 .github
 .claude
-node_modules
-landing/node_modules
+**/node_modules
 landing/.next
 landing/out
+web/.next
+web/out
+web/cypress
 dist
 coverage
 test/screenshots
