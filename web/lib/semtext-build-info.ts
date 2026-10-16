@@ -3,5 +3,5 @@
  * or re-sync bundles. See lib/semtext-asset.ts for the URL helpers that
  * consume these constants. */
 
-export const SEMTEXT_VERSION = "0.1.0";
-export const BUILD_EPOCH = "1792171051";
+export const SEMTEXT_VERSION = "0.7.0";
+export const BUILD_EPOCH = "1792173980";
