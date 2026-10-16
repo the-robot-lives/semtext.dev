@@ -9,9 +9,13 @@ defmodule SemtextWeb.Hologram.Components.Landing.CodeViewer do
   precomputed `%{num, toks}` rows, so no string logic is client-reachable.
 
   Copy/Save need script, so the buttons are chrome-only affordances over a
-  static page: the full source also lives in a hidden `<textarea>` in the
-  DOM, and the two actions shell out to `/js/landing-bootstrap.js` helpers
-  (`SemtextLanding.copyFrom/saveFrom`) via Hologram.JS — no-op during SSR.
+  static page: the actions hand the source text to `/js/landing-bootstrap.js`
+  helpers (`SemtextLanding.copyText/saveText`) via Hologram.JS, escaped with
+  the payload-safe js_string/1 escaper (83c34cd class: the doc example
+  contains literal `<...>` markup, which must never ride unescaped in the
+  inline payload — and unlike the first port there is no hidden textarea
+  duplicating it into the SSR DOM, where it broke the harness's
+  data-sem-theme count parity). No-op during SSR.
   Deviations from the Next.js port (noted in the lane report): the copy
   status never auto-reverts (the 2s revert needs a timer, which is only
   expressible on bindings), and the Save button label does not flip to
@@ -75,7 +79,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.CodeViewer do
       dom_id: props.dom_id,
       mime_type: props.mime_type,
       copy_status: "idle",
-      download_status: "idle",
+      download_status: "idle"
     )
   end
 
@@ -118,7 +122,6 @@ defmodule SemtextWeb.Hologram.Components.Landing.CodeViewer do
           </div>
         {/for}
       </div>
-      <textarea id={@dom_id} class="sr-only-clip" aria-hidden="true" readonly="readonly">{code_text()}</textarea>
     </figure>
     """
   end
@@ -127,7 +130,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.CodeViewer do
 
   def action(:copy_code, _params, component) do
     Hologram.JS.exec(
-      "window.SemtextLanding && SemtextLanding.copyFrom('" <> component.state.dom_id <> "')"
+      "window.SemtextLanding && SemtextLanding.copyText(" <> js_string(code_text()) <> ")"
     )
 
     put_state(component, copy_status: "copied")
@@ -135,17 +138,33 @@ defmodule SemtextWeb.Hologram.Components.Landing.CodeViewer do
 
   def action(:save_code, _params, component) do
     Hologram.JS.exec(
-      "window.SemtextLanding && SemtextLanding.saveFrom('" <>
-        component.state.dom_id <>
-        "', '" <>
-        component.state.filename <>
-        "', '" <>
-        component.state.mime_type <>
-        "')"
+      "window.SemtextLanding && SemtextLanding.saveText(" <>
+        js_string(code_text()) <>
+        ", " <>
+        js_string(component.state.filename) <>
+        ", " <>
+        js_string(component.state.mime_type) <>
+        ")"
     )
 
     put_state(component, download_status: "downloading")
   end
+
+  # Payload-safe JS string literal (83c34cd class): the doc example embeds
+  # literal `<` markup, which must be <-escaped so it can never close a
+  # script region. Same escaper as VocabProposalWizard's encode_uri path.
+  defp js_string(s) do
+    "\"" <> js_esc(String.graphemes(s)) <> "\""
+  end
+
+  defp js_esc([]), do: ""
+  defp js_esc(["\\" | rest]), do: "\\\\" <> js_esc(rest)
+  defp js_esc(["\"" | rest]), do: "\\\"" <> js_esc(rest)
+  defp js_esc(["\n" | rest]), do: "\\n" <> js_esc(rest)
+  defp js_esc(["\r" | rest]), do: "\\r" <> js_esc(rest)
+  defp js_esc(["\t" | rest]), do: "\\t" <> js_esc(rest)
+  defp js_esc(["<" | rest]), do: "\\u003C" <> js_esc(rest)
+  defp js_esc([g | rest]), do: g <> js_esc(rest)
 
   # -- tokenizer (server-side only; init/3 never runs on the client for
   #    SSR'd components, the token stream hydrates as serialized state) ---

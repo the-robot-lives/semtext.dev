@@ -8,9 +8,12 @@ defmodule SemtextWeb.Hologram.Components.Site.ExampleViewer do
   Parity contract kept: `figure.code-window` per example with an
   aria-label, view pills (Source / Split / Render) with aria-pressed and
   client-side view state, a `data-sem-render-note` render pane, and the
-  `#example-<id>` anchor. What the real viewer adds and this placeholder
-  stubs: the live SemText render pane (the render side shows an honest
-  note instead), the boot-guard chain, and the chrome Copy / Save pair.
+  `#example-<id>` anchor. The render pane is the Next export's themed host
+  (`data-sem-theme` + `data-color-mode`, "render" pane tag) — matching the
+  export's SSR host count — with the honest note inside it until the live
+  island boot replaces this shell's static pane (the export SSRs the
+  authored markup raw; Hologram templates cannot inject raw HTML, so the
+  note marks the seam without breaking the no-empty-host contract).
 
   Zero-JS: without scripts the pills are hidden (html.no-js gating in
   site.css) and the split view renders as static content — source + note,
@@ -95,23 +98,49 @@ defmodule SemtextWeb.Hologram.Components.Site.ExampleViewer do
           </span>
         </div>
         {%if @view == "render"}
-          <div class="p-4" data-color-mode="dark">
-            <p class="m-0 text-sm leading-6 text-ink-mute" data-sem-render-note>
+          {%if @renderable}
+            <div class="px-4 pt-3 pb-1 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-code-gray sm:px-5">render</div>
+            <div
+              data-sem-theme="minimal-tech-light"
+              data-color-mode="dark"
+              class="min-h-24 px-4 py-4 sm:px-5"
+            >
+              <p class="m-0 text-sm italic leading-6 text-ink-faint" data-sem-render-note>
+                {render_note(@note)}
+              </p>
+            </div>
+          {%else}
+            <div class="min-h-24 px-4 py-6 text-sm italic leading-6 text-ink-faint sm:px-5" data-sem-render-note>
               {render_note(@note)}
-            </p>
-          </div>
+            </div>
+          {/if}
         {%else}
           {%if @view == "source"}
             <CodeBody lines={@lines} />
           {%else}
             <div class="grid gap-0 md:grid-cols-2">
               <div class="min-w-0 md:border-r md:border-white/10">
+                <div class="px-4 pt-3 pb-1 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-code-gray sm:px-5">source</div>
                 <CodeBody lines={@lines} />
               </div>
-              <div class="min-w-0 p-4" data-color-mode="dark">
-                <p class="m-0 text-sm leading-6 text-ink-mute" data-sem-render-note>
-                  {render_note(@note)}
-                </p>
+              <div class="min-w-0 border-t border-white/10 md:border-t-0 md:border-l md:pl-0">
+                {%if @renderable}
+                  <div class="px-4 pt-3 pb-1 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-code-gray sm:px-5">render</div>
+                  <div
+                    data-sem-theme="minimal-tech-light"
+                    data-color-mode="dark"
+                    class="min-h-24 px-4 py-4 sm:px-5"
+                  >
+                    <p class="m-0 text-sm italic leading-6 text-ink-faint" data-sem-render-note>
+                      {render_note(@note)}
+                    </p>
+                  </div>
+                {%else}
+                  <div class="px-4 pt-3 pb-1 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-code-gray sm:px-5">render — pending bundle</div>
+                  <div class="min-h-24 px-4 py-6 text-sm italic leading-6 text-ink-faint sm:px-5" data-sem-render-note>
+                    {render_note(@note)}
+                  </div>
+                {/if}
               </div>
             </div>
           {/if}

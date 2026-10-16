@@ -32,6 +32,43 @@ defmodule SemtextWeb.PortDocsPagesTest do
       assert body =~ "https://semtext.dev/extend/"
     end
 
+    test "GET /extend keeps generated artifact code out of the payload (83c34cd class)", %{
+      conn: conn
+    } do
+      # The scaffold wizard's generated demo.html contains a literal
+      # </script>. If that string rides in component state, Hologram's
+      # payload encoder embeds it raw, the payload <script> region closes
+      # early and the browser throws a SyntaxError. State carries inputs
+      # only; the artifacts render from build_files/2 as ESCAPED DOM.
+      conn = get(conn, "/extend")
+      body = html_response(conn, 200)
+
+      # raw (unescaped) generated markup must appear nowhere in the response
+      refute body =~ "<script src=\"./yelp-sem-lazy.js\">"
+      refute body =~ "<!doctype html>"
+
+      # the demo artifact still renders, escaped, inside the code window
+      # (text-node escaping covers < > & — attribute quotes stay literal)
+      assert body =~ "&lt;script src="
+      assert body =~ "yelp-sem-lazy.js"
+      assert body =~ "yelp-sem-manifest.json"
+    end
+
+    test "wizard namespace normaliser matches the Next regex, not a letter dedup", %{} do
+      # Next: raw.replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "") — only
+      # runs of INVALID characters collapse to one dash. A whole-list dedup
+      # also ate legitimate doubled letters ("acme-tools" → "acme-tols"),
+      # found typing in the live wizard.
+      alias SemtextWeb.Hologram.Components.Site.VocabScaffoldWizard
+
+      assert VocabScaffoldWizard.parse_namespace("acme-tools") == "acme-tools"
+      assert VocabScaffoldWizard.parse_namespace("  My Tools! ") == "my-tools"
+      # literal dashes are legal mid-name (only EDGE dashes are stripped)
+      assert VocabScaffoldWizard.parse_namespace("a--b") == "a--b"
+      assert VocabScaffoldWizard.parse_namespace("--x--") == "x"
+      assert VocabScaffoldWizard.parse_namespace("") == ""
+    end
+
     test "GET /showcase (index)", %{conn: conn} do
       conn = get(conn, "/showcase")
       body = html_response(conn, 200)

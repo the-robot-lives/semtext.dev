@@ -33,14 +33,22 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabProposalWizard do
 
   # -- actions ------------------------------------------------------------------
 
-  def action(:set_name, params, component), do: recompute(component, %{name: params.value})
-  def action(:set_summary, params, component), do: recompute(component, %{summary: params.value})
+  # $change params shape: the runtime wraps the control's value under
+  # :event (params.event.value) — params.value raises KeyError on any real
+  # input event (same latent bug fixed in VocabScaffoldWizard).
+  def action(:set_name, params, component), do: recompute(component, %{name: params.event.value})
+
+  def action(:set_summary, params, component),
+    do: recompute(component, %{summary: params.event.value})
 
   def action(:set_motivation, params, component),
-    do: recompute(component, %{motivation: params.value})
+    do: recompute(component, %{motivation: params.event.value})
 
-  def action(:set_attrs, params, component), do: recompute(component, %{attrs: params.value})
-  def action(:set_example, params, component), do: recompute(component, %{example: params.value})
+  def action(:set_attrs, params, component),
+    do: recompute(component, %{attrs: params.event.value})
+
+  def action(:set_example, params, component),
+    do: recompute(component, %{example: params.event.value})
 
   defp recompute(component, changed) do
     s = Map.merge(component.state, changed)
@@ -52,7 +60,8 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabProposalWizard do
     issue_url =
       if ready do
         @issue_base <>
-          "?title=" <> encode_uri("Vocabulary proposal: " <> tag) <>
+          "?title=" <>
+          encode_uri("Vocabulary proposal: " <> tag) <>
           "&body=" <> encode_uri(body(s, tag))
       else
         ""

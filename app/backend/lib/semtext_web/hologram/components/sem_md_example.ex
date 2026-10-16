@@ -94,9 +94,6 @@ defmodule SemtextWeb.Hologram.Components.SemMdExample do
             <div
               id={"sem-pane-" <> @anchor}
               class="ref-md-example"
-              data-sem-pane={@spec_json}
-              data-sem-theme="minimal-tech-light"
-              data-color-mode="dark"
             >
               <div class="ref-md-static">
                 <div class="ref-md-static-label">Token lifetimes</div>
@@ -115,9 +112,9 @@ defmodule SemtextWeb.Hologram.Components.SemMdExample do
                 </table>
               </div>
               <sem-md id="m-lifetimes" label="Token lifetimes" controls="toggle,copy">| Token   | Lifetime | Rotates |
-  | :------ | -------: | :-----: |
-  | access  | 15 min   | no      |
-  | refresh | 30 days  | yes     |</sem-md>
+    | :------ | -------: | :-----: |
+    | access  | 15 min   | no      |
+    | refresh | 30 days  | yes     |</sem-md>
             </div>
           </div>
           <div class="ref-source-col">

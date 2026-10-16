@@ -119,10 +119,9 @@
 
   // -- 4. clipboard / download helpers -------------------------------------
 
-  function copyFrom(id) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    var text = el.value != null && el.value !== "" ? el.value : el.textContent;
+  // Text-direct variants (CodeViewer actions pass the source literally,
+  // escaped payload-safeside; no hidden textarea in the DOM).
+  function copyText(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).catch(function () {
         legacyCopy(text);
@@ -130,6 +129,12 @@
     } else {
       legacyCopy(text);
     }
+  }
+
+  function copyFrom(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    copyText(el.value != null && el.value !== "" ? el.value : el.textContent);
   }
 
   function legacyCopy(text) {
@@ -148,10 +153,7 @@
     document.body.removeChild(ta);
   }
 
-  function saveFrom(id, filename, mimeType) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    var text = el.value != null && el.value !== "" ? el.value : el.textContent;
+  function saveText(text, filename, mimeType) {
     var blob = new Blob([text], { type: (mimeType || "text/plain") + ";charset=utf-8" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
@@ -163,6 +165,12 @@
     window.setTimeout(function () {
       URL.revokeObjectURL(url);
     }, 1000);
+  }
+
+  function saveFrom(id, filename, mimeType) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    saveText(el.value != null && el.value !== "" ? el.value : el.textContent, filename, mimeType);
   }
 
   // -- 5. dialog wiring -----------------------------------------------------
@@ -214,7 +222,9 @@
   window.SemtextLanding = {
     enhanceHeroPane: enhanceHeroPane,
     focusActiveTab: focusActiveTab,
+    copyText: copyText,
     copyFrom: copyFrom,
+    saveText: saveText,
     saveFrom: saveFrom,
     loadViewRuntimes: loadViewRuntimes,
     hydrate: dispatchHydrated

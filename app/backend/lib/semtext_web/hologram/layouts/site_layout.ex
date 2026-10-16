@@ -30,6 +30,11 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
 
   prop :page_title, :string, default: @default_title
   prop :description, :string, default: @default_description
+  # The Next site's og:description is the site-wide tagline on EVERY page,
+  # never the per-page description (which goes only in name=description).
+  # Without this, pages whose copy mentions "data-sem-theme" (e.g. /themes/)
+  # carry an extra attribute mention the export does not have.
+  prop :og_description, :string, default: @default_description
   prop :canonical, :string, default: @site_url
   # /docs loads the SemText bundle without the off-switches so the page's
   # live SemText blocks auto-wire (the current next/script behavior).
@@ -51,7 +56,7 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={@canonical} />
         <meta property="og:title" content={@page_title} />
-        <meta property="og:description" content={@description} />
+        <meta property="og:description" content={@og_description} />
         <meta property="og:url" content={@canonical} />
         <meta property="og:site_name" content="semtext" />
         <meta property="og:type" content="website" />

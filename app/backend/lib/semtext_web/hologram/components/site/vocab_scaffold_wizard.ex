@@ -22,42 +22,41 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabScaffoldWizard do
     ns = parse_namespace("yelp-sem")
     tags = parse_elements("org-chart\nsystem-status", ns)
 
+    # State carries INPUTS only (83c34cd lesson): the generated artifacts
+    # contain literal `</script>` (demo.html), which would break Hologram's
+    # payload <script> region if they rode in state. build_files/2 is called
+    # from the template instead — server-side it renders as escaped DOM, and
+    # client-side it re-runs in the compiled JS on state changes.
     put_state(component,
       ns_raw: "yelp-sem",
       elements_raw: "org-chart\nsystem-status",
       namespace: ns,
-      tags: tags,
-      files: build_files(ns, tags)
+      tags: tags
     )
   end
 
   # -- actions -----------------------------------------------------------------
 
+  # $change params shape: the runtime wraps the control's value under
+  # :event (params.event.value) — params.value raises KeyError on any real
+  # input event (verified interactively; the SSR-only tests never fire it).
   def action(:set_ns, params, component) do
-    recompute(component, params.value, component.state.elements_raw)
+    recompute(component, params.event.value, component.state.elements_raw)
   end
 
   def action(:set_elements, params, component) do
-    recompute(component, component.state.ns_raw, params.value)
+    recompute(component, component.state.ns_raw, params.event.value)
   end
 
   defp recompute(component, ns_raw, elements_raw) do
     ns = parse_namespace(ns_raw)
     tags = parse_elements(elements_raw, ns)
 
-    files =
-      if ns != "" and tags != [] do
-        build_files(ns, tags)
-      else
-        []
-      end
-
     put_state(component, %{
       ns_raw: ns_raw,
       elements_raw: elements_raw,
       namespace: ns,
-      tags: tags,
-      files: files
+      tags: tags
     })
   end
 
@@ -73,7 +72,6 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabScaffoldWizard do
     |> String.downcase()
     |> String.graphemes()
     |> to_dashes()
-    |> Enum.dedup()
     |> strip_dashes_front()
     |> strip_dashes_back()
     |> Enum.join("")
@@ -87,7 +85,13 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabScaffoldWizard do
     if ns_char?(g) do
       to_dashes(rest, [g | acc])
     else
-      to_dashes(rest, ["-" | acc])
+      case acc do
+        # One dash per RUN of non-namespace chars (Next's /[^a-z0-9-]+/g →
+        # "-"); legitimate doubled letters survive ("acme-tools" keeps both
+        # o's — a whole-list dedup here ate them, found in browser verify).
+        ["-" | _] -> to_dashes(rest, acc)
+        _ -> to_dashes(rest, ["-" | acc])
+      end
     end
   end
 
@@ -219,6 +223,12 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabScaffoldWizard do
 
   # -- the five artifacts --------------------------------------------------------
 
+  # Public: called from template/0, so it transpiles to the client bundle and
+  # re-runs there on state changes — the artifacts never travel in payload.
+  # Guards the empty-input case the old recompute/4 branch used to handle.
+  def build_files(_, tags) when tags == [], do: []
+  def build_files("", _), do: []
+
   def build_files(ns, tags) do
     css = %{
       name: ns <> ".css",
@@ -244,7 +254,11 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabScaffoldWizard do
   end
 
   defp css_code(ns, tags) do
-    "/* " <> ns <> ".css — vocabulary base for the " <> ns <> " namespace.\n" <>
+    "/* " <>
+      ns <>
+      ".css — vocabulary base for the " <>
+      ns <>
+      " namespace.\n" <>
       " * One rule per element: a block box before any definition, so the\n" <>
       " * document presents before (and without) the loader — the same\n" <>
       " * presentation-without-script contract as the core's semtext.css\n" <>
@@ -253,25 +267,39 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabScaffoldWizard do
       css_rules(tags) <>
       "\n/* Tokens a host theme can override. */\n" <>
       ":root {\n" <>
-      "  --" <> ns <> "-accent: #7c3aed;\n" <>
-      "  --" <> ns <> "-surface: #0f172a;\n" <>
-      "  --" <> ns <> "-ink: #e2e8f0;\n" <>
+      "  --" <>
+      ns <>
+      "-accent: #7c3aed;\n" <>
+      "  --" <>
+      ns <>
+      "-surface: #0f172a;\n" <>
+      "  --" <>
+      ns <>
+      "-ink: #e2e8f0;\n" <>
       "}"
   end
 
   defp css_rules([]), do: ""
   defp css_rules([tag]), do: tag <> ":not(:defined) { display: block; }\n"
-  defp css_rules([tag | rest]), do: tag <> ":not(:defined) { display: block; }\n" <> css_rules(rest)
+
+  defp css_rules([tag | rest]),
+    do: tag <> ":not(:defined) { display: block; }\n" <> css_rules(rest)
 
   defp element_code(_ns, tag) do
     class = "Sem" <> pascal(tag)
 
-    "/* elements/" <> tag <> ".js — the <" <> tag <> "> element.\n" <>
+    "/* elements/" <>
+      tag <>
+      ".js — the <" <>
+      tag <>
+      "> element.\n" <>
       " * Light DOM on purpose: the authored content stays searchable, copyable\n" <>
       " * and extractable — the same rule the core vocabulary follows\n" <>
       " * (spec/conventions.md §4 rule 5).\n" <>
       " */\n" <>
-      "class " <> class <> " extends HTMLElement {\n" <>
+      "class " <>
+      class <>
+      " extends HTMLElement {\n" <>
       "  connectedCallback() {\n" <>
       "    if (this.dataset.upgraded) return;\n" <>
       "    this.dataset.upgraded = \"true\";\n" <>
@@ -298,7 +326,11 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabScaffoldWizard do
   end
 
   defp loader_code(ns, tags) do
-    "/* " <> ns <> "-lazy.js — namespace loader for the " <> ns <> " vocabulary.\n" <>
+    "/* " <>
+      ns <>
+      "-lazy.js — namespace loader for the " <>
+      ns <>
+      " vocabulary.\n" <>
       " * The spec's \"Hosted lazy\" contract (spec/conventions.md §7) applied to a\n" <>
       " * foreign namespace: scan the document for this namespace's tags, import\n" <>
       " * only the chunks those tags need, mark what upgraded, and report a\n" <>
@@ -309,7 +341,9 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabScaffoldWizard do
       loader_manifest(tags) <>
       "};\n" <>
       "\n" <>
-      "const MARK = \"data-" <> ns <> "-upgraded\";\n" <>
+      "const MARK = \"data-" <>
+      ns <>
+      "-upgraded\";\n" <>
       "\n" <>
       "function reportFailure(tag, error, first) {\n" <>
       "  const note = document.createElement(\"p\");\n" <>
@@ -341,6 +375,7 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabScaffoldWizard do
   end
 
   defp loader_manifest([]), do: ""
+
   defp loader_manifest([tag | rest]) do
     "  \"" <> tag <> "\": \"./elements/" <> tag <> ".js\",\n" <> loader_manifest(rest)
   end
@@ -350,12 +385,18 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabScaffoldWizard do
       "<html lang=\"en\">\n" <>
       "<head>\n" <>
       "  <meta charset=\"utf-8\">\n" <>
-      "  <title>" <> ns <> " demo</title>\n" <>
-      "  <link rel=\"stylesheet\" href=\"./" <> ns <> ".css\">\n" <>
+      "  <title>" <>
+      ns <>
+      " demo</title>\n" <>
+      "  <link rel=\"stylesheet\" href=\"./" <>
+      ns <>
+      ".css\">\n" <>
       "  <!-- The loader scans and imports only what this page uses.\n" <>
       "       Server-hosted only: dynamic import needs a server, so this page\n" <>
       "       is not the portable single-file form (spec/conventions.md §7). -->\n" <>
-      "  <script src=\"./" <> ns <> "-lazy.js\"></script>\n" <>
+      "  <script src=\"./" <>
+      ns <>
+      "-lazy.js\"></script>\n" <>
       "</head>\n" <>
       "<body>\n" <>
       demo_body(tags) <>
@@ -434,14 +475,14 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabScaffoldWizard do
           {/if}
         </p>
 
-        {%if @files == []}
+        {%if @namespace == "" or @tags == []}
           <p class="mt-6 max-w-3xl rounded-md border border-white/15 px-4 py-3 text-sm text-ink-mute" role="status">
             Name a namespace and at least one valid element to generate the
             scaffold.
           </p>
         {%else}
           <div class="mt-6 flex max-w-3xl flex-col gap-4">
-            {%for f <- @files}
+            {%for f <- build_files(@namespace, @tags)}
               <CodeWindow lines={f.lines} filename={f.name} caption="generated" label={"Generated " <> f.name} class="" />
             {/for}
           </div>
