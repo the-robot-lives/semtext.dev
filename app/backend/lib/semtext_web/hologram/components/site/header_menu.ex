@@ -54,7 +54,7 @@ defmodule SemtextWeb.Hologram.Components.Site.HeaderMenu do
           <nav aria-label="Primary menu" class="flex flex-col">
             <a href="/#try" class="flex min-h-11 items-center rounded-md px-3 font-mono text-sm text-ink-mute hover:bg-white/5 hover:text-ink">See it work</a>
             <a href="/reference/" class="flex min-h-11 items-center rounded-md px-3 font-mono text-sm text-ink-mute hover:bg-white/5 hover:text-ink">Reference</a>
-            <a href="/spec/semtext.html" class="flex min-h-11 items-center rounded-md px-3 font-mono text-sm text-ink-mute hover:bg-white/5 hover:text-ink">Read the spec</a>
+            <a href="/spec/semtext.html" class="flex min-h-11 items-center rounded-md px-3 font-mono text-sm text-ink-mute hover:bg-white/5 hover:text-ink">Spec</a>
             <a href="/#start" class="flex min-h-11 items-center rounded-md px-3 font-mono text-sm text-ink-mute hover:bg-white/5 hover:text-ink">Get started</a>
             <a href="https://therobotlives.com" class="flex min-h-11 items-center rounded-md px-3 font-mono text-sm text-ink-mute hover:bg-white/5 hover:text-ink">The Robot Lives</a>
           </nav>

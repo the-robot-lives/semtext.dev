@@ -253,7 +253,7 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
             <p class="mt-4 max-w-md text-base leading-relaxed text-ink-mute">Open it in a browser and the same markup becomes working web components: flashcards flip, quizzes score, tabs switch, code copies, terms preview, and a reader bar tracks the outline. All of it works from a double-clicked file in any current browser, and none of it changes the text the model wrote.</p>
             <div class="mt-8 flex flex-wrap items-center gap-3">
               <a href="#try" class="inline-flex min-h-11 items-center bg-violet px-5 py-2 text-sm font-semibold text-white hover:brightness-110">See it work</a>
-              <a href="/spec/semtext.html" class="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft">Read the spec</a>
+              <a href="/reference/" class="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft">Browse the reference</a>
               <a href="#start" class="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft">Get started</a>
             </div>
             <dl class="mt-8 grid grid-cols-2 gap-3 font-mono text-xs text-ink-mute">
