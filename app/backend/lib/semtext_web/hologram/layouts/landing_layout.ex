@@ -65,8 +65,11 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
           content="SemText: one XHTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components. Part of The Robot Lives portfolio."
         />
         <meta name="twitter:image" content="https://semtext.dev/og.jpg" />
-        <link rel="icon" href="/icon.png" />
-        <link rel="apple-touch-icon" href="/apple-icon.png" />
+        <link rel="icon" href="/favicon.ico" sizes="48x48" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#0f172a" />
         <link rel="stylesheet" href="/css/landing.css" />
         <link rel="stylesheet" href="/semtext/themes/_vocabulary.css" />
         <link rel="stylesheet" href="/semtext/themes/minimal-tech-light.css" />

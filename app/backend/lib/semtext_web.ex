@@ -1,6 +1,6 @@
 defmodule SemtextWeb do
   # <REMOVED UUID HERE> static_paths :: auto-generated pointer for public function static_paths
-  def static_paths, do: ~w(themes css hologram favicon.ico robots.txt sitemap.xml site.xml llms.txt llm.txt)
+  def static_paths, do: ~w(themes css hologram favicon.ico robots.txt sitemap.xml site.xml llms.txt llm.txt icon.svg apple-touch-icon.png manifest.webmanifest icons)
 
   # <REMOVED UUID HERE> router :: auto-generated pointer for public function router
   def router do
