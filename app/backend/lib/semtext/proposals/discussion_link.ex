@@ -57,7 +57,7 @@ defmodule Semtext.Proposals.DiscussionLink do
     ])
     |> validate_required([:proposal_id, :repo, :state])
     |> validate_number(:attempts, greater_than_or_equal_to: 0)
-    |> unique_constraint(:proposal_id)
+    |> unique_constraint(:proposal_id, name: :discussion_links_proposal_id_key)
     |> unique_constraint([:repo, :discussion_number], name: :uq_discussion_links_repo_number)
   end
 end

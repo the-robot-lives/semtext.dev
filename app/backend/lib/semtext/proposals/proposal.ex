@@ -96,6 +96,7 @@ defmodule Semtext.Proposals.Proposal do
     ])
     |> validate_required([:slug, :element_tag, :title, :summary, :motivation, :submitter_id])
     |> validate_format(:slug, name_format())
+    |> validate_format(:element_tag, name_format())
     |> validate_length(:slug, max: 64)
     |> validate_length(:element_tag, max: 64)
     |> validate_length(:title, max: 200)
@@ -104,8 +105,8 @@ defmodule Semtext.Proposals.Proposal do
     |> validate_length(:example, max: 64 * 1024)
     |> validate_length(:options, max: 100)
     |> validate_inclusion(:status, @statuses)
-    |> unique_constraint(:slug)
-    |> unique_constraint(:idempotency_key)
+    |> unique_constraint(:slug, name: :proposals_slug_key)
+    |> unique_constraint(:idempotency_key, name: :proposals_idempotency_key_key)
     |> foreign_key_constraint(:submitter_id)
   end
 
