@@ -291,6 +291,7 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
                   bundles={bundles?.bundles ?? []}
                   aliasRuntime={aliasRuntime()}
                   renderNote={renderNote}
+                  editorHref={`/editor/?example=${tagSlug(t.name)}`}
                 />
               )}
             </div>
@@ -310,6 +311,7 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
                   aliasRuntime={aliasRuntime()}
                   exampleLabel={v.label}
                   renderNote={renderNote}
+                  editorHref={`/editor/?example=${tagSlug(t.name)}&variant=${v.id}`}
                 />
               </div>
             </div>
