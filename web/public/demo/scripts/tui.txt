@@ -1,1 +1,5 @@
-cat demo/messages/tui.txt
+# semtext tui — flashcards in the terminal
+$ semtext tui demo/auth-notes.sem.html
+@expect Auth notes
+@key <Down>
+@key <Enter>

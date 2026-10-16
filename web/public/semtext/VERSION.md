@@ -4,8 +4,8 @@
 `dist/` output of `noizu-labs-ml/npl-enhanced-content`:
 
 - version: 0.1.0 (dist `package.json`)
-- dist commit: `0f5a8cf8fd0de3ada76c8fa2b10fe7f576d3d6c2` (2026-10-07)
-- copied: 2026-10-13
+- dist commit: `ed6bc91d7a6b` (2026-10-14, develop — shell-v2 round 2.1)
+- copied: 2026-10-14
 
 They are loaded on demand, same-origin from `public/semtext/`, by the
 hero window's Render control (`web/components/hero-window.tsx`). No CDN,
@@ -44,7 +44,7 @@ verbatim from the `dist/` output of `noizu-labs-ml/npl-enhanced-content`:
   `feat/semtext-lazy` which is ahead of the `feat/lit-only-bundle`
   one-bundle surface; the sem-md Markdown renderer itself is unchanged
   from that surface)
-- copied: 2026-10-13
+- copied: 2026-10-14
 
 The reference page's sem-md example (`/reference/`, `/elements/`) loads
 the sem-md chunk through this loader, scoped to the example: the page sets
