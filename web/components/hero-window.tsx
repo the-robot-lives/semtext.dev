@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { semtextAsset } from "@/lib/semtext-asset";
 
 /*
  * The rendered view uses the real SemText bundle, copied verbatim
@@ -58,8 +59,8 @@ declare global {
 }
 
 const THEME_CSS = [
-  "/semtext/themes/_vocabulary.css",
-  "/semtext/themes/minimal-tech-light.css",
+  semtextAsset("themes/_vocabulary.css"),
+  semtextAsset("themes/minimal-tech-light.css"),
 ];
 
 function pillClasses(active: boolean) {
@@ -98,7 +99,7 @@ export function HeroWindow() {
           window.__semJsOff = true;
           await new Promise<void>((resolve, reject) => {
             const script = document.createElement("script");
-            script.src = "/semtext/semtext-fallback.js";
+            script.src = semtextAsset("semtext-fallback.js");
             script.onload = () => resolve();
             script.onerror = () => reject(new Error("semtext-fallback.js failed to load"));
             document.head.appendChild(script);

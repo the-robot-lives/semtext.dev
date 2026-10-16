@@ -14,8 +14,7 @@ npm run snap:tag -- --stop          # stop the harness-managed dev server
 |---|---|---|
 | `<tag>` | — | reference tag slug (`highlight`, `sem-note`, `npl-declaration`, …) |
 | `--base` | harness-managed dev server (see below) | render against this URL instead; the managed server is then left untouched |
-| `--dist <dir>` | shipped `web/public/semtext/` | serve `/semtext/**` from a privately built npl bundle dir (route interception) |
-| `--out <dir>` | `.tmp/semtext-docs-overhaul/snaps/<tag>/` (or `$SNAP_OUT_ROOT/<tag>`) | private output dir; wiped at run start |
+| `--dist <dir>` | shipped `web/public/semtext/` | serve `/semtext/**` from a privately built npl bundle dir (route interception) || `--out <dir>` | `.tmp/semtext-docs-overhaul/snaps/<tag>/` (or `$SNAP_OUT_ROOT/<tag>`) | private output dir; wiped at run start |
 
 Exit codes: `0` ok · `1` capture failures (incl. output-gate rejections) ·
 `2` usage · `3` no render server / tag page unreachable.
@@ -153,14 +152,22 @@ branch `epic.docs-overhaul`):
    latter path).
 2. Build to a PRIVATE out dir when verifying (`--out /tmp/semtext-snap/…`);
    the shared `dist/` belongs to whoever runs there.
-3. Copy into `web/public/semtext/` (the LEAD does this, not the harness):
-   `semtext.js`, `semtext-lazy.js`, `semtext-manifest.json`, `chunks/`,
-   and `themes/_vocabulary.css` + `themes/minimal-tech-light.css`. Then
-   bump the digest/commit line in `web/public/semtext/VERSION.md`.
-   `semtext-fallback.js` is NOT in the build's output (the per-tier
-   scripts are retired); the shipped copy is a frozen legacy file
-   `data/bundles.json` still names — leave it in place unless the lead
-   retires the fallback tier.
+3. Sync into `web/public/semtext/` (the LEAD does this, not the harness) —
+   one command since the asset-versioning scheme landed:
+
+   ```
+   node scripts/sync-bundles.mjs --from <npl-dist>
+   ```
+
+   It reads the stamped snapshot (`dist/v<semver>/` + `dist/version.json`,
+   written by upstream `npm run build`) and publishes
+   `public/semtext/v<semver>/` (immutable per-release snapshot), refreshes
+   `stable/` and `latest/`, rewrites `versions.json` + `VERSION.md`, keeps
+   the unversioned alias mirroring STABLE, and regenerates
+   `data/bundles.json`. Previous `v*/` directories are kept. The frozen
+   legacy `semtext-fallback.js` (retired upstream, still named by
+   `data/bundles.json`) is carried into new snapshots automatically.
+   `--dry-run` prints the plan; `--version` overrides the stamped tag.
 4. Regression warning: the copies of `themes/_vocabulary.css` (body paint
    scoped to `[data-sem-theme]`) and `themes/minimal-tech-light.css`
    (`--sem-muted` contrast fix) currently in `web/public/semtext/` carry a

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type HTMLAttributes } from "react";
+import { semtextAsset } from "@/lib/semtext-asset";
 
 /*
  * The Try section's four view surfaces — code, browser, tui, cli — over the
@@ -40,8 +41,8 @@ import { useEffect, useRef, useState, type HTMLAttributes } from "react";
 /* Runtime wiring — one injection per bundle, guarded.                 */
 /* ------------------------------------------------------------------ */
 
-const SHELL_JS = "/semtext/semtext-js-shell.js";
-const LAZY_JS = "/semtext/semtext-lazy.js";
+const SHELL_JS = semtextAsset("semtext-js-shell.js");
+const LAZY_JS = semtextAsset("semtext-lazy.js");
 
 /** Scripts this component asked for. Custom-element bundles throw on a
  * second define, so a remount (React StrictMode, route return) must not
