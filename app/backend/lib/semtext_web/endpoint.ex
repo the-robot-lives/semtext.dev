@@ -31,7 +31,12 @@ defmodule SemtextWeb.Endpoint do
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
-    json_decoder: Phoenix.json_library()
+    json_decoder: Phoenix.json_library(),
+    # GitHub webhooks must be verified against the RAW body (X-Hub-Signature-256,
+    # byte-exact) after the JSON parser consumes the stream — the reader caches
+    # a raw copy for /api/v1/webhooks/** requests only (everything else pays
+    # zero extra memory).
+    body_reader: {Semtext.Github.Webhook.BodyReader, :read, []}
 
   plug Plug.MethodOverride
   plug Plug.Head

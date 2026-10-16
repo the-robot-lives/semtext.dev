@@ -93,6 +93,10 @@ defmodule Semtext.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
       {:guardian, "~> 2.3"},
+      # Declared explicitly: Semtext.Github.AppAuth signs GitHub App JWTs
+      # (RS256) with JOSE directly. Already locked as guardian/openid_connect's
+      # dependency — same version, no lock change.
+      {:jose, "~> 1.11"},
       {:bcrypt_elixir, "~> 3.0"},
       # Explicit (not just transitive-optional) so Mint/Finch/Redix HTTPS
       # clients (OIDC discovery, outbound Redis TLS, etc.) always have a CA
