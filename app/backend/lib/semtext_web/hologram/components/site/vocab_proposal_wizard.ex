@@ -1,24 +1,36 @@
 defmodule SemtextWeb.Hologram.Components.Site.VocabProposalWizard do
   @moduledoc """
-  Drafts a vocabulary proposal and opens it as a prefilled GitHub issue on
-  noizu-labs-ml/npl-enhanced-content — port of `VocabProposalWizard` in the
-  Next site's `components/extend-wizard.tsx`. (Submit target per the
-  docs-overhaul brief; pending a user decision on the final target.)
+  Drafts a vocabulary proposal and SUBMITS it in place (P1: the same-origin
+  command path — design v2 §5, decision D4): the submit button fires the
+  `:submit_proposal` command straight to `Semtext.Proposals.create_and_submit/3`
+  (no cross-origin POST, no CORS), then navigates to the new proposal's
+  `/p/<slug>` page on proposals.semtext.dev. The idempotency key is
+  generated once at mount and reused across retries — a replay returns the
+  original (API.md §5). Failures render the problem+json map via
+  `ProblemNotice` (429 carries the retry seconds; anonymous visitors get a
+  GitHub-login prompt instead of the button — the server command re-checks
+  auth either way).
 
-  The markdown body is built with plain Elixir (client-transpilable); the
-  URL encoding goes through `Hologram.JS.eval("encodeURIComponent(...)")`
-  with the payload escaped into a JS string literal (regex-free constraint).
+  The GitHub-issue fallback link is a plain constant (no prefill): the
+  prefilled URL needed client-side `encodeURIComponent` and the resulting
+  NativeValue corrupted the wizard's VDOM patch (fields reset, bindings
+  died on the ready flip). The same-origin command submit is the primary
+  path; D5 removes the fallback once it is verified end to end.
   The name normaliser is shared with the scaffold wizard
   (`VocabScaffoldWizard.parse_namespace/1`) — one implementation, no drift.
   """
 
   use Hologram.Component
 
+  alias Semtext.Hologram.Auth
+  alias SemtextWeb.Hologram.Pages.Proposals.{Fields, Problems}
+  alias Semtext.Proposals
+  alias SemtextWeb.Hologram.Components.Proposals.ProblemNotice
   alias SemtextWeb.Hologram.Components.Site.VocabScaffoldWizard
 
   @issue_base "https://github.com/noizu-labs-ml/npl-enhanced-content/issues/new"
 
-  def init(_props, component, _server) do
+  def init(_props, component, server) do
     put_state(component,
       name: "",
       summary: "",
@@ -27,7 +39,12 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabProposalWizard do
       example: "",
       tag: "",
       ready: false,
-      issue_url: ""
+      # Same-origin submit (P1): identity + a mount-time idempotency key
+      # that survives retries within the session.
+      signed_in: Auth.current_user(server) != nil,
+      idempotency_key: Ecto.UUID.generate(),
+      submitting: false,
+      problem: %{}
     )
   end
 
@@ -50,6 +67,92 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabProposalWizard do
   def action(:set_example, params, component),
     do: recompute(component, %{example: params.event.value})
 
+  def action(:submit, _params, component) do
+    s = component.state
+
+    put_command(component, :submit_proposal,
+      fields: %{
+        tag: s.tag,
+        summary: s.summary,
+        motivation: s.motivation,
+        attrs: s.attrs,
+        example: s.example
+      },
+      idempotency_key: s.idempotency_key
+    )
+  end
+
+  # Commands cannot 302 (the client runtime has no redirect handling for
+  # command responses) — submit raises a :goto action instead; the action
+  # runs client-side and navigates to the proposals host. The URL is always
+  # server-built (validated slug + configured origin), so quoting is safe.
+  def action(:goto, params, component) do
+    Hologram.JS.exec("window.location.assign('" <> params.url <> "')")
+    # The action must return the component struct (the client runtime reads
+    # next_action off the return value).
+    component
+  end
+
+  def action(:submit_failed, params, component) do
+    put_state(component, problem: params.problem, submitting: false)
+  end
+
+  # ── command (server) — same-origin submit ────────────────────
+
+  def command(:submit_proposal, params, server) do
+    case Auth.current_user(server) do
+      nil ->
+        put_action(server, :submit_failed,
+          problem: Problems.problem("unauthenticated")
+        )
+
+      user ->
+        case Proposals.consume_rate_limit(:submit, user.id) do
+          :ok ->
+            fields = Fields.from_wizard(Map.get(params, :fields) || %{})
+            idem = command_key(params)
+
+            case Problems.from_result(Proposals.create_and_submit(user.id, fields, idem)) do
+              {:ok, proposal} ->
+                put_action(server, :goto, url: proposals_origin() <> "/p/" <> proposal.slug)
+
+              {:error, problem} ->
+                put_action(server, :submit_failed, problem: problem)
+            end
+
+          {:error, {:limited, secs}} ->
+            put_action(server, :submit_failed,
+              problem: Problems.problem("rate-limited", %{"retry_after" => secs})
+            )
+
+          _ ->
+            put_action(server, :submit_failed,
+              problem: Problems.problem("internal-error")
+            )
+        end
+    end
+  end
+
+  # Submit redirects land on the proposals host's detail page. The origin
+  # is configurable (`:semtext, :proposals_ui` → `:origin`, env
+  # SEMTEXT_PROPOSALS_ORIGIN) so dev/e2e runs on non-80 ports can point
+  # the redirect at the served host:port instead of production.
+  defp proposals_origin do
+    :semtext
+    |> Application.get_env(:proposals_ui, [])
+    |> Keyword.get(:origin, "https://proposals.semtext.dev")
+  end
+
+  defp command_key(params) do
+    key = Map.get(params, :idempotency_key) || Map.get(params, "idempotency_key") || ""
+
+    if is_binary(key) and key != "" do
+      String.slice(key, 0, 64)
+    else
+      Ecto.UUID.generate()
+    end
+  end
+
   defp recompute(component, changed) do
     s = Map.merge(component.state, changed)
     tag = VocabScaffoldWizard.parse_namespace(s.name)
@@ -57,17 +160,12 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabProposalWizard do
     ready =
       valid_tag?(tag) and String.trim(s.summary) != "" and String.trim(s.motivation) != ""
 
-    issue_url =
-      if ready do
-        @issue_base <>
-          "?title=" <>
-          encode_uri("Vocabulary proposal: " <> tag) <>
-          "&body=" <> encode_uri(body(s, tag))
-      else
-        ""
-      end
-
-    put_state(component, %{tag: tag, ready: ready, issue_url: issue_url})
+    # NOTE: no client-side URL prefill here. Building the prefilled issue
+    # URL with Hologram.JS.eval("encodeURIComponent(...)") hands the state a
+    # NativeValue (not a binary); the next patch renders it into an href and
+    # the wizard subtree corrupts (fields reset, bindings die). The fallback
+    # link is a plain constant in the template instead.
+    put_state(component, %{tag: tag, ready: ready})
   end
 
   # `^[a-z][a-z0-9]*(-[a-z0-9]+)*$` + must contain a hyphen (custom-element
@@ -145,25 +243,7 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabProposalWizard do
     end
   end
 
-  # encodeURIComponent via JS interop; the payload is escaped into a JS
-  # string literal first. This runs client-side only (in the action), so the
-  # server-side pass-through is never hit.
-  defp encode_uri(s) do
-    Hologram.JS.eval("encodeURIComponent(" <> js_string(s) <> ")")
-  end
 
-  defp js_string(s) do
-    "\"" <> js_esc(String.graphemes(s)) <> "\""
-  end
-
-  defp js_esc([]), do: ""
-  defp js_esc(["\\" | rest]), do: "\\\\" <> js_esc(rest)
-  defp js_esc(["\"" | rest]), do: "\\\"" <> js_esc(rest)
-  defp js_esc(["\n" | rest]), do: "\\n" <> js_esc(rest)
-  defp js_esc(["\r" | rest]), do: "\\r" <> js_esc(rest)
-  defp js_esc(["\t" | rest]), do: "\\t" <> js_esc(rest)
-  defp js_esc(["<" | rest]), do: "\\u003C" <> js_esc(rest)
-  defp js_esc([g | rest]), do: g <> js_esc(rest)
 
   # -- template ------------------------------------------------------------------
 
@@ -177,7 +257,15 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabProposalWizard do
         a worked example.
       </div>
 
-      <div class="js-only">
+      <!--
+        NOT gated behind the site's .js-only class: Hologram's client render
+        rebuilds the layout's html.no-js literal, which re-hides every
+        .js-only surface after hydration (the site-chrome.js flip runs too
+        early and is undone). The form degrades gracefully without the gate:
+        the submit control is @ready-gated, so no-JS visitors see the fields
+        plus the fill hint and no button.
+      -->
+      <div>
         <div class="grid max-w-3xl gap-4 sm:grid-cols-2">
           <div>
             <label for="prop-name" class="block font-mono text-sm text-violet-soft">
@@ -242,19 +330,39 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabProposalWizard do
           </div>
         </div>
 
+        <ProblemNotice problem={@problem} />
+
         <div class="mt-6 flex flex-wrap items-center gap-3">
           {%if @ready}
+            {%if @signed_in}
+              <button
+                type="button"
+                class="inline-flex min-h-11 items-center bg-violet px-5 py-2 text-sm font-semibold text-white hover:brightness-110"
+                $click="submit"
+                data-cy="wizard-submit"
+              >
+                Submit proposal
+              </button>
+            {%else}
+              <a
+                href="/auth/github"
+                class="inline-flex min-h-11 items-center bg-violet px-5 py-2 text-sm font-semibold text-white hover:brightness-110"
+                data-cy="wizard-login"
+              >
+                Sign in with GitHub to submit
+              </a>
+            {/if}
             <a
-              href={@issue_url}
+              href="https://github.com/noizu-labs-ml/npl-enhanced-content/issues/new"
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex min-h-11 items-center bg-violet px-5 py-2 text-sm font-semibold text-white hover:brightness-110"
+              class="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink hover:border-violet-soft"
             >
-              Open the drafted proposal as a GitHub issue
+              Open as a GitHub issue instead
             </a>
           {%else}
             <span class="font-mono text-xs text-ink-faint" role="status">
-              Name, summary and motivation make the draft openable.
+              Name, summary and motivation make the draft submittable.
             </span>
           {/if}
           <a
@@ -267,9 +375,9 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabProposalWizard do
           </a>
         </div>
         <p class="mt-2 font-mono text-[0.68rem] leading-5 text-ink-faint">
-          Opens a prefilled issue on noizu-labs-ml/npl-enhanced-content — the
-          spec's repository. Very long examples may exceed the URL limit; the
-          draft is also reproducible by hand from the fields above.
+          Submitting publishes the proposal to the review queue on
+          proposals.semtext.dev; the GitHub-issue link stays as a fallback
+          for anything the form cannot carry (very long examples, say).
         </p>
       </div>
     </div>

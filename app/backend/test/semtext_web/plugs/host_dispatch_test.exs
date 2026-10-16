@@ -14,21 +14,20 @@ defmodule SemtextWeb.Plugs.HostDispatchTest do
     assert json_response(conn, 200)["status"] == "ok"
   end
 
-  test "proposals host dispatches to the proposals router", %{conn: conn} do
+  # P1 ui lane: the skeleton JSON stub was replaced by the real browse page.
+  test "proposals host dispatches to the proposals router (browse SSR)", %{conn: conn} do
     conn = get(%{conn | host: @proposals_host}, "/")
-    body = json_response(conn, 200)
 
     assert conn.assigns[:semtext_host] == :proposals
-    assert body["service"] == "semtext-proposals"
-    assert body["status"] == "skeleton"
+    assert conn.status == 200
+    assert get_resp_header(conn, "content-type") |> List.first() |> String.contains?("html")
   end
 
-  test "proposals detail stub reports not_implemented", %{conn: conn} do
-    conn = get(%{conn | host: @proposals_host}, "/p/some-slug")
-    body = json_response(conn, 404)
+  # P1 ui lane: unknown slugs are a real 404 from the detail page middleware.
+  test "proposals detail 404s unknown slugs", %{conn: conn} do
+    conn = get(%{conn | host: @proposals_host}, "/p/never-existed-slug")
 
-    assert body["error"] == "not_implemented"
-    assert body["slug"] == "some-slug"
+    assert conn.status == 404
   end
 
   test "proposals host never reaches Hologram page routes", %{conn: conn} do
@@ -58,6 +57,7 @@ defmodule SemtextWeb.Plugs.HostDispatchTest do
 
   test "host headers carrying ports dispatch the same", %{conn: conn} do
     conn = get(%{conn | host: "#{@proposals_host}:4000"}, "/")
-    assert json_response(conn, 200)["service"] == "semtext-proposals"
+    assert conn.status == 200
+    assert conn.assigns[:semtext_host] == :proposals
   end
 end

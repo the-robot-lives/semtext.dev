@@ -39,3 +39,16 @@ config :noizu_sendgrid,
 # Dev-only login stub (POST /auth/test/login?github_login=...) for Cypress +
 # manual testing. Compile-gated; prod config leaves it false.
 config :semtext, :test_auth_login_route, true
+
+# Multi-host split (P1): HostDispatch routes proposals.semtext.dev to the
+# proposals router, and the pages' HostGuard allow-lists the same entry.
+# E2E maps the name to 127.0.0.1 (app/e2e/cypress.config.ts E2E_HOSTS).
+config :semtext, :hosts,
+  proposals: ["proposals.semtext.dev"]
+
+# Absolute origin of the proposals host (env SEMTEXT_PROPOSALS_ORIGIN).
+# The /extend wizard's submit redirect lands here; point it at a
+# host:port when the dev server does not serve on 443. Production
+# config keeps the default https://proposals.semtext.dev.
+config :semtext, :proposals_ui,
+  origin: System.get_env("SEMTEXT_PROPOSALS_ORIGIN", "https://proposals.semtext.dev")
