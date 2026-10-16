@@ -35,7 +35,7 @@ export function Header() {
             href="/spec/semtext.html"
             className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex"
           >
-            Read the spec
+            Spec
           </a>
           <a
             href="/#start"
