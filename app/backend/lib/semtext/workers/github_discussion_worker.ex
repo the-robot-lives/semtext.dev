@@ -88,13 +88,21 @@ defmodule Semtext.Workers.GithubDiscussionWorker do
     end
   end
 
+  # LANE=data (coordinator follow-up 2026-10-17): a `removed` link is ALSO a
+  # skip — recreation is exclusively the moderator `Proposals.recreate_discussion/1`
+  # action; a stray retry/job must never auto-recreate a deleted discussion.
+  # Map.get, NOT Access (`link[:state]`): the production adapter returns a
+  # `%DiscussionLink{}` struct, which does not implement Access (a plain-map
+  # fake port does — both must work).
   defp already_linked?(nil), do: :create
 
   defp already_linked?(link) do
-    if link[:state] == :ok and is_binary(link[:node_id]) do
-      :skip
-    else
-      :create
+    state = Map.get(link, :state)
+
+    cond do
+      state == :removed -> :skip
+      state == :ok and is_binary(Map.get(link, :node_id)) -> :skip
+      true -> :create
     end
   end
 

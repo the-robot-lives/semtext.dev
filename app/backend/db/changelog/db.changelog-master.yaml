@@ -92,3 +92,6 @@ databaseChangeLog:
   - include:
       file: 030-proposals-indexes.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 031-discussion-removed-state.yaml
+      relativeToChangelogFile: true

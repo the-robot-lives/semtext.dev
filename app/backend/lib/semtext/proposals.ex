@@ -121,7 +121,10 @@ defmodule Semtext.Proposals do
         with {:ok, proposal} <- Repo.insert(cs),
              {:ok, proposal} <- attach_version_1(proposal, user_id, base.files),
              {:ok, _link} <- ensure_discussion_link(proposal.id, discussion_repo()),
-             {:ok, proposal} <- transition(proposal, :submitted, %{user_id: user_id}, nil) do
+             {:ok, proposal} <- transition(proposal, :submitted, %{user_id: user_id}, nil),
+             # Same transaction as the submit: a rollback (e.g. slug retry)
+             # can never leave an orphan Oban job behind.
+             {:ok, _job} <- Semtext.Github.Sync.enqueue_discussion(proposal.id) do
           Repo.preload(proposal, :discussion_link)
         else
           {:error, %Ecto.Changeset{} = cs} -> Repo.rollback({:changeset, cs})
@@ -235,7 +238,8 @@ defmodule Semtext.Proposals do
           Repo.transaction(fn ->
             with {:ok, proposal} <- attach_version_1(proposal, user_id, %{}),
                  {:ok, _link} <- ensure_discussion_link(proposal.id, discussion_repo()),
-                 {:ok, proposal} <- transition(proposal, :submitted, %{user_id: user_id}, nil) do
+                 {:ok, proposal} <- transition(proposal, :submitted, %{user_id: user_id}, nil),
+                 {:ok, _job} <- Semtext.Github.Sync.enqueue_discussion(proposal.id) do
               Repo.preload(proposal, :discussion_link)
             else
               {:error, %Ecto.Changeset{} = cs} -> Repo.rollback({:changeset, cs})
@@ -638,6 +642,36 @@ defmodule Semtext.Proposals do
     end
   end
 
+  @doc """
+  Webhook `discussion.deleted` / removed-on-GitHub: `state -> :removed` with
+  the reason in `last_error`. Only an `:ok` link can become `:removed` — a
+  discussion must have existed to be deleted; a stale webhook against a
+  `:pending`/`:failed` link is a no-op so it can never suppress creation.
+  Recreation is NEVER automatic — only `recreate_discussion/1`.
+  """
+  @spec record_discussion_removed(Ecto.UUID.t(), String.t()) ::
+          {:ok, DiscussionLink.t()} | {:error, Ecto.Changeset.t()}
+  def record_discussion_removed(proposal_id, reason \\ "discussion removed on GitHub") do
+    case Repo.one(from dl in DiscussionLink, where: dl.proposal_id == ^proposal_id) do
+      nil ->
+        {:error,
+         %DiscussionLink{}
+         |> Ecto.Changeset.change()
+         |> Ecto.Changeset.add_error(:proposal_id, "does not exist")}
+
+      %DiscussionLink{state: :ok} = link ->
+        link
+        |> DiscussionLink.changeset(%{
+          state: :removed,
+          last_error: String.slice(reason || "discussion removed on GitHub", 0, 2000)
+        })
+        |> Repo.update()
+
+      %DiscussionLink{} = link ->
+        {:ok, link}
+    end
+  end
+
   @doc "Webhook sync landed: update counts/reactions + `last_synced_at` (state unchanged)."
   @spec record_discussion_sync(Ecto.UUID.t(), map()) ::
           {:ok, DiscussionLink.t()} | {:error, Ecto.Changeset.t()}
@@ -668,6 +702,47 @@ defmodule Semtext.Proposals do
 
       link ->
         {:ok, link}
+    end
+  end
+
+  @doc """
+  Moderator action for a `:removed` link: `state -> :pending` with a FRESH
+  attempt budget (the old attempts belong to a discussion that no longer
+  exists), clears the link target, and re-enqueues creation — link update and
+  job insert in one transaction. The only path back from `:removed`; the
+  worker refuses `:removed` links, so nothing recreates implicitly.
+  """
+  @spec recreate_discussion(Ecto.UUID.t()) ::
+          {:ok, DiscussionLink.t()} | {:error, :not_found | :invalid_transition | Ecto.Changeset.t()}
+  def recreate_discussion(proposal_id) do
+    case Repo.one(from dl in DiscussionLink, where: dl.proposal_id == ^proposal_id) do
+      nil ->
+        {:error, :not_found}
+
+      %DiscussionLink{state: :removed} = link ->
+        Repo.transaction(fn ->
+          with {:ok, link} <-
+                 link
+                 |> DiscussionLink.changeset(%{
+                   state: :pending,
+                   attempts: 0,
+                   last_error: nil,
+                   discussion_number: nil,
+                   node_id: nil,
+                   url: nil
+                 })
+                 |> Repo.update(),
+               {:ok, _job} <- Semtext.Github.Sync.enqueue_discussion(proposal_id) do
+            link
+          else
+            {:error, %Ecto.Changeset{} = cs} -> Repo.rollback({:changeset, cs})
+            {:error, reason} -> Repo.rollback({:error, reason})
+          end
+        end)
+        |> unwrap()
+
+      %DiscussionLink{} ->
+        {:error, :invalid_transition}
     end
   end
 

@@ -1,8 +1,13 @@
 defmodule Semtext.ProposalsTest do
-  use Semtext.DataCase, async: true
+  # async: false — the submit path now enqueues the github-sync Oban job inline
+  # (testing: :inline) and the worker reads the GLOBAL `Semtext.Github` app env;
+  # must serialize against the github-sync lane's env-mutating test modules.
+  use Semtext.DataCase, async: false
 
   alias Semtext.Proposals
   alias Semtext.Proposals.{DiscussionLink, Proposal, ProposalVersion, RateLimit, RateLimitEvent}
+  alias Semtext.Github.InstallationToken
+  alias Semtext.Github.Sync
 
   @mod System.unique_integer([:positive])
 
@@ -625,6 +630,276 @@ defmodule Semtext.ProposalsTest do
     assert %{limit: 10, window_seconds: 3600} = buckets.report
     assert %{limit: 10, window_seconds: 86_400} = buckets.fork
     assert %{limit: 120, window_seconds: 60} = buckets.read
+  end
+
+  # ── Discussion enqueue on submit + `removed` state (coordinator 2026-10-17)
+  #
+  # Oban runs `testing: :inline` in tests: jobs execute synchronously and NO
+  # oban_jobs rows persist, so enqueue behavior is asserted through outcomes
+  # (chip states) — the acceptance describe runs the worker against the REAL
+  # port + stubbed HTTP.
+
+  test "submit survives an unconfigured GitHub: commits with a pending chip" do
+    uid = user_fixture()
+    p = submit!(uid, valid_attrs("enq-me"))
+
+    assert {:ok, %{discussion: link}} = Proposals.get_by_slug(p.slug, nil)
+    assert link.state == :pending
+  end
+
+  test "idempotency replay does not disturb the original's chip" do
+    uid = user_fixture()
+    attrs = valid_attrs("replay-enq")
+
+    {:ok, p1, :created} = Proposals.create_and_submit(uid, attrs, "key-enq-1")
+    {:ok, p2, :replayed} = Proposals.create_and_submit(uid, attrs, "key-enq-1")
+
+    assert p2.id == p1.id
+
+    assert {:ok, %{discussion: link}} = Proposals.get_by_slug(p1.slug, nil)
+    assert link.state == :pending
+  end
+
+  test "slug-collision retry still submits both survivors cleanly" do
+    uid = user_fixture()
+    uid2 = user_fixture()
+
+    p1 = submit!(uid, valid_attrs("enq-clash"))
+    {:ok, p2, :created} = Proposals.create_and_submit(uid2, valid_attrs("enq-clash"), nil)
+
+    assert p1.slug == "enq-clash"
+    assert p2.slug == "enq-clash-2"
+
+    assert {:ok, %{discussion: l1}} = Proposals.get_by_slug(p1.slug, nil)
+    assert {:ok, %{discussion: l2}} = Proposals.get_by_slug(p2.slug, nil)
+    assert l1.state == :pending and l2.state == :pending
+  end
+
+  test "submit_draft: no link while a draft; pending link created at submit" do
+    uid = user_fixture()
+
+    {:ok, draft} = Proposals.save_draft(uid, valid_attrs("draft-enq"))
+    assert {:ok, %{discussion: nil}} = Proposals.get_by_slug("draft-enq", %{user_id: uid})
+
+    {:ok, _submitted} = Proposals.submit_draft(uid, "draft-enq")
+
+    assert {:ok, %{discussion: link}} = Proposals.get_by_slug("draft-enq", nil)
+    assert link.proposal_id == draft.id
+    assert link.state == :pending
+  end
+
+  test "recreate_discussion: removed -> pending with a fresh budget; other states refused" do
+    uid = user_fixture()
+    p = submit!(uid, valid_attrs("recreate-1"))
+
+    {:ok, _} =
+      Proposals.record_discussion_created(p.id, %{
+        discussion_number: 9,
+        node_id: "D_rec_1",
+        url: "https://github.com/noizu-labs-ml/npl-enhanced-content/discussions/9"
+      })
+
+    {:ok, _} = Proposals.record_discussion_removed(p.id, "deleted on GitHub")
+
+    {:ok, link} = Proposals.recreate_discussion(p.id)
+    assert link.state == :pending
+    assert link.attempts == 0
+    assert is_nil(link.last_error)
+    # Old coordinates cleared — they point at a deleted discussion.
+    assert is_nil(link.discussion_number) and is_nil(link.node_id) and is_nil(link.url)
+
+    # Only a removed link can be recreated.
+    q = submit!(uid, valid_attrs("recreate-2"))
+    assert {:error, :invalid_transition} = Proposals.recreate_discussion(q.id)
+    assert {:error, :not_found} = Proposals.recreate_discussion(Ecto.UUID.generate())
+  end
+
+  test "record_discussion_removed: ok -> removed; pending/failed are stale-webhook no-ops" do
+    uid = user_fixture()
+    p = submit!(uid, valid_attrs("removed-1"))
+
+    {:ok, _link} =
+      Proposals.record_discussion_created(p.id, %{
+        discussion_number: 7,
+        node_id: "D_rem_1",
+        url: "https://github.com/noizu-labs-ml/npl-enhanced-content/discussions/7",
+        category: "proposals"
+      })
+
+    {:ok, removed} = Proposals.record_discussion_removed(p.id, "deleted on GitHub")
+    assert removed.state == :removed
+    assert removed.last_error =~ "deleted on GitHub"
+    # The old coordinates stay for the audit story until a recreate clears them.
+    assert removed.discussion_number == 7
+
+    # A discussion that never existed cannot be "removed" — a stale webhook
+    # must not suppress creation.
+    q = submit!(uid, valid_attrs("removed-2"))
+    {:ok, still} = Proposals.record_discussion_removed(q.id, "stale webhook")
+    assert still.state == :pending
+
+    assert {:error, %Ecto.Changeset{}} = Proposals.record_discussion_removed(Ecto.UUID.generate())
+  end
+
+  describe "acceptance: outage -> pending chip -> retry lands (real port, stubbed HTTP)" do
+    setup do
+      InstallationToken.clear()
+
+      base = Application.get_env(:semtext, Semtext.Github, [])
+
+      Application.put_env(
+        :semtext,
+        Semtext.Github,
+        Keyword.merge(base,
+          app_id: "123",
+          app_private_key: JOSE.JWK.generate_key({:rsa, 2048}) |> JOSE.JWK.to_pem() |> elem(1),
+          installation_id: "456",
+          repository_id: "R_repo",
+          discussion_category_id: "DIC_proposals",
+          repository_owner: "noizu-labs-ml",
+          repository_name: "npl-enhanced-content",
+          http_client: __MODULE__.GithubStubClient
+        )
+      )
+
+      # Default: FORCED GITHUB OUTAGE (transport refused = transient).
+      :persistent_term.put({__MODULE__, :gh_reply}, {:error, {:transport, :econnrefused}})
+
+      on_exit(fn ->
+        InstallationToken.clear()
+        :persistent_term.erase({__MODULE__, :gh_reply})
+
+        if base == [] do
+          Application.delete_env(:semtext, Semtext.Github)
+        else
+          Application.put_env(:semtext, Semtext.Github, base)
+        end
+      end)
+
+      :ok
+    end
+
+    test "forced outage: proposal visible with a pending chip; retry lands the discussion" do
+      uid = user_fixture()
+
+      assert {:ok, p, :created} = Proposals.create_and_submit(uid, valid_attrs("outage-1"), nil)
+
+      # The inline job already failed transiently; the submit itself survived.
+      assert {:ok, %{proposal: prop, discussion: link}} = Proposals.get_by_slug("outage-1", nil)
+      assert prop.id == p.id and prop.status == :submitted
+      assert link.state == :pending
+
+      # Retry with GitHub healthy — the discussion lands, chip flips to ok.
+      set_gh_reply(
+        {:ok, 200,
+         %{
+           "data" => %{
+             "createDiscussion" => %{
+               "discussion" => %{
+                 "id" => "D_outage",
+                 "number" => 11,
+                 "url" => "https://github.com/noizu-labs-ml/npl-enhanced-content/discussions/11",
+                 "title" => "t"
+               }
+             }
+           }
+         }}
+      )
+
+      assert {:ok, _job} = Sync.retry_discussion(p.id)
+
+      assert {:ok, %{discussion: ok_link}} = Proposals.get_by_slug("outage-1", nil)
+      assert ok_link.state == :ok
+      assert ok_link.discussion_number == 11
+      assert ok_link.node_id == "D_outage"
+      assert is_nil(ok_link.last_error)
+    end
+
+    test "never auto-recreate: retry against a removed link is a no-op; recreate lands it" do
+      uid = user_fixture()
+      p = submit!(uid, valid_attrs("norecreate"))
+
+      set_gh_reply(created_reply(12))
+
+      assert {:ok, _job} = Sync.retry_discussion(p.id)
+      assert {:ok, %{discussion: link}} = Proposals.get_by_slug("norecreate", nil)
+      assert link.state == :ok
+
+      # Webhook says the discussion was deleted.
+      {:ok, _} = Proposals.record_discussion_removed(p.id, "deleted on GitHub")
+
+      # A stray retry/job MUST NOT recreate it.
+      assert {:ok, _job} = Sync.retry_discussion(p.id)
+      assert {:ok, %{discussion: still_removed}} = Proposals.get_by_slug("norecreate", nil)
+      assert still_removed.state == :removed
+
+      # The moderator action is the only way back.
+      assert {:ok, recreated} = Proposals.recreate_discussion(p.id)
+      assert recreated.state == :pending
+
+      assert {:ok, %{discussion: landed}} = Proposals.get_by_slug("norecreate", nil)
+      assert landed.state == :ok
+      assert landed.discussion_number == 12
+    end
+
+    test "healthy GitHub: the submit itself lands the discussion inline" do
+      uid = user_fixture()
+
+      set_gh_reply(created_reply(21))
+
+      assert {:ok, p, :created} = Proposals.create_and_submit(uid, valid_attrs("healthy-1"), "key-h")
+
+      # The enqueue runs inside the submit transaction (testing: :inline) — the
+      # discussion exists by the time submit returns.
+      assert {:ok, %{discussion: link}} = Proposals.get_by_slug(p.slug, nil)
+      assert link.state == :ok
+      assert link.discussion_number == 21
+      assert is_nil(link.last_error)
+
+      # A replay of the same idempotency key creates nothing further.
+      {:ok, p2, :replayed} = Proposals.create_and_submit(uid, valid_attrs("healthy-1"), "key-h")
+      assert p2.id == p.id
+      assert {:ok, %{discussion: same}} = Proposals.get_by_slug(p.slug, nil)
+      assert same.discussion_number == 21
+    end
+
+    defp created_reply(number) do
+      {:ok, 200,
+       %{
+         "data" => %{
+           "createDiscussion" => %{
+             "discussion" => %{
+               "id" => "D_n#{number}",
+               "number" => number,
+               "url" =>
+                 "https://github.com/noizu-labs-ml/npl-enhanced-content/discussions/#{number}",
+               "title" => "t"
+             }
+           }
+         }
+       }}
+    end
+
+    defp set_gh_reply(reply), do: :persistent_term.put({__MODULE__, :gh_reply}, reply)
+  end
+
+  defmodule GithubStubClient do
+    @moduledoc false
+    @behaviour Semtext.Github.Client
+
+    @token_reply {:ok, 201, %{"token" => "ghs_test", "expires_at" => "2099-01-01T00:00:00Z"}}
+
+    @impl true
+    def post(url, _headers, _body) do
+      if String.contains?(to_string(url), "/access_tokens") do
+        @token_reply
+      else
+        case :persistent_term.get({Semtext.ProposalsTest, :gh_reply}, nil) do
+          nil -> {:ok, 500, "no reply configured"}
+          reply -> reply
+        end
+      end
+    end
   end
 
   # ── Contract constants ───────────────────────────────────────────────────

@@ -58,7 +58,8 @@ draft ──submit(owner)──▶ submitted ──triage(mod)──▶ under_re
 | 14 | `GET /api/v1/admin/queue` | moderator | `{hidden: [...], reported: [...], sync_failed: [...]}` |
 | 15 | `POST /api/v1/admin/reports/{id}/resolve` | moderator | Body `{outcome: resolved\|dismissed}` |
 | 16 | `POST /api/v1/admin/discussions/{proposal_id}/retry` | moderator | Failed sync → pending, retry worker picks it up |
-| 17 | `POST /api/v1/webhooks/github` | HMAC (github-sync lane) | Discussion/comment/reaction sync + delivery dedupe |
+| 16a | `POST /api/v1/admin/discussions/{proposal_id}/recreate` | moderator | `removed` link → pending with a fresh attempt budget + cleared link target; re-enqueues creation. The ONLY path back from `removed` — never automatic |
+| 17 | `POST /api/v1/webhooks/github` | HMAC (github-sync lane) | Discussion/comment/reaction sync + delivery dedupe; `discussion.deleted` sets the chip to `removed` (only from `ok`) |
 
 P2 (documented now, not built): `POST …/fork`, `POST /api/v1/playgrounds`, `GET /api/v1/playgrounds/{share_slug}`, `GET /api/v1/datasets?public=true`.
 
@@ -87,7 +88,7 @@ P2 (documented now, not built): `POST …/fork`, `POST /api/v1/playgrounds`, `GE
 ```
 
 - `element_tag`/`slug` grammar: `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`, ≤ 64 chars (v1 §7.2 NAME_RE). Slug defaults to `element_tag`; on collision a `-2`/`-3…` suffix is appended (forks re-use tags — uniqueness is enforced on slug globally, on `element_tag` only among non-hidden rows).
-- `discussion` creation is async (github-sync's Oban worker): submit returns `state: "pending"` immediately; the chip flips via webhook sync. A GitHub outage degrades to a visible `pending`/`failed` chip — never a lost proposal (acceptance: forced-outage test).
+- `discussion` creation is async (github-sync's Oban worker): submit returns `state: "pending"` immediately; the chip flips via webhook sync. A GitHub outage degrades to a visible `pending`/`failed` chip — never a lost proposal (acceptance: forced-outage test). A discussion deleted on GitHub moves the chip to `removed` (webhook-set, only from `ok`); the UI shows "discussion removed" and recreation happens exclusively via the moderator `recreate` action (16a) — never auto-recreated.
 
 ### 3.2 Browse response (#2)
 
@@ -157,7 +158,7 @@ Indexes: `idx_proposals_list (status, updated_at desc) where hidden_at is null` 
 `id uuid pk` · `proposal_id uuid not null fk` · `version int not null` (`uq(proposal_id, version)`) · `title/summary/motivation text not null` · `options jsonb` · `example text` · `files jsonb not null default '{}'` (`{path: text}`) · `files_sha256 text not null` (sha256 of sorted-files canonical JSON — `Semtext.Proposals.ProposalVersion.canonical_files/1`) · `created_by_id uuid fk→users` · `inserted_at` (immutable)
 
 ### discussion_links
-`id uuid pk` · `proposal_id uuid not null unique fk` · `repo text not null` · `discussion_number int` · `node_id text` · `url text` · `category text` · `state discussion_state_enum not null default 'pending'` — `pending|ok|failed` (v2 dropped `paused`) · `attempts int not null default 0` · `comment_count int not null default 0` · `reactions jsonb not null default '{}'` · `last_synced_at timestamptz` · `last_error text` · `uq(repo, discussion_number)`
+`id uuid pk` · `proposal_id uuid not null unique fk` · `repo text not null` · `discussion_number int` · `node_id text` · `url text` · `category text` · `state discussion_state_enum not null default 'pending'` — `pending|ok|failed|removed` (`removed` added 2026-10-17: webhook-set from `ok` only; moderator `recreate` is the only way back) · `attempts int not null default 0` · `comment_count int not null default 0` · `reactions jsonb not null default '{}'` · `last_synced_at timestamptz` · `last_error text` · `uq(repo, discussion_number)`
 
 ### moderation_events (append-only)
 `id uuid pk` · `proposal_id uuid not null fk` · `actor_user_id uuid fk→users (null for system)` · `actor_system text` · `event moderation_event_enum not null` — `status_change|hide|unhide|report|spam_flag|lock_discussion|claim` · `from_status/to_status proposal_status_enum` · `reason text` · `inserted_at`

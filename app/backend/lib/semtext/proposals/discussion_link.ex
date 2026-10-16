@@ -6,6 +6,8 @@ defmodule Semtext.Proposals.DiscussionLink do
     - `pending` — creation queued/retrying; proposal stays fully visible
     - `ok`      — discussion exists (`url` set), counts sync via webhooks
     - `failed`  — retries exhausted / unrecoverable; manual retry resets to pending
+    - `removed` — discussion deleted on GitHub (webhook-set); recreated ONLY by
+      the moderator `recreate_discussion/1` action — never auto-recreated
   `attempts` + `last_error` carry the retry story (v2 drops v1's `paused`).
   """
 
@@ -16,7 +18,7 @@ defmodule Semtext.Proposals.DiscussionLink do
 
   @type t :: %__MODULE__{}
 
-  @states [:pending, :ok, :failed]
+  @states [:pending, :ok, :failed, :removed]
 
   schema "discussion_links" do
     field :repo, :string

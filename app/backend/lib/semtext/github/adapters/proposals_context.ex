@@ -15,16 +15,17 @@ defmodule Semtext.Github.Adapters.ProposalsContext do
     | `mark_discussion_pending/1` | `ensure_discussion_link/2` (creates the row `:pending`) |
     | `put_discussion_link/2`   | `record_discussion_created/2`                          |
     | `mark_discussion_failed/2`| `record_discussion_failure/2` (attempts-gated, v2 §5)  |
-    | `mark_discussion_removed/1`| `record_discussion_failure/2` (v2 has no `removed` state) |
+    | `mark_discussion_removed/1`| `record_discussion_removed/2` (`:ok` -> `:removed`)  |
     | `update_discussion_stats/2`| `record_discussion_sync/2`                            |
     | `find_discussion_by_node/1` | DiscussionLink query by `node_id`                    |
     | `find_discussion_by_number/2` | DiscussionLink query by `repo` + `discussion_number` |
 
   v2 notes (documented deviations from the v1 §6 chip vocabulary): a
-  discussion deleted on GitHub leaves an `:ok` link untouched (the failure
-  recorder no-ops on `:ok` by design) and a `:pending` link accrues attempts
-  toward `:failed` — the data context owns the state machine; see the lane
-  report for the follow-up request.
+  discussion deleted on GitHub sets `:removed` (`record_discussion_removed/2`,
+  only reachable from `:ok`) and a `:pending` link accrues attempts toward
+  `:failed` — the data context owns the state machine; recreation from
+  `:removed` is the moderator `Proposals.recreate_discussion/1` action and is
+  never automatic.
   """
 
   @behaviour Semtext.Github.Port
@@ -82,11 +83,9 @@ defmodule Semtext.Github.Adapters.ProposalsContext do
 
   @impl true
   def mark_discussion_removed(proposal_id) do
-    # v2 dropped the `removed` state; the recorder's attempts/last_error story
-    # is the closest truthful surface ("discussion removed on GitHub").
-    with {:ok, _link} <-
-           Proposals.record_discussion_failure(proposal_id, "discussion removed on GitHub"),
-         do: :ok
+    # `:removed` chip state (LANE=data, coordinator follow-up 2026-10-17):
+    # only an `:ok` link flips; recreation is the moderator action, never auto.
+    with {:ok, _link} <- Proposals.record_discussion_removed(proposal_id), do: :ok
   end
 
   @impl true
