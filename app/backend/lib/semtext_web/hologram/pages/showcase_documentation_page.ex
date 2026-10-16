@@ -16,6 +16,7 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseDocumentationPage do
   alias SemtextWeb.Hologram.Layouts.SiteLayout
 
   route "/showcase/documentation"
+
   layout SiteLayout,
     page_title: "Documentation — SemText showcase",
     description:
@@ -51,7 +52,9 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseDocumentationPage do
   def init(_params, component, _server) do
     put_state(component,
       groups: NavGroups.groups(),
-      lines: Highlighter.numbered_lines(@example)
+      lines: Highlighter.numbered_lines(@example),
+      # raw source for ExampleViewer data-sem-html (template @example = state key)
+      example: @example
     )
   end
 
@@ -76,7 +79,7 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseDocumentationPage do
           occludes its highlight in quiz views; the citation previews on
           hover with a backlink.
         </p>
-        <ExampleViewer cid="example-viewer" id="documentation" label="documentation example" filename="documentation.md" caption="authored SemText" lines={@lines} renderable={true} />
+        <ExampleViewer cid="example-viewer" id="documentation" label="documentation example" filename="documentation.md" caption="authored SemText" lines={@lines} renderable={true} raw={@example} />
       </section>
 
       <section id="why" class="mt-14 scroll-mt-24">

@@ -18,6 +18,7 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseClaudeMdPage do
   alias SemtextWeb.Hologram.Layouts.SiteLayout
 
   route "/showcase/claude-md"
+
   layout SiteLayout,
     page_title: "CLAUDE.md — SemText showcase",
     description:
@@ -60,7 +61,9 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseClaudeMdPage do
   def init(_params, component, _server) do
     put_state(component,
       groups: NavGroups.groups(),
-      lines: Highlighter.numbered_lines(@example)
+      lines: Highlighter.numbered_lines(@example),
+      # raw source for ExampleViewer data-sem-html (template @example = state key)
+      example: @example
     )
   end
 
@@ -87,7 +90,7 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseClaudeMdPage do
           an answer can cite <code class="font-mono">g-main</code> the way
           the instructions require.
         </p>
-        <ExampleViewer cid="example-viewer" id="claude-md" label="claude-md example" filename="claude.md" caption="authored SemText" lines={@lines} renderable={true} />
+        <ExampleViewer cid="example-viewer" id="claude-md" label="claude-md example" filename="claude.md" caption="authored SemText" lines={@lines} renderable={true} raw={@example} />
       </section>
 
       <section id="why" class="mt-14 scroll-mt-24">

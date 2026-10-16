@@ -9,11 +9,15 @@ defmodule SemtextWeb.Hologram.Components.Site.ExampleViewer do
   aria-label, view pills (Source / Split / Render) with aria-pressed and
   client-side view state, a `data-sem-render-note` render pane, and the
   `#example-<id>` anchor. The render pane is the Next export's themed host
-  (`data-sem-theme` + `data-color-mode`, "render" pane tag) — matching the
-  export's SSR host count — with the honest note inside it until the live
-  island boot replaces this shell's static pane (the export SSRs the
-  authored markup raw; Hologram templates cannot inject raw HTML, so the
-  note marks the seam without breaking the no-empty-host contract).
+  (`data-sem-theme` + `data-color-mode`, "render" pane tag) carrying the
+  example's own source in `data-sem-html` (attribute-escaped by
+  interpolation — payload-safe, the 83c34cd lesson stays about state only).
+  site-chrome.js hydrates it on load: with JS the pane holds the real
+  authored markup presented by the vocabulary/theme CSS exactly as the
+  static export does; without JS nothing injects and the honest note stays
+  as the fallback (the export SSRs the markup raw; Hologram templates
+  cannot inject raw HTML server-side, so the attribute + hydration is the
+  same end state one tick later).
 
   Zero-JS: without scripts the pills are hidden (html.no-js gating in
   site.css) and the split view renders as static content — source + note,
@@ -31,6 +35,13 @@ defmodule SemtextWeb.Hologram.Components.Site.ExampleViewer do
   prop :lines, :list, required: true
   prop :renderable, :boolean, default: true
   prop :note, :string, default: ""
+  # The example's own source as a compile-time literal (module attr on the
+  # page). MUST be a template literal prop, not state/derivation: strings
+  # derived from the tokenized lines (state-seeded or template-computed)
+  # serialize to codepoint lists in the component IR and interpolate as
+  # digit soup in attribute position ("Auth" -> "65117116104"; probe-
+  # verified in live SSR). Literal props like label/filename render true.
+  prop :raw, :string, default: ""
 
   def init(_props, component, _server) do
     put_state(component, :view, "split")
@@ -103,6 +114,7 @@ defmodule SemtextWeb.Hologram.Components.Site.ExampleViewer do
             <div
               data-sem-theme="minimal-tech-light"
               data-color-mode="dark"
+              data-sem-html={@raw}
               class="min-h-24 px-4 py-4 sm:px-5"
             >
               <p class="m-0 text-sm italic leading-6 text-ink-faint" data-sem-render-note>
@@ -129,6 +141,7 @@ defmodule SemtextWeb.Hologram.Components.Site.ExampleViewer do
                   <div
                     data-sem-theme="minimal-tech-light"
                     data-color-mode="dark"
+                    data-sem-html={@raw}
                     class="min-h-24 px-4 py-4 sm:px-5"
                   >
                     <p class="m-0 text-sm italic leading-6 text-ink-faint" data-sem-render-note>

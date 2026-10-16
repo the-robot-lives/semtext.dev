@@ -37,7 +37,9 @@
   // page modules at build time — never user input.
   function hydrateSemPane(el) {
     var html = el.getAttribute("data-sem-html");
-    if (html != null) {
+    // Empty string stays a no-op: the pane's static fallback (e.g. the
+    // showcase viewer's render note) must never be wiped into an empty host.
+    if (html) {
       el.innerHTML = html;
       el.removeAttribute("data-sem-html");
     }

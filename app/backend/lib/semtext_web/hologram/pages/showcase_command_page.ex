@@ -16,6 +16,7 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseCommandPage do
   alias SemtextWeb.Hologram.Layouts.SiteLayout
 
   route "/showcase/command"
+
   layout SiteLayout,
     page_title: "Command — SemText showcase",
     description:
@@ -53,7 +54,9 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseCommandPage do
   def init(_params, component, _server) do
     put_state(component,
       groups: NavGroups.groups(),
-      lines: Highlighter.numbered_lines(@example)
+      lines: Highlighter.numbered_lines(@example),
+      # raw source for ExampleViewer data-sem-html (template @example = state key)
+      example: @example
     )
   end
 
@@ -80,7 +83,7 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseCommandPage do
           <code class="font-mono">current</code> step shows where a run
           stands.
         </p>
-        <ExampleViewer cid="example-viewer" id="command" label="command example" filename="command.md" caption="authored SemText" lines={@lines} renderable={true} />
+        <ExampleViewer cid="example-viewer" id="command" label="command example" filename="command.md" caption="authored SemText" lines={@lines} renderable={true} raw={@example} />
       </section>
 
       <section id="why" class="mt-14 scroll-mt-24">

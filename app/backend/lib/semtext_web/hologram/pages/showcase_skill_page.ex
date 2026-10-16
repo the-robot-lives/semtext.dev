@@ -15,6 +15,7 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseSkillPage do
   alias SemtextWeb.Hologram.Layouts.SiteLayout
 
   route "/showcase/skill"
+
   layout SiteLayout,
     page_title: "Skill — SemText showcase",
     description:
@@ -54,7 +55,9 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseSkillPage do
   def init(_params, component, _server) do
     put_state(component,
       groups: NavGroups.groups(),
-      lines: Highlighter.numbered_lines(@example)
+      lines: Highlighter.numbered_lines(@example),
+      # raw source for ExampleViewer data-sem-html (template @example = state key)
+      example: @example
     )
   end
 
@@ -80,7 +83,7 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseSkillPage do
           URL, arrow keys rove the tab bar, and with scripts off every view
           stacks under its name.
         </p>
-        <ExampleViewer cid="example-viewer" id="skill" label="skill example" filename="skill.md" caption="authored SemText" lines={@lines} renderable={true} />
+        <ExampleViewer cid="example-viewer" id="skill" label="skill example" filename="skill.md" caption="authored SemText" lines={@lines} renderable={true} raw={@example} />
       </section>
 
       <section id="why" class="mt-14 scroll-mt-24">

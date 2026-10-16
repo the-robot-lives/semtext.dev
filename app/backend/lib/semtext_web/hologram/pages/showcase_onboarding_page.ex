@@ -16,6 +16,7 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseOnboardingPage do
   alias SemtextWeb.Hologram.Layouts.SiteLayout
 
   route "/showcase/onboarding"
+
   layout SiteLayout,
     page_title: "Onboarding — SemText showcase",
     description:
@@ -54,7 +55,9 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseOnboardingPage do
   def init(_params, component, _server) do
     put_state(component,
       groups: NavGroups.groups(),
-      lines: Highlighter.numbered_lines(@example)
+      lines: Highlighter.numbered_lines(@example),
+      # raw source for ExampleViewer data-sem-html (template @example = state key)
+      example: @example
     )
   end
 
@@ -80,7 +83,7 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseOnboardingPage do
           <code class="font-mono">ob-main</code> joins the quiz options
           when the deck is switched to quiz view.
         </p>
-        <ExampleViewer cid="example-viewer" id="onboarding" label="onboarding example" filename="onboarding.md" caption="authored SemText" lines={@lines} renderable={true} />
+        <ExampleViewer cid="example-viewer" id="onboarding" label="onboarding example" filename="onboarding.md" caption="authored SemText" lines={@lines} renderable={true} raw={@example} />
       </section>
 
       <section id="why" class="mt-14 scroll-mt-24">
