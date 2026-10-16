@@ -1,0 +1,143 @@
+databaseChangeLog:
+  # Proposals indexes (design v1 §4 index set + dashboard/rate-limit/dedupe
+  # access patterns). All additive; rollbacks drop what was created.
+
+  - changeSet:
+      id: 030-index-users-github-login
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE UNIQUE INDEX uq_users_github_login ON users (github_login) WHERE github_login IS NOT NULL;
+      rollback:
+        - sql:
+            sql: DROP INDEX IF EXISTS uq_users_github_login;
+
+  - changeSet:
+      id: 030-index-proposals-list
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE INDEX idx_proposals_list ON proposals (status, updated_at DESC) WHERE hidden_at IS NULL;
+      rollback:
+        - sql:
+            sql: DROP INDEX IF EXISTS idx_proposals_list;
+
+  - changeSet:
+      id: 030-index-proposals-search
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE INDEX idx_proposals_search ON proposals USING gin (search);
+      rollback:
+        - sql:
+            sql: DROP INDEX IF EXISTS idx_proposals_search;
+
+  - changeSet:
+      id: 030-index-proposals-tag
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE INDEX idx_proposals_tag ON proposals (element_tag) WHERE hidden_at IS NULL;
+      rollback:
+        - sql:
+            sql: DROP INDEX IF EXISTS idx_proposals_tag;
+
+  - changeSet:
+      id: 030-index-proposals-forks
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE INDEX idx_proposals_forks ON proposals (forked_from_proposal_id);
+      rollback:
+        - sql:
+            sql: DROP INDEX IF EXISTS idx_proposals_forks;
+
+  - changeSet:
+      id: 030-index-proposals-submitter
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE INDEX idx_proposals_submitter ON proposals (submitter_id, updated_at DESC);
+      rollback:
+        - sql:
+            sql: DROP INDEX IF EXISTS idx_proposals_submitter;
+
+  - changeSet:
+      id: 030-index-proposals-idempotency
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE UNIQUE INDEX uq_proposals_idempotency_key ON proposals (idempotency_key) WHERE idempotency_key IS NOT NULL;
+      rollback:
+        - sql:
+            sql: DROP INDEX IF EXISTS uq_proposals_idempotency_key;
+
+  - changeSet:
+      id: 030-constraint-versions-proposal-version
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: ALTER TABLE proposal_versions ADD CONSTRAINT uq_proposal_versions_proposal_version UNIQUE (proposal_id, version);
+      rollback:
+        - sql:
+            sql: ALTER TABLE proposal_versions DROP CONSTRAINT IF EXISTS uq_proposal_versions_proposal_version;
+
+  - changeSet:
+      id: 030-index-versions-latest
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE INDEX idx_proposal_versions_latest ON proposal_versions (proposal_id, version DESC);
+      rollback:
+        - sql:
+            sql: DROP INDEX IF EXISTS idx_proposal_versions_latest;
+
+  - changeSet:
+      id: 030-constraint-discussion-links-repo-number
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: ALTER TABLE discussion_links ADD CONSTRAINT uq_discussion_links_repo_number UNIQUE (repo, discussion_number);
+      rollback:
+        - sql:
+            sql: ALTER TABLE discussion_links DROP CONSTRAINT IF EXISTS uq_discussion_links_repo_number;
+
+  - changeSet:
+      id: 030-index-moderation-events-proposal
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE INDEX idx_moderation_events_proposal ON moderation_events (proposal_id, inserted_at DESC);
+      rollback:
+        - sql:
+            sql: DROP INDEX IF EXISTS idx_moderation_events_proposal;
+
+  - changeSet:
+      id: 030-index-proposal-reports-open
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE INDEX idx_proposal_reports_open ON proposal_reports (proposal_id) WHERE status = 'open';
+      rollback:
+        - sql:
+            sql: DROP INDEX IF EXISTS idx_proposal_reports_open;
+
+  - changeSet:
+      id: 030-index-rate-limit-window
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE INDEX idx_rate_limit_events_window ON rate_limit_events (bucket, subject, inserted_at);
+      rollback:
+        - sql:
+            sql: DROP INDEX IF EXISTS idx_rate_limit_events_window;
+
+  - changeSet:
+      id: 030-constraint-webhook-deliveries-unique
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: ALTER TABLE github_webhook_deliveries ADD CONSTRAINT uq_github_webhook_deliveries_delivery_id UNIQUE (delivery_id);
+      rollback:
+        - sql:
+            sql: ALTER TABLE github_webhook_deliveries DROP CONSTRAINT IF EXISTS uq_github_webhook_deliveries_delivery_id;
