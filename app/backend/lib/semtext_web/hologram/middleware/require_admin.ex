@@ -4,13 +4,12 @@ defmodule SemtextWeb.Hologram.Middleware.RequireAdmin do
 
   alias Semtext.Hologram.Auth
   alias SemtextWeb.Hologram.Pages.AppHomePage
-  alias SemtextWeb.Hologram.Pages.LoginPage
 
   # <REMOVED UUID HERE> call :: auto-generated pointer for public function call
   def call(server, _opts) do
     case Auth.current_user(server) do
       nil ->
-        Hologram.Server.put_redirect(server, LoginPage)
+        Hologram.Server.put_redirect(server, "/auth/github")
 
       user ->
         if admin?(user) do

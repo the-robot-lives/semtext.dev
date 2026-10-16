@@ -40,23 +40,38 @@ defmodule Semtext.Auth.SSODomains do
     end)
   end
 
+  # GitHub-only (design v2 §4): `:sso_open` short-circuits the per-domain
+  # policy machinery — any email may sign in with GitHub and signups are
+  # auto-approved. Shipped config sets it true; test.exs pins it false so the
+  # domain-policy gate tests below keep exercising the machinery.
+  # <REMOVED UUID HERE> open? :: auto-generated pointer for public function open?
+  def open?, do: Application.get_env(:semtext, :sso_open, false)
+
   # <REMOVED UUID HERE> sso_available? :: auto-generated pointer for public function sso_available?
   def sso_available?(email_or_domain, provider) do
-    provider = provider_name(provider)
+    if open?() do
+      true
+    else
+      provider = provider_name(provider)
 
-    case policy_for(email_or_domain) do
-      %{providers: providers} -> provider in providers
-      nil -> false
+      case policy_for(email_or_domain) do
+        %{providers: providers} -> provider in providers
+        nil -> false
+      end
     end
   end
 
   # <REMOVED UUID HERE> auto_approve? :: auto-generated pointer for public function auto_approve?
   def auto_approve?(email_or_domain, provider) do
-    provider = provider_name(provider)
+    if open?() do
+      true
+    else
+      provider = provider_name(provider)
 
-    case policy_for(email_or_domain) do
-      %{providers: providers, auto_approve: true} -> provider in providers
-      _ -> false
+      case policy_for(email_or_domain) do
+        %{providers: providers, auto_approve: true} -> provider in providers
+        _ -> false
+      end
     end
   end
 

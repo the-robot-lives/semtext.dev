@@ -18,6 +18,14 @@ defmodule Semtext.Schema.Users.User do
       default: :active
 
     field :mobile_phone, :string
+    # GitHub identity (design v2 §4): login is the only login path; the
+    # partial unique index `uq_users_github_login` backs the upsert.
+    field :github_login, :string
+    # Proposals trust tier (v1 §4 as amended by v2 §5); 0 = default.
+    field :trust_tier, :integer, default: 0
+    # Site role for require_role/1 ('user' | 'moderator'); granted via
+    # `mix semtext.grant_moderator <github_login>`.
+    field :role, :string, default: "user"
     field :profile_completed_at, :utc_datetime_usec
     field :approved_at, :utc_datetime_usec
     field :verified, :boolean, default: false
@@ -45,7 +53,10 @@ defmodule Semtext.Schema.Users.User do
       :approved_at,
       :verified,
       :flagged,
-      :admin
+      :admin,
+      :github_login,
+      :trust_tier,
+      :role
     ])
     |> validate_required([:email])
     |> unique_constraint(:email)

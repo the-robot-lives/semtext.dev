@@ -216,55 +216,10 @@ if config_env() == :prod do
       ]
   end
 
-  # ── SSO: OIDC ──────────────────────────────────────────────────
-  if oidc_client_id = System.get_env("OIDC_CLIENT_ID") do
-    config :openid_connect, :providers,
-      default: [
-        discovery_document_uri:
-          System.get_env("OIDC_ISSUER") <> "/.well-known/openid-configuration",
-        client_id: oidc_client_id,
-        client_secret: System.get_env("OIDC_CLIENT_SECRET"),
-        redirect_uri: System.get_env("OIDC_REDIRECT_URI") || "https://#{host}/auth/oidc/callback",
-        response_type: "code",
-        scope: "openid email profile"
-      ]
-
-    config :semtext, :oidc_enabled, true
-  end
-
-  # ── SSO: SAML ──────────────────────────────────────────────────
-  saml_metadata =
-    cond do
-      value = System.get_env("SAML_IDP_METADATA") -> [metadata: value]
-      value = System.get_env("SAML_IDP_METADATA_FILE") -> [metadata_file: value]
-      true -> []
-    end
-
-  if saml_metadata != [] do
-    sp_cert = System.get_env("SAML_SP_CERT", "") |> String.replace("\\n", "\n")
-    sp_key = System.get_env("SAML_SP_KEY", "") |> String.replace("\\n", "\n")
-
-    config :samly, Samly.Provider,
-      service_providers: [
-        %{
-          id: "default",
-          entity_id: System.get_env("SAML_SP_ENTITY_ID") || "https://#{host}",
-          certfile_data: sp_cert,
-          keyfile_data: sp_key
-        }
-      ],
-      identity_providers: [
-        %{
-          id: "default",
-          sp_id: "default",
-          base_url: "https://#{host}/sso/saml",
-          pre_session_create_pipeline: SemtextWeb.SAMLHandler
-        }
-        |> Map.merge(Map.new(saml_metadata))
-      ]
-
-    config :semtext, :saml_enabled, true
-  end
+  # ── SSO: OIDC + SAML removed (design v2 §4 github-only) ─────────
+  # The OIDC/SAML env-gated config blocks, the Samly config, the /sso/saml
+  # route forward and SemtextWeb.SAMLHandler were all deleted with their
+  # routes. A stray OIDC_*/SAML_* env var can no longer re-enable them.
 
   # ── SSO: Social OAuth (each enabled when *_CLIENT_ID is set) ──
   # Retired: no longer an access control (see config.exs). Parsed for zero env
@@ -279,35 +234,10 @@ if config_env() == :prod do
          :sso_domain_policies,
          build_sso_domain_policies.(sso_domains, sso_auto_approve_domains)
 
+  # Google/Facebook OAuth removed (design v2 §4 github-only) — the env-gated
+  # ueberauth registrations were deleted with their routes.
+
   oauth_providers = []
-
-  oauth_providers =
-    if google_id = System.get_env("GOOGLE_CLIENT_ID") do
-      config :ueberauth, Ueberauth.Strategy.Google.OAuth,
-        client_id: google_id,
-        client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
-
-      config :semtext, :google_enabled, true
-      [{:google, {Ueberauth.Strategy.Google, [default_scope: "email profile"]}} | oauth_providers]
-    else
-      oauth_providers
-    end
-
-  oauth_providers =
-    if fb_id = System.get_env("FACEBOOK_CLIENT_ID") do
-      config :ueberauth, Ueberauth.Strategy.Facebook.OAuth,
-        client_id: fb_id,
-        client_secret: System.get_env("FACEBOOK_CLIENT_SECRET")
-
-      config :semtext, :facebook_enabled, true
-
-      [
-        {:facebook, {Ueberauth.Strategy.Facebook, [default_scope: "email,public_profile"]}}
-        | oauth_providers
-      ]
-    else
-      oauth_providers
-    end
 
   oauth_providers =
     if gh_id = System.get_env("GITHUB_CLIENT_ID") do
@@ -357,11 +287,51 @@ if config_env() == :prod do
   config :semtext, :oidc_enabled, false
   config :semtext, :saml_enabled, false
 
+  # GitHub-only domain policy (design v2 §4): open — any email may sign in
+  # with GitHub and signups auto-approve. SSO_DOMAINS/SAML-style per-domain
+  # gating is gone from the shipped surface; SSO_OPEN=false re-enables the
+  # (config-carried) policy machinery if it is ever needed again. test.exs
+  # pins sso_open: false for the gate tests — not overridden here.
+  if config_env() != :test do
+    config :semtext, :sso_open, System.get_env("SSO_OPEN", "true") == "true"
+  end
+
   # Fleet dashboard (fleet.noizu.com) daily metrics push. Unset/blank
   # FLEET_INGEST_KEY ⇒ the worker logs once and no-ops; nothing is pushed.
   config :semtext, Semtext.FleetPush,
     url: System.get_env("FLEET_INGEST_URL", "https://fleet.noizu.com/api/v1/ingest/metrics"),
     key: System.get_env("FLEET_INGEST_KEY")
+
+  # GitHub App sync (design v1 §6): proposal Discussion creation + webhook
+  # ingestion. Distinct secret set from the OAuth login app above — never
+  # merged (design v2 §4). dc → Infisical → chart env:
+  #   services.semtext.github_app_id             → SEMTEXT_GITHUB_APP_ID
+  #   services.semtext.github_app_private_key    → SEMTEXT_GITHUB_APP_PRIVATE_KEY (PEM, \n-escaped OK)
+  #   services.semtext.github_webhook_secret     → SEMTEXT_GITHUB_WEBHOOK_SECRET
+  #   services.semtext.github_installation_id    → SEMTEXT_GITHUB_INSTALLATION_ID
+  #   services.semtext.github_repository_id      → SEMTEXT_GITHUB_REPOSITORY_ID (GraphQL node id)
+  #   services.semtext.github_discussion_category_id → SEMTEXT_GITHUB_DISCUSSION_CATEGORY_ID
+  # Unset keys stay nil ⇒ Semtext.Github.enabled?/0 is false, sync jobs cancel
+  # cleanly, and the webhook endpoint 503s — never a half-configured sync.
+  github_env = fn name ->
+    case System.get_env(name) do
+      nil -> nil
+      value -> if String.trim(value) == "", do: nil, else: String.trim(value)
+    end
+  end
+
+  gh_cfg = Application.get_env(:semtext, Semtext.Github, [])
+
+  config :semtext, Semtext.Github,
+    app_id: github_env.("SEMTEXT_GITHUB_APP_ID"),
+    app_private_key: github_env.("SEMTEXT_GITHUB_APP_PRIVATE_KEY"),
+    webhook_secret: github_env.("SEMTEXT_GITHUB_WEBHOOK_SECRET"),
+    installation_id: github_env.("SEMTEXT_GITHUB_INSTALLATION_ID"),
+    repository_id: github_env.("SEMTEXT_GITHUB_REPOSITORY_ID"),
+    repository_owner: github_env.("SEMTEXT_GITHUB_REPOSITORY_OWNER") || gh_cfg[:repository_owner],
+    repository_name: github_env.("SEMTEXT_GITHUB_REPOSITORY_NAME") || gh_cfg[:repository_name],
+    discussion_category_id: github_env.("SEMTEXT_GITHUB_DISCUSSION_CATEGORY_ID"),
+    proposals_base_url: github_env.("SEMTEXT_PROPOSALS_BASE_URL") || gh_cfg[:proposals_base_url]
 
   config :semtext, SemtextWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],

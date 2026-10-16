@@ -66,6 +66,16 @@ config :semtext, :sso_require_invite, false
 config :semtext, :sso_domains, %{}
 config :semtext, :sso_auto_approve_domains, []
 config :semtext, :sso_domain_policies, %{}
+# GitHub-only (design v2 §4): open domain policy — any email may sign in with
+# GitHub and signups auto-approve (Semtext.Auth.SSODomains.open?/0). test.exs
+# pins it false so the domain-policy gate tests keep exercising the machinery.
+config :semtext, :sso_open, true
+# Cookie-session lifetime (P1 has no refresh tokens; the session cookie is the
+# whole auth state).
+config :semtext, :session_ttl, {7, :day}
+# Dev/test-only login stub route (POST /auth/test/login). Compiled into the
+# router ONLY when true — prod never sets it (see SemtextWeb.TestAuthController).
+config :semtext, :test_auth_login_route, false
 
 config :junit_formatter,
   report_file: "results.xml"
@@ -77,7 +87,7 @@ config :hammer,
 # Background jobs
 config :semtext, Oban,
   repo: Semtext.Repo,
-  queues: [mailer: 10, default: 10, cleanup: 5, fleet_push: 1],
+  queues: [mailer: 10, default: 10, cleanup: 5, fleet_push: 1, github_sync: 5],
   plugins: [
     {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 7},
     {Oban.Plugins.Cron,
@@ -88,6 +98,32 @@ config :semtext, Oban,
        {"5 9 * * *", Semtext.FleetPush}
      ]}
   ]
+
+# GitHub App sync (design v1 §6, v2 §4) — proposal Discussion creation +
+# webhook ingestion on noizu-labs-ml/npl-enhanced-content. This is the
+# DISCUSSIONS GitHub App, a different GitHub object from the OAuth LOGIN app
+# (whose GITHUB_CLIENT_ID/SECRET env wiring lives with the ueberauth config).
+# Credential values arrive from env via config/runtime.exs (Infisical keys
+# SEMTEXT_GITHUB_APP_* / SEMTEXT_GITHUB_WEBHOOK_SECRET / SEMTEXT_GITHUB_*_ID);
+# unset here means "not configured" — sync workers cancel cleanly and the
+# webhook endpoint 503s until the secrets are provisioned. `repository_owner`
+# / `repository_name` are design-fixed; override via env only if the install
+# moves. `proposals_port` is the seam to the proposals data context
+# (Semtext.Github.Port behaviour); `Semtext.Github.Adapters.Memory` is the
+# P1-interim/dev adapter.
+config :semtext, Semtext.Github,
+  app_id: nil,
+  app_private_key: nil,
+  webhook_secret: nil,
+  installation_id: nil,
+  repository_id: nil,
+  repository_owner: "noizu-labs-ml",
+  repository_name: "npl-enhanced-content",
+  discussion_category_id: nil,
+  api_base: "https://api.github.com",
+  proposals_base_url: "https://proposals.semtext.dev",
+  http_client: Semtext.Github.ReqClient,
+  proposals_port: Semtext.Github.Adapters.ProposalsContext
 
 # Fleet metrics push — see Semtext.FleetPush. runtime.exs overlays url/key
 # from FLEET_INGEST_URL / FLEET_INGEST_KEY. A fresh scaffold ships the

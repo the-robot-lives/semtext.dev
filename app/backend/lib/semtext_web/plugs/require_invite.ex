@@ -10,14 +10,14 @@ defmodule SemtextWeb.Plugs.RequireInvite do
   everywhere except the exempt surface that lets them understand their state,
   manage their profile and redeem an invite:
 
-    * identity — `GET /auth/me`, `POST /auth/verify-email` (resend),
+    * identity — `GET /auth/me`,
     * profile — `GET|PATCH /users/me`, `POST /users/me/complete-registration`,
     * `POST /invites/redeem`.
 
-  Login, refresh, register, logout and `invites/lookup` sit outside the
-  authenticated pipeline already. Conns with no user at all pass (anonymous
-  traffic was already 401'd upstream); a Guardian resource of an unknown
-  shape is refused (fail closed).
+  Login, logout and `invites/lookup` sit outside the authenticated pipeline
+  already. Conns with no user at all pass (anonymous traffic was already
+  401'd upstream); a Guardian resource of an unknown shape is refused
+  (fail closed).
   """
 
   @behaviour Plug
@@ -28,7 +28,6 @@ defmodule SemtextWeb.Plugs.RequireInvite do
 
   @exempt [
     {"GET", "/api/v1/auth/me"},
-    {"POST", "/api/v1/auth/verify-email"},
     {"GET", "/api/v1/users/me"},
     {"PATCH", "/api/v1/users/me"},
     {"POST", "/api/v1/users/me/complete-registration"},

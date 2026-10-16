@@ -7,6 +7,7 @@ defmodule SemtextWeb.Hologram.Components.Site.Header do
 
   use Hologram.Component
 
+  alias SemtextWeb.Hologram.Components.Auth.UserMenu
   alias SemtextWeb.Hologram.Components.Site.{HeaderMenu, HeaderSearch}
 
   def template do
@@ -23,6 +24,7 @@ defmodule SemtextWeb.Hologram.Components.Site.Header do
           <a href="/spec/semtext.html" class="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex">Spec</a>
           <a href="/#start" class="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex">Get started</a>
           <HeaderSearch cid="header_search" />
+          <UserMenu cid="site_user_menu" />
           <a href="https://therobotlives.com" class="hidden min-h-11 items-center font-medium text-violet-soft underline-offset-4 hover:underline sm:inline-flex">The Robot Lives</a>
           <HeaderMenu cid="header_menu" />
         </nav>

@@ -1,248 +1,264 @@
 defmodule SemtextWeb.AuthControllerTest do
-  use SemtextWeb.ConnCase
-  import Ecto.Query
+  @moduledoc """
+  GitHub-only auth surface (design v2 §4):
 
-  alias Semtext.Schema.Organizations.InviteToken
-  alias Semtext.Schema.Organizations.InviteTokenRedemption
-  alias Semtext.Schema.Users.User
+  - every legacy auth route (email/password, magic-link, OTP, password
+    reset, email verification, refresh, register, SAML, OIDC, other OAuth
+    providers) and every legacy Hologram auth page 404s;
+  - `GET /auth/session` (RequireUser) answers the session cookie OR Bearer;
+  - `POST /auth/logout` clears the session;
+  - `GET /api/v1/auth/me` keeps its Bearer contract;
+  - the GitHub callback writes a Guardian access token + GitHub claims into
+    the session cookie (tested at the controller action with a fake
+    `%Ueberauth.Auth{}` — no live GitHub call).
+  """
 
-  describe "POST /api/v1/auth/login" do
-    test "returns tokens on valid credentials", %{conn: conn} do
-      %{user: user, password: password} = setup_user_and_token()
+  use SemtextWeb.ConnCase, async: false
 
-      conn = post(conn, "/api/v1/auth/login", %{email: user.email, password: password})
-      response = json_response(conn, 200)
+  alias Semtext.Auth.CurrentUser
+  alias SemtextWeb.SSOController
 
-      assert response["access_token"]
-      assert response["refresh_token"]
-      assert response["user"]["email"] == user.email
-    end
+  @legacy_api_routes [
+    {:post, "/api/v1/auth/register"},
+    {:post, "/api/v1/auth/login"},
+    {:post, "/api/v1/auth/refresh"},
+    {:post, "/api/v1/auth/sso/exchange"},
+    {:post, "/api/v1/auth/magic-link"},
+    {:post, "/api/v1/auth/magic-link/verify"},
+    {:post, "/api/v1/auth/otp-login"},
+    {:post, "/api/v1/auth/otp-login/verify"},
+    {:post, "/api/v1/auth/password-reset"},
+    {:post, "/api/v1/auth/password-reset/verify"},
+    {:post, "/api/v1/auth/verify-email/confirm"},
+    {:post, "/api/v1/auth/verify-email"},
+    {:get, "/auth/oidc"},
+    {:get, "/auth/oidc/callback"},
+    {:get, "/auth/google"},
+    {:get, "/auth/google/callback"},
+    {:get, "/auth/facebook"},
+    {:get, "/auth/linkedin"}
+  ]
 
-    test "returns 401 on invalid credentials", %{conn: conn} do
-      conn =
-        post(conn, "/api/v1/auth/login", %{email: "nobody@example.com", password: "wrongpassword"})
+  @legacy_pages [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/auth/verify-email",
+    "/auth/verify",
+    "/auth/sso-callback"
+  ]
 
-      assert json_response(conn, 401)["error"]
-    end
-  end
+  describe "removed auth routes 404" do
+    test "API + provider routes are gone at the router AND function level", %{conn: conn} do
+      for {verb, path} <- @legacy_api_routes do
+        resp =
+          case verb do
+            :get -> get(conn, path)
+            :post -> post(conn, path)
+          end
 
-  describe "POST /api/v1/auth/register" do
-    test "creates complete password registrations as pending without invite", %{conn: conn} do
-      email = unique_email()
-
-      conn = post(conn, "/api/v1/auth/register", %{user: registration_params(email)})
-      response = json_response(conn, 201)
-
-      assert response["access_token"]
-      assert response["refresh_token"]
-      assert response["user"]["email"] == email
-      assert response["user"]["status"] == "pending"
-      assert response["user"]["profile_complete"] == true
-
-      user = Semtext.Repo.get_by!(User, email: email)
-      assert user.status == :pending
-      assert user.approved_at == nil
-      assert user.profile_completed_at
-    end
-
-    test "valid invite activates the user and records redemption", %{conn: conn} do
-      email = unique_email()
-      {:ok, invite, raw_token} = create_invite(email, max_uses: 1)
-
-      conn =
-        post(conn, "/api/v1/auth/register", %{
-          user: registration_params(email),
-          invite_token: raw_token
-        })
-
-      response = json_response(conn, 201)
-      assert response["user"]["status"] == "active"
-
-      user = Semtext.Repo.get_by!(User, email: email)
-      invite = Semtext.Repo.get!(InviteToken, invite.id)
-
-      assert user.status == :active
-      assert user.invite_token_id == invite.id
-      assert user.approved_at
-      assert invite.uses == 1
-      assert invite.redemption_count == 1
-      assert invite.accepted_by == user.id
-
-      redemption_count =
-        Semtext.Repo.aggregate(
-          from(r in InviteTokenRedemption, where: r.invite_token_id == ^invite.id),
-          :count
-        )
-
-      assert redemption_count == 1
-    end
-
-    test "invalid invite is rejected", %{conn: conn} do
-      conn =
-        post(conn, "/api/v1/auth/register", %{
-          user: registration_params(unique_email()),
-          invite_token: "not-a-valid-token"
-        })
-
-      assert json_response(conn, 401)["error"] =~ "Invalid"
-    end
-
-    test "registers at the invite's role, not a hardcoded viewer", %{conn: conn} do
-      email = unique_email()
-
-      org =
-        Semtext.Repo.insert!(%Semtext.Schema.Organizations.Organization{
-          slug: "role-org-#{System.unique_integer([:positive])}",
-          name: "Role Org"
-        })
-
-      {:ok, _invite, raw_token} = create_invite(email, role: "member", organization_id: org.id)
-
-      conn =
-        post(conn, "/api/v1/auth/register", %{
-          user: registration_params(email),
-          invite_token: raw_token
-        })
-
-      assert json_response(conn, 201)
-
-      user = Semtext.Repo.get_by!(User, email: email)
-      assert {:ok, %{role: "member"}} = Semtext.Authz.authorize(user.id, "organization", org.id, "member")
-    end
-
-    test "single-use invite cannot be redeemed twice", %{conn: conn} do
-      email = unique_email()
-      {:ok, invite, raw_token} = create_invite(email, max_uses: 1)
-
-      conn1 =
-        post(conn, "/api/v1/auth/register", %{
-          user: registration_params(email),
-          invite_token: raw_token
-        })
-
-      assert json_response(conn1, 201)
-      assert Semtext.Repo.get!(InviteToken, invite.id).uses == 1
-
-      # A second registration attempt with the spent token is rejected. The
-      # lookup pre-filters exhausted invites, so this surfaces as the same
-      # invalid-token response as any dead link (uniform oracle); the
-      # invite_exhausted 409 branch only fires inside the redeem race window.
-      email2 = unique_email()
-
-      conn2 =
-        post(conn, "/api/v1/auth/register", %{
-          user: registration_params(email2),
-          invite_token: raw_token
-        })
-
-      assert json_response(conn2, 401)["error"] =~ "Invalid"
-      assert Semtext.Repo.get_by(User, email: email2) == nil
-    end
-
-    test "register open, app gated: no invite → 201 :pending session held by the gate, for both flag values",
-         %{conn: conn} do
-      gate = Application.get_env(:semtext, :sso_require_invite)
-      on_exit(fn -> Application.put_env(:semtext, :sso_require_invite, gate) end)
-
-      for flag <- [true, false] do
-        Application.put_env(:semtext, :sso_require_invite, flag)
-        email = unique_email()
-
-        resp = post(conn, "/api/v1/auth/register", %{user: registration_params(email)})
-        body = json_response(resp, 201)
-
-        assert body["user"]["status"] == "pending"
-        assert body["user"]["invite_required"] == true
-        assert body["access_token"]
-        assert Semtext.Repo.get_by!(User, email: email).status == :pending
-
-        gated =
-          conn
-          |> authenticated_conn(body["access_token"])
-          |> get("/api/v1/organizations")
-
-        assert %{"error" => "invite_required", "account_status" => "pending"} =
-                 json_response(gated, 403)
+        assert resp.status == 404, "#{verb} #{path} must 404 (got #{resp.status})"
       end
     end
-  end
 
-  describe "POST /api/v1/auth/refresh" do
-    test "rotates tokens on valid refresh", %{conn: conn} do
-      %{refresh_token: refresh_token} = setup_user_and_token()
-
-      conn = post(conn, "/api/v1/auth/refresh", %{refresh_token: refresh_token})
-      response = json_response(conn, 200)
-
-      assert response["access_token"]
-      assert response["refresh_token"]
+    test "legacy Hologram auth pages are gone", %{conn: conn} do
+      for path <- @legacy_pages do
+        resp = get(conn, path)
+        assert resp.status == 404, "#{path} must 404 (got #{resp.status})"
+      end
     end
 
-    test "rejects reused refresh token", %{conn: conn} do
-      %{refresh_token: refresh_token} = setup_user_and_token()
+    test "SAML is gone (router forward removed, handler module deleted)" do
+      refute Code.ensure_loaded?(SemtextWeb.SamlHandler)
+      paths = SemtextWeb.Router |> Phoenix.Router.routes() |> Enum.map(& &1.path)
+      refute Enum.any?(paths, &String.starts_with?(&1, "/sso/saml"))
+    end
 
-      # First refresh succeeds
-      conn1 = post(conn, "/api/v1/auth/refresh", %{refresh_token: refresh_token})
-      assert json_response(conn1, 200)["access_token"]
-
-      # Second refresh with same token fails (JTI was revoked)
-      conn2 = post(conn, "/api/v1/auth/refresh", %{refresh_token: refresh_token})
-      assert json_response(conn2, 401)["error"]
+    test "SSOCode and TokenStore modules are deleted (no Redis in the auth path)" do
+      refute Code.ensure_loaded?(Semtext.Auth.SSOCode)
+      refute Code.ensure_loaded?(Semtext.Auth.TokenStore)
     end
   end
 
-  describe "GET /api/v1/auth/me" do
+  describe "GET /auth/session (RequireUser)" do
+    test "401 problem+json when anonymous", %{conn: conn} do
+      resp =
+        conn
+        |> put_req_header("accept", "application/json")
+        |> get("/auth/session")
+
+      assert resp.status == 401
+      assert get_resp_header(resp, "content-type") |> hd() |> String.starts_with?("application/problem+json")
+
+      assert %{"status" => 401, "title" => "Unauthorized", "type" => "about:blank"} =
+               json_response(resp, 401)
+    end
+
+    test "302 to the GitHub login when a page request is anonymous", %{conn: conn} do
+      resp =
+        conn
+        |> put_req_header("accept", "text/html")
+        |> get("/auth/session")
+
+      assert resp.status == 302
+      assert get_resp_header(resp, "location") == ["/auth/github"]
+    end
+
+    test "200 with the session-cookie transport", %{conn: conn} do
+      %{user: user} = setup_user_and_token()
+      conn = login_as(conn, user, %{"github_login" => "octocat", "avatar_url" => "https://example.com/a.png"})
+
+      resp =
+        conn
+        |> put_req_header("accept", "application/json")
+        |> get("/auth/session")
+
+      assert %{"user" => u} = json_response(resp, 200)
+      assert u["id"] == user.id
+      assert u["github_login"] == "octocat"
+      assert u["avatar_url"] == "https://example.com/a.png"
+      assert u["trust_tier"] == 0
+      assert u["role"] == "user"
+    end
+
+    test "200 with the Bearer transport too", %{conn: conn} do
+      %{user: user, access_token: token} = setup_user_and_token()
+
+      resp =
+        conn
+        |> authenticated_conn(token)
+        |> put_req_header("accept", "application/json")
+        |> get("/auth/session")
+
+      assert %{"user" => u} = json_response(resp, 200)
+      assert u["id"] == user.id
+    end
+  end
+
+  describe "POST /auth/logout" do
+    test "clears the session", %{conn: conn} do
+      %{user: user} = setup_user_and_token()
+      conn = login_as(conn, user)
+
+      resp = post(conn, "/auth/logout")
+      assert json_response(resp, 200) == %{"ok" => true}
+      assert get_session(resp, :access_token) == nil
+    end
+  end
+
+  describe "GET /api/v1/auth/me (Bearer contract kept)" do
     test "returns current user when authenticated", %{conn: conn} do
-      %{access_token: token, user: user} = setup_user_and_token()
+      %{user: user, access_token: token} = setup_user_and_token()
 
-      conn = conn |> authenticated_conn(token) |> get("/api/v1/auth/me")
-      response = json_response(conn, 200)
+      body =
+        conn
+        |> authenticated_conn(token)
+        |> get("/api/v1/auth/me")
+        |> json_response(200)
 
-      assert response["user"]["email"] == user.email
+      assert body["user"]["id"] == user.id
     end
 
     test "returns 401 without token", %{conn: conn} do
-      conn = get(conn, "/api/v1/auth/me")
-      assert conn.status == 401
+      assert conn |> get("/api/v1/auth/me") |> json_response(401)
     end
   end
 
-  describe "POST /api/v1/auth/verify-email" do
-    test "sends verification email when authenticated", %{conn: conn} do
-      %{access_token: token} = setup_user_and_token()
+  describe "GitHub callback" do
+    # test.exs pins sso_open: false (scaffold gate tests); production ships
+    # true (config.exs). These callback tests assert the production behavior —
+    # flip it on and restore afterwards.
+    setup do
+      Application.put_env(:semtext, :sso_open, true)
+      on_exit(fn -> Application.put_env(:semtext, :sso_open, false) end)
+      :ok
+    end
 
-      conn = conn |> authenticated_conn(token) |> post("/api/v1/auth/verify-email")
-      response = json_response(conn, 200)
+    test "upserts the user and writes token + claims into the session", %{conn: conn} do
+      conn =
+        conn
+        |> session_conn()
+        |> assign(:ueberauth_auth, github_auth("octocat"))
 
-      assert response["message"] =~ "Verification"
+      conn = SSOController.oauth_callback(conn, %{"provider" => "github"})
+
+      assert conn.status == 302
+      assert conn.resp_headers |> get_header("location") == "/app"
+
+      token = get_session(conn, :access_token)
+      assert is_binary(token) and token != ""
+
+      {:ok, claims} = Semtext.Guardian.decode_and_verify(token, %{"typ" => "access"})
+      assert claims["github_login"] == "octocat"
+      assert claims["avatar_url"] == "https://avatars.githubusercontent.com/u/1"
+
+      assert {:ok, user} = CurrentUser.resolve(conn)
+      assert user.github_login == "octocat"
+      assert user.trust_tier == 0
+      assert user.role == "user"
+    end
+
+    test "a second login with the same GitHub login reuses the row", %{conn: conn} do
+      conn
+      |> session_conn()
+      |> assign(:ueberauth_auth, github_auth("octocat"))
+      |> SSOController.oauth_callback(%{"provider" => "github"})
+
+      build_conn()
+      |> session_conn()
+      |> assign(:ueberauth_auth, github_auth("octocat"))
+      |> SSOController.oauth_callback(%{"provider" => "github"})
+
+      import Ecto.Query, only: [from: 2]
+
+      rows =
+        Semtext.Repo.all(from u in Semtext.Schema.Users.User, where: u.github_login == "octocat")
+
+      assert length(rows) == 1
+    end
+
+    test "ueberauth failure redirects with an error code", %{conn: conn} do
+      conn =
+        conn
+        |> session_conn()
+        |> assign(:ueberauth_failure, %Ueberauth.Failure{})
+        |> SSOController.oauth_callback(%{"provider" => "github"})
+
+      assert conn.status == 302
+      assert conn.resp_headers |> get_header("location") =~ "auth_error=github_failed"
     end
   end
 
-  defp registration_params(email) do
-    uniq = System.unique_integer([:positive])
+  # A conn with the endpoint's real session configured, so put_session works:
+  # Plug.Session.call registers the cookie-store config (a fixed test
+  # secret_key_base satisfies the cookie store), then fetch_session loads the
+  # (empty) session into the conn.
+  defp session_conn(conn) do
+    conn
+    |> Map.put(:secret_key_base, String.duplicate("t", 64))
+    |> Plug.Session.call(SemtextWeb.Plugs.Session.init(nil))
+    |> fetch_session()
+  end
 
-    %{
-      email: email,
-      password: "password123",
-      user_name: "user#{uniq}",
-      first_name: "Ada",
-      last_name: "Lovelace",
-      mobile_phone: "+15555550123"
+  defp github_auth(login) do
+    %Ueberauth.Auth{
+      provider: :github,
+      uid: 1,
+      info: %Ueberauth.Auth.Info{
+        email: "octocat@example.com",
+        first_name: "Octo",
+        last_name: "Cat",
+        nickname: login,
+        image: "https://avatars.githubusercontent.com/u/1",
+        name: "Octo Cat"
+      }
     }
   end
 
-  defp unique_email do
-    "test-#{System.unique_integer([:positive])}@example.com"
-  end
-
-  defp create_invite(email, attrs) do
-    defaults = %{
-      email: email,
-      starts_at: DateTime.add(DateTime.utc_now(), -60, :second),
-      expires_at: DateTime.add(DateTime.utc_now(), 3600, :second),
-      max_uses: 1
-    }
-
-    Semtext.Organizations.create_invite_token(Map.merge(defaults, Map.new(attrs)))
+  defp get_header(headers, name) do
+    case List.keyfind(headers, name, 0) do
+      {_, value} -> value
+      nil -> nil
+    end
   end
 end

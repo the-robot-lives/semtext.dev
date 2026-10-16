@@ -25,15 +25,15 @@ defmodule Semtext.Auth.SSOTest do
   end
 
   test "auto-provisioned SSO users are pending until profile completion" do
-    ensure_provider!("Google", "Google OAuth")
-    set_sso_policy("example.com", ["google"], auto_approve: false)
+    ensure_provider!("GitHub", "GitHub OAuth")
+    set_sso_policy("example.com", ["github"], auto_approve: false)
     email = "sso-#{System.unique_integer([:positive])}@example.com"
 
     assert {:ok, session} =
-             Semtext.Auth.SSO.authenticate_sso(:google, %{
+             Semtext.Auth.SSO.authenticate_sso(:github, %{
                email: email,
                name: %{first: "Ada", last: "Lovelace"},
-               sub: "google-#{System.unique_integer([:positive])}"
+               sub: "github-#{System.unique_integer([:positive])}"
              })
 
     assert {:ref, Semtext.Users.User, user_id} = session.user
@@ -47,15 +47,15 @@ defmodule Semtext.Auth.SSOTest do
   end
 
   test "auto-approved SSO domain creates active incomplete users" do
-    ensure_provider!("Google", "Google OAuth")
-    set_sso_policy("example.com", ["google"], auto_approve: true)
+    ensure_provider!("GitHub", "GitHub OAuth")
+    set_sso_policy("example.com", ["github"], auto_approve: true)
     email = "sso-approved-#{System.unique_integer([:positive])}@example.com"
 
     assert {:ok, session} =
-             Semtext.Auth.SSO.authenticate_sso("google", %{
+             Semtext.Auth.SSO.authenticate_sso("github", %{
                email: email,
                name: %{first: "Ada", last: "Lovelace"},
-               sub: "google-approved-#{System.unique_integer([:positive])}"
+               sub: "github-approved-#{System.unique_integer([:positive])}"
              })
 
     assert {:ref, Semtext.Users.User, user_id} = session.user
@@ -66,33 +66,35 @@ defmodule Semtext.Auth.SSOTest do
     assert user.profile_completed_at == nil
   end
 
-  test "SSO is rejected when the email domain is not available for the provider" do
-    ensure_provider!("Google", "Google OAuth")
-    set_sso_policy("example.com", ["oidc"], auto_approve: true)
+  test "SSO is rejected when the email domain has no policy (github-only, sso_open pinned off)" do
+    ensure_provider!("GitHub", "GitHub OAuth")
+    # example.com allows GitHub, but this identity is on a domain with NO
+    # policy — with :sso_open false (test pin) the gate rejects it.
+    set_sso_policy("example.com", ["github"], auto_approve: true)
 
     assert {:error, :sso_not_allowed} =
-             Semtext.Auth.SSO.authenticate_sso(:google, %{
-               email: "sso-disabled-#{System.unique_integer([:positive])}@example.com",
+             Semtext.Auth.SSO.authenticate_sso(:github, %{
+               email: "sso-disabled-#{System.unique_integer([:positive])}@unmapped.example",
                name: %{first: "Ada", last: "Lovelace"},
-               sub: "google-disabled-#{System.unique_integer([:positive])}"
+               sub: "github-disabled-#{System.unique_integer([:positive])}"
              })
   end
 
   # ── register open, app gated (Semtext.Auth.InviteGate) ────────────────────
 
   test "register open: unknown SSO identity without an invite is created :pending (both flag values)" do
-    ensure_provider!("Google", "Google OAuth")
-    set_sso_policy("example.com", ["google"], auto_approve: false)
+    ensure_provider!("GitHub", "GitHub OAuth")
+    set_sso_policy("example.com", ["github"], auto_approve: false)
 
     for flag <- [true, false] do
       Application.put_env(:semtext, :sso_require_invite, flag)
       email = "gated-#{flag}-#{System.unique_integer([:positive])}@example.com"
 
       assert {:ok, session} =
-               Semtext.Auth.SSO.authenticate_sso(:google, %{
+               Semtext.Auth.SSO.authenticate_sso(:github, %{
                  email: email,
                  name: %{first: "Ada", last: "Lovelace"},
-                 sub: "google-gated-#{System.unique_integer([:positive])}"
+                 sub: "github-gated-#{System.unique_integer([:positive])}"
                })
 
       assert {:ref, Semtext.Users.User, user_id} = session.user
@@ -104,17 +106,17 @@ defmodule Semtext.Auth.SSOTest do
   end
 
   test "register open: auto-approve SSO domain is :active for both flag values" do
-    ensure_provider!("Google", "Google OAuth")
-    set_sso_policy("example.com", ["google"], auto_approve: true)
+    ensure_provider!("GitHub", "GitHub OAuth")
+    set_sso_policy("example.com", ["github"], auto_approve: true)
 
     for flag <- [true, false] do
       Application.put_env(:semtext, :sso_require_invite, flag)
       email = "auto-#{flag}-#{System.unique_integer([:positive])}@example.com"
 
       assert {:ok, session} =
-               Semtext.Auth.SSO.authenticate_sso(:google, %{
+               Semtext.Auth.SSO.authenticate_sso(:github, %{
                  email: email,
-                 sub: "google-auto-#{System.unique_integer([:positive])}"
+                 sub: "github-auto-#{System.unique_integer([:positive])}"
                })
 
       assert {:ref, Semtext.Users.User, user_id} = session.user
@@ -125,35 +127,35 @@ defmodule Semtext.Auth.SSOTest do
   end
 
   test "existing pending SSO account still gets a session (the gate holds it, not login)" do
-    ensure_provider!("Google", "Google OAuth")
-    set_sso_policy("example.com", ["google"], auto_approve: false)
+    ensure_provider!("GitHub", "GitHub OAuth")
+    set_sso_policy("example.com", ["github"], auto_approve: false)
     email = "repeat-#{System.unique_integer([:positive])}@example.com"
-    attrs = %{email: email, sub: "google-repeat-#{System.unique_integer([:positive])}"}
+    attrs = %{email: email, sub: "github-repeat-#{System.unique_integer([:positive])}"}
 
-    assert {:ok, _} = Semtext.Auth.SSO.authenticate_sso(:google, attrs)
-    assert {:ok, session} = Semtext.Auth.SSO.authenticate_sso(:google, attrs)
+    assert {:ok, _} = Semtext.Auth.SSO.authenticate_sso(:github, attrs)
+    assert {:ok, session} = Semtext.Auth.SSO.authenticate_sso(:github, attrs)
     assert {:ref, Semtext.Users.User, user_id} = session.user
     assert Semtext.Repo.get!(User, user_id).status == :pending
   end
 
   test "an invalid invite token is rejected without provisioning" do
-    ensure_provider!("Google", "Google OAuth")
-    set_sso_policy("example.com", ["google"], auto_approve: true)
+    ensure_provider!("GitHub", "GitHub OAuth")
+    set_sso_policy("example.com", ["github"], auto_approve: true)
     email = "gated-bad-#{System.unique_integer([:positive])}@example.com"
 
     assert {:error, :invalid_token} =
-             Semtext.Auth.SSO.authenticate_sso(:google, %{
+             Semtext.Auth.SSO.authenticate_sso(:github, %{
                email: email,
                invite_token: "definitely-not-a-real-token",
-               sub: "google-gated-bad-#{System.unique_integer([:positive])}"
+               sub: "github-gated-bad-#{System.unique_integer([:positive])}"
              })
 
     assert Semtext.Repo.get_by(User, email: email) == nil
   end
 
   test "valid invite provisions an active member and is redeemed" do
-    ensure_provider!("Google", "Google OAuth")
-    set_sso_policy("example.com", ["google"], auto_approve: false)
+    ensure_provider!("GitHub", "GitHub OAuth")
+    set_sso_policy("example.com", ["github"], auto_approve: false)
     email = "invited-#{System.unique_integer([:positive])}@example.com"
 
     org =
@@ -173,11 +175,11 @@ defmodule Semtext.Auth.SSOTest do
       })
 
     assert {:ok, session} =
-             Semtext.Auth.SSO.authenticate_sso(:google, %{
+             Semtext.Auth.SSO.authenticate_sso(:github, %{
                email: email,
                invite_token: raw_token,
                name: %{first: "Ada", last: "Lovelace"},
-               sub: "google-invited-#{System.unique_integer([:positive])}"
+               sub: "github-invited-#{System.unique_integer([:positive])}"
              })
 
     assert {:ref, Semtext.Users.User, user_id} = session.user
@@ -200,10 +202,10 @@ defmodule Semtext.Auth.SSOTest do
     # A second SSO hit with the same (now exhausted) token is a plain login
     # for the existing user, not a re-redemption.
     assert {:ok, _} =
-             Semtext.Auth.SSO.authenticate_sso(:google, %{
+             Semtext.Auth.SSO.authenticate_sso(:github, %{
                email: email,
                invite_token: raw_token,
-               sub: "google-invited-#{System.unique_integer([:positive])}"
+               sub: "github-invited-#{System.unique_integer([:positive])}"
              })
 
     assert Semtext.Repo.get!(token_schema, invite.id).uses == 1

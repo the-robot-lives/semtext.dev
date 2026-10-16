@@ -68,3 +68,14 @@ end
 
 # config.exs already captured SENDGRID_API_KEY at load time; pin a dummy.
 config :noizu_sendgrid, api_key: "SG.test-placeholder"
+
+# ── P1 auth lane pins ────────────────────────────────────────────────────
+# config.exs ships sso_open: true (github-only, design v2 §4); pin it FALSE
+# here so the SSODomains domain-policy gate tests keep their semantics. Tests
+# that need open logins flip it locally with Application.put_env.
+config :semtext, :sso_open, false
+# Session lifetime is irrelevant to tests (tokens are minted per-test); keep
+# it short so any accidental real-TTL dependency fails loudly.
+config :semtext, :session_ttl, {1, :hour}
+# Compile the dev/test login-stub route into the router (prod never sets this).
+config :semtext, :test_auth_login_route, true

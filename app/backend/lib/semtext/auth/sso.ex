@@ -3,13 +3,10 @@ defmodule Semtext.Auth.SSO do
   alias Semtext.Schema.Users.Credentials.UserCredential, as: CredentialSchema
   import Ecto.Query, only: [from: 2]
 
+  # GitHub-only (design v2 §4): the other providers were removed at the
+  # function level with their routes; `authenticate_sso/2` rejects them.
   @provider_map %{
-    oidc: &Semtext.Auth.Providers.oidc/0,
-    saml: &Semtext.Auth.Providers.saml/0,
-    google: &Semtext.Auth.Providers.google/0,
-    facebook: &Semtext.Auth.Providers.facebook/0,
-    github: &Semtext.Auth.Providers.github/0,
-    linkedin: &Semtext.Auth.Providers.linkedin/0
+    github: &Semtext.Auth.Providers.github/0
   }
 
   # <REMOVED UUID HERE> authenticate_sso :: auto-generated pointer for public function authenticate_sso
@@ -29,8 +26,9 @@ defmodule Semtext.Auth.SSO do
       provider_ref = provider_ref(provider_type)
       {:ok, provider_id} = Semtext.Auth.Providers.Provider.id(provider_ref)
 
-      case find_user_by_email(email) do
+      case find_user(email, attrs[:login]) do
         {:ok, user} ->
+          user = ensure_github_login(user, attrs[:login])
           ensure_sso_credential(user, provider_ref, provider_id, provider_type, attrs, context)
           create_sso_session(user, provider_type, context)
 
@@ -123,6 +121,31 @@ defmodule Semtext.Auth.SSO do
   defp invite_role(%{role: role}) when role in ~w(admin member viewer), do: role
   defp invite_role(_), do: "viewer"
 
+  # GitHub-first identity match: the GitHub login is the canonical identity
+  # (v2 §4), email the fallback (a GitHub account can change its email while
+  # the login is stable). Both must be alive.
+  defp find_user(email, login) when is_binary(login) and login != "" do
+    case by_github_login(login) do
+      {:ok, user} -> {:ok, user}
+      :not_found -> find_user_by_email(email)
+    end
+  end
+
+  defp find_user(email, _login), do: find_user_by_email(email)
+
+  defp by_github_login(login) do
+    q =
+      from u in UserSchema,
+        where: u.github_login == ^login,
+        where: u.status != :deleted,
+        limit: 1
+
+    case Semtext.Repo.one(q) do
+      nil -> :not_found
+      user -> {:ok, user}
+    end
+  end
+
   defp find_user_by_email(email) do
     q = from u in UserSchema, where: u.email == ^email, where: u.status != :deleted, limit: 1
 
@@ -131,6 +154,20 @@ defmodule Semtext.Auth.SSO do
       user -> {:ok, user}
     end
   end
+
+  # A pre-GitHub account (e.g. seeded) matched by email adopts the login on
+  # first GitHub sign-in; an existing login is never overwritten.
+  defp ensure_github_login(%UserSchema{github_login: nil} = user, login)
+       when is_binary(login) and login != "" do
+    {:ok, user} =
+      user
+      |> Ecto.Changeset.change(github_login: login)
+      |> Semtext.Repo.update()
+
+    user
+  end
+
+  defp ensure_github_login(user, _login), do: user
 
   defp provider_ref(provider_type) do
     case @provider_map[provider_type].() do
@@ -219,6 +256,8 @@ defmodule Semtext.Auth.SSO do
       handle: handle,
       name_id: name.id,
       email: email,
+      github_login: attrs[:login],
+      trust_tier: 0,
       status: status,
       verified: true,
       flagged: false,

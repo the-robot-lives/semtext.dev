@@ -6,7 +6,6 @@ defmodule SemtextWeb.Hologram.Components.Navbar do
   use Hologram.Component
 
   alias Hologram.UI.Link
-  alias SemtextWeb.Hologram.Components.FloatingAuth
   alias SemtextWeb.Hologram.Pages.AppHomePage
   alias SemtextWeb.Hologram.Pages.HomePage
   alias SemtextWeb.Hologram.Pages.StyleGuidePage
@@ -32,7 +31,7 @@ defmodule SemtextWeb.Hologram.Components.Navbar do
                 Log Out
               </button>
             {%else}
-              <FloatingAuth cid="floating_auth" />
+              <a class="btn btn-black btn-sm" href="/auth/github" data-cy="login-github">Sign in with GitHub</a>
             {/if}
           {/if}
         </div>

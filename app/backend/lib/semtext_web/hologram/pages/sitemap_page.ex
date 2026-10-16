@@ -8,11 +8,8 @@ defmodule SemtextWeb.Hologram.Pages.SitemapPage do
     AdminOrgsPage,
     AdminUsersPage,
     AppHomePage,
-    ForgotPasswordPage,
     HomePage,
-    LoginPage,
     ProfilePage,
-    SignupPage,
     StyleGuidePage,
     TailwindPlusPage
   }
@@ -30,9 +27,6 @@ defmodule SemtextWeb.Hologram.Pages.SitemapPage do
       <h1 class="sg-page-title">Site Map</h1>
       <ul>
         <li><Link to={HomePage}>Home</Link></li>
-        <li><Link to={LoginPage}>Log In</Link></li>
-        <li><Link to={SignupPage}>Sign Up</Link></li>
-        <li><Link to={ForgotPasswordPage}>Forgot Password</Link></li>
         <li><Link to={StyleGuidePage}>Style Guide</Link></li>
         <li><Link to={TailwindPlusPage}>Tailwind Plus</Link></li>
         <li><Link to={AppHomePage}>App Home</Link></li>

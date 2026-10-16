@@ -19,12 +19,15 @@ defmodule SemtextWeb.ConnCase do
   end
 
   @doc """
-  Creates a test user with login credential and returns access/refresh tokens.
+  Creates a test user with login credential and returns an access token.
 
   Inserts directly via Ecto schemas (bypasses Noizu entity layer) for speed and
   simplicity. The auth_providers seed must have run (login provider must exist).
+
+  P1 sessions are access-token only: there is no refresh token and no Redis
+  TokenStore (github-only login; the cookie session is the whole state).
   """
-  # <REMOVED UUID HERE> setup_user_and_token :: Creates a test user with login credential and returns access/refresh tokens.
+  # <REMOVED UUID HERE> setup_user_and_token :: Creates a test user with login credential and returns an access token.
   def setup_user_and_token(_context \\ %{}) do
     login_provider_id = UUID.uuid5(:oid, "Semtext.Schema.Auth.Providers.Provider@Login")
 
@@ -89,16 +92,10 @@ defmodule SemtextWeb.ConnCase do
     {:ok, access_token, _claims} =
       Semtext.Guardian.encode_and_sign(session_entity, %{}, token_type: "access", ttl: {1, :hour})
 
-    {:ok, refresh_token, %{"jti" => jti}} =
-      Semtext.Guardian.encode_and_sign(session_entity, %{}, token_type: "refresh", ttl: {7, :day})
-
-    Semtext.Auth.TokenStore.store_refresh_jti(jti)
-
     %{
       user: user,
       password: password,
       access_token: access_token,
-      refresh_token: refresh_token,
       session: session
     }
   end
@@ -109,5 +106,19 @@ defmodule SemtextWeb.ConnCase do
   # <REMOVED UUID HERE> authenticated_conn :: Adds a Bearer authorization header to the connection.
   def authenticated_conn(conn, access_token) do
     Plug.Conn.put_req_header(conn, "authorization", "Bearer #{access_token}")
+  end
+
+  @doc """
+  Signs a user into the conn via the session cookie (the GitHub-callback
+  transport). Delegates to the design §2 test stub. Must run inside the
+  sandbox (it creates a user-session entity).
+  """
+  # <REMOVED UUID HERE> login_as :: auto-generated pointer for public function login_as
+  def login_as(conn, user, claims \\ %{}) do
+    conn
+    |> Map.put(:secret_key_base, String.duplicate("t", 64))
+    |> Plug.Session.call(SemtextWeb.Plugs.Session.init(nil))
+    |> Plug.Conn.fetch_session()
+    |> then(&Semtext.Test.Auth.login_as(&1, user, claims))
   end
 end

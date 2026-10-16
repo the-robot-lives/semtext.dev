@@ -9,23 +9,32 @@ defmodule SemtextWeb.Router do
     plug SemtextWeb.AuthPipeline
   end
 
-  pipeline :sso_session do
-    # 900s, not 300s: this cookie now carries the OIDC `state`/`nonce` pair
-    # (see SSOController.oidc_init/2), so its expiry gates how long a login
-    # can take, not just how long a redirect can take. 300s is too short for
-    # password + a 2FA code typed on a phone - the flow would still complete,
-    # but only insecurely, since it fails closed to an opaque `state_mismatch`
-    # with no indication it was a timeout rather than an attack. This cookie
-    # carries flow state, never credentials, so 900s is not a
-    # credential-lifetime decision.
-    plug Plug.Session,
-      store: :cookie,
-      key: "_semtext_sso",
-      signing_salt: "sso_session_salt",
-      same_site: "Lax",
-      max_age: 900
-
+  # Session-cookie auth (GitHub callback writes the access token into the
+  # main `_semtext_key` cookie — design v2 §4). GitHub OAuth + logout + the
+  # session-current-user route run through this; Hologram pages already have
+  # the session fetched at the endpoint.
+  pipeline :session do
     plug :fetch_session
+  end
+
+  # Resolve `:current_user` from Bearer OR session cookie; pair with
+  # RequireUser/RequireModerator to enforce (proposals host uses these too).
+  pipeline :current_user do
+    plug :fetch_session
+    plug SemtextWeb.Plugs.CurrentUser
+  end
+
+  pipeline :require_user do
+    plug :fetch_session
+    plug SemtextWeb.Plugs.CurrentUser
+    plug SemtextWeb.Plugs.RequireUser
+  end
+
+  pipeline :require_moderator do
+    plug :fetch_session
+    plug SemtextWeb.Plugs.CurrentUser
+    plug SemtextWeb.Plugs.RequireUser
+    plug SemtextWeb.Plugs.RequireModerator
   end
 
   pipeline :rate_limited_auth do
@@ -63,32 +72,16 @@ defmodule SemtextWeb.Router do
 
   scope "/api/v1", SemtextWeb do
     pipe_through [:api, :rate_limited_auth]
-    post "/auth/register", AuthController, :register
-    post "/auth/login", AuthController, :login
-    post "/auth/refresh", AuthController, :refresh
     get "/consent/cookies", ConsentController, :show
     put "/consent/cookies", ConsentController, :update
     get "/auth/sso/providers", SSOController, :providers
-    post "/auth/sso/exchange", SSOController, :exchange
     get "/invites/lookup", InviteTokenController, :lookup
     get "/config/features", ConfigController, :features
   end
 
   scope "/api/v1", SemtextWeb do
-    pipe_through [:api, :rate_limited_sensitive]
-    post "/auth/magic-link", AuthController, :request_magic_link
-    post "/auth/magic-link/verify", AuthController, :verify_magic_link
-    post "/auth/otp-login", AuthController, :request_otp_login
-    post "/auth/otp-login/verify", AuthController, :verify_otp_login
-    post "/auth/password-reset", AuthController, :request_password_reset
-    post "/auth/password-reset/verify", AuthController, :verify_password_reset
-    post "/auth/verify-email/confirm", AuthController, :verify_email
-  end
-
-  scope "/api/v1", SemtextWeb do
     pipe_through [:api, :authenticated]
     get "/auth/me", AuthController, :me
-    post "/auth/verify-email", AuthController, :send_verification
     get "/users/me", UserController, :show
     patch "/users/me", UserController, :update
     post "/users/me/complete-registration", UserController, :complete_registration
@@ -138,24 +131,21 @@ defmodule SemtextWeb.Router do
     get "/examples/:tag", EditorExampleController, :show
   end
 
-  # SAML 2.0 (Samly handles assertion consumer service, metadata, etc.)
-  scope "/sso/saml" do
-    pipe_through [:sso_session]
-    forward "/", Samly.Router
-  end
-
-  # OIDC redirect flow
-  scope "/auth/oidc", SemtextWeb do
-    pipe_through [:sso_session]
-    get "/", SSOController, :oidc_init
-    get "/callback", SSOController, :oidc_callback
-  end
-
-  # Social OAuth (ueberauth handles request + callback)
+  # GitHub OAuth — the only login path (design v2 §4). The endpoint's main
+  # session cookie carries the access token the Hologram pages read; there is
+  # no separate SSO cookie and no server-side token store. Email/password,
+  # magic-link, OTP, SAML and every other OAuth provider were removed at the
+  # router AND function level (github-only tests 404 each old route).
   scope "/auth", SemtextWeb do
-    pipe_through [:sso_session]
-    get "/:provider", SSOController, :oauth_request
-    get "/:provider/callback", SSOController, :oauth_callback
+    pipe_through [:session]
+    get "/github", SSOController, :oauth_request
+    get "/github/callback", SSOController, :oauth_callback
+    post "/logout", AuthController, :logout
+  end
+
+  scope "/auth", SemtextWeb do
+    pipe_through [:require_user]
+    get "/session", AuthController, :session_user
   end
 
   # PBAC v2: Groups & Memberships (authenticated, read-only)
@@ -220,6 +210,20 @@ defmodule SemtextWeb.Router do
     scope "/dev" do
       pipe_through [:fetch_session, :protect_from_forgery]
       live_dashboard "/dashboard", metrics: SemtextWeb.Telemetry
+    end
+  end
+
+  # Test-env login stub (design §2 contract): POST /auth/test/login with
+  # `github_login=` (or `user_id=`) signs that user in — Cypress + manual dev
+  # use. Gated at COMPILE time on :test_auth_login_route (config.exs default
+  # false; dev.exs/test.exs set true), so it can never compile into a prod
+  # release, and the controller itself no-ops to 404 unless the flag is also
+  # set at runtime.
+  if Application.compile_env(:semtext, :test_auth_login_route, false) do
+    scope "/auth/test", SemtextWeb do
+      pipe_through [:session]
+      post "/login", TestAuthController, :login
+      get "/login", TestAuthController, :login
     end
   end
 end

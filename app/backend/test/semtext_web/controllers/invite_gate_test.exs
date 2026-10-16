@@ -211,60 +211,88 @@ defmodule SemtextWeb.InviteGateTest do
 
   # ── signup status ─────────────────────────────────────────────────────────
 
+  # P1: password signup routes are gone (github-only, design v2 §4) — the
+  # signup surface under test is `Semtext.Auth.SSO.authenticate_sso/2`, the
+  # one path new accounts are created by. sso_open is pinned false in test
+  # config so these exercise the domain-policy machinery.
   describe "signup" do
-    test "password signup on an invite-required domain → :pending", %{conn: conn} do
+    test "GitHub signup on an invite-required domain → :pending", %{conn: _conn} do
+      Application.put_env(:semtext, :sso_domain_policies, %{
+        "gated.example" => %{providers: ["github"], auto_approve: false}
+      })
+
       email = "p-#{uniq()}@gated.example"
-      body = json_response(post(conn, "/api/v1/auth/register", %{user: reg(email)}), 201)
-      assert body["user"]["status"] == "pending"
-      assert body["user"]["invite_required"] == true
+
+      assert {:ok, _session} =
+               Semtext.Auth.SSO.authenticate_sso(:github, %{
+                 email: email,
+                 login: "gateduser",
+                 sub: "sub-1"
+               })
+
+      user = Semtext.Repo.get_by!(User, github_login: "gateduser")
+      assert user.status == :pending
+      assert user.trust_tier == 0
+      assert user.role == "user"
+      assert InviteGate.required?(user)
     end
 
-    test "password signup on an auto-approve domain → :unverified until the email is confirmed",
-         %{conn: conn} do
-      Application.put_env(:semtext, :sso_auto_approve_domains, ["auto.example"])
+    test "GitHub signup on an auto-approve domain → :active", %{conn: _conn} do
+      Application.put_env(:semtext, :sso_domain_policies, %{
+        "auto.example" => %{providers: ["github"], auto_approve: true}
+      })
+
       email = "a-#{uniq()}@auto.example"
 
-      body = json_response(post(conn, "/api/v1/auth/register", %{user: reg(email)}), 201)
-      assert body["user"]["status"] == "unverified"
-      assert body["user"]["invite_required"] == true
+      assert {:ok, _session} =
+               Semtext.Auth.SSO.authenticate_sso(:github, %{
+                 email: email,
+                 login: "autouser",
+                 sub: "sub-2"
+               })
 
-      gated = conn |> authenticated_conn(body["access_token"]) |> get("/api/v1/organizations")
-      assert %{"account_status" => "unverified"} = json_response(gated, 403)
-
-      {:ok, %{encoded_key: key}} = Semtext.Auth.SmartTokenAuth.request_email_verification(email)
-      assert json_response(post(recycle(conn), "/api/v1/auth/verify-email/confirm", %{token: key}), 200)
-
-      user = Semtext.Repo.get_by!(User, email: email)
+      user = Semtext.Repo.get_by!(User, github_login: "autouser")
       assert user.status == :active
       assert user.approved_at
+      refute InviteGate.required?(user)
+    end
 
-      open = conn |> recycle() |> authenticated_conn(body["access_token"]) |> get("/api/v1/organizations")
-      assert json_response(open, 200)
+    test "an invite at signup → :active + redeemed; an invalid token → error and no row" do
+      email = "i-#{uniq()}@gated.example"
+      {:ok, _invite, raw} = invite(email: email)
+
+      Application.put_env(:semtext, :sso_domain_policies, %{
+        "gated.example" => %{providers: ["github"], auto_approve: false}
+      })
+
+      assert {:ok, _session} =
+               Semtext.Auth.SSO.authenticate_sso(:github, %{
+                 email: email,
+                 login: "inviteduser",
+                 sub: "sub-3",
+                 invite_token: raw
+               })
+
+      user = Semtext.Repo.get_by!(User, github_login: "inviteduser")
+      assert user.status == :active
+
+      bad = "b-#{uniq()}@gated.example"
+
+      assert {:error, :invalid_token} =
+               Semtext.Auth.SSO.authenticate_sso(:github, %{
+                 email: bad,
+                 login: "badinvited",
+                 sub: "sub-4",
+                 invite_token: "nope-nope-nope"
+               })
+
+      assert Semtext.Repo.get_by(User, email: bad) == nil
     end
 
     test "confirming the email never activates an invite-required (:pending) account" do
       %{user: user} = user_with_status(:pending)
       InviteGate.confirm_email(user.id)
       assert Semtext.Repo.get!(User, user.id).status == :pending
-    end
-
-    test "valid code at signup → :active; invalid code → error and no row", %{conn: conn} do
-      email = "i-#{uniq()}@gated.example"
-      {:ok, _invite, raw} = invite(email: email)
-
-      body =
-        json_response(
-          post(conn, "/api/v1/auth/register", %{user: reg(email), invite_token: raw}),
-          201
-        )
-
-      assert body["user"]["status"] == "active"
-      assert body["user"]["invite_required"] == false
-
-      bad = "b-#{uniq()}@gated.example"
-      resp = post(conn, "/api/v1/auth/register", %{user: reg(bad), invite_token: "nope-nope-nope"})
-      assert resp.status in [401, 403, 422]
-      assert Semtext.Repo.get_by(User, email: bad) == nil
     end
 
     test "signup_status/3 is the one rule" do
@@ -335,24 +363,7 @@ defmodule SemtextWeb.InviteGateTest do
     end
   end
 
-  # ── resend is only for :unverified accounts ───────────────────────────────
-
-  describe "resend confirmation" do
-    test "an :unverified account may resend; a :pending account may not" do
-      %{access_token: pending_token} = user_with_status(:pending)
-      %{access_token: unverified_token} = user_with_status(:unverified)
-
-      assert {:error, "not_unverified"} =
-               Semtext.Hologram.Auth.resend_confirmation(%Hologram.Server{
-                 session: %{"access_token" => pending_token}
-               })
-
-      assert :ok =
-               Semtext.Hologram.Auth.resend_confirmation(%Hologram.Server{
-                 session: %{"access_token" => unverified_token}
-               })
-    end
-  end
+  # ── (resend-confirmation removed with email/password signup — P1 github-only)
 
   # ── complete-registration: redeem and profile save are atomic ─────────────
 
@@ -455,17 +466,6 @@ defmodule SemtextWeb.InviteGateTest do
     }
 
     Semtext.Organizations.create_invite_token(Map.merge(defaults, Map.new(attrs)))
-  end
-
-  defp reg(email) do
-    %{
-      email: email,
-      password: "password123",
-      user_name: "u#{uniq()}",
-      first_name: "Ada",
-      last_name: "Lovelace",
-      mobile_phone: "+15555550123"
-    }
   end
 
   defp socket_stub, do: %Phoenix.Socket{assigns: %{}}

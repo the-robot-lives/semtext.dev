@@ -1,6 +1,7 @@
 defmodule SemtextWeb.Hologram.Middleware.RequireAuth do
   @moduledoc """
-  Redirect unauthenticated visitors to the login page, and hold invite-gated
+  Redirect unauthenticated visitors to GitHub login (the only login path),
+  and hold invite-gated
   users (`Semtext.Auth.InviteGate`) at `/auth/invite-required`.
 
   Runs before a page renders AND before each of the page's commands, so a
@@ -12,13 +13,12 @@ defmodule SemtextWeb.Hologram.Middleware.RequireAuth do
 
   alias Semtext.Hologram.Auth
   alias SemtextWeb.Hologram.Pages.InviteRequiredPage
-  alias SemtextWeb.Hologram.Pages.LoginPage
 
   # <REMOVED UUID HERE> call :: auto-generated pointer for public function call
   def call(server, opts) do
     case Auth.current_user(server) do
       nil ->
-        Hologram.Server.put_redirect(server, LoginPage)
+        Hologram.Server.put_redirect(server, "/auth/github")
 
       user ->
         if Keyword.get(opts, :invite) != :exempt and Auth.user_needs_invite?(user) do

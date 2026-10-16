@@ -35,3 +35,7 @@ config :phoenix, :plug_init_mode, :runtime
 
 config :noizu_sendgrid,
   sandbox_enable: true
+
+# Dev-only login stub (POST /auth/test/login?github_login=...) for Cypress +
+# manual testing. Compile-gated; prod config leaves it false.
+config :semtext, :test_auth_login_route, true
