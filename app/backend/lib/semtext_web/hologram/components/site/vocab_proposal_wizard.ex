@@ -165,7 +165,11 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabProposalWizard do
     # NativeValue (not a binary); the next patch renders it into an href and
     # the wizard subtree corrupts (fields reset, bindings die). The fallback
     # link is a plain constant in the template instead.
-    put_state(component, %{tag: tag, ready: ready})
+    #
+    # `changed` MUST be persisted along with the derived fields: put_state
+    # merges, so omitting it here silently kept name/summary/... empty — the
+    # controlled-input patch reset every keystroke and `ready` never flipped.
+    put_state(component, Map.merge(changed, %{tag: tag, ready: ready}))
   end
 
   # `^[a-z][a-z0-9]*(-[a-z0-9]+)*$` + must contain a hyphen (custom-element
