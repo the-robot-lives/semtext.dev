@@ -102,4 +102,71 @@ defmodule SemtextWeb.PortDocsPagesTest do
       assert source_only =~ ~s(id="example-sem-shell")
     end
   end
+
+  # The renderable showcase pages seed the raw example source into page
+  # state (`example: @example`) and render it into `data-sem-html`, which
+  # site-chrome.js hydrates. State rides Hologram's payload <script>
+  # region: a literal </script in an example would close that region
+  # early and SyntaxError the whole page (83c34cd / 62a3b06 leak class).
+  describe "showcase hydration payload safety" do
+    @renderable_slugs ~w(agent claude-md command data-viewer documentation onboarding skill)
+
+    test "no showcase @example source contains </script bytes (seed scan)" do
+      # All showcase pages, present and future: the hazard is killed at
+      # the seed, before it can ride state, the hydration attribute, or
+      # the source column. Case-insensitive: </SCRIPT also terminates a
+      # script element.
+      pages = Path.wildcard("lib/semtext_web/hologram/pages/showcase_*_page.ex")
+
+      # 9 of the 10 showcase files carry an @example (the index has none) —
+      # pins the glob against silent drift.
+      with_examples =
+        for page <- pages,
+            source = File.read!(page),
+            blocks =
+              Regex.scan(~r/@example ~S"""(.*?)"""/s, source, capture: :all_but_first)
+              |> List.flatten(),
+            blocks != [] do
+          {page, blocks}
+        end
+
+      assert length(with_examples) >= 9
+
+      for {page, blocks} <- with_examples do
+        for block <- blocks do
+          refute String.downcase(block) =~ "</script",
+                 "#{page} @example contains </script — it would ride page state " <>
+                   "into the Hologram payload and terminate the bootstrap <script> early"
+        end
+      end
+    end
+
+    test "renderable pages ship balanced script tags with the hydration payload", %{conn: conn} do
+      # Body-level belt: any raw </script that reaches the SSR body — a
+      # hydration attribute, an unescaped payload, a future encoder
+      # regression — unbalances the page's script tags (SSR currently
+      # Jason-escapes "/" in the payload region, so the seed hazard is
+      # neutralized there; this guards the whole document regardless of
+      # which layer regresses). Scan as a tag-state machine: depth must
+      # never go negative and must end at zero.
+      for slug <- @renderable_slugs do
+        body = html_response(get(conn, "/showcase/#{slug}"), 200)
+        assert body =~ "data-sem-html="
+
+        depth =
+          Regex.scan(~r/<\/?script\b/i, body)
+          |> List.flatten()
+          |> Enum.reduce(0, fn tag, d ->
+            if String.downcase(tag) =~ "</" do
+              assert d > 0, "/showcase/#{slug}: </script> with no open <script> — payload broken"
+              d - 1
+            else
+              d + 1
+            end
+          end)
+
+        assert depth == 0, "/showcase/#{slug}: unclosed <script> — payload truncated"
+      end
+    end
+  end
 end
