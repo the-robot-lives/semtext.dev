@@ -265,10 +265,10 @@ export default function Home() {
                 See it work
               </a>
               <a
-                href="/spec/semtext.html"
+                href="/reference/"
                 className="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft"
               >
-                Read the spec
+                Browse the reference
               </a>
               <a
                 href="#start"
