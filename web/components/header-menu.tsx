@@ -16,7 +16,7 @@ import { useEffect, useId, useRef, useState } from "react";
 const MOBILE_LINKS = [
   { href: "/#try", label: "See it work" },
   { href: "/reference/", label: "Reference" },
-  { href: "/spec/semtext.html", label: "Read the spec" },
+  { href: "/spec/semtext.html", label: "Spec" },
   { href: "/#start", label: "Get started" },
   { href: "https://therobotlives.com", label: "The Robot Lives" },
 ];
