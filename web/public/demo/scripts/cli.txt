@@ -1,1 +1,5 @@
-cat demo/messages/cli.txt
+# the semtext CLI
+$ render-card demos/render-demo.card
+@expect render
+$ semtext --render demo/auth-notes.sem.html
+@expect h1
