@@ -4,6 +4,7 @@ import { CodeViewer } from "@/components/code-viewer";
 import { ThemeGenerator } from "@/components/theme-generator";
 import { AddonsCarousel } from "@/components/addons-carousel";
 import { Sem, SHOWCASE_ITEMS, INTEGRATIONS } from "@/components/docs-shell";
+import { semtextAsset } from "@/lib/semtext-asset";
 
 const REPO = "https://github.com/noizu-labs-ml/npl-enhanced-content";
 const SPEC = `${REPO}/blob/develop/spec`;
@@ -945,7 +946,7 @@ export default function Home() {
           after the deferred bundle has loaded. The hero window re-checks
           the html[data-sem-fallback] marker before touching anything. */}
       <script dangerouslySetInnerHTML={{ __html: "window.__semJsOff=true;" }} />
-      <script defer src="/semtext/semtext-fallback.js" />
+      <script defer src={semtextAsset("semtext-fallback.js")} />
       <script
         dangerouslySetInnerHTML={{
           __html:
