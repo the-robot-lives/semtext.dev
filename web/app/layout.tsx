@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import "./globals.css";
+import { semtextAsset } from "@/lib/semtext-asset";
 
 const siteUrl = "https://semtext.dev";
 const title = "SemText — one XHTML file, in place of Markdown";
@@ -66,12 +67,12 @@ export default function RootLayout({
         <link
           rel="stylesheet"
           precedence="semtext"
-          href="/semtext/themes/_vocabulary.css"
+          href={semtextAsset("themes/_vocabulary.css")}
         />
         <link
           rel="stylesheet"
           precedence="semtext"
-          href="/semtext/themes/minimal-tech-light.css"
+          href={semtextAsset("themes/minimal-tech-light.css")}
         />
         <a className="skip-link" href="#main">
           Skip to docs

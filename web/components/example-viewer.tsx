@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CodeBody, CopySaveButtons } from "@/components/code-viewer";
 import type { BundleEntry } from "@/data/reference-tags";
+import { semtextAsset } from "@/lib/semtext-asset";
 
 /*
  * One authored example on /reference: a view switch over the same authored
@@ -73,8 +74,8 @@ function lazyBundle(): LazyBundle | null {
 }
 
 const THEME_CSS = [
-  "/semtext/themes/_vocabulary.css",
-  "/semtext/themes/minimal-tech-light.css",
+  semtextAsset("themes/_vocabulary.css"),
+  semtextAsset("themes/minimal-tech-light.css"),
 ];
 
 /*
@@ -100,8 +101,9 @@ function loadScript(src: string): Promise<void> {
     // chunks themselves, which import their shared siblings relatively)
     // are module builds — a classic script tag throws on their
     // import.meta. The IIFE bundles (full bundles, shell, fallback tier)
-    // are classic.
-    if (/-lazy\.js$/.test(src) || /(^|\/)[a-z-]*chunks\//.test(src)) {
+    // are classic. Test the PATH only: pinned URLs carry a ?v= query.
+    const assetPath = src.split("?")[0];
+    if (/-lazy\.js$/.test(assetPath) || /(^|\/)[a-z-]*chunks\//.test(assetPath)) {
       script.type = "module";
     }
     script.onload = () => {
@@ -133,7 +135,7 @@ async function bootElementRuntime(files: string[]): Promise<void> {
   }
   if (!booted) booted = true;
   for (const f of files) {
-    await loadScript(`/semtext/${f}`);
+    await loadScript(semtextAsset(f));
   }
 }
 

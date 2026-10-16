@@ -557,7 +557,14 @@ describe(`snap /reference/${snap.tag}/`, () => {
               /^\/semtext\//,
               ""
             );
-            const hit = files[rel];
+            // Pinned URLs carry a version / stable / latest prefix
+            // (/semtext/v0.1.0/…, /semtext/stable/…); the private dist is
+            // flat (the npl build layout), so look those prefixes through.
+            const unpinned = rel.replace(
+              /^(?:v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?|stable|latest)\//,
+              ""
+            );
+            const hit = files[rel] ?? files[unpinned];
             if (hit) {
               distHits += 1;
               req.reply({
