@@ -61,14 +61,21 @@ defmodule Semtext.Workers.GithubDiscussionWorker do
 
     with {:ok, link} <- port.get_discussion_link(proposal_id),
          :create <- already_linked?(link),
-         {:ok, target} <- port.get_sync_target(proposal_id) do
-      :ok = port.mark_discussion_pending(proposal_id)
-
+         {:ok, target} <- port.get_sync_target(proposal_id),
+         :ok <- mark_pending(port, proposal_id) do
       case Graphql.create_discussion(target) do
         {:ok, created} ->
-          :ok = port.put_discussion_link(proposal_id, created)
-          Logger.info("github_discussion_worker: discussion ##{created.discussion_number} created for proposal #{proposal_id}")
-          :ok
+          # A link write can legitimately fail (e.g. uq_discussion_links_repo_
+          # number collision) — never a bare `:ok =` match: that would crash
+          # the job unclassified instead of a handled permanent failure.
+          case port.put_discussion_link(proposal_id, created) do
+            :ok ->
+              Logger.info("github_discussion_worker: discussion ##{created.discussion_number} created for proposal #{proposal_id}")
+              :ok
+
+            {:error, reason} ->
+              handle_failure(proposal_id, job, :permanent, {:link_write_failed, reason})
+          end
 
         {:error, {kind, reason}} ->
           handle_failure(proposal_id, job, kind, reason)
@@ -85,6 +92,15 @@ defmodule Semtext.Workers.GithubDiscussionWorker do
       {:error, reason} ->
         Logger.error("github_discussion_worker: port error for #{proposal_id}: #{inspect(reason)}")
         {:error, {:port_error, reason}}
+    end
+  end
+
+  # Chip flip to `pending` — a port error here is transient-shape (DB trouble)
+  # and Oban retries; it must not crash the worker with a MatchError.
+  defp mark_pending(port, proposal_id) do
+    case port.mark_discussion_pending(proposal_id) do
+      :ok -> :ok
+      {:error, reason} -> {:error, {:port_error, reason}}
     end
   end
 
@@ -107,14 +123,14 @@ defmodule Semtext.Workers.GithubDiscussionWorker do
   end
 
   defp handle_failure(proposal_id, _job, :permanent, reason) do
-    :ok = Github.port().mark_discussion_failed(proposal_id, format_reason(reason))
+    mark_failed(Github.port(), proposal_id, reason)
     Logger.error("github_discussion_worker: permanent failure for #{proposal_id}: #{inspect(reason)} — chip set to failed, manual retry available")
     {:cancel, {:permanent, reason}}
   end
 
   defp handle_failure(proposal_id, job, :transient, reason) do
     if job.attempt >= job.max_attempts do
-      :ok = Github.port().mark_discussion_failed(proposal_id, format_reason(reason))
+      mark_failed(Github.port(), proposal_id, reason)
       Logger.error("github_discussion_worker: retries exhausted for #{proposal_id} — chip set to failed")
       {:error, {:transient_exhausted, reason}}
     else
@@ -122,6 +138,15 @@ defmodule Semtext.Workers.GithubDiscussionWorker do
       # stays visible the whole time (v1 §3.1 "async-tolerant").
       Logger.warning("github_discussion_worker: transient failure for #{proposal_id} (attempt #{job.attempt}/#{job.max_attempts}): #{inspect(reason)}")
       {:error, {:transient, reason}}
+    end
+  end
+
+  # The failure write itself must never crash the worker with a MatchError —
+  # a port error here is logged and the classified job result still returned.
+  defp mark_failed(port, proposal_id, reason) do
+    case port.mark_discussion_failed(proposal_id, format_reason(reason)) do
+      :ok -> :ok
+      {:error, cs_error} -> Logger.error("github_discussion_worker: failed to write :failed chip for #{proposal_id}: #{inspect(cs_error)}")
     end
   end
 

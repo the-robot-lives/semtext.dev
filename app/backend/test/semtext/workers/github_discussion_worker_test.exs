@@ -165,8 +165,42 @@ defmodule Semtext.Workers.GithubDiscussionWorkerTest do
     assert FakePort.link(@proposal).discussion_number == 11
   end
 
-  test "unknown proposal: cancels without touching GitHub" do
-    set_reply(fn _url -> flunk("must not touch GitHub for a missing proposal") end)
+  # A link write that fails (e.g. uq_discussion_links_repo_number collision)
+  # must surface as a classified permanent failure — never a MatchError crash.
+  defmodule FailingLinkPort do
+    @moduledoc false
+    @behaviour Semtext.Github.Port
+
+    defdelegate get_discussion_link(id), to: Semtext.Github.FakePort
+    defdelegate get_sync_target(id), to: Semtext.Github.FakePort
+    defdelegate mark_discussion_pending(id), to: Semtext.Github.FakePort
+    defdelegate mark_discussion_failed(id, reason), to: Semtext.Github.FakePort
+
+    def put_discussion_link(_proposal_id, _created), do: {:error, :uq_discussion_links_repo_number}
+  end
+
+  test "link-write failure → classified permanent cancel + failed chip (no crash)" do
+    # Swap only the port — keep the setup's fully-provisioned GitHub config.
+    provisioned = Application.get_env(:semtext, Semtext.Github, [])
+
+    Application.put_env(
+      :semtext,
+      Semtext.Github,
+      Keyword.merge(provisioned, proposals_port: __MODULE__.FailingLinkPort)
+    )
+
+    Semtext.Github.FakePort.reset()
+    Semtext.Github.FakePort.seed_target(@proposal)
+
+    assert {:cancel, {:permanent, {:link_write_failed, :uq_discussion_links_repo_number}}} =
+             GithubDiscussionWorker.perform(job())
+
+    link = Semtext.Github.FakePort.link(@proposal)
+    assert link.state == :failed
+    assert link.last_error =~ "uq_discussion_links_repo_number"
+  end
+
+  test "unknown proposal: cancels without touching GitHub" do    set_reply(fn _url -> flunk("must not touch GitHub for a missing proposal") end)
 
     assert {:cancel, :proposal_not_found} =
              GithubDiscussionWorker.perform(%Oban.Job{args: %{"proposal_id" => "ghost"}, attempt: 1, max_attempts: 12})
