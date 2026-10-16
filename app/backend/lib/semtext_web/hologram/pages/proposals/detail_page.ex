@@ -155,7 +155,7 @@ defmodule SemtextWeb.Hologram.Pages.Proposals.DetailPage do
   def command(:mod_transition, params, server) do
     guard_mod_command(server, params, fn _user, slug ->
       case status_atom(param_str(params, :to)) do
-        {:ok, to} -> Problems.from_result(Proposals.change_status(:moderator_panel, slug, to))
+        {:ok, to} -> Problems.from_result(Proposals.change_status(%{system: :moderator_panel}, slug, to))
         :error -> {:error, Problems.problem("validation-failed", "Unknown status.")}
       end
     end)
@@ -163,13 +163,13 @@ defmodule SemtextWeb.Hologram.Pages.Proposals.DetailPage do
 
   def command(:mod_hide, params, server) do
     guard_mod_command(server, params, fn _user, slug ->
-      Problems.from_result(Proposals.hide(:moderator_panel, slug, nil))
+      Problems.from_result(Proposals.hide(%{system: :moderator_panel}, slug, nil))
     end)
   end
 
   def command(:mod_unhide, params, server) do
     guard_mod_command(server, params, fn _user, slug ->
-      Problems.from_result(Proposals.unhide(:moderator_panel, slug))
+      Problems.from_result(Proposals.unhide(%{system: :moderator_panel}, slug))
     end)
   end
 

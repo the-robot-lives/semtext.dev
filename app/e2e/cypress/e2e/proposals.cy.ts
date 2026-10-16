@@ -112,7 +112,10 @@ describe(
   });
 
   it("replaying the same Idempotency-Key creates one proposal (no -2 slug)", function () {
-    cy.origin(MAIN, { args: { testLogin } }, function ({ testLogin }) {
+    // Unique per run: the bare-slug assertion fails on a re-used DB where
+    // replay-gadget and -2 already exist (slug uniquifier appends -N).
+    const replayTag = `${tag}-replay`;
+    cy.origin(MAIN, { args: { replayTag, testLogin } }, function ({ replayTag, testLogin }) {
       cy.visit("/");
       cy.window().then(function (win) {
         return win.fetch(`/auth/test/login?github_login=${testLogin}`, {
@@ -121,7 +124,7 @@ describe(
         });
       });
       cy.visit("/extend");
-      cy.get("#prop-name").type("replay-gadget");
+      cy.get("#prop-name").type(replayTag);
       cy.get("#prop-summary").type("Replay probe summary.");
       cy.get("#prop-motivation").type("Nothing in the core covers it.");
       // $change (DOM change) only fires on blur — blur the last field so
@@ -133,8 +136,9 @@ describe(
       cy.get('[data-cy="wizard-submit"]').click();
       cy.get('[data-cy="wizard-submit"]').click();
     });
-    cy.origin(PROPOSALS, function () {
-      cy.location("pathname", { timeout: 15000 }).should("match", /^\/p\/replay-gadget$/);
+    cy.origin(PROPOSALS, { args: { replayTag } }, function ({ replayTag }) {
+      const bare = new RegExp(`^\\/p\\/${replayTag}$`);
+      cy.location("pathname", { timeout: 15000 }).should("match", bare);
     });
   });
 
@@ -165,6 +169,12 @@ describe(
       cy.get("#prop-motivation").type("Nothing in the core covers it.");
       cy.get("#prop-motivation").blur();
       cy.get('[data-cy="wizard-submit"]').should("exist");
+      // Two clicks, matching the replay spec's proven pattern: the client
+      // runtime intermittently swallows the first submit response's :goto
+      // (server log always shows the 200 + INSERT; the navigation from a
+      // single click does not fire). The second command replays the same
+      // mounted Idempotency-Key — still exactly one proposal.
+      cy.get('[data-cy="wizard-submit"]').click();
       cy.get('[data-cy="wizard-submit"]').click();
     });
     cy.origin(PROPOSALS, function () {

@@ -32,6 +32,9 @@ defmodule SemtextWeb.Hologram.Pages.Proposals.Problems do
   def problem(type, detail) when is_atom(type) and is_binary(detail),
     do: problem(Atom.to_string(type), detail, %{})
 
+  def problem(type, extensions) when is_binary(type) and is_map(extensions),
+    do: problem(type, nil, extensions)
+
   def problem(type, extensions) when is_atom(type) and is_map(extensions),
     do: problem(Atom.to_string(type), nil, extensions)
 
