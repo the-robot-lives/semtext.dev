@@ -33,6 +33,17 @@
     root.classList.add("js");
   }
 
+  // Hologram hydration restores the SSR'd `class="no-js"` on <html> (the
+  // client render rebuilds the layout literal), re-hiding every .js-only
+  // surface. Re-flip whenever it reappears — this script running IS the
+  // proof of JS, and the class is ours to keep.
+  new MutationObserver(function () {
+    if (root.classList.contains("no-js")) {
+      root.classList.remove("no-js");
+      root.classList.add("js");
+    }
+  }).observe(root, { attributes: true, attributeFilter: ["class"] });
+
   // 5. Sem pane hydration (see header note). The markup is authored in
   // page modules at build time — never user input.
   function hydrateSemPane(el) {
