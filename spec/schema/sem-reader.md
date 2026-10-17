@@ -60,10 +60,11 @@ as `data-<name>` first, then bare `<name>`.
     an inactive `sem-view` **are included**: an outline link is a plain
     `#id` anchor, and the fallback core's deep-link resolver
     (`src/fallback/target.ts`) answers the `hashchange` by opening what
-    encloses the heading. This depends on the **core fallback bundle**
-    (`dist/semtext-fallback.js`) being present: a document that loads only
-    the reading bundle has dead links to headings inside closed
-    disclosures, so ship both or author the nav without them. The panel starts closed (`hidden`). While the
+    encloses the heading. The resolver ships in the one runtime bundle,
+    `semtext/latest/semtext.js` (0.9.0 retired the standalone
+    `dist/semtext-fallback.js`): a document that loads no script has dead
+    links to headings inside closed disclosures, so link the runtime or
+    author the nav without them. The panel starts closed (`hidden`). While the
     document scrolls, the anchor whose heading is the topmost one in view
     carries `aria-current="location"` (IntersectionObserver over the
     targets in **document order**, whatever order an authored nav lists
