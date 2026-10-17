@@ -56,8 +56,7 @@
       var parsed = new DOMParser().parseFromString(html, "text/html");
       var frag = document.createDocumentFragment();
       while (parsed.body.firstChild) frag.appendChild(parsed.body.firstChild);
-      el.innerHTML = "";
-      el.appendChild(frag);
+      el.replaceChildren(frag);
       el.removeAttribute("data-sem-html");
     }
   }

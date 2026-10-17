@@ -96,7 +96,7 @@ describe('Sem hydration + SSR parity contract', () => {
     it(`${path}: ${paneCount} pane(s) hydrated, ${themeCount} theme host(s)`, () => {
       // Deterministic SSR tiers first (no browser, no hydration interference).
       cy.request(path).then((res) => {
-        const ssr = String(res.body).replace(/<script\b[\s\S]*?<\/script\s*>/gi, '')
+        const ssr = String(res.body).replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, '')
         const ssrPanes = (ssr.match(/data-sem-html/g) ?? []).length
         expect(ssrPanes, `SSR Sem pane count (data-sem-html)`).to.eq(paneCount)
         const ssrTheme = (ssr.match(/data-sem-theme/g) ?? []).length

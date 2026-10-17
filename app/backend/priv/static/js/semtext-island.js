@@ -56,8 +56,21 @@
   // but the flag pins make document scans inert either way). Resolves when
   // every file has run, rejects on first failure.
   var loadedSrcs = {};
+  // Only same-origin scripts are loadable: the spec is build-authored, but
+  // the guard keeps a tampered pane spec from turning the loader into a
+  // cross-origin script injector.
+  function sameOriginSrc(src) {
+    try {
+      return new URL(src, location.href).origin === location.origin;
+    } catch (e) {
+      return false;
+    }
+  }
   function loadScript(src, pane) {
     if (loadedSrcs[src]) return loadedSrcs[src];
+    if (!sameOriginSrc(src)) {
+      return Promise.reject(new Error("semtext-island: refusing non-same-origin script " + src));
+    }
     var p;
     if (/(^|\/)[a-z-]*chunks\//.test(src) || /-lazy\.js$/.test(src)) {
       p = import(src);
@@ -204,8 +217,7 @@
       var parsed = new DOMParser().parseFromString(spec.html, "text/html");
       var frag = document.createDocumentFragment();
       while (parsed.body.firstChild) frag.appendChild(parsed.body.firstChild);
-      pane.innerHTML = "";
-      pane.appendChild(frag);
+      pane.replaceChildren(frag);
     }
 
     var classForm = !!spec.classForm;

@@ -103,17 +103,21 @@ async function fetchPage(base, routePath) {
   return last;
 }
 
+// Entity decode via a single table-backed replace (no reconstructing
+// replace-chain).
+var ENTITY_MAP = { lt: "<", gt: ">", quot: '"', "#039": "'", "#39": "'", amp: "&" };
+function decodeEntities(s) {
+  return String(s || "").replace(/&(lt|gt|quot|#0?39|amp);/gi, function (m, name) {
+    var k = name.toLowerCase();
+    return Object.prototype.hasOwnProperty.call(ENTITY_MAP, k) ? ENTITY_MAP[k] : m;
+  });
+}
+
 function clean(s) {
-  // Decode entities FIRST, then strip script regions (so an encoded
-  // &lt;script&gt; payload can never survive as live markup), then drop the
-  // remaining tags. The strip is the LAST markup-capable step by design —
-  // this is text extraction for parity comparison, never a sink.
-  return stripScripts((s || "")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#0?39;/g, "'")
-    .replace(/&amp;/g, "&"))
+  // Decode, then strip script regions (an encoded &lt;script&gt; payload can
+  // never survive as live markup), then drop the remaining tags. This is text
+  // extraction for parity comparison — never a markup sink.
+  return stripScripts(decodeEntities(s))
     .replace(/<[^>]+>/g, "")
     .replace(/\s+/g, " ")
     .trim();
@@ -123,7 +127,7 @@ function clean(s) {
  * payload in an early script whose example SOURCE carries literal markup
  * bytes ("<h1 …") — title/h1/text checks must never read inside it. */
 function stripScripts(html) {
-  return html.replace(/<script\b[\s\S]*?<\/script\s*>/gi, "");
+  return html.replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, "");
 }
 
 /** title + first h1 + flattened text of a rendered page. The page h1 is

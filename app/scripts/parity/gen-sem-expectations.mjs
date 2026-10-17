@@ -24,7 +24,7 @@ const nextOut = process.env.PARITY_NEXT_OUT ?? '/Users/keithbrings/Work/Space/No
 function countSemPanes(routePath) {
   const rel = routePath === '/' ? 'index.html' : `${routePath.replace(/^\//, '')}index.html`
   const html = readFileSync(join(nextOut, rel), 'utf8')
-  const visible = html.replace(/<script\b[\s\S]*?<\/script\s*>/gi, '')
+  const visible = html.replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, '')
   return (visible.match(/data-sem-theme/g) ?? []).length
 }
 

@@ -56,15 +56,18 @@ if (fromDir) fromDir = path.resolve(fromDir);
 
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 
+var ENTITY_MAP = { lt: "<", gt: ">", quot: '"', "#039": "'", "#39": "'", amp: "&" };
+function decodeEntities(s) {
+  return String(s || "").replace(/&(lt|gt|quot|#0?39|amp);/gi, function (m, name) {
+    var k = name.toLowerCase();
+    return Object.prototype.hasOwnProperty.call(ENTITY_MAP, k) ? ENTITY_MAP[k] : m;
+  });
+}
+
 function cleanHtml(s) {
-  // Decode first, then strip script regions (decoded payloads included),
-  // then drop remaining tags — text extraction only, never a sink.
-  return stripScripts((s || "")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#0?39;/g, "'")
-    .replace(/&amp;/g, "&"))
+  // Decode, then strip script regions (decoded payloads included), then drop
+  // remaining tags — text extraction only, never a markup sink.
+  return stripScripts(decodeEntities(s))
     .replace(/<[^>]+>/g, "")
     .replace(/\s+/g, " ")
     .trim();
@@ -74,7 +77,7 @@ function cleanHtml(s) {
 // Hologram SSR (and any page embedding code samples in scripts) can carry
 // literal markup bytes inside <script> payloads — never extract from those.
 function stripScripts(html) {
-  return html.replace(/<script\b[\s\S]*?<\/script\s*>/gi, "");
+  return html.replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, "");
 }
 
 function extract(html) {
