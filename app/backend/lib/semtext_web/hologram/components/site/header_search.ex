@@ -219,12 +219,6 @@ defmodule SemtextWeb.Hologram.Components.Site.HeaderSearch do
   def template do
     ~HOLO"""
     <div class="sem-search relative hidden sm:block">
-      <a href="/reference/" class="sem-search-nolink" aria-label="Search the docs (opens the reference)">
-        <span class="hidden items-center gap-2 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 font-mono text-xs text-ink-mute sm:inline-flex">
-          <span aria-hidden="true">Search</span>
-          <kbd aria-hidden="true" class="rounded border border-white/20 px-1 font-mono text-[0.65rem] text-ink-faint">/</kbd>
-        </span>
-      </a>
       <div class="sem-search-js relative" $click_outside="close_list">
         <label for="header-search-input" class="sr-only">Search tags and CLI commands</label>
         <input

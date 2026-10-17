@@ -360,14 +360,6 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabProposalWizard do
                 >
                   Sign in with GitHub to submit
                 </a>
-              {%else}
-                <span
-                  class="inline-flex min-h-11 items-center bg-violet/50 px-5 py-2 text-sm font-semibold text-white/80"
-                  data-cy="wizard-login-disabled"
-                  aria-disabled="true"
-                >
-                  Sign in coming soon
-                </span>
               {/if}
             {/if}
             <a

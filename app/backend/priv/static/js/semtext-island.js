@@ -208,14 +208,25 @@
     // The authored markup rides in the spec (attribute round-trip decodes
     // the entity escaping): the render pane's raw HTML — the one thing the
     // Hologram template cannot emit (it escapes all text). Replace the
-    // zero-JS placeholder with it on first sync.
-    if (!pane.__semContentSet && typeof spec.html === "string") {
-      pane.__semContentSet = true;
-      // Authored build-time markup (never user input). Parse + adopt instead
-      // of a raw innerHTML sink: identical rendering semantics for markup —
-      // script elements are inert in both paths — without the flagged sink.
-      var parsed = new DOMParser().parseFromString(spec.html, "text/html");
-      pane.replaceChildren.apply(pane, parsed.body.childNodes);
+    // zero-JS placeholder with it on first sync — and RE-set it whenever a
+    // Hologram re-render wiped the pane back to the placeholder (the round-2
+    // hydration bug: hydration replaced the injected children with the
+    // template's placeholder and nothing re-synced). "Wiped" = the pane is
+    // empty or still carries the template's placeholder node; normal
+    // operation (content present) never re-injects.
+    if (typeof spec.html === "string") {
+      var wiped =
+        pane.children.length === 0 || !!pane.querySelector(".ref-render-placeholder");
+      if (!pane.__semContentSet || wiped) {
+        pane.__semContentSet = true;
+        // Authored build-time markup (never user input): spec.html is
+        // generated server-side from this repo's own example files. Parse +
+        // adopt instead of a raw innerHTML sink — identical rendering
+        // semantics for markup (script elements are inert in both paths).
+        // codeql[js/xss-through-dom]
+        var parsed = new DOMParser().parseFromString(spec.html, "text/html");
+        pane.replaceChildren.apply(pane, parsed.body.childNodes);
+      }
     }
 
     var classForm = !!spec.classForm;
@@ -461,39 +472,55 @@
     });
   }
 
-  // ————— integrations carousel autoplay —————
-  // The element owns the index (prev/next/dots are Hologram actions); the
-  // island only ticks the side next control every six seconds and manages
-  // the pause surface: hover or keyboard focus inside the region pauses,
-  // a hidden tab skips ticks, and prefers-reduced-motion readers never get
-  // autoplay at all. While paused the status line becomes aria-live=polite
-  // so a paused reader still hears position changes; while playing it is
-  // aria-live=off (the section is moving on its own).
-  function initCarouselAutoplay() {
-    var region = document.querySelector("[data-carousel-autoplay]");
-    if (!region || region.dataset.carouselBound) return;
-    region.dataset.carouselBound = "1";
-    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  // ————— pane re-sync watcher —————
+  // Hologram hydration (and later state re-renders) can replace a render
+  // pane's children with the template's placeholder AFTER syncPane injected
+  // the authored markup — the round-2 feedback bug ("correct render flips
+  // back to placeholder"). One document-level observer re-syncs any pane
+  // that looks wiped: authored html in its spec, but empty children or the
+  // placeholder node present. Content-present panes are skipped, so the
+  // observer is idle in normal operation (syncPane's own replaceChildren
+  // re-triggers it and re-enters the skip branch — loop-safe).
+  var resyncQueued = false;
 
-    var paused = false;
-    var status = function () { return region.querySelector("[data-carousel-status]"); };
-    var setLive = function () {
-      var st = status();
-      if (st) st.setAttribute("aria-live", paused ? "polite" : "off");
-    };
-    region.addEventListener("mouseenter", function () { paused = true; setLive(); });
-    region.addEventListener("mouseleave", function () { paused = false; setLive(); });
-    region.addEventListener("focusin", function () { paused = true; setLive(); });
-    region.addEventListener("focusout", function (e) {
-      if (!region.contains(e.relatedTarget)) { paused = false; setLive(); }
+  function parsePaneSpec(pane) {
+    try {
+      return JSON.parse(pane.getAttribute("data-sem-pane") || "null");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function queuePaneResync() {
+    if (resyncQueued) return;
+    resyncQueued = true;
+    window.setTimeout(function () {
+      resyncQueued = false;
+      var panes = document.querySelectorAll("[data-sem-pane]");
+      for (var i = 0; i < panes.length; i++) {
+        var pane = panes[i];
+        if (pane.hasAttribute("data-sem-booting")) continue; // boot in flight
+        var spec = parsePaneSpec(pane);
+        if (
+          spec &&
+          typeof spec.html === "string" &&
+          (pane.children.length === 0 || !!pane.querySelector(".ref-render-placeholder"))
+        ) {
+          syncPane(pane);
+        }
+      }
+    }, 80);
+  }
+
+  function watchPanes() {
+    if (watchPanes.done) return;
+    watchPanes.done = true;
+    new MutationObserver(queuePaneResync).observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-sem-pane"],
     });
-    setInterval(function () {
-      if (paused || document.visibilityState !== "visible") return;
-      // Re-scan per tick: the controls render once the element hydrates,
-      // which may land after this script runs.
-      var next = region.querySelector("[data-carousel-next]");
-      if (next) next.click();
-    }, 6000);
   }
 
   // ————— reference index filter —————
@@ -546,15 +573,15 @@
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {
       bootAll();
+      watchPanes();
       initRefFilter();
-      initCarouselAutoplay();
       initDocsSearch();
       initSearchShortcut();
     });
   } else {
     bootAll();
+    watchPanes();
     initRefFilter();
-    initCarouselAutoplay();
     initDocsSearch();
     initSearchShortcut();
   }

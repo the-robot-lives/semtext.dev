@@ -16,8 +16,20 @@ defmodule Semtext.Reference.Nav do
   @spec groups() :: [map()]
   def groups do
     [
-      %{title: "Guides", items: [%{key: "cli", label: "CLI commands", href: "/docs/", data_ref: ""}]},
-      %{title: "Reference", items: [%{key: "reference", label: "Tag reference", href: "/reference/", data_ref: ""}]},
+      %{
+        title: "Guides",
+        items: [
+          %{key: "cli", label: "CLI commands", href: "/docs/", data_ref: ""},
+          %{key: "editor", label: "Try the editor →", href: "/editor/", data_ref: ""}
+        ]
+      },
+      %{
+        title: "Reference",
+        items: [
+          %{key: "reference", label: "Tag reference", href: "/reference/", data_ref: ""},
+          %{key: "reference-all", label: "All tags", href: "/reference/all", data_ref: ""}
+        ]
+      },
       Enum.map(Buckets.buckets(), &bucket_group/1),
       family_group("NPL elements", Tags.npl_tags())
     ]

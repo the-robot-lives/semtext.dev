@@ -67,51 +67,8 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
         gap_note: gap_note,
         href: Tags.tag_href(t.name),
         # Filter payload: tag name plus summary words, lowercase (TS dataRef).
-        data_ref: String.downcase("#{t.name} #{t.summary}"),
-        badge: badge(t)
+        data_ref: String.downcase("#{t.name} #{t.summary}")
       }
-    end
-  end
-
-  # Compact shipped-runtime badge (TS BundleBadge): the file that provides
-  # the element (lazy chunk when one exists, else the fallback bundle), a
-  # fallback suffix when the enhancement tier also covers it, or an honest
-  # none. `title` carries the full provenance.
-  defp badge(t) do
-    case Tags.bundles_for(t.name) do
-      nil ->
-        nil
-
-      b ->
-        cond do
-          t.family == :npl ->
-            %{text: "not in site bundles", title: b[:note] || ""}
-
-          not b.shipped and b.css_only ->
-            # Zero-JS by contract, painted by the shipped theme CSS: say
-            # what paints the example instead of implying the pane is dead.
-            %{text: "theme CSS only", title: b[:note] || ""}
-
-          not b.shipped ->
-            %{text: "no shipped runtime", title: b[:note] || ""}
-
-          true ->
-            files = b.bundles || []
-            lazy = Enum.find(files, &(&1.file == "semtext-lazy.js"))
-            chunk = lazy && String.replace_prefix(lazy.detail, "loads ", "")
-            fallback? = Enum.any?(files, &(&1.file == "semtext-fallback.js"))
-
-            text =
-              [chunk || (files != [] && hd(files).file) || nil, fallback? && "fallback"]
-              |> Enum.reject(&(&1 in [nil, false]))
-              |> Enum.join(" · ")
-
-            title =
-              (if b.shared_with, do: "same runtime as #{b.shared_with}: ", else: "") <>
-                Enum.map_join(files, " + ", & &1.file)
-
-            %{text: text, title: title}
-        end
     end
   end
 
@@ -127,7 +84,20 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
           The {@total} SemText and NPL tags, grouped by the job the element
           does. Each card opens the element's page — its options, children
           and an authored example — and a field its source does not state
-          is marked there.
+          is marked there. To write with them right away,{" "}
+          <a
+            class="text-violet-soft underline decoration-white/30 underline-offset-4 hover:decoration-white/70"
+            href="/editor/"
+          >
+            open the editor →
+          </a>{" "}
+          — any example below opens in it with <code class="font-mono">?example=&lt;tag&gt;</code>.{" "}
+          <a
+            class="text-violet-soft underline decoration-white/30 underline-offset-4 hover:decoration-white/70"
+            href="/reference/all"
+          >
+            Every tag in one table →
+          </a>
         </p>
 
         <div class="mt-8 max-w-3xl">

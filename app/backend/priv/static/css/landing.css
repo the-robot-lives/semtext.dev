@@ -10,3 +10,8 @@
 .code-text{white-space:pre}
 #theme-generator-dialog{border:1px solid var(--code-border);border-radius:.75rem;background:var(--bg-panel,#0b1220);color:var(--ink,#e2e8f0);padding:0}
 #theme-generator-dialog::backdrop{background:rgb(2 6 23/.7)}
+
+/* JS gate: landing pages render <html class="sem-booting">; landing-bootstrap
+   removes it as its first act. With scripts off the .js-only surfaces
+   (tablist, carousel controls) stay hidden and the SSR markup reads whole. */
+html.sem-booting .js-only{display:none!important}
