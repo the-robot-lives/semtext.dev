@@ -1,0 +1,30 @@
+{
+  "name": "semtext-parity-e2e",
+  "private": true,
+  "version": "0.1.0",
+  "$comment": [
+    "BDD + snapshot Cypress harness for the semtext.dev Elixir replatform",
+    "(parity-harness lane). The site under test is the Hologram app at",
+    "PARITY_APP_BASE (default http://127.0.0.1:4100); the Next.js source of",
+    "truth is never launched from here. Versions mirror the landing-preview",
+    "web/package.json devDependencies so the shared Cypress binary cache is",
+    "reused. npm ci once; cypress.run is also used programmatically by",
+    "scripts/parity/snap-tag.mjs."
+  ],
+  "scripts": {
+    "bdd": "cypress run",
+    "snap": "node ../scripts/parity/snap-tag.mjs",
+    "parity": "node ../scripts/parity/parity-check.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@badeball/cypress-cucumber-preprocessor": "^28.0.1",
+    "@types/node": "^22.0.0",
+    "cypress": "^15.21.1",
+    "esbuild": "^0.28.2",
+    "pixelmatch": "^7.0.0",
+    "pngjs": "^7.0.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,1465 @@
+{
+ "$comment": "INTERIM nav/search data for the port-docs lane. Extracted verbatim from the Next site's data/elements.json + reference-glossary.ts + reference-buckets.ts (landing-preview worktree) by lane port-docs on 2026-10-14. Long-term source: port-reference's compile-time modules generated from the npl-enhanced-content subtree (Semtext.Reference.*) — converge on those and retire this file once they land (see the port-docs lane report, cross-lane requests).",
+ "specVersion": "0.6",
+ "tags": [
+  {
+   "name": "agent",
+   "family": "sem",
+   "summary": "Document-level metadata aimed at a model: name, bio, instructions.",
+   "description": "The tag form is bare <agent> (Appendix A maps it to div.sem-agent); extraction names the record type sem-agent. Inert to the browser, a record to the extractor.",
+   "attributes": [
+    {
+     "name": "name",
+     "description": ""
+    },
+    {
+     "name": "bio",
+     "description": ""
+    },
+    {
+     "name": "instructions",
+     "description": ""
+    },
+    {
+     "name": "id · kind · tags",
+     "description": ""
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "conclusion",
+   "family": "sem",
+   "summary": "Fact part — the citable takeaway extraction returns.",
+   "description": "Bare semantic child of sem-fact; any inline content. Conclusions are verbatim-citable assertions; distractors never are.",
+   "attributes": [],
+   "children": []
+  },
+  {
+   "name": "highlight",
+   "family": "sem",
+   "summary": "Prose with occludable content.",
+   "description": "Prose with occludable content. Recall-oriented prose, distinct from `sem-reveal` (block disclosure) and `sem-views` (perspective switching): same prose, a different interaction model per view. Each `sem-detail` is one prose passage; a `<highlight>` child marks a recall target (`[[cloze]]` sugar maps to `<highlight>`) — `<em>` in plain view, occluded and revealed per item in the `quiz` view (self-check model). `view-as` is display-only sugar (`plain` default, `quiz`): the prose is identical under both.",
+   "attributes": [],
+   "children": []
+  },
+  {
+   "name": "incorrect-statement",
+   "family": "sem",
+   "summary": "Explicit wrong candidate for quiz view; never extracted as a claim.",
+   "description": "Child of sem-fact; quiz view only. Up to 3 distractors win over sibling conclusions when the quiz builds its options; with scripts off they render labelled, hidden by nothing.",
+   "attributes": [],
+   "children": []
+  },
+  {
+   "name": "npl-agent",
+   "family": "npl",
+   "summary": "Agent definition card: the element form of the NPL agent convention's `⌜name|type|NPL@version⌝ … ⌞name⌟` header.",
+   "description": "Agent definition card: the element form of the NPL agent convention's `⌜name|type|NPL@version⌝ … ⌞name⌟` header. The three header fields become attributes; the authored prose (the description and behavioural spec) stays the body and is never rewritten. Display-only (Lit `NplAgent`, `src/lit/npl/npl-agent.ts`).",
+   "attributes": [
+    {
+     "name": "name",
+     "description": "required. The agent's identifier, the `⌜<agent-name>` field of the source form. Mirrored to `data-name` after upgrade (the resolved value — an authored `data-name` is never overwritten)."
+    },
+    {
+     "name": "type",
+     "description": "required. The agent's archetype (e.g. `scout`, `coder`). Mirrored to `data-type` after upgrade (the resolved value)."
+    },
+    {
+     "name": "version",
+     "description": "required. The NPL contract version, the `NPL@{version}` field of the source form. Mirrored to `data-version` after upgrade (the resolved value)."
+    },
+    {
+     "name": "extends",
+     "description": "optional. The parent agent this definition extends; the header omits it when not authored. Mirrored to `data-extends` after upgrade (the resolved value)."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "npl-artifact",
+   "family": "npl",
+   "summary": "A structured output block with metadata — the display of an artifact an NPL agent emits (generated code, a report, a figure).",
+   "description": "A structured output block with metadata — the display of an artifact an NPL agent emits (generated code, a report, a figure). Display-only: no events, no state; the authored children carry the data and the upgrade turns them into display chrome in place (`title` becomes the heading, `content` becomes preformatted text, or a sandboxed iframe when `type=\"svg\"`) — Lit `NplArtifact`, `src/lit/npl/npl-artifact.ts`.",
+   "attributes": [
+    {
+     "name": "type",
+     "description": "(unset). A content type such as `text`, `code`, `svg`, `markdown`. `svg` routes the content through a sandboxed iframe; every other value (including unset) renders the content preformatted. Mirrored to `data-type` (dual-form contract; the mirror is deferred past parse via afterParse)."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": [
+    "title",
+    "content"
+   ]
+  },
+  {
+   "name": "npl-cot",
+   "family": "npl",
+   "summary": "Chain-of-thought block: the steps of an NPL `cot` block's `thought_process` plus its outcome, folded in a native `<details>`.",
+   "description": "Chain-of-thought block: the steps of an NPL `cot` block's `thought_process` plus its outcome, folded in a native `<details>`. Lit component: `src/lit/npl/npl-cot.ts`; toggle is native, so it works without JavaScript.",
+   "attributes": [
+    {
+     "name": "collapsed",
+     "description": "Absent ⇒ the block starts expanded; present ⇒ it starts collapsed. Sets the **initial** open state of the native details; the user's own toggling is never re-forced. The runtime mirrors the boolean to `data-collapsed` (`\"true\"`/`\"false\"`) in `updated()` via afterParse — a write for CSS/extraction parity, never an input (the component reads the bare attribute only, like the sem tier's `collapsed`); the mirror is deferred past parse so a sem-source snapshot never sees runtime writes."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": [
+    "sem-step",
+    "outcome"
+   ]
+  },
+  {
+   "name": "npl-critique",
+   "family": "npl",
+   "summary": "Structured critique of one subject from one perspective, with strengths, weaknesses, and a verdict.",
+   "description": "Structured critique of one subject from one perspective, with strengths, weaknesses, and a verdict. Source: NPL critique blocks. Display-only — the component structures authored children; it hides nothing, fires nothing, and owns no state (Lit `NplCritique`, `src/lit/npl/npl-critique.ts`).",
+   "attributes": [
+    {
+     "name": "id",
+     "description": "per the global attribute catalog — optional, the native HTML `id`; the only attribute parameter. No component-specific parameters exist; all content rides the five authored children."
+    }
+   ],
+   "children": [
+    "subject",
+    "perspective",
+    "strengths",
+    "weaknesses",
+    "verdict"
+   ]
+  },
+  {
+   "name": "npl-declaration",
+   "family": "npl",
+   "summary": "Display-only banner for an NPL declaration block: the version/extension header of a rules document (`src/lit/npl/npl-declaration.ts`).",
+   "description": "Display-only banner for an NPL declaration block: the version/extension header of a rules document (`src/lit/npl/npl-declaration.ts`). The source forms are the NPL fences `⌜NPL@<version>⌝ … ⌞NPL@⌟` (definition) and `⌜extend:NPL@<version>⌝ … ⌞NPL@⌟` (extension); the component renders the banner text the source spells, with the rules content as authored children.",
+   "attributes": [
+    {
+     "name": "version",
+     "description": "required; a missing version warns and the banner still renders, with the bare mark (`⌜NPL@⌝`). Rendered in the banner mark (`⌜NPL@<version>⌝`) and mirrored to `data-version` (dual-form contract; the mirror is deferred past parse via afterParse so a sem-source snapshot never sees runtime writes)."
+    },
+    {
+     "name": "type",
+     "description": "one of `definition` | `extension`. Selects the banner mark (`⌜NPL@…⌝` vs `⌜extend:NPL@…⌝`) and mirrors the resolved kind to `data-type`. Any other value falls back to `definition`."
+    },
+    {
+     "name": "extend-target",
+     "description": "optional; the vocabulary an extension extends, authored on `type=\"extension\"` declarations. Rendered by `.npl-declaration-target` beside the mark whenever authored and mirrored to `data-extend-target` (absent when unauthored)."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "npl-directive",
+   "family": "npl",
+   "summary": "Inline directive chip: the element form of an NPL inline directive `⟪glyph: instruction | elaboration⟫` or prefix chip `emoji➤ instruction`.",
+   "description": "Inline directive chip: the element form of an NPL inline directive `⟪glyph: instruction | elaboration⟫` or prefix chip `emoji➤ instruction`. Display-only (Lit `NplDirective`, `src/lit/npl/npl-directive.ts`).",
+   "attributes": [
+    {
+     "name": "glyph",
+     "description": "required; the emoji or symbol leading the chip. Rendered by `.npl-directive-glyph` (dropped, gracefully, when absent) and mirrored to `data-glyph` when non-empty."
+    },
+    {
+     "name": "kind",
+     "description": "one of `directive` | `prefix`. A `prefix` chip renders the `➤` arrow between glyph and instruction, the prefix form's source grammar. Mirrored to `data-kind` (resolved value)."
+    },
+    {
+     "name": "qualifier",
+     "description": "optional; a trailing label beside the instruction, rendered by `.npl-directive-qualifier` and mirrored to `data-qualifier` when non-empty."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "npl-example",
+   "family": "npl",
+   "summary": "Placeholder component proving the `npl-*` pattern end to end (`src/lit/npl/npl-example.ts`).",
+   "description": "Placeholder component proving the `npl-*` pattern end to end (`src/lit/npl/npl-example.ts`). Delete this file together with the component once real components exist; keep the recipe it demonstrates (`src/lit/npl/index.ts` header, `spec/schema/npl/TEMPLATE.md`).",
+   "attributes": [
+    {
+     "name": "label",
+     "description": "Displayed by `.npl-example-label` and mirrored to `data-label` (dual-form contract: `data-label` wins when both spellings are present, so the mirror writes the resolved value and never clobbers an authored `data-label`; deferred past parse via afterParse so a sem-source snapshot never sees runtime writes)."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "npl-flag",
+   "family": "npl",
+   "summary": "One runtime flag row: a `name`/`value` pair rendered as one labelled row the reader can click to apply.",
+   "description": "One runtime flag row: a `name`/`value` pair rendered as one labelled row the reader can click to apply. Authored inside the `npl-flags` container; usable standalone. Values render verbatim; when the name implies a numeric range the value is checked against it, and an out-of-range or non-numeric value is not an error — the flag renders with the `npl-flag-invalid` warning class on its value span. Clicking the flag toggles `data-applied` on it and dispatches `npl-flags-change` to the host app.",
+   "attributes": [
+    {
+     "name": "name",
+     "description": "required, no default. Flag identifier; its wording implies the numeric range checked on `value` (below)."
+    },
+    {
+     "name": "value",
+     "description": "no default. Rendered verbatim; validated only when the name implies a numeric range (case-insensitive substring of the name): `freq` checks [0.0, 1.0] (frequency flags), `factor` checks [-10, 10] (hormone factors), `threshold` must be numeric and unbounded. Any other name (pump switches, meta, …) is free-form — never validated. An out-of-range or non-numeric value is NOT an error: the flag renders with the `npl-flag-invalid` warning class on its value span."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "npl-flags",
+   "family": "npl",
+   "summary": "Container for `npl-flag` children (`npl-flag.md`) plus optional note text.",
+   "description": "Container for `npl-flag` children (`npl-flag.md`) plus optional note text. Mirrors the sem-* prose contracts in `spec/schema/*.md`: prose is normative — changes here precede spec changes precede code, and this file is the BDD source of truth for `test/unit/npl-flags.test.ts`.",
+   "attributes": [
+    {
+     "name": "preset",
+     "description": "optional, no default (omit it entirely for no badge). One of `minimal`, `full`, `production`, `creative`, `tireless` (the NPL flag source spells these `preset:<name>`; the attribute accepts the bare word or the prefixed spelling, normalized for display). An unknown preset is NOT an error: it warns through the author-facing channel and renders with the invalid-preset warning class (see Rendered form)."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": [
+    "npl-flag"
+   ]
+  },
+  {
+   "name": "npl-hormones",
+   "family": "npl",
+   "summary": "Source block: the NPL synthetic-hormones pump (NoizuPromptLingo `conventions/pumps.yaml`, `synthetic-hormones`).",
+   "description": "Source block: the NPL synthetic-hormones pump (NoizuPromptLingo `conventions/pumps.yaml`, `synthetic-hormones`). Seven biochemical-analog hormones — Momentum MTM, Tension TNS, Curiosity CRS, Confidence CNF, Affinity AFN, Fatigue FTG, Restlessness RST — drawn as bars with delta arrows and threshold alerts. Display-only: no events, no network, no timers.",
+   "attributes": [
+    {
+     "name": "variant",
+     "description": "`panel` renders one row per `h` plus the `state` and `triggered` lines; `bars` renders only the rows (the compact form); `alert` renders only the `alert` elements. Any other value falls back to `panel`."
+    },
+    {
+     "name": "state",
+     "description": "child element — compound state description, rendered in the `panel` variant as the state line."
+    },
+    {
+     "name": "triggered",
+     "description": "child element — threshold behaviors activated, or `none`. A row is highlighted (`data-fired`) when this block names the hormone: by symbol (word match, so `RST` does not hit \"first\"), by name, or by its `trigger` text; `none` highlights nothing."
+    },
+    {
+     "name": "alert",
+     "description": "child elements — `hormone`, `value`, `threshold`, `behavior` attributes, body text as content. Rendered only by the `alert` variant."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": [
+    "h"
+   ]
+  },
+  {
+   "name": "npl-intent",
+   "family": "npl",
+   "summary": "Display-only render of an NPL intent block: goal, scope, outcomes and an assumptions grid.",
+   "description": "Display-only render of an NPL intent block: goal, scope, outcomes and an assumptions grid. Lit `NplIntent` (`src/lit/npl/npl-intent.ts`); this file is the normative source of the BDD spec `test/unit/npl-intent.test.ts`.",
+   "attributes": [],
+   "children": [
+    "npl-intent-overview",
+    "npl-intent-scope",
+    "npl-intent-outcomes",
+    "npl-intent-assumptions",
+    "npl-intent-assumption"
+   ]
+  },
+  {
+   "name": "npl-mindread",
+   "family": "npl",
+   "summary": "Theory-of-mind reading of the other party — the display upgrade of the NPL `<npl-mindread>` block (NoizuPromptLingo `npl/npl-full.md` §3.6 Social Cognition).",
+   "description": "Theory-of-mind reading of the other party — the display upgrade of the NPL `<npl-mindread>` block (NoizuPromptLingo `npl/npl-full.md` §3.6 Social Cognition). Source block: ```html <npl-mindread> <subject>{who — user, collaborator, agent name}</subject> <signals> <signal type=\"tone|pattern|omission|context|contradiction|expertise\">{observed evidence}</signal> </signals> <inferred> <motive>{goal behind the stated request}</motive> <mood>{emotional state}</mood> <cognitive>{how they're thinking}</cognitive> <unspoken>{what they need but haven't articulated}</unspoken> </inferred> <adaptation>{concrete behavioral change}</adaptation> </npl-mindread> ``` Contract per conventions.md v0.6 and the namespace recipe in `src/lit/npl/index.ts`. Display-only: no events, no interactivity.",
+   "attributes": [
+    {
+     "name": "confidence",
+     "description": "optional, a theory-of-mind reading is a guess until corrected; authored `0..1`. Out-of-range values are **clamped** into `[0,1]` (a non-numeric authoring clamps to `0`), and the host is **marked**: `data-confidence` carries the clamped value, `data-confidence-out-of-range` the verbatim authored value, and the meter gains a `npl-mindread-confidence-out` note."
+    }
+   ],
+   "children": [
+    "subject",
+    "signals",
+    "signal",
+    "type",
+    "inferred",
+    "motive",
+    "mood",
+    "cognitive",
+    "unspoken",
+    "adaptation"
+   ]
+  },
+  {
+   "name": "npl-mode",
+   "family": "npl",
+   "summary": "Cognitive lens declaration (display-only): the authored `mode` children enumerate the cognitive lenses of an NPL agent; the component renders one chip per lens, marked when the declaration is primary.",
+   "description": "Cognitive lens declaration (display-only): the authored `mode` children enumerate the cognitive lenses of an NPL agent; the component renders one chip per lens, marked when the declaration is primary.",
+   "attributes": [
+    {
+     "name": "primary",
+     "description": "Resolved in either authoring spelling (`data-primary` wins, conventions §2). Declares this the primary lens; marks the rendered chips (`npl-mode-chip-primary`) and mirrors to `data-primary` after parse — an authored `data-primary` is never clobbered by the default."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": [
+    "mode"
+   ]
+  },
+  {
+   "name": "npl-mood",
+   "family": "npl",
+   "summary": "Affective-state chip (display-only).",
+   "description": "Affective-state chip (display-only). Source: NPL mood blocks — the block's emoji and optional qualifier ride the `mood` attribute; its tone, context and approach annotations ride optional children.",
+   "attributes": [
+    {
+     "name": "mood",
+     "description": "required. One emoji followed by an optional qualifier string, whitespace-separated (`\"🙂 wistful\"`); a lone emoji is valid. Displayed by `.npl-mood-chip` and mirrored to `data-mood` (dual-form contract; the mirror is deferred past parse via afterParse so a sem-source snapshot never sees runtime writes)."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": [
+    "npl-mood-tone",
+    "npl-mood-context",
+    "npl-mood-approach"
+   ]
+  },
+  {
+   "name": "npl-poa",
+   "family": "npl",
+   "summary": "The NPL plan-of-action block: a decision tree with weighted reasoning.",
+   "description": "The NPL plan-of-action block: a decision tree with weighted reasoning. Source is the NPL `poa` block — a ```mermaid fence for the decision tree, a `<reasoning>` element with the weighted paths, and a `<selected>` element naming the chosen option. Display-only: the component never loads mermaid or any runtime library, so the tree degrades to its own source, which reads as a plain code block.",
+   "attributes": [
+    {
+     "name": "direction",
+     "description": "One of `lr` | `td`; declares the intended flow and mirrors to `data-direction` (dual-form contract, `data-` wins, mirror deferred past parse via afterParse). The fence's own `graph LR`/`graph TD` line remains the renderer's source of truth — authored source is never rewritten. Anything other than `lr`/`td` falls back to `lr` with an author-facing warning."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "npl-ref",
+   "family": "npl",
+   "summary": "Display-only rendering of an NPL ref block: post-hoc reflection over a finished turn (assessment, improvements, validation, eval, fine-tune).",
+   "description": "Display-only rendering of an NPL ref block: post-hoc reflection over a finished turn (assessment, improvements, validation, eval, fine-tune).",
+   "attributes": [
+    {
+     "name": "variant",
+     "description": "one of `full`, `compact`, optional — `full` renders each section as a labelled block; `compact` renders one emoji line per section. Any other value resolves to `full`, and the resolved variant mirrors to `data-variant` (dual-form contract; the mirror is deferred past parse via afterParse, like sem-note, so a sem-source snapshot never sees runtime writes). The variant is read at upgrade; it is display-only and not switched after wiring."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": [
+    "assessment",
+    "improvements",
+    "validation",
+    "eval",
+    "fine-tune"
+   ]
+  },
+  {
+   "name": "npl-rubric",
+   "family": "npl",
+   "summary": "Display-only weighted scoring rubric: one table of criteria, each with a weight and a score, plus an overall figure that is stated or computed from the weighted average.",
+   "description": "Display-only weighted scoring rubric: one table of criteria, each with a weight and a score, plus an overall figure that is stated or computed from the weighted average. Source: NPL rubric blocks. The component renders the table and owns no state; a criterion whose weight or score is missing or non-numeric is marked, kept visible, and excluded from the average, and the overall figure is marked (stated) or (computed) (Lit `NplRubric`, `src/lit/npl/npl-rubric.ts`).",
+   "attributes": [
+    {
+     "name": "title",
+     "description": "(empty). Rendered as the table caption and mirrored to `data-title` (dual-form contract; the mirror is deferred past parse via afterParse so a sem-source snapshot never sees runtime writes)."
+    },
+    {
+     "name": "npl-overall-score",
+     "description": "(optional, one) — `value`: number — default: the element's trimmed text (`value` wins when both are present). States the overall score; when absent or non-numeric the component computes the weighted average — sum(weight · score) ÷ sum(weight) over the criteria with a numeric weight AND score (all-zero weights ⇒ no figure)."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "npl-section",
+   "family": "npl",
+   "summary": "Generic typed section for NPL prompt-section blocks (`src/lit/npl/npl-section.ts`): display-only chrome over untouched authored content — a labelled header for known types, a warning box for unknown o",
+   "description": "Generic typed section for NPL prompt-section blocks (`src/lit/npl/npl-section.ts`): display-only chrome over untouched authored content — a labelled header for known types, a warning box for unknown ones. Light DOM per the namespace recipe; content stays searchable/copyable.",
+   "attributes": [
+    {
+     "name": "type",
+     "description": "required. One of the known section types: `alg`, `alg-pseudo`, `diagram`, `example`, `format`, `logic`, `note`, `syntax`, `template`. A missing or unknown value is never fatal: the section renders with the `npl-section-warning` class, its content plain, plus one author-facing warning per offending value."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "npl-thought",
+   "family": "npl",
+   "summary": "Typed associative thought bubble (source: NPL thought blocks).",
+   "description": "Typed associative thought bubble (source: NPL thought blocks). A display-only container whose typed children are `npl-thought` elements that carry a `type` attribute, one per NPL thought-block type (`src/lit/npl/npl-thought.ts`).",
+   "attributes": [
+    {
+     "name": "type",
+     "description": "optional; One of the eleven NPL thought-block types (case-insensitive): `observation`, `tangent`, `question`, `relation`, `concern`, `affirmation`, `reflection`, `opportunity`, `aversion`, `interest`, `eval`."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": [
+    "npl-thought"
+   ]
+  },
+  {
+   "name": "npl-vos",
+   "family": "npl",
+   "summary": "Display-only bracket for an NPL vector-of-self block (`src/lit/npl/npl-vos.ts`): the psychodynamic state an NPL persona brackets each substantive response with — id, ego, mood, super-ego, optional col",
+   "description": "Display-only bracket for an NPL vector-of-self block (`src/lit/npl/npl-vos.ts`): the psychodynamic state an NPL persona brackets each substantive response with — id, ego, mood, super-ego, optional collective (source: NPL `vos` blocks, npl-full.md \"Psychodynamic State\"). One component renders one bracket; `phase` marks which half of the bracket it is. When vector-of-self is active it subsumes standalone `<npl-mood>` — do not author both.",
+   "attributes": [
+    {
+     "name": "phase",
+     "description": "One of `entry`, `exit`; rendered as the bracket label and mirrored to data-phase (dual-form contract; the mirror is deferred past parse via afterParse so a sem-source snapshot never sees runtime writes)."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-audiences",
+   "family": "sem",
+   "summary": "Two halves, one contract: a declaration block (`sem-audiences`) names the profiles a document knows about, and an `audience` qualifier says who each element is for.",
+   "description": "Two halves, one contract: a declaration block (`sem-audiences`) names the profiles a document knows about, and an `audience` qualifier says who each element is for. The reader picks a profile; the script hides what is not for them. Nothing is ever removed from the document, and extraction never looks at the result.",
+   "attributes": [
+    {
+     "name": "id",
+     "description": "(required, document-unique): the profile token that `audience` specs and the hash parameter refer to. It is an ordinary element id, so it shares the document's id space."
+    },
+    {
+     "name": "label",
+     "description": "(optional): human label; the id renders when absent."
+    },
+    {
+     "name": "implies",
+     "description": "(optional, comma list): profiles this one satisfies as well. `operator implies reader` means an operator sees reader content. Closure is transitive; a cycle is an authoring error, warned once and broken."
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-browser",
+   "family": "sem",
+   "summary": "A chrome-like window that renders a SemText document live.",
+   "description": "A chrome-like window that renders a SemText document live. The element exists because the landing \"The Idea\" section needs a BROWSER tab that names its document (an address bar), looks like a window (the shared window-chrome standard), and still renders the deck as real, hydratable DOM rather than an isolated frame. It is the window-frame sibling of `sem-shell` and `sem-code`; all three build their chrome from `src/shared/window-chrome.ts`.",
+   "attributes": [
+    {
+     "name": "src",
+     "description": "(optional): VFS path or URL of the SemText document to render. With no `src`, the element's authored children are the viewport content."
+    },
+    {
+     "name": "label",
+     "description": "(optional): tab-label override. Priority: `label`, then the document's `<title>`, then the `src` basename, then `untitled`."
+    },
+    {
+     "name": "resolve",
+     "description": "(property only, not an attribute): a host-injected `(path) => string | null | Promise<string | null>` consulted for scheme-less paths (`demo/deck.sem.html`, not `/…` or `https://…`) before any fetch. Returning a string adopts it; returning null errors without fetching."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "audience",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-chronology",
+   "family": "sem",
+   "summary": "An ordered sequence of dated events — a timeline.",
+   "description": "An ordered sequence of dated events — a timeline. Each `sem-event` is one dated assertion: *at `when` (until `until`), this happened*, optionally carrying a lifecycle `status`. DOM order is chronological order; the vocabulary does not sort. `view-as` selects the timeline rail or a plain list and never changes what an event means.",
+   "attributes": [
+    {
+     "name": "when",
+     "description": "(recommended): the event's date or period start, as the author wants a machine to see it (ISO-8601 preferred, free text allowed)."
+    },
+    {
+     "name": "until",
+     "description": "(optional): period end."
+    },
+    {
+     "name": "status",
+     "description": "(optional): `done | current | todo | blocked` — same vocabulary as `sem-step`. Absent means unannotated, **not** `todo`: an event is a record of something that happened, not a task."
+    },
+    {
+     "name": "view-as",
+     "description": "`timeline` (default) | `list`. Unknown values render as `timeline`."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "audience",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-code",
+   "family": "sem",
+   "summary": "A source listing with provenance.",
+   "description": "A source listing with provenance. The element exists because plain `<pre><code>` cannot carry a filename, a language, or a set of emphasised lines that a machine can read back, and because copy / wrap are reading affordances that need JS. The listing itself is **verbatim**: whitespace inside `<code>` is content, never normalised.",
+   "attributes": [
+    {
+     "name": "lang",
+     "description": "(optional): language token, rendered as a badge."
+    },
+    {
+     "name": "filename",
+     "description": "(optional): provenance label."
+    },
+    {
+     "name": "mark",
+     "description": "(optional): emphasised lines, 1-based, comma list of numbers and `a-b` ranges (`2,4-5`). Out-of-range entries are ignored."
+    },
+    {
+     "name": "wrap",
+     "description": "(boolean, optional): start with soft-wrapped lines."
+    },
+    {
+     "name": "controls",
+     "description": "(optional): comma flags from `copy`, `wrap`; Unknown flags are ignored."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "audience",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": [
+    "pre",
+    "code",
+    "mark"
+   ]
+  },
+  {
+   "name": "sem-data-join",
+   "family": "sem",
+   "summary": "A declaration, not a rendered dataset: it materializes one extra bucket — the **inner join** of two named buckets on a single named key column — that queries can address by `name`.",
+   "description": "A declaration, not a rendered dataset: it materializes one extra bucket — the **inner join** of two named buckets on a single named key column — that queries can address by `name`. Placed directly inside a `sem-data-visualizer`; zero-JS it is invisible (there is nothing to read). Outer joins, multiple keys and non-equality joins are out of scope.",
+   "attributes": [
+    {
+     "name": "data-name",
+     "description": "(alias `name`): required — bucket key of the join result; colliding with a source name is an authoring error."
+    },
+    {
+     "name": "data-left",
+     "description": "(alias `left`): required — the left-hand bucket to join, by `data-name` reference."
+    },
+    {
+     "name": "data-right",
+     "description": "(alias `right`): required — the other bucket to join, by `data-name` reference."
+    },
+    {
+     "name": "data-on",
+     "description": "(alias `on`): required — the named key column; must exist (case-insensitive) in both buckets."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-data-query",
+   "family": "sem",
+   "summary": "The editable default query: a direct declaration whose text body is one query in the read-only SQL subset (`SELECT … FROM <bucket> [WHERE] [ORDER BY] [LIMIT]`).",
+   "description": "The editable default query: a direct declaration whose text body is one query in the read-only SQL subset (`SELECT … FROM <bucket> [WHERE] [ORDER BY] [LIMIT]`). Placed directly inside a `sem-data-visualizer`; no JOIN in the grammar (joins are declarative via `sem-data-join`), no aggregates, no write path. Zero-JS the query text shows as ordinary text (it *is* the document's record of the default query).",
+   "attributes": [
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-data-source",
+   "family": "sem",
+   "summary": "One named data bucket inside a `sem-data-visualizer`.",
+   "description": "One named data bucket inside a `sem-data-visualizer`. Its payload is either the element's inline text body or the resource named by `source` (an empty body plus `source` is the file/API form; a non-empty inline body together with `source` is an authoring error, rendered as a clear error, never silently resolved). Formats: inline Markdown table, CSV (RFC 4180), a YAML subset, JSON, a SQL result-shape declaration, or a file/API load; zero-JS the authored text reads as pre-wrapped text.",
+   "attributes": [
+    {
+     "name": "data-name",
+     "description": "free text — human label rendered as the table `caption`, and the bucket key every query, join and cross-source view reference resolves (exact, then case-insensitive, then normalized: lowercase, non-alphanumeric runs collapsed to `-`, edge `-` trimmed)."
+    },
+    {
+     "name": "data-format",
+     "description": "(optional): one of `table`, `csv`, `yaml`, `json`, `sql` — payload syntax of the body or of the fetched resource; Unknown format is a clear inline error, never a silent blank."
+    },
+    {
+     "name": "data-type",
+     "description": "(optional): one of `rows`, `yaml-schema` — structure declaration; (absent ⇒ the tier infers). rows ⇒ simple row/column definition via the per-column declaration attribute; yaml-schema ⇒ the payload is an OpenAPI-style YAML document whose nested objects flatten to dotted column paths."
+    },
+    {
+     "name": "data-columns",
+     "description": "(optional): string — with `data-type=\"rows\"`, the per-column declaration, a comma list of `name[:type][?]` (`?` = nullable; types `string`, `number`, `integer`, `boolean`, `date`, `null`). Declared types override inference per column; inference fills any column the declaration omits."
+    },
+    {
+     "name": "source",
+     "description": "(optional): string — URL of a relative/same-origin file or an absolute `http(s)` file/API endpoint; inline payload and `source` are mutually exclusive. `file://` is refused when the document itself is `file://`."
+    },
+    {
+     "name": "data-views",
+     "description": "(optional): named views as `name=colspec; name=colspec` — `colspec` is `*` or a comma list of column names, matched case-insensitively; malformed segments are skipped (a typo hides a view, it never breaks the document)."
+    },
+    {
+     "name": "data-view",
+     "description": "(optional): view name — the default view. Resolution: `data-view` name ⇒ first declared view ⇒ implicit `all=*`."
+    },
+    {
+     "name": "data-header",
+     "description": "(optional): one of `true`, `false`; csv only: `false` ⇒ the first row is data and headers synthesize `col-<n>`."
+    },
+    {
+     "name": "data-path",
+     "description": "(optional): string — `json`/API only: dot/bracket path into a nested response (`data.items`, `rows[2].entries`) that flattens to the row array."
+    },
+    {
+     "name": "data-cache",
+     "description": "(optional): one of `no`; `no` ⇒ skip the in-memory fetch cache (one fetch per URL per page load by default)."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-data-visualizer",
+   "family": "sem",
+   "summary": "The container for data-visualizer state: it wraps one or more `sem-data-source` children (plus optional `sem-data-join` and `sem-data-query` declaration children).",
+   "description": "The container for data-visualizer state: it wraps one or more `sem-data-source` children (plus optional `sem-data-join` and `sem-data-query` declaration children). It mints no records of its own — it is the unit of tier scanning, of the modal viewer, and of shared view/query state. Zero-JS it shows its source children unenhanced (the authored text reads as pre-wrapped text).",
+   "attributes": [
+    {
+     "name": "id",
+     "description": "optional — names the container for the modal deep link (`#dv=<visualizer-id>`). The copy-link chrome prefers the container's id; with none it falls back to the container's sole named source (`#bucket=<name>`), and a container with neither mints no copy-link button."
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": [
+    "sem-data-source",
+    "sem-data-join",
+    "sem-data-query"
+   ]
+  },
+  {
+   "name": "sem-detail",
+   "family": "sem",
+   "summary": "Prose with occludable content.",
+   "description": "Prose with occludable content. Recall-oriented prose, distinct from `sem-reveal` (block disclosure) and `sem-views` (perspective switching): same prose, a different interaction model per view. Each `sem-detail` is one prose passage; a `<highlight>` child marks a recall target (`[[cloze]]` sugar maps to `<highlight>`) — `<em>` in plain view, occluded and revealed per item in the `quiz` view (self-check model). `view-as` is display-only sugar (`plain` default, `quiz`): the prose is identical under both.",
+   "attributes": [],
+   "children": []
+  },
+  {
+   "name": "sem-details",
+   "family": "sem",
+   "summary": "Prose with occludable content.",
+   "description": "Prose with occludable content. Recall-oriented prose, distinct from `sem-reveal` (block disclosure) and `sem-views` (perspective switching): same prose, a different interaction model per view. Each `sem-detail` is one prose passage; a `<highlight>` child marks a recall target (`[[cloze]]` sugar maps to `<highlight>`) — `<em>` in plain view, occluded and revealed per item in the `quiz` view (self-check model). `view-as` is display-only sugar (`plain` default, `quiz`): the prose is identical under both.",
+   "attributes": [
+    {
+     "name": "view-as",
+     "description": "`plain` (default) | `quiz`. Display-only sugar — the prose is identical; quiz view additionally occludes highlights."
+    },
+    {
+     "name": "id",
+     "description": "on the container; `kind`, `tags` global. Facts may also carry `<highlight>` prompts (schema sem-facts), but occlusion wiring for prose lives here."
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-enhanced-document",
+   "family": "sem",
+   "summary": "Required root wrapper; delimits extraction scope.",
+   "description": "Exactly one per document when the vocabulary is used. Plain HTML inside stays ordinary HTML; extraction scopes to the wrapper when present, otherwise to <body>.",
+   "attributes": [
+    {
+     "name": "role",
+     "description": ""
+    },
+    {
+     "name": "audience",
+     "description": ""
+    },
+    {
+     "name": "id · kind · tags",
+     "description": ""
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-event",
+   "family": "sem",
+   "summary": "An ordered sequence of dated events — a timeline.",
+   "description": "An ordered sequence of dated events — a timeline. Each `sem-event` is one dated assertion: *at `when` (until `until`), this happened*, optionally carrying a lifecycle `status`. DOM order is chronological order; the vocabulary does not sort. `view-as` selects the timeline rail or a plain list and never changes what an event means.",
+   "attributes": [],
+   "children": [
+    "time"
+   ]
+  },
+  {
+   "name": "sem-fact",
+   "family": "sem",
+   "summary": "A collection of fact/claim pairs.",
+   "description": "A collection of fact/claim pairs. Each `sem-fact` is an assertable statement/conclusion pair — the atomic citable unit (`id` is the citation token; `kind`, `tags` global). `view-as` is a **presentation parameterization, not a semantic change**: the fact *is* a fact under every view; the view selects the recall interaction (list = read, flashcards = self-test, quiz = scored recall).",
+   "attributes": [],
+   "children": [
+    "statement",
+    "conclusion",
+    "incorrect-statement"
+   ]
+  },
+  {
+   "name": "sem-facts",
+   "family": "sem",
+   "summary": "A collection of fact/claim pairs.",
+   "description": "A collection of fact/claim pairs. Each `sem-fact` is an assertable statement/conclusion pair — the atomic citable unit (`id` is the citation token; `kind`, `tags` global). `view-as` is a **presentation parameterization, not a semantic change**: the fact *is* a fact under every view; the view selects the recall interaction (list = read, flashcards = self-test, quiz = scored recall).",
+   "attributes": [
+    {
+     "name": "view-as",
+     "description": "`list` (default) | `flashcards` | `quiz`. Canonical attribute; display-only sugar — machines extract the same pairs regardless of view."
+    },
+    {
+     "name": "id",
+     "description": "on the container and on facts: required for citation (`#auth-facts/f-rotate`); `kind`, `tags` global."
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-md",
+   "family": "sem",
+   "summary": "A block whose content is authored as **Markdown** and rendered to HTML in the browser.",
+   "description": "A block whose content is authored as **Markdown** and rendered to HTML in the browser. The element exists for the one kind of content that is cheaper to write as Markdown than as HTML and that a machine wants back as Markdown: tables above all, then headings, lists, emphasis, links, code and quotes. It is not a second authoring format for the vocabulary — a `sem-fact` is still written as a `sem-fact` — and it never fetches, never evaluates and never injects markup: the renderer builds DOM nodes from the parsed text, so anything that looks like HTML inside the Markdown is rendered as the characters that were typed.",
+   "attributes": [
+    {
+     "name": "view-as",
+     "description": "(optional): `rendered` (default) or `raw` — the initial mode. **Mutable presentation**: the toggle rewrites `data-view-as` at runtime (the authored bare attribute is left alone) and extraction ignores it (spec/extraction.md §5c)."
+    },
+    {
+     "name": "label",
+     "description": "(optional): a short caption rendered in the chrome."
+    },
+    {
+     "name": "controls",
+     "description": "(optional): comma flags from `toggle`, `copy`; default both, also when the attribute is present but empty. Unknown flags are ignored."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "audience",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-note",
+   "family": "sem",
+   "summary": "A callout — prose set beside the main flow (`role=\"note\"`, light DOM, content searchable).",
+   "description": "A callout — prose set beside the main flow (`role=\"note\"`, light DOM, content searchable). The body is the element's content; `variant` (`info` default | `warning` | `tip` | `danger`) selects the accent and label, `collapsed` hides the body behind a ten-word teaser that expands on click, and `view-as=\"margin\"` floats the note as a right-gutter aside on wide viewports (inline otherwise, and in print) — CSS-only. `view-as` is never extracted: a margin note and an inline note yield the same record.",
+   "attributes": [
+    {
+     "name": "variant",
+     "description": "`info` (default) | `warning` | `tip` | `danger`."
+    },
+    {
+     "name": "collapsed",
+     "description": "boolean attr — the body is hidden behind a ten-word teaser (`.sem-note-summary`) that expands on click."
+    },
+    {
+     "name": "view-as",
+     "description": "presentation only. On wide viewports the note floats right beside the prose that follows it (width `--sem-margin-width`, default 14rem), inside the container; a document whose column has a gutter pushes it out with `--sem-margin-offset`. On narrow viewports and in print it reads inline as an ordinary callout. CSS-only — no handler, no chrome, no record change."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-option",
+   "family": "sem",
+   "summary": "Quiz answer candidate; correct marks the right one.",
+   "description": "Sugar: ✅ / ✗ prefixes mark correct / distractor options. Tier-1 demo element — the validator's schema does not know it yet.",
+   "attributes": [
+    {
+     "name": "correct",
+     "description": ""
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-procedure",
+   "family": "sem",
+   "summary": "An ordered, status-annotated procedure.",
+   "description": "An ordered, status-annotated procedure. Children: one `sem-step` per instruction, each carrying a `status` attribute. A step's `status` is its lifecycle annotation — `done` | `current` | `todo` default | `blocked`; DOM order is execution order — no step-number attribute, ordinals are positional and rendered with CSS counters. Status sugar (`✅/→/❌`) is display-only: `status` is canonical. Zero-JS element — pure CSS rendering. `kind` is a free token (`runbook`, `recipe`, `migration` …).",
+   "attributes": [
+    {
+     "name": "kind",
+     "description": "free token (`runbook`, `recipe`, `migration` …)."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-profile",
+   "family": "sem",
+   "summary": "Two halves, one contract: a declaration block (`sem-audiences`) names the profiles a document knows about, and an `audience` qualifier says who each element is for.",
+   "description": "Two halves, one contract: a declaration block (`sem-audiences`) names the profiles a document knows about, and an `audience` qualifier says who each element is for. The reader picks a profile; the script hides what is not for them. Nothing is ever removed from the document, and extraction never looks at the result.",
+   "attributes": [],
+   "children": []
+  },
+  {
+   "name": "sem-progress",
+   "family": "sem",
+   "summary": "A completion meter — one scalar completion assertion.",
+   "description": "A completion meter — one scalar completion assertion. `value` is required, canonical unit 0..1: out-of-range values clamp for rendering while the raw attribute stays untouched; `label` is optional (default `progress`). The runtime builds a meter (track + fill + `label :: N%`); JS-off the value reads as text via CSS `attr()` — no fake bar. `status=\"done\"` ⇔ value 1 by convention.",
+   "attributes": [
+    {
+     "name": "value",
+     "description": "required, canonical unit 0..1. Out-of-range values clamp for rendering; the raw attr stays untouched (machine readers see the author's value, the render shows the clamp)."
+    },
+    {
+     "name": "label",
+     "description": "optional meter caption;"
+    },
+    {
+     "name": "status",
+     "description": "optional completion state — pairs with value 1 and renders the full/accent state (same catalog as `sem-step`)."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-properties",
+   "family": "sem",
+   "summary": "A definition/properties block: a closed set of key/value assertions.",
+   "description": "A definition/properties block: a closed set of key/value assertions. Each `sem-property` is one pair — `key` is the term (required, free text), the property text is the value. Renders a `<dl>`-equivalent grid, zero-JS: the key column renders via CSS `attr(key)`, and each property authored as `role=\"definition\"` + `aria-label` = the key lets AT announce the pair without JS. Compact `term :: value` sugar is display-only — `key` is canonical. Pure definition list, no copy/search chrome; `view-as=\"glossary\"` turns the block into a glossary (term anchors get hover/focus preview popovers).",
+   "attributes": [
+    {
+     "name": "key",
+     "description": "(on each `sem-property`): required, free text (the term). The property text is the value."
+    },
+    {
+     "name": "kind",
+     "description": "(optional): free token (`config`, `spec`, `env` …)."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "view-as",
+     "description": "(optional; R/W1): the block is a glossary. Each property should carry an `id`; prose elsewhere links a term with a plain anchor (`<a href=\"#g-jwt\">JWT</a>`), optionally wrapping it in `<dfn>` at its defining use."
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-property",
+   "family": "sem",
+   "summary": "A definition/properties block: a closed set of key/value assertions.",
+   "description": "A definition/properties block: a closed set of key/value assertions. Each `sem-property` is one pair — `key` is the term (required, free text), the property text is the value. Renders a `<dl>`-equivalent grid, zero-JS: the key column renders via CSS `attr(key)`, and each property authored as `role=\"definition\"` + `aria-label` = the key lets AT announce the pair without JS. Compact `term :: value` sugar is display-only — `key` is canonical. Pure definition list, no copy/search chrome; `view-as=\"glossary\"` turns the block into a glossary (term anchors get hover/focus preview popovers).",
+   "attributes": [],
+   "children": []
+  },
+  {
+   "name": "sem-question",
+   "family": "sem",
+   "summary": "Quiz block (Tier 1 demo element).",
+   "description": "Children: a prompt and sem-option candidates. Tier-1 demo element — no tier ships a handler yet, and the validator's schema does not know it yet.",
+   "attributes": [
+    {
+     "name": "type",
+     "description": ""
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-reader",
+   "family": "sem",
+   "summary": "The reading chrome of a long document: an outline, a reading-progress bar, and the reader-side controls a printed page cannot offer — focus mode, type size and face, colour scheme, print, audience.",
+   "description": "The reading chrome of a long document: an outline, a reading-progress bar, and the reader-side controls a printed page cannot offer — focus mode, type size and face, colour scheme, print, audience. It is **chrome, not content**: it mints no record, its outline is derived from the document's headings, and a document without it loses nothing a machine could read. It exists as one element (rather than one per control) because every control shares a host, a persistence policy and an a11y contract, and because the planned `sem-themes` picker collapses into its `theme` control (R/W3 — not in this wave).",
+   "attributes": [
+    {
+     "name": "controls",
+     "description": "optional. Comma flags, in any order, one of `outline`, `progress`, `focus`, `type`, `color`, `print`, `audience` — unknown flags, including the theme flag reserved for R/W3, are ignored. Controls render in the **canonical order** above, not in attribute order."
+    },
+    {
+     "name": "outline-depth",
+     "description": "optional. Deepest heading level in the generated outline, `2`–`6`; The outline always starts at `h2` — `h1` is the document title."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "audience",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": [
+    "nav"
+   ]
+  },
+  {
+   "name": "sem-reference",
+   "family": "sem",
+   "summary": "A numbered list of works or notes the prose cites.",
+   "description": "A numbered list of works or notes the prose cites. Each `sem-reference` is one citable entry with an `id`; **inline citations are plain anchors** (`<a href=\"#r1\">`) and mint nothing. The element exists because a reference needs fields a `<li>` cannot carry (`href`, `cite`) and because backlinks and hover previews are reading affordances that need JS.",
+   "attributes": [],
+   "children": []
+  },
+  {
+   "name": "sem-references",
+   "family": "sem",
+   "summary": "A numbered list of works or notes the prose cites.",
+   "description": "A numbered list of works or notes the prose cites. Each `sem-reference` is one citable entry with an `id`; **inline citations are plain anchors** (`<a href=\"#r1\">`) and mint nothing. The element exists because a reference needs fields a `<li>` cannot carry (`href`, `cite`) and because backlinks and hover previews are reading affordances that need JS.",
+   "attributes": [
+    {
+     "name": "kind",
+     "description": "`footnotes` | `bibliography` (free token; these two get distinct styling). Optional."
+    },
+    {
+     "name": "id",
+     "description": "(required; on each `sem-reference`): the citation target — the global `id`."
+    },
+    {
+     "name": "href",
+     "description": "(optional; on each `sem-reference`): external location (`data-href` in the class form)."
+    },
+    {
+     "name": "cite",
+     "description": "(optional; on each `sem-reference`): short citation label (`RFC 6749`)."
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-reveal",
+   "family": "sem",
+   "summary": "A Q→A disclosure, `<details>`-backed — the non-assertive counterpart to the `sem-fact` Q/A shape (a reveal is exposition, not an assertion).",
+   "description": "A Q→A disclosure, `<details>`-backed — the non-assertive counterpart to the `sem-fact` Q/A shape (a reveal is exposition, not an assertion). `summary` labels the closed state; when absent the leading body text (max 60 chars, cut at the last word boundary) derives it, by the one rule in `src/shared/summary.ts` that render and extraction share. `collapsed` starts hidden; without it the reveal starts open. The runtime's fallback handler — this element has no Lit component, like `sem-views` and `sem-progress` — wraps the element in native `<details>/<summary>`: click/keyboard toggling is the platform's; JS-off the content is fully visible (summary as a small-caps heading).",
+   "attributes": [
+    {
+     "name": "summary",
+     "description": "optional label for the closed state. Default: the leading body text (max 60 chars, cut at the last word boundary, trailing punctuation dropped) acts as summary when absent."
+    },
+    {
+     "name": "collapsed",
+     "description": "boolean attr — starts hidden (the `sem-note[collapsed]` convention carries over). Without it the reveal starts **open**."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-source",
+   "family": "sem",
+   "summary": "A transparent wrapper around ordinary SemText content: the reader can flip between the section as rendered and its markup as parsed, before any enhancement.",
+   "description": "A transparent wrapper around ordinary SemText content: the reader can flip between the section as rendered and its markup as parsed, before any enhancement. It exists for documents that teach or demonstrate the vocabulary: the reader sees what a fact deck renders as, then sees exactly what was written to get it, without a second copy of the markup that could drift. It is a wrapper, not content: it mints no record, its children extract exactly as they would without it, and a document without it loses nothing a machine could read. The verbatim source is the one thing it adds, and that is a derived view of the children, never a second authoring.",
+   "attributes": [
+    {
+     "name": "view-as",
+     "description": "`html` (default) | `source`. The initial mode. Mutable presentation: the toggle rewrites `data-view-as` at runtime (the authored bare attribute is left alone), and extraction ignores it (spec/extraction.md §5c)."
+    },
+    {
+     "name": "label",
+     "description": "(optional): a short caption rendered in the chrome."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "audience",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "sem-step",
+   "family": "sem",
+   "summary": "An ordered, status-annotated procedure.",
+   "description": "An ordered, status-annotated procedure. Children: one `sem-step` per instruction, each carrying a `status` attribute. A step's `status` is its lifecycle annotation — `done` | `current` | `todo` default | `blocked`; DOM order is execution order — no step-number attribute, ordinals are positional and rendered with CSS counters. Status sugar (`✅/→/❌`) is display-only: `status` is canonical. Zero-JS element — pure CSS rendering. `kind` is a free token (`runbook`, `recipe`, `migration` …).",
+   "attributes": [],
+   "children": [
+    "sem-step"
+   ]
+  },
+  {
+   "name": "sem-table",
+   "family": "sem",
+   "summary": "A data table a reader can sort and filter, whose **authored `<table>` is the contract**.",
+   "description": "A data table a reader can sort and filter, whose **authored `<table>` is the contract**. There is no JSON payload (PRD §5 planned one; it is dropped): the markup a person reads is the data a machine reads, which is the only way the extraction invariant can hold over a surface the reader reorders. The element exists because sort and filter are interactions, and because a machine reader needs the authored row order back after the DOM has been reordered — plain `<table kind=\"…\">` covers a table nobody sorts.",
+   "attributes": [
+    {
+     "name": "data-value",
+     "description": "(optional, on `<td>`): the sort key for that cell when the visible text is not the key (`15 min` vs `900`). Two numeric keys compare numerically; anything else compares as text, locale-aware."
+    },
+    {
+     "name": "controls",
+     "description": "(optional): one of the comma flags `sort`, `filter`; Unknown flags are ignored."
+    },
+    {
+     "name": "sticky",
+     "description": "(boolean, optional): the header row sticks to the top of the scroll container. Opting in also caps the element at `max-height: 24rem` so a long table scrolls inside itself — the stick needs an internal scroll container to engage, and without it a page-level table never gains one and the header would scroll away like any other row. CSS only — works with scripts off."
+    },
+    {
+     "name": "id",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "kind",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "tags",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    },
+    {
+     "name": "audience",
+     "description": "per the global attribute catalog (conventions.md §2)"
+    }
+   ],
+   "children": [
+    "table"
+   ]
+  },
+  {
+   "name": "sem-view",
+   "family": "sem",
+   "summary": "`sem-views` holds one subject under named perspectives: a tab bar of `sem-view` names shows one view at a time; with no script all views render stacked under their names.",
+   "description": "`sem-views` holds one subject under named perspectives: a tab bar of `sem-view` names shows one view at a time; with no script all views render stacked under their names. Switching is by click, arrow keys or hash, and never moves or rewrites the content itself. ❓ Q3 resolved for v1: **`sem-views`** (not `sem-perspectives`) — shorter, `name` reads naturally, tab-family semantics are the intent.",
+   "attributes": [],
+   "children": []
+  },
+  {
+   "name": "sem-views",
+   "family": "sem",
+   "summary": "`sem-views` holds one subject under named perspectives: a tab bar of `sem-view` names shows one view at a time; with no script all views render stacked under their names.",
+   "description": "`sem-views` holds one subject under named perspectives: a tab bar of `sem-view` names shows one view at a time; with no script all views render stacked under their names. Switching is by click, arrow keys or hash, and never moves or rewrites the content itself. ❓ Q3 resolved for v1: **`sem-views`** (not `sem-perspectives`) — shorter, `name` reads naturally, tab-family semantics are the intent.",
+   "attributes": [
+    {
+     "name": "name",
+     "description": "required, unique within the container, human label."
+    },
+    {
+     "name": "active",
+     "description": "boolean marker on the initially-visible view; **if no view carries it, the first view is active**. The shown view is tracked at runtime in `data-active` (the component mirrors an authored `active` there, then moves it on every switch); the authored attribute is never rewritten."
+    },
+    {
+     "name": "id",
+     "description": "required **for enhancement, not only for deep links** — the handler selects `.sem-views[id]`, so a container without an id never upgrades and stays stacked (the JS-off form) even with script running. Also the deep-link head (`#deploy/argocd`); `kind`, `tags` global."
+    }
+   ],
+   "children": []
+  },
+  {
+   "name": "statement",
+   "family": "sem",
+   "summary": "Fact part — the prompt side of a sem-fact.",
+   "description": "Bare semantic child of sem-fact; any inline content.",
+   "attributes": [],
+   "children": []
+  }
+ ],
+ "buckets": [
+  {
+   "id": "document",
+   "label": "Document & structure",
+   "description": "The root wrapper, reading chrome, audience declarations and document-level metadata that frame a SemText document.",
+   "tags": [
+    "sem-enhanced-document",
+    "sem-reader",
+    "sem-audiences",
+    "sem-profile",
+    "agent"
+   ]
+  },
+  {
+   "id": "prose",
+   "label": "Prose & code",
+   "description": "Content blocks beyond plain HTML — Markdown bodies, callouts and source listings with provenance.",
+   "tags": [
+    "sem-md",
+    "sem-note",
+    "sem-code",
+    "sem-browser"
+   ]
+  },
+  {
+   "id": "disclosure",
+   "label": "Disclosure & views",
+   "description": "The same content under different reading interactions — occluded detail, Q→A reveal, markup flip, perspective tabs.",
+   "tags": [
+    "sem-details",
+    "sem-detail",
+    "highlight",
+    "sem-reveal",
+    "sem-source",
+    "sem-views",
+    "sem-view"
+   ]
+  },
+  {
+   "id": "recall",
+   "label": "Facts & recall",
+   "description": "Assertable statement/conclusion pairs — the citable unit — with the quiz candidates and distractors built on them.",
+   "tags": [
+    "sem-facts",
+    "sem-fact",
+    "statement",
+    "conclusion",
+    "incorrect-statement",
+    "sem-question",
+    "sem-option"
+   ]
+  },
+  {
+   "id": "data",
+   "label": "Data & tables",
+   "description": "Authored tables and the data-visualizer's named buckets, joins and editable queries.",
+   "tags": [
+    "sem-table",
+    "sem-data-visualizer",
+    "sem-data-source",
+    "sem-data-join",
+    "sem-data-query"
+   ]
+  },
+  {
+   "id": "sequence",
+   "label": "Sequences & progress",
+   "description": "Ordered, status-annotated content — timelines, procedures and completion meters.",
+   "tags": [
+    "sem-chronology",
+    "sem-event",
+    "sem-procedure",
+    "sem-step",
+    "sem-progress"
+   ]
+  },
+  {
+   "id": "definitions",
+   "label": "Definitions & citations",
+   "description": "Closed key/value assertions and the numbered works the prose cites.",
+   "tags": [
+    "sem-properties",
+    "sem-property",
+    "sem-references",
+    "sem-reference"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,241 @@
+databaseChangeLog:
+  # Proposals tables (design v1 §4 as amended by v2 §5).
+  # - `submitters` is a VIEW over the scaffold's `users` (v2 §5: submission
+  #   requires GitHub login; identity = users row + github_login/trust_tier).
+  # - `users` gains `github_login` + `trust_tier` (v2 §5) — added here because
+  #   app/db/changelog is owned by the data lane.
+  # - `github_webhook_deliveries` is the X-GitHub-Delivery dedupe table the
+  #   github-sync lane's webhook controller inserts into (v1 §6).
+
+  - changeSet:
+      id: 029-users-github-columns
+      author: semtext-p1-data
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: github_login
+                  type: citext
+              - column:
+                  name: trust_tier
+                  type: smallint
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              # LANE=auth request (coordinated): moderator role column backing
+              # require_role(:moderator) + `mix semtext.grant_moderator`.
+              - column:
+                  name: role
+                  type: citext
+                  defaultValue: user
+                  constraints:
+                    nullable: false
+      rollback:
+        - sql:
+            sql: ALTER TABLE users DROP COLUMN IF EXISTS github_login, DROP COLUMN IF EXISTS trust_tier, DROP COLUMN IF EXISTS role;
+
+  - changeSet:
+      id: 029-create-view-submitters
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: |
+              CREATE VIEW submitters AS
+              SELECT id, user_name, handle, email, github_login, trust_tier,
+                     role, admin, verified, status, inserted_at, updated_at
+              FROM users;
+      rollback:
+        - sql:
+            sql: DROP VIEW IF EXISTS submitters;
+
+  - changeSet:
+      id: 029-create-table-proposals
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE proposals (
+                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                slug citext NOT NULL UNIQUE,
+                element_tag text NOT NULL,
+                title text NOT NULL,
+                summary text NOT NULL,
+                motivation text NOT NULL,
+                options jsonb NOT NULL DEFAULT '[]',
+                example text NOT NULL DEFAULT '',
+                status proposal_status_enum NOT NULL DEFAULT 'draft',
+                current_version_id uuid,
+                forked_from_proposal_id uuid REFERENCES proposals(id),
+                forked_from_version_id uuid,
+                submitter_id uuid NOT NULL REFERENCES users(id),
+                idempotency_key text UNIQUE,
+                hidden_at timestamptz,
+                search tsvector GENERATED ALWAYS AS (
+                  to_tsvector('english',
+                    element_tag || ' ' || coalesce(title, '') || ' ' ||
+                    coalesce(summary, '') || ' ' || coalesce(motivation, ''))
+                ) STORED,
+                inserted_at timestamptz NOT NULL,
+                updated_at timestamptz NOT NULL
+              );
+      rollback:
+        - dropTable:
+            tableName: proposals
+
+  - changeSet:
+      id: 029-create-table-proposal-versions
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE proposal_versions (
+                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                proposal_id uuid NOT NULL REFERENCES proposals(id),
+                version int NOT NULL,
+                title text NOT NULL,
+                summary text NOT NULL,
+                motivation text NOT NULL,
+                options jsonb NOT NULL DEFAULT '[]',
+                example text NOT NULL DEFAULT '',
+                files jsonb NOT NULL DEFAULT '{}',
+                files_sha256 text NOT NULL,
+                created_by_id uuid REFERENCES users(id),
+                inserted_at timestamptz NOT NULL
+              );
+      rollback:
+        - dropTable:
+            tableName: proposal_versions
+
+  # Circular fast pointer: proposals.current_version_id -> proposal_versions.
+  # Deferred so a version row and its pointer can be written in one transaction.
+  - changeSet:
+      id: 029-fk-proposals-current-version
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE proposals
+                ADD CONSTRAINT fk_proposals_current_version
+                FOREIGN KEY (current_version_id)
+                REFERENCES proposal_versions(id)
+                DEFERRABLE INITIALLY DEFERRED;
+      rollback:
+        - sql:
+            sql: ALTER TABLE proposals DROP CONSTRAINT IF EXISTS fk_proposals_current_version;
+
+  - changeSet:
+      id: 029-fk-proposals-forked-version
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE proposals
+                ADD CONSTRAINT fk_proposals_forked_version
+                FOREIGN KEY (forked_from_version_id)
+                REFERENCES proposal_versions(id);
+      rollback:
+        - sql:
+            sql: ALTER TABLE proposals DROP CONSTRAINT IF EXISTS fk_proposals_forked_version;
+
+  - changeSet:
+      id: 029-create-table-discussion-links
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE discussion_links (
+                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                proposal_id uuid NOT NULL UNIQUE REFERENCES proposals(id),
+                repo text NOT NULL,
+                discussion_number int,
+                node_id text,
+                url text,
+                category text,
+                state discussion_state_enum NOT NULL DEFAULT 'pending',
+                attempts int NOT NULL DEFAULT 0,
+                comment_count int NOT NULL DEFAULT 0,
+                reactions jsonb NOT NULL DEFAULT '{}',
+                last_synced_at timestamptz,
+                last_error text,
+                inserted_at timestamptz NOT NULL,
+                updated_at timestamptz NOT NULL
+              );
+      rollback:
+        - dropTable:
+            tableName: discussion_links
+
+  - changeSet:
+      id: 029-create-table-moderation-events
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE moderation_events (
+                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                proposal_id uuid NOT NULL REFERENCES proposals(id),
+                actor_user_id uuid REFERENCES users(id),
+                actor_system text,
+                event moderation_event_enum NOT NULL,
+                from_status proposal_status_enum,
+                to_status proposal_status_enum,
+                reason text,
+                inserted_at timestamptz NOT NULL
+              );
+      rollback:
+        - dropTable:
+            tableName: moderation_events
+
+  - changeSet:
+      id: 029-create-table-proposal-reports
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE proposal_reports (
+                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                proposal_id uuid NOT NULL REFERENCES proposals(id),
+                reporter_id uuid REFERENCES users(id),
+                reason report_reason_enum NOT NULL DEFAULT 'other',
+                details text,
+                status report_status_enum NOT NULL DEFAULT 'open',
+                inserted_at timestamptz NOT NULL,
+                updated_at timestamptz NOT NULL
+              );
+      rollback:
+        - dropTable:
+            tableName: proposal_reports
+
+  # Sliding-window rate-limit event log (approximate window: count rows newer
+  # than now - window). Pruned opportunistically by the RateLimit module.
+  - changeSet:
+      id: 029-create-table-rate-limit-events
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE rate_limit_events (
+                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                bucket text NOT NULL,
+                subject text NOT NULL,
+                inserted_at timestamptz NOT NULL
+              );
+      rollback:
+        - dropTable:
+            tableName: rate_limit_events
+
+  - changeSet:
+      id: 029-create-table-github-webhook-deliveries
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: |
+              CREATE TABLE github_webhook_deliveries (
+                id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+                delivery_id text NOT NULL,
+                event text,
+                inserted_at timestamptz NOT NULL
+              );
+      rollback:
+        - dropTable:
+            tableName: github_webhook_deliveries

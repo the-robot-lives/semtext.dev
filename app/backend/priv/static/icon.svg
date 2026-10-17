@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="SemText">
+  <!--
+    Candidate A - "Markup tile"
+    The header brand-mark (white glyph on the accent violet tile, radius as in
+    the site's .brand-mark) carrying the universal markup glyph: a pair of
+    angle brackets, open toward each other, framing the empty span they mark.
+
+    Both-scheme safe by construction: the tile is opaque accent violet
+    (#7c3aed) and the glyph is #fff (5.7:1 on the tile). Against light browser
+    chrome the dark violet tile separates cleanly; against dark chrome it
+    still reads as a coloured tile on a neutral field. One version needs no
+    media query.
+  -->
+  <rect width="32" height="32" rx="6" fill="#7c3aed"/>
+  <g fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="butt" stroke-linejoin="miter">
+    <polyline points="13,10 7.5,16 13,22"/>
+    <polyline points="19,10 24.5,16 19,22"/>
+  </g>
+</svg>
