@@ -1,0 +1,32 @@
+# Live-dev slot release values (ArgoCD app: semtext-live-dev → dev.semtext.dev).
+#
+# This release renders ONLY the devSlot stack: one pod (throwaway Postgres +
+# Redis sidecars + the live-dev git-pull dev server), its Service, its
+# Authentik-gated Ingress, its workspace PVC, and its own InfisicalSecrets
+# (git deploy key + TLS). Everything prod is switched OFF below so the two
+# releases (semtext / semtext-live-dev, both from this chart) can never fight
+# over names, ingress hosts, or synced secrets.
+#
+# Isolation contract: the dev pod never sees prod secrets (the prod
+# InfisicalSecret sync is disabled here) and never touches the cluster DB —
+# its Postgres/Redis are same-pod sidecars on 127.0.0.1 with throwaway data.
+
+# Prod lanes off (their templates gate on these).
+backend:
+  enabled: false
+migrate:
+  enabled: false
+secrets:
+  infisical:
+    enabled: false
+tls:
+  enabled: false
+ingress:
+  enabled: false
+
+# Needed only for label/annotation rendering in the dev templates.
+domain: semtext.dev
+
+# The slot itself.
+devSlot:
+  enabled: true

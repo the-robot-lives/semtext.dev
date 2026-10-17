@@ -4,6 +4,22 @@ if System.get_env("PHX_SERVER") do
   config :semtext, SemtextWeb.Endpoint, server: true
 end
 
+# Live-dev slot (dev.semtext.dev): extra main-site hosts, comma-separated.
+# HostDispatch 404s unknown hosts by design (design v2 §3.1); the dev slot
+# serves the same main site under dev.semtext.dev without forking config.exs.
+# Empty/unset is the normal case (prod never sets this).
+extra_main_hosts =
+  System.get_env("SEMTEXT_EXTRA_MAIN_HOSTS", "")
+  |> String.split(",", trim: true)
+  |> Enum.map(&(&1 |> String.trim() |> String.downcase()))
+  |> Enum.reject(&(&1 == ""))
+
+unless extra_main_hosts == [] do
+  hosts = Application.get_env(:semtext, :hosts, [])
+  main = Enum.uniq(Keyword.get(hosts, :main, []) ++ extra_main_hosts)
+  Application.put_env(:semtext, :hosts, Keyword.put(hosts, :main, main))
+end
+
 # Secret material for dev/test: prefer an injected value (.env) and otherwise
 # generate a strong one per boot. No literal secret_key_base or signing salt
 # may be committed in this scaffold — see README/.env.example. Sessions do not

@@ -7,7 +7,11 @@ appDomain: proposals.semtext.dev
 # every sibling subdomain including the future play. sandbox origin.
 cookieDomain: ""
 
+# Render the prod stack (Deployment/Service/migrate Job) from this release.
+# The live-dev slot release (values-live-dev.yaml) flips this off so the two
+# releases never fight over names, hosts, or synced secrets.
 backend:
+  enabled: true
   image: ops.noizu.com/semtext.dev/app:sha-b2962d6
   port: 4000
   resources:
@@ -228,3 +232,76 @@ sandbox:
     storageClass: ""
   service:
     type: ClusterIP
+
+# ---------------------------------------------------------------------------
+# Live dev slot (dev.semtext.dev) — opt-in SECOND environment from this chart.
+# The dev-slot deployment clones origin/develop at runtime (read-only GitHub
+# deploy key) and redeploys on every new commit; the server runs Phoenix DEV
+# mode (CodeReloader + LiveReloader = remote code execution by design), so
+# the ingress is ALWAYS behind the house Authentik forward-auth gate — no
+# anonymous request ever reaches Phoenix.
+#
+# Isolation guarantees (LIVE_DEV pattern):
+#   * own throwaway Postgres + Redis as same-pod sidecars (localhost only);
+#     NEVER the cluster DB, never platform-valkey
+#   * only secret mounted in the pod is the git deploy key, synced by its own
+#     InfisicalSecret from /apps/semtext (key SEMTEXT_LIVE_DEV_DEPLOY_KEY)
+#   * signing secrets are generated at first boot into the workspace volume
+# Enable via values-live-dev.yaml (release semtext-live-dev, ArgoCD app
+# semtext-live-dev); the prod release keeps this false and renders nothing.
+devSlot:
+  enabled: false
+  host: dev.semtext.dev
+  # Toolchain image (Dockerfile.live-dev) — code comes from git, so the
+  # mutable :live-dev tag + Always pull is correct here (NOT for prod).
+  image: ops.noizu.com/semtext.dev/app:live-dev
+  branch: develop
+  pollSeconds: 30
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1536Mi
+  postgres:
+    # pgvector image: the Liquibase changelog creates vector/cube/
+    # earthdistance/pg_trgm/citext extensions (same image as app-ci.yml).
+    image: pgvector/pgvector:pg17
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  redis:
+    image: redis:7-alpine
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+  workspace:
+    # Git clone + deps/_build cache — survives pod restarts so a rebuild is
+    # incremental. Throwaway data only.
+    size: 8Gi
+    storageClass: ""
+  gitSecret:
+    # Synced by templates/dev-secrets.yaml from Infisical /apps/semtext.
+    name: semtext-live-dev-git
+    key: SEMTEXT_LIVE_DEV_DEPLOY_KEY
+  tls:
+    # Own secret (creationPolicy Owner) from the SAME Infisical path as the
+    # prod cert — the origin cert covers semtext.dev + *.semtext.dev, so the
+    # two Owner-secrets never fight over the same name (cdn-semtext-tls
+    # precedent).
+    secretName: semtext-live-dev-tls
+  auth:
+    # House Authentik gate (auth.derobot.is embedded outpost, forward-auth
+    # nginx mode). auth-url is resolved in-cluster (no Cloudflare hop for
+    # every subrequest); auth-signin is the browser-facing URL.
+    authUrl: "http://authentik-server.infra.svc.cluster.local/outpost.goauthentik.io/auth/nginx"
+    authSignin: "https://auth.derobot.is/outpost.goauthentik.io/start?rd=$scheme://$host$escaped_request_uri"
