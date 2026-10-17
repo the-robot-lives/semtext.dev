@@ -17,6 +17,8 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
 
   use Hologram.Component
 
+  alias SemtextWeb.Hologram.Components.AnnotateWidget
+
   alias SemtextWeb.Hologram.Components.Site.Footer
   alias SemtextWeb.Hologram.Components.Site.Header
 
@@ -78,6 +80,7 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
           <script defer src="/js/semtext-island.js"></script>
         {/if}
         <script defer src="/js/site-chrome.js"></script>
+        <script src="/js/keep-location.js"></script>
         <Hologram.UI.Runtime />
       </head>
       <body class="docs-bg min-h-screen antialiased">
@@ -85,6 +88,7 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
         <Header />
         <slot />
         <Footer />
+        <AnnotateWidget />
       </body>
     </html>
     """

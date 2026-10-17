@@ -7,6 +7,8 @@ defmodule SemtextWeb.Hologram.Layouts.MainLayout do
   """
   use Hologram.Component
 
+  alias SemtextWeb.Hologram.Components.AnnotateWidget
+
   alias Hologram.UI.Link
   alias Semtext.Hologram.Auth
   alias Semtext.StyleGuide.Catalog
@@ -63,6 +65,7 @@ defmodule SemtextWeb.Hologram.Layouts.MainLayout do
         <link rel="stylesheet" href="/css/app.css" />
         <link rel="stylesheet" href="/css/tobor-kit.css" />
         <link rel="stylesheet" href="/css/viewer.css" />
+        <script src="/js/keep-location.js"></script>
         <Hologram.UI.Runtime />
       </head>
       <body>
@@ -94,6 +97,7 @@ defmodule SemtextWeb.Hologram.Layouts.MainLayout do
           <slot />
         </main>
         <CookieConsent cid="cookie_consent" visible={@show_cookie_banner} />
+        <AnnotateWidget />
       </body>
     </html>
     """
