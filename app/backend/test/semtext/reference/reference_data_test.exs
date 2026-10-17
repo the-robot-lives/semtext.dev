@@ -21,12 +21,12 @@ defmodule Semtext.Reference.ReferenceDataTest do
 
   describe "inventory" do
     test "counts match the generated half + supplement" do
-      assert length(Elements.all()) == 50
+      assert length(Elements.all()) == 54
       assert length(Glossary.all()) == 7
-      assert length(Tags.sem_tags()) == 37
+      assert length(Tags.sem_tags()) == 41
       assert length(Tags.npl_tags()) == 20
-      assert length(Tags.all_tags()) == 57
-      assert Elements.declared_count() == 50
+      assert length(Tags.all_tags()) == 61
+      assert Elements.declared_count() == 54
     end
 
     test "all_tags is sorted by name" do

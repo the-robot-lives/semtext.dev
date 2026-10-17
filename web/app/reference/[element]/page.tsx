@@ -6,7 +6,6 @@ import { ExampleViewer } from "@/components/example-viewer";
 import { SemMdExample } from "@/components/sem-md-example";
 import { REFERENCE_SEM_MD_RENDERED } from "@/components/sem-md-rendered";
 import type {
-  TagAttr,
   TagRecord,
 } from "@/data/reference-glossary";
 import {
@@ -27,6 +26,7 @@ import {
   tagHref,
   tagSlug,
 } from "@/data/reference-tags";
+import { semtextAsset } from "@/lib/semtext-asset";
 
 export const dynamic = "force-static";
 
@@ -176,7 +176,6 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
       ? "Render is available once the npl bundle ships."
       : "No shipped runtime for this element — the authored example renders as plain HTML.";
   const variants = dedupeVariants(EXAMPLE_VARIANTS[t.name] ?? [], t.example);
-  const description = dedupeDescription(t.description, t.summary);
 
   return (
     <>
@@ -184,11 +183,20 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
         <span className="rounded-full border border-white/15 px-2.5 py-1">
           {t.family === "sem" ? "SemText element" : "NPL element"}
         </span>
+        {t.family === "npl" ? (
+          <>
+            {" · "}
+            <a
+              href={promptlingoHref(t)}
+              className="underline decoration-white/30 underline-offset-2 hover:decoration-white/70"
+            >
+              PromptLingo reference ↗
+            </a>
+          </>
+        ) : null}
       </p>
 
-      {t.summary ? (
-        <p className="mt-4 max-w-3xl text-base leading-7 text-ink">{t.summary}</p>
-      ) : gapNote ? (
+      {gapNote ? (
         <p className="mt-4 max-w-3xl text-sm italic leading-6 text-ink-faint">
           The schema file does not state a summary for this tag
           {missing.length ? ` (missing: ${missing.join(", ")})` : ""} — see the
@@ -196,9 +204,16 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
         </p>
       ) : null}
 
-      {description ? (
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">{description}</p>
-      ) : null}
+      {/*
+       * The self-describing definition: summary, description and the
+       * options table authored once as the vocabulary's own
+       * <sem-tag-def>/<sem-tag-attr> markup (server-rendered verbatim from
+       * build-time elements.json data). The vendored runtime (script below)
+       * enhances it into the labelled definition card; without JavaScript
+       * the vocabulary CSS paints the plain block form. Build-time,
+       * repo-authored data only — no user input reaches this sink.
+       */}
+      <TagDefCard tag={t} bucket={bucketOf(t.name)} />
 
       {t.optionsIn ? (
         <p className="mt-3 max-w-3xl text-sm leading-6 text-ink-mute">
@@ -210,32 +225,13 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
         </p>
       ) : null}
 
-      {t.attributes.length > 0 ? (
-        <div className="mt-5 max-w-none overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-white/15 text-xs uppercase tracking-wide text-ink-faint">
-                <th scope="col" className="py-2 pr-4 font-medium">Option</th>
-                <th scope="col" className="py-2 pr-4 font-medium">Required</th>
-                <th scope="col" className="py-2 pr-4 font-medium">Type · values</th>
-                <th scope="col" className="py-2 pr-4 font-medium">Default</th>
-                <th scope="col" className="py-2 font-medium">Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              {t.attributes.map((a) => (
-                <AttrRow key={a.name} a={a} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
+      {t.attributes.length === 0 ? (
         <p className="mt-5 max-w-3xl text-sm leading-6 text-ink-mute">
-          {t.attributes.length === 0 && missing.includes("attributes")
+          {missing.includes("attributes")
             ? "The schema file states no options for this tag."
             : "No options beyond the global attribute catalog are stated for this tag."}
         </p>
-      )}
+      ) : null}
 
       {t.children.length > 0 ? (
         <div className="mt-5 max-w-3xl">
@@ -327,6 +323,13 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
         Source:{" "}
         <code className="font-mono">{t.source}</code>
       </p>
+
+      {/*
+       * The page-level runtime: upgrades the definition card above (and any
+       * other authored vocabulary in the page chrome) with the vendored
+       * stable bundle. The example viewers stay pane-scoped as before.
+       */}
+      <script defer src={semtextAsset("semtext.js")} />
 
     </>
   );
@@ -422,35 +425,64 @@ function RuntimeLine({ tag: t }: { tag: TagRecord }) {
   );
 }
 
-function attrType(a: TagAttr): string {
-  const parts: string[] = [];
-  if (a.type) parts.push(a.type);
-  if (a.allowedValues.length) parts.push(a.allowedValues.map((v) => `\`${v}\``).join(" | "));
-  return parts.join(" · ");
+/**
+ * The canonical PromptLingo documentation URL for an NPL convention tag.
+ * Derived from the tag record itself (family + name) — promptlingo.dev
+ * serves /reference/<tag> for every npl-* convention (verified live
+ * 2026-10-18); sem-* tags have no PromptLingo page and get no link.
+ */
+function promptlingoHref(t: TagRecord): string {
+  return `https://promptlingo.dev/reference/${t.name}`;
 }
 
-function defaultText(a: TagAttr): string {
-  if (a.default === null) return "—";
-  if (a.default === "") return "(empty)";
-  return a.default;
-}
+const escapeHtml = (s: string): string =>
+  s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 
-function requiredText(a: TagAttr): string {
-  if (a.required === true) return "yes";
-  if (a.required === false) return "no";
-  return "—";
-}
+/**
+ * The reference page's definition card as authored SemText: the same data
+ * the old hand-rendered table carried, emitted as the vocabulary's own
+ * <sem-tag-def>/<sem-tag-attr> markup so readers, machines and the runtime
+ * all consume one source. Server-rendered verbatim from build-time
+ * elements.json data (repo-authored; no user input reaches this sink), so
+ * the static export carries the definitions and the vendored runtime
+ * enhances them in the browser.
+ */
+function tagDefHtml(t: TagRecord, group: string | undefined): string {
+  const attrs = t.attributes
+    .map((a) => {
+      const bits = [`name="${escapeHtml(a.name)}"`];
+      if (a.type) bits.push(`type="${escapeHtml(a.type)}"`);
+      if (a.required === true) bits.push("required");
+      if (a.default !== null) bits.push(`default="${escapeHtml(a.default)}"`);
+      if (a.allowedValues.length)
+        bits.push(`allowed="${escapeHtml(a.allowedValues.join(","))}"`);
+      const body = a.description ? escapeHtml(a.description) : "";
+      return `  <sem-tag-attr ${bits.join(" ")}>${body}</sem-tag-attr>`;
+    })
+    .join("\n");
 
-function AttrRow({ a }: { a: TagAttr }) {
+  const groupAttr = group ? ` group="${escapeHtml(group)}"` : "";
+  const prose = [t.summary, dedupeDescription(t.description, t.summary)]
+    .filter(Boolean)
+    .join("\n");
+
   return (
-    <tr className="border-b border-white/5 align-top">
-      <td className="py-2 pr-4 font-mono text-ink">{a.name}</td>
-      <td className="py-2 pr-4 text-ink-mute">{requiredText(a)}</td>
-      <td className="py-2 pr-4 font-mono text-ink-mute">
-        {attrType(a) || "—"}
-      </td>
-      <td className="py-2 pr-4 font-mono text-ink-mute">{defaultText(a)}</td>
-      <td className="py-2 leading-6 text-ink-mute">{a.description || "—"}</td>
-    </tr>
+    `<sem-tag-def tag="${escapeHtml(t.name)}"${groupAttr}>\n` +
+    (prose ? `${escapeHtml(prose)}\n` : "") +
+    (attrs ? `${attrs}\n` : "") +
+    `</sem-tag-def>`
+  );
+}
+
+function TagDefCard({ tag: t, bucket }: { tag: TagRecord; bucket?: { id: string } }) {
+  return (
+    <div
+      className="mt-5 max-w-3xl"
+      dangerouslySetInnerHTML={{ __html: tagDefHtml(t, bucket?.id) }}
+    />
   );
 }

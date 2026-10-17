@@ -1,7 +1,7 @@
 defmodule SemtextWeb.Hologram.Pages.EditorPage do
   @moduledoc """
   /editor — the SemText document editor island (Instrument shell; site
-  revamp direction 1 "Instrument", runtime v0.8.2 — see npl-enhanced-content
+  revamp direction 1 "Instrument", runtime v0.8.3 — see npl-enhanced-content
   docs/editor/EDITOR.md §5 for the element contract this page wires
   against).
 
@@ -26,10 +26,10 @@ defmodule SemtextWeb.Hologram.Pages.EditorPage do
   spec repo's own web/demo/editor.html does — driving them through the
   island bridge's appended script tags races Hologram hydration):
   /js/editor-flags.js pins the page boot switches first (nothing
-  auto-wires), the VERSION-PINNED /semtext/v0.8.2/semtext.js registers
+  auto-wires), the VERSION-PINNED /semtext/v0.8.3/semtext.js registers
   the core vocabulary the canvas renders (immutable snapshot — same
   pinned base the static site's editor served; cache-stable across
-  bundle syncs), and the REAL /semtext/v0.8.2/semtext-editor.js (§9.2
+  bundle syncs), and the REAL /semtext/v0.8.3/semtext-editor.js (§9.2
   surface: SemTextEditor.createDocument/tryParse + openDocument, the
   Instrument frame: semantic outline, docked inspector, status bar,
   Visual/Code/Split). /js/editor-boot.js fetches the document and opens
