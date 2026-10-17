@@ -1,4 +1,7 @@
 # Changelog
+## 2026-10-18 (editor boot: dead param-open paths leave a styled, usable editor)
+- `editor-boot.js`: a param-driven open that fails (`?src=` 404, unknown `?example=` tag, unsupported src) used to abort before `openDocument`, so the bundle's chrome styles never injected — the editor rendered as bare unstyled light-DOM with no recovery (observed live 2026-10-18 on prod with a bad `?src=`). Every failure path now falls back to the starter document via `openStarterFallback()`; the error stays on the status line and the editor mounts styled
+- heal hardening for the same hole: `lastSource` seeds with the starter (a failed open used to leave the heal with no document to remount from), and the remount's current-document probe feature-detects the 0.9.0 surface (`exportDocument` is gone; falls back to a string-valued `doc`)
 ## 2026-10-18 (Hologram home glossary: 0.9.0 wording)
 - home_page.ex glossary rows ("tier", "tier marker") and the header comment reworded for the one-bundle 0.9.0 reality — the Next home got this in the 0.9.0 pass; the Hologram twin was missed (surfaced as `data-sem-fallback` strings in the prod home payload)
 ## 2026-10-18 (runtime 0.9.0 — SemText fallback tier removal) → stage (#129) → main (#130)
