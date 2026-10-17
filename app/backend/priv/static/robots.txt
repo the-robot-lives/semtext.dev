@@ -28,5 +28,5 @@ Allow: /
 User-agent: OAI-SearchBot
 Allow: /
 
-Sitemap: https://example.com/sitemap.xml
-Sitemap: https://example.com/site.xml
+Sitemap: https://semtext.dev/sitemap.xml
+Sitemap: https://semtext.dev/site.xml

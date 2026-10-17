@@ -156,6 +156,11 @@ config :semtext, :hosts,
   proposals: ["proposals.semtext.dev"],
   probe_paths: ["/health"]
 
+# www.semtext.dev permanently redirects to the apex (SemtextWeb.Plugs.CanonicalHost).
+config :semtext, :canonical_host,
+  from: ["www.semtext.dev"],
+  to: "https://semtext.dev"
+
 # i18n
 config :semtext, SemtextWeb.Gettext, default_locale: "en"
 
