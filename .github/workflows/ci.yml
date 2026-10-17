@@ -31,6 +31,9 @@ env:
   IMAGE_REPO: semtext.dev/web
   CDN_BUCKET: cdn-semtext-dev
 
+permissions:
+  contents: read
+
 jobs:
   test-landing:
     # Next.js static export: typecheck + build (landing/).
