@@ -57,27 +57,59 @@ defmodule SemtextWeb.Hologram.Pages.DocsPage do
   </html>
   """
 
-  # Verbatim from the Next page's first CLI code window.
-  @terminal_sample """
-  $ semtext doc.semtext.html
-  Auth notes
+  # Verbatim from the Next page's first CLI code window (the demo document
+  # these commands run against, kept as the integration sample above).
+  @demo_doc "auth-notes.sem.html"
 
-  refresh tokens rotate per use — each exchange retires the previous token.
+  # REAL CLI outputs, captured by running bin/semtext.mjs +
+  # bin/semtext-validate.mjs from the spec repo (npl-enhanced-content)
+  # against the auth-notes demo document. Thread 7b2969f9: never invent
+  # output formats — regenerate these when the CLI changes.
+  @view_output """
+  $ semtext view auth-notes.sem.html
+  sem-note (#tip-1): Refresh tokens rotate per use — each exchange retires the previous token.
+    variant: tip
+  sem-facts (#facts-1)
+    sem-fact (#f-rotate kind=concept): Refresh tokens rotate per session :: Short-lived access tokens; the refresh grant issues a new pair.
+      incorrectStatements: Store the token in localStorage for durability.
+  """
 
-  Facts
+  @outline_output """
+  $ semtext outline auth-notes.sem.html
+  - [top-h] section: Auth notes (2 nested)
+    - [tip-1] sem-note: Refresh tokens rotate per use — each exchange retires the previous token.
+    - [facts-1] sem-facts: sem-facts (1 nested)
+      - [f-rotate] sem-fact: Refresh tokens rotate per session :: Short-lived access tokens; the refresh grant issues…
+  """
 
-    f-jwt
-    kind: concept
-    JWTs rotate per session
-    conclusion:
-      Short-lived access tokens; the refresh grant issues a new pair.
-    incorrectStatements:
-      Store the token in localStorage for durability.
+  @filter_output """
+  $ semtext filter auth-notes.sem.html --type sem-fact
+  <sem-fact id="f-rotate" kind="concept">
+        <statement>Refresh tokens rotate per session</statement>
+        <conclusion>Short-lived access tokens; the refresh grant issues a new pair.</conclusion>
+        <incorrect-statement>Store the token in localStorage for durability.</incorrect-statement>
+      </sem-fact>
+  """
 
-  $
+  @expand_output """
+  $ semtext expand auth-notes.sem.html f-rotate
+  [f-rotate] sem-fact
+  sem-fact (#f-rotate kind=concept): Refresh tokens rotate per session :: Short-lived access tokens; the refresh grant issues a new pair.
+    incorrectStatements: Store the token in localStorage for durability.
+  """
+
+  @validate_output """
+  $ semtext-validate auth-notes.sem.html
+  1 file checked, 0 errors, 0 warnings
   """
 
   def stub_text, do: @stub
+  def demo_doc, do: @demo_doc
+  def view_output, do: @view_output
+  def outline_output, do: @outline_output
+  def filter_output, do: @filter_output
+  def expand_output, do: @expand_output
+  def validate_output, do: @validate_output
 
   def init(_params, component, _server) do
     # The Next page builds SHOWCASE_HTML in a module IIFE; same build here,
@@ -99,7 +131,6 @@ defmodule SemtextWeb.Hologram.Pages.DocsPage do
 
     put_state(component,
       groups: NavGroups.groups(),
-      terminal_sample: @terminal_sample,
       showcase_html: showcase_html,
       sections: [
         %{id: "cli-commands", label: "CLI commands"},
@@ -123,7 +154,14 @@ defmodule SemtextWeb.Hologram.Pages.DocsPage do
           working web components — no build step, no framework, nothing
           compiled. SemText ships as a CLI and as component bundles. Author
           documents as plain HTML, then read them in the browser, the
-          terminal, or render them for distribution to agents.
+          terminal, or render them for distribution to agents. Want to try
+          one right now?{" "}
+          <a
+            class="text-violet-soft underline decoration-white/30 underline-offset-4 hover:decoration-white/70"
+            href="/editor/"
+          >
+            Open the editor →
+          </a>
         </p>
 
         <section id="cli-commands" aria-labelledby="cli-commands-h" class="mt-14 scroll-mt-24">
@@ -164,77 +202,126 @@ defmodule SemtextWeb.Hologram.Pages.DocsPage do
           </p>
 
           <h3 class="mt-10 text-lg font-semibold tracking-tight text-ink">
-            semtext — read a document (raw)
+            semtext view — read a document
           </h3>
           <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">
-            Prints the document in the terminal, as authored HTML: sections,
-            facts, steps and all the structure, readable as plain text from a
-            buffer or a pipe.
+            Prints the whole document as plain text in the terminal: every
+            record with its id and attributes, readable from a buffer or a
+            pipe.
           </p>
 
-          <figure class="code-window mt-4" aria-label="The semtext command">
+          <figure class="code-window mt-4" aria-label="The semtext view command">
             <div class="code-chrome">
               <span class="dot live" aria-hidden="true" />
               <span class="font-mono">terminal</span>
             </div>
-            <pre><code>{@terminal_sample}</code></pre>
+            <pre><code>{view_output()}</code></pre>
           </figure>
+
+          <h3 class="mt-10 text-lg font-semibold tracking-tight text-ink">
+            semtext outline — the block tree
+          </h3>
+          <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">
+            Prints the document's structure: one line per block with its
+            stable id in brackets. Use <code class="font-mono">--depth N</code>{" "}
+            to trim nesting, or <code class="font-mono">--json</code> for
+            machine-readable output.
+          </p>
+
+          <figure class="code-window mt-4" aria-label="The semtext outline command">
+            <div class="code-chrome">
+              <span class="dot live" aria-hidden="true" />
+              <span class="font-mono">terminal</span>
+            </div>
+            <pre><code>{outline_output()}</code></pre>
+          </figure>
+
+          <h3 class="mt-10 text-lg font-semibold tracking-tight text-ink">
+            semtext filter — select records
+          </h3>
+          <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">
+            Prints matching blocks as normalised HTML. Filter by record type
+            (<code class="font-mono">--type</code>), attribute
+            (<code class="font-mono">--attr</code>), text
+            (<code class="font-mono">--text</code>), id, kind, tag, audience
+            or CSS selector — criteria combine with AND. Add
+            <code class="font-mono"> --json</code> for structured output your
+            tools can consume.
+          </p>
+
+          <figure class="code-window mt-4" aria-label="The semtext filter command">
+            <div class="code-chrome">
+              <span class="dot live" aria-hidden="true" />
+              <span class="font-mono">terminal</span>
+            </div>
+            <pre><code>{filter_output()}</code></pre>
+          </figure>
+
+          <h3 class="mt-10 text-lg font-semibold tracking-tight text-ink">
+            semtext expand — one block in full
+          </h3>
+          <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">
+            Loads a single block by the id the outline printed — the
+            on-demand counterpart to a collapsed outline or a filtered
+            result.
+          </p>
+
+          <figure class="code-window mt-4" aria-label="The semtext expand command">
+            <div class="code-chrome">
+              <span class="dot live" aria-hidden="true" />
+              <span class="font-mono">terminal</span>
+            </div>
+            <pre><code>{expand_output()}</code></pre>
+          </figure>
+
+          <h3 class="mt-10 text-lg font-semibold tracking-tight text-ink">
+            semtext format — normalise a document
+          </h3>
+          <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">
+            Rewrites the document in its normal form — <code class="font-mono">--text</code>{" "}
+            prints the plain-text form instead, <code class="font-mono">--json</code>{" "}
+            the machine-readable one. Same output shape as
+            <code class="font-mono"> view</code>, normalised.
+          </p>
 
           <h3 class="mt-10 text-lg font-semibold tracking-tight text-ink">
             semtext tui — interactive terminal
           </h3>
           <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">
-            Opens an interactive terminal UI for browsing the document: navigate
-            sections, flip flashcards, run quizzes, and inspect structured
-            records. No dependencies, runs in your shell.
+            Opens an interactive terminal UI for browsing the document:
+            arrows or j/k move, Enter expands or collapses a block,
+            <code class="font-mono"> / </code>searches,
+            <code class="font-mono"> r </code>shows the raw source. No
+            dependencies, runs in your shell.
           </p>
           <p class="mt-2 text-sm text-ink-faint">
-            Usage: <code class="font-mono">semtext tui doc.semtext.html</code>
+            Usage: <code class="font-mono">semtext tui auth-notes.sem.html</code>
           </p>
 
           <h3 class="mt-10 text-lg font-semibold tracking-tight text-ink">
-            semtext --render — render for agents
+            semtext-validate — check a document
           </h3>
           <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">
-            Renders the document into a plain-text representation designed for
-            language models: collapsed sections expand on demand, embeds load,
-            examples stay inline. The output is the document itself as a text
-            input to a model, with every structure it needs.
-          </p>
-          <p class="mt-2 text-sm text-ink-faint">
-            Usage: <code class="font-mono">semtext --render doc.semtext.html</code> ·
-            output: plain text to stdout
+            Validates documents against the spec schema and reports unknown
+            elements, bad nesting and schema violations per line. Accepts
+            multiple files or globs; exits 0 when everything is clean.
           </p>
 
-          <h3 class="mt-10 text-lg font-semibold tracking-tight text-ink">
-            semtext extract — extract records
-          </h3>
-          <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">
-            Extracts structured records — facts, steps, properties, references,
-            and all machine-readable content — in YAML or JSON format. Use this
-            to feed a document's structured content into your own tools.
-          </p>
-          <p class="mt-2 text-sm text-ink-faint">
-            Usage: <code class="font-mono">semtext extract [--format yaml|json] doc.semtext.html</code>
-          </p>
+          <figure class="code-window mt-4" aria-label="The semtext-validate command">
+            <div class="code-chrome">
+              <span class="dot live" aria-hidden="true" />
+              <span class="font-mono">terminal</span>
+            </div>
+            <pre><code>{validate_output()}</code></pre>
+          </figure>
 
-          <h3 class="mt-10 text-lg font-semibold tracking-tight text-ink">
-            semtext validate — check a document
-          </h3>
-          <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">
-            Parses the document and reports any structural issues: mismatched
-            nesting, invalid attributes, broken links. Exits 0 if the document
-            is valid.
-          </p>
-          <p class="mt-2 text-sm text-ink-faint">
-            Usage: <code class="font-mono">semtext validate doc.semtext.html</code>
-          </p>
-
-          <h3 class="mt-10 text-lg font-semibold tracking-tight text-ink">
-            semtext --version
-          </h3>
-          <p class="mt-2 text-sm text-ink-mute">
-            Print the CLI and vocabulary version.
+          <p class="mt-3 font-mono text-xs leading-5 text-ink-faint">
+            The CLI ships in the spec repo (npl-enhanced-content):
+            <code class="font-mono">semtext</code>,
+            <code class="font-mono">semtext-validate</code> and the
+            <code class="font-mono">semtext-agent</code> toolkit (search,
+            write, edit) — installed with
+            <code class="font-mono"> npm install npl-enhanced-content</code>.
           </p>
         </section>
 

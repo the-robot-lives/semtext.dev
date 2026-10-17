@@ -50,9 +50,23 @@ defmodule SemtextWeb.Hologram.Pages.EditorPage do
     og_image: "/og-editor-0.8.2.jpg",
     hide_footer: true
 
-  # No init/3 on purpose: the page has no state to serve — everything
-  # document-shaped arrives client-side (see the moduledoc), so the
-  # hydration payload carries nothing but this static template.
+  # init/3 (server-only) computes the content-hashed URLs for the two
+  # site-owned scripts: Plug.Static's heuristic caching serves stale
+  # copies of edited files, so the tags must carry the ?v= hash. The
+  # /semtext/v0.8.3/ bundles are version-pinned paths — no hash needed.
+  # Plain strings only — no document markup in state (payload-leak rule).
+  # The template also authors the editor's chrome prerequisites from the
+  # spec repo's web/demo/editor.html: the semtext.css link (toolbar and
+  # canvas styling — without it the chrome renders as bare text) and the
+  # display:block default; the <sem-editor-code slot="code-view"> child
+  # the Code pane slots into is ensured by /js/editor-boot.js mount().
+  def init(_params, component, _server) do
+    put_state(component,
+      flags_js: SemtextWeb.AssetVersion.url("js/editor-flags.js"),
+      boot_js: SemtextWeb.AssetVersion.url("js/editor-boot.js")
+    )
+  end
+
   def template do
     ~HOLO"""
     <div class="sem-ed-page">
@@ -70,10 +84,11 @@ defmodule SemtextWeb.Hologram.Pages.EditorPage do
           </noscript>
         </div>
       </main>
-      <script defer src="/js/editor-flags.js"></script>
-      <script defer src="/semtext/v0.8.2/semtext.js"></script>
-      <script defer src="/semtext/v0.8.2/semtext-editor.js"></script>
-      <script defer src="/js/editor-boot.js"></script>
+      <link rel="stylesheet" href="/semtext/v0.8.3/semtext.css" />
+      <script defer src={@flags_js}></script>
+      <script defer src="/semtext/v0.8.3/semtext.js"></script>
+      <script defer src="/semtext/v0.8.3/semtext-editor.js"></script>
+      <script defer src={@boot_js}></script>
     </div>
     """
   end

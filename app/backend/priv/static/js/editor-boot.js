@@ -72,6 +72,43 @@
   var linkedThemes = {};
   var lastStatus = "";
 
+  // Hologram hydration can land AFTER this boot chain (cold page bundles)
+  // and reset the template-rendered #editor-root to its SSR children —
+  // removing the mounted editor and reverting the status line (the round-2
+  // /editor bug: the page stayed on "loading…" forever). The mutation
+  // observer alone missed that wipe in the field, so boot ALSO re-asserts
+  // on a time ladder — immune to how the wipe happens, same defence the
+  // landing bootstrap uses. Every step is idempotent; ticks stop touching
+  // the DOM once the editor is connected and the status text matches.
+  var REASSERT_AT = [300, 800, 1600, 3000, 5000, 8000];
+
+  function reassert() {
+    var root = document.getElementById("editor-root");
+    if (!root) return;
+    var existing = root.querySelector("sem-editor");
+    if (existing) {
+      ed = existing;
+      if (lastStatus && (statusEl || document.getElementById("editor-status"))) {
+        var current = document.getElementById("editor-status");
+        if (current && current.textContent !== lastStatus) status(lastStatus);
+      }
+      return;
+    }
+    if (ed && !ed.isConnected) {
+      // The detached node kept its opened document — re-attach it as-is.
+      root.appendChild(ed);
+      if (lastStatus) status(lastStatus);
+    } else if (!ed) {
+      start(); // the first mount never happened (root was missing then)
+    }
+  }
+
+  function armReassert() {
+    for (var i = 0; i < REASSERT_AT.length; i++) {
+      window.setTimeout(reassert, REASSERT_AT[i]);
+    }
+  }
+
   // The Hologram client router rewrites the URL during hydration and
   // drops the query string, so location.search is unreliable by the time
   // the boot chain finishes. The navigation timing entry preserves the
@@ -153,8 +190,19 @@
     // a second run must adopt the existing editor, never mount a rival.
     ed = root.querySelector("sem-editor");
     if (!ed) {
+      // Build off-DOM first: the code-lane child must be in place when the
+      // element connects (the spec demo authors it before the bundle runs).
       ed = document.createElement("sem-editor");
+      var lane = document.createElement("sem-editor-code");
+      lane.setAttribute("slot", "code-view");
+      ed.appendChild(lane);
       root.appendChild(ed);
+    } else if (!ed.querySelector("sem-editor-code")) {
+      // Adopted editor without a lane (older boot) — add it; the editor
+      // re-renders its panes on state changes, so a late slot still fills.
+      var adoptLane = document.createElement("sem-editor-code");
+      adoptLane.setAttribute("slot", "code-view");
+      ed.appendChild(adoptLane);
     }
   }
 
@@ -195,7 +243,9 @@
   // detached node keeps its state, so the reopened document survives.
   function installSelfHeal() {
     if (typeof MutationObserver === "undefined") return;
-    var watchRoot = document.body || document.documentElement;
+    // documentElement, not body: a re-render that replaces wholesale can
+    // take the body's children with it; the documentElement node persists.
+    var watchRoot = document.documentElement || document.body;
     if (!watchRoot) return;
     new MutationObserver(function () {
       if (!ed || ed.isConnected) return;
@@ -311,6 +361,7 @@
     window.__semEditorBooted = true;
     installSelfHeal();
     start();
+    armReassert();
   }
 
   if (document.readyState === "loading") {
