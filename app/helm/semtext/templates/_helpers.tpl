@@ -59,6 +59,21 @@ app.kubernetes.io/instance: {{ .Release.Name }}
       name: {{ .Values.secrets.name }}
       key: {{ .Values.secrets.keys.fleetIngestKey }}
       optional: true
+# Live-fetch proxy (agent-kit lookups, PR #127). Optional refs: until the
+# AGENT_KIT_* keys land in the synced secret the pod starts without them and
+# the proxy routes fail soft with 503 not_configured.
+- name: AGENT_KIT_API_URL
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.secrets.name }}
+      key: {{ .Values.secrets.keys.agentKitApiUrl }}
+      optional: true
+- name: AGENT_KIT_API_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.secrets.name }}
+      key: {{ .Values.secrets.keys.agentKitApiKey }}
+      optional: true
 {{- if .Values.secrets.keys.databaseUrl }}
 - name: DATABASE_URL
   valueFrom:

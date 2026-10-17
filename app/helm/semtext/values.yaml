@@ -8,7 +8,7 @@ appDomain: proposals.semtext.dev
 cookieDomain: ""
 
 backend:
-  image: ops.noizu.com/semtext.dev/app:sha-ce8d86c
+  image: ops.noizu.com/semtext.dev/app:sha-b2962d6
   port: 4000
   resources:
     requests:
@@ -81,6 +81,11 @@ secrets:
     # secretKeyRef in _helpers.tpl: until it lands in the synced secret the
     # pod boots without it and FleetPush no-ops (logs once).
     fleetIngestKey: SEMTEXT_FLEET_INGEST_KEY
+    # Live-fetch proxy (agent-kit lookups, PR #127). Optional secretKeyRef in
+    # _helpers.tpl: until these land in the synced secret the pod boots
+    # without them and the proxy routes fail soft with 503 not_configured.
+    agentKitApiUrl: AGENT_KIT_API_URL
+    agentKitApiKey: AGENT_KIT_API_KEY
     # Not provisioned yet — empty disables the env (the {{- if gates in
     # _helpers.tpl). Flip these on (and set the /apps/semtext store keys)
     # when the user creates the OAuth App / GitHub App / Turnstile account.
