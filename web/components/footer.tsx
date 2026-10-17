@@ -50,7 +50,8 @@ export function Footer() {
           ))}
         </ul>
         <p className="mt-6 text-sm text-ink-mute">
-          SemText · draft spec · part of Noizu Prompt Lingua.{" "}
+          SemText · draft spec · part of Noizu Prompt Lingua. Noizu Labs, Inc.
+          and The Robot Lives use SemText internally.{" "}
           <a
             href={TRL}
             className="text-violet-soft underline-offset-4 hover:underline"

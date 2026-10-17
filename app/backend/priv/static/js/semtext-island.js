@@ -306,6 +306,196 @@
     });
   }
 
+  // ————— header docs search —————
+  // Port of the Next header combobox: one input, grouped SemText/NPL
+  // results over /data/elements.json (name prefix first, then summary
+  // substring), arrow-key selection, Enter to open, Escape to clear. The
+  // "/" shortcut focuses it unless the reader is already typing in a
+  // field. No JS: the input still renders and the reference keeps its own
+  // filter — nothing is promised twice.
+  function initDocsSearch() {
+    var wrap = document.querySelector("[data-docs-search]");
+    if (!wrap || wrap.dataset.searchBound) return;
+    wrap.dataset.searchBound = "1";
+    var input = wrap.querySelector("input");
+    var list = wrap.querySelector("ul");
+    if (!input || !list) return;
+
+    var entries = null; // [{name, summary, href, family}]
+    var active = -1;
+    var options = []; // live option elements
+
+    function load() {
+      if (entries) return Promise.resolve(entries);
+      return fetch("/data/elements.json")
+        .then(function (r) { return r.json(); })
+        .then(function (d) { entries = d.tags || []; return entries; });
+    }
+
+    function close() {
+      list.hidden = true;
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-activedescendant");
+      active = -1;
+    }
+
+    function choose(li) {
+      var href = li && li.getAttribute("data-href");
+      if (href && /^\/reference\/[a-z0-9-]+\/$/.test(href)) { close(); input.value = ""; window.location.assign(href); }
+    }
+
+    function render(q) {
+      while (list.firstChild) list.removeChild(list.firstChild);
+      options = [];
+      active = -1;
+      var ql = q.toLowerCase();
+      var scored = [];
+      for (var i = 0; i < entries.length; i++) {
+        var e = entries[i];
+        var name = e.name.toLowerCase();
+        var idx = name.indexOf(ql);
+        if (idx === 0) scored.push([0, e]);
+        else if (idx > 0) scored.push([1, e]);
+        else if (e.summary.toLowerCase().indexOf(ql) !== -1) scored.push([2, e]);
+      }
+      scored.sort(function (a, b) { return a[0] - b[0]; });
+      var top = scored.slice(0, 10);
+
+      if (top.length === 0) {
+        var none = document.createElement("li");
+        none.className = "px-3 py-2 font-mono text-xs text-ink-faint";
+        none.textContent = "No matching tag";
+        none.setAttribute("role", "option");
+        list.appendChild(none);
+      } else {
+        var lastFamily = null;
+        for (var j = 0; j < top.length; j++) {
+          var tag = top[j][1];
+          if (tag.family !== lastFamily) {
+            lastFamily = tag.family;
+            var head = document.createElement("li");
+            head.className = "px-3 pt-2 font-mono text-[0.65rem] uppercase tracking-[0.14em] text-ink-faint";
+            head.textContent = tag.family === "sem" ? "SemText" : "NPL";
+            head.setAttribute("role", "presentation");
+            list.appendChild(head);
+          }
+          var li = document.createElement("li");
+          li.className = "cursor-pointer px-3 py-2 hover:bg-white/5";
+          li.setAttribute("role", "option");
+          li.setAttribute("data-href", "/reference/" + tag.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "/");
+          var nameEl = document.createElement("span");
+          nameEl.className = "font-mono text-xs text-ink";
+          nameEl.textContent = tag.name;
+          var sumEl = document.createElement("span");
+          sumEl.className = "ml-2 text-xs text-ink-mute";
+          sumEl.textContent = tag.summary.length > 64 ? tag.summary.slice(0, 63) + "…" : tag.summary;
+          li.appendChild(nameEl);
+          li.appendChild(sumEl);
+          list.appendChild(li);
+          options.push(li);
+        }
+      }
+      list.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+    }
+
+    function setActive(next) {
+      if (active >= 0 && options[active]) {
+        options[active].classList.remove("bg-white/5");
+      }
+      active = next;
+      if (active >= 0 && options[active]) {
+        options[active].classList.add("bg-white/5");
+        input.setAttribute("aria-activedescendant", "docs-search-opt");
+        options[active].id = "docs-search-opt";
+        if (options[active].scrollIntoView) options[active].scrollIntoView({ block: "nearest" });
+      }
+    }
+
+    input.addEventListener("input", function () {
+      var q = input.value.trim();
+      if (!q) { close(); return; }
+      load().then(function () { if (input.value.trim()) render(q); }).catch(function () {});
+    });
+    input.addEventListener("focus", function () {
+      if (input.value.trim()) load().then(function () { render(input.value.trim()); }).catch(function () {});
+    });
+    input.addEventListener("keydown", function (ev) {
+      var visible = !list.hidden;
+      if (ev.key === "ArrowDown" && visible) {
+        ev.preventDefault();
+        setActive(Math.min(active + 1, options.length - 1));
+      } else if (ev.key === "ArrowUp" && visible) {
+        ev.preventDefault();
+        setActive(Math.max(active - 1, 0));
+      } else if (ev.key === "Enter") {
+        var pick = (active >= 0 && options[active]) || (visible && options[0]);
+        if (pick) { ev.preventDefault(); choose(pick); }
+      } else if (ev.key === "Escape") {
+        input.value = "";
+        close();
+        input.blur();
+      }
+    });
+    list.addEventListener("mousedown", function (ev) {
+      var li = ev.target.closest("li[data-href]");
+      if (li) { ev.preventDefault(); choose(li); }
+    });
+    document.addEventListener("click", function (ev) {
+      if (!wrap.contains(ev.target)) close();
+    });
+  }
+
+  // "/" focuses the header search from anywhere except a text field.
+  function initSearchShortcut() {
+    var wrap = document.querySelector("[data-docs-search]");
+    if (!wrap || wrap.dataset.shortcutBound) return;
+    wrap.dataset.shortcutBound = "1";
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key !== "/" || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      var t = ev.target;
+      var typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+      if (typing) return;
+      var input = wrap.querySelector("input");
+      if (input) { ev.preventDefault(); input.focus(); }
+    });
+  }
+
+  // ————— integrations carousel autoplay —————
+  // The element owns the index (prev/next/dots are Hologram actions); the
+  // island only ticks the side next control every six seconds and manages
+  // the pause surface: hover or keyboard focus inside the region pauses,
+  // a hidden tab skips ticks, and prefers-reduced-motion readers never get
+  // autoplay at all. While paused the status line becomes aria-live=polite
+  // so a paused reader still hears position changes; while playing it is
+  // aria-live=off (the section is moving on its own).
+  function initCarouselAutoplay() {
+    var region = document.querySelector("[data-carousel-autoplay]");
+    if (!region || region.dataset.carouselBound) return;
+    region.dataset.carouselBound = "1";
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    var paused = false;
+    var status = function () { return region.querySelector("[data-carousel-status]"); };
+    var setLive = function () {
+      var st = status();
+      if (st) st.setAttribute("aria-live", paused ? "polite" : "off");
+    };
+    region.addEventListener("mouseenter", function () { paused = true; setLive(); });
+    region.addEventListener("mouseleave", function () { paused = false; setLive(); });
+    region.addEventListener("focusin", function () { paused = true; setLive(); });
+    region.addEventListener("focusout", function (e) {
+      if (!region.contains(e.relatedTarget)) { paused = false; setLive(); }
+    });
+    setInterval(function () {
+      if (paused || document.visibilityState !== "visible") return;
+      // Re-scan per tick: the controls render once the element hydrates,
+      // which may land after this script runs.
+      var next = region.querySelector("[data-carousel-next]");
+      if (next) next.click();
+    }, 6000);
+  }
+
   // ————— reference index filter —————
   // Port of the Next index page's FILTER_SCRIPT: the #ref-search input
   // narrows the element cards and the sidebar links by tag name or summary.
@@ -357,10 +547,16 @@
     document.addEventListener("DOMContentLoaded", function () {
       bootAll();
       initRefFilter();
+      initCarouselAutoplay();
+      initDocsSearch();
+      initSearchShortcut();
     });
   } else {
     bootAll();
     initRefFilter();
+    initCarouselAutoplay();
+    initDocsSearch();
+    initSearchShortcut();
   }
 
   window.SemtextIsland = {

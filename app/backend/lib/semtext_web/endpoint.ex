@@ -20,7 +20,7 @@ defmodule SemtextWeb.Endpoint do
     from: :semtext,
     gzip: false,
     cache_control_for_etags: "public, no-cache",
-    only: ~w(themes css hologram favicon.ico robots.txt semtext js demo spec dataviz icon.svg apple-touch-icon.png manifest.webmanifest icons)
+    only: ~w(themes css hologram favicon.ico robots.txt semtext js demo spec dataviz data icon.svg apple-touch-icon.png manifest.webmanifest icons)
 
   if code_reloading? do
     plug Phoenix.CodeReloader

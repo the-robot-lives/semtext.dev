@@ -26,10 +26,8 @@ const EXAMPLE = `<sem-enhanced-document>
   <h2>Key lifetime</h2>
   <p>Short-lived access tokens are paired with a refresh grant that issues a new pair<a href="#r-oauth">[1]</a>.</p>
 
-  <sem-code lang="yaml" filename="config/auth.yaml" mark="2" controls="copy,wrap">
-<pre><code>access_ttl: 15m
-refresh_rotation: per-use</code></pre>
-  </sem-code>
+  <sem-code lang="yaml" filename="config/auth.yaml" mark="2" controls="copy,wrap">access_ttl: 15m
+refresh_rotation: per-use</sem-code>
 
   <sem-details>
     <sem-detail>
