@@ -81,9 +81,8 @@ Examples are `figure.code-window` elements under `main#main`:
   via `customElements.whenDefined`);
 - view pills: `.code-chrome button[aria-pressed]` (present only after React
   hydration — the spec gates on them);
-- render settle: tier markers `[data-sem-fallback], [data-sem-upgraded]`, or
-  `window.SemTextFallback` defined plus a grace beat (the highlight quiz
-  handler sets no tier markers).
+- render settle: the `[data-sem-upgraded]` marker, or `window.SemText`
+  defined plus a grace beat (the highlight quiz handler sets no markers).
 
 Figures sharing one aria-label (variant examples repeat it) are
 occurrence-paired: the k-th source figure pairs with the k-th render figure
@@ -164,9 +163,9 @@ branch `epic.docs-overhaul`):
    `public/semtext/v<semver>/` (immutable per-release snapshot), refreshes
    `stable/` and `latest/`, rewrites `versions.json` + `VERSION.md`, keeps
    the unversioned alias mirroring STABLE, and regenerates
-   `data/bundles.json`. Previous `v*/` directories are kept. The frozen
-   legacy `semtext-fallback.js` (retired upstream, still named by
-   `data/bundles.json`) is carried into new snapshots automatically.
+   `data/bundles.json`. Previous `v*/` directories are kept. The retired
+   `semtext-fallback.js` (removed upstream in 0.9.0) is no longer synced —
+   old version directories keep their published copies.
    `--dry-run` prints the plan; `--version` overrides the stamped tag.
 4. Regression warning: the copies of `themes/_vocabulary.css` (body paint
    scoped to `[data-sem-theme]`) and `themes/minimal-tech-light.css`
@@ -182,8 +181,8 @@ branch `epic.docs-overhaul`):
 
 The lead's copy step, mechanized — idempotent (sha256-gated: only differing
 files are written), mirrors chunk dirs (stale hash-named extras deleted;
-anything not hash-named is reported and kept), preserves the frozen
-`semtext-fallback.js` unless the build still emits it, handles both theme
+anything not hash-named is reported and kept), drops the retired
+`semtext-fallback.js` from the alias roots, handles both theme
 renames (vocabulary verbatim; a flattened `semtext.css` is accepted as a
 stand-in when the verbatim sheet is absent), syncs `spec/` → `public/spec/`,
 then re-runs `build-bundle-map.mjs` so `data/bundles.json` (shipped /
