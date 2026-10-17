@@ -1,4 +1,11 @@
 
+/* The three directives are REQUIRED for the documented regen (see
+ * tailwind.config.js): without them the CLI emits only the custom css
+ * below and every template utility drops out of the compiled sheet. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --bg: #0f172a;
   --bg-lift: #111827;
@@ -779,3 +786,56 @@ label.g-pill.is-active {
 .sem-carousel-track[data-index="3"] { transform: translateX(-300%); }
 .sem-carousel-track[data-index="4"] { transform: translateX(-400%); }
 .sem-carousel-track[data-index="5"] { transform: translateX(-500%); }
+
+/* ————— Editor page (/editor) — Instrument shell chrome —————
+   No page hero: the <sem-editor> Instrument frame fills the viewport
+   below the site header (h-16 = 4rem). The frame scrolls internally;
+   the page itself never scrolls. */
+
+.sem-ed-page {
+  height: calc(100vh - 4rem);
+  height: calc(100dvh - 4rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.sem-ed-page-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 0.75rem 0;
+}
+
+#editor-root {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#editor-root sem-editor {
+  display: block;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Boot / state line above the frame — quiet, one line, never a hero. */
+.sem-ed-boot {
+  flex: none;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--mute);
+}
+
+@media (max-width: 700px) {
+  .sem-ed-page {
+    height: calc(100vh - 3.5rem);
+    height: calc(100dvh - 3.5rem);
+  }
+
+  .sem-ed-page-main {
+    padding: 0.4rem 0.4rem 0;
+  }
+}
