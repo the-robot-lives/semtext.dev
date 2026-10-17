@@ -1,7 +1,7 @@
 # SemText runtime — synced bundles
 
 - stable: 0.8.3
-- latest: 0.8.3
+- latest: 0.8.3 + semtext.dev v0.6 assembly (see below)
 - this unversioned directory mirrors stable 0.8.3
 - last sync: 2026-10-18T00:00:00.000Z (0.8.3 refresh — exprRegex escaping contract), source ../../../../../../npl-enhanced-content/.claude/worktrees/editor-instrument/dist (stamp `dist/v0.8.3/`, 25 artifact groups)
 - 0.8.2 carried the Instrument editor shell (semantic outline, docked inspector,
@@ -11,6 +11,13 @@
   v0.8.2/v0.7.2 stay published for the immutable-snapshot rule.
 - semtext-fallback.js is retired upstream; each snapshot carries the frozen
   legacy copy carried forward from v0.7.2.
+- v0.6 assembly (2026-10-18, restored after merge displacement): `latest/semtext.css` =
+  0.8.3 vocabulary base + `_default` + `_v06` + all five themes
+  (minimal-tech-light, nocturne-console, organic-warm, editorial-settings,
+  newsprint — consolidated); `latest/semtext.js` = vendored 0.8.3
+  `semtext.js` verbatim + `runtime/semtext-v06.js` extension (global
+  `SemTextV06`). Built by `scripts/build-latest.mjs`; re-run it after any
+  sync-bundles refresh.
 
 URL scheme: `/semtext/v<semver>/` is an immutable per-release snapshot;
 `/semtext/` (this directory) is the unversioned alias of stable.
