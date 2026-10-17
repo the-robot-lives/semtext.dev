@@ -20,7 +20,7 @@ DOM, and own only shadow-DOM chrome — so the upgrade path cannot fork the
 document or break extraction. Any behavior the fallback can provide, the
 upgrade supersedes rather than replaces.
 
-**Why HTML over Markdown.** The document is the data: qualifying
+**Why XHTML over Markdown.** The document is the data: qualifying
 attributes on semantic children make every datum self-describing for agents
 while remaining fully styled, human-readable HTML. Markdown would need a
 preprocessing layer to carry the same structure — the landing thesis of the

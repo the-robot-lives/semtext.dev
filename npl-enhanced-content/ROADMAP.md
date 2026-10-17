@@ -30,7 +30,7 @@ nobody outside the team has been interviewed.
 
 ## Non-negotiable invariants (guardrails — every milestone inherits these)
 
-1. **Canonical artifact = standalone HTML document.** file:// double-click is the
+1. **Canonical artifact = standalone XHTML document.** file:// double-click is the
    zero-th acceptance bar; IIFE classic scripts only, no runtime fetch, no ES modules.
 2. **Fallback-first.** The universal inline vanilla handler ships with (or before) every
    behavior. Lit upgrades in place: sets `data-sem-upgraded`, removes `data-sem-fallback`.
