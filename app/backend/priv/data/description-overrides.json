@@ -228,6 +228,22 @@
     "sem-enhanced-document": [
       "The required root wrapper around a SemText document.",
       "You wrap the whole document in it once. Inside, plain HTML and sem-* elements mix freely. Extraction reads everything inside the wrapper; the browser treats it as an ordinary container."
+    ],
+    "sem-tag-def": [
+      "Documents one tag's contract: its attributes, types, defaults and child tags, as a card.",
+      "The definition card for a markup tag. You write the tag name and one sem-tag-attr child per attribute; the page shows a tidy table and machines read the same fields back. The reference pages use it, so the vocabulary documents itself."
+    ],
+    "sem-tag-attr": [
+      "One attribute row inside a sem-tag-def: name, type, required flag, default and description.",
+      "The child of sem-tag-def. You write the attribute's name and type, add the required flag when it must be present, and the description text is what readers see in that row."
+    ],
+    "sem-api-call": [
+      "Documents one API call's contract: method, endpoint, status and its parameters, as a card.",
+      "The definition card for an endpoint. You write the operation name, HTTP method and path, then one sem-api-param child per parameter or response field; the page shows a table and machines read the same fields back."
+    ],
+    "sem-api-param": [
+      "One parameter row inside a sem-api-call: name, where it lives, type and description.",
+      "The child of sem-api-call. The in attribute says where the parameter lives (query, body, header, or response for a returned field); required marks the ones the caller must send."
     ]
   }
 }

@@ -226,6 +226,11 @@
       "shipped": true,
       "bundles": [
         {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        },
+        {
           "file": "semtext-fallback.js",
           "detail": "enhancement tier"
         }
@@ -242,9 +247,14 @@
       ]
     },
     "sem-chronology": {
-      "shipped": false,
-      "cssOnly": true,
-      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        }
+      ]
     },
     "sem-code": {
       "shipped": true,
@@ -257,19 +267,34 @@
       ]
     },
     "sem-data-join": {
-      "shipped": false,
-      "cssOnly": true,
-      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        }
+      ]
     },
     "sem-data-query": {
-      "shipped": false,
-      "cssOnly": true,
-      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        }
+      ]
     },
     "sem-data-source": {
-      "shipped": false,
-      "cssOnly": true,
-      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        }
+      ]
     },
     "sem-data-visualizer": {
       "shipped": true,
@@ -283,16 +308,11 @@
     },
     "sem-detail": {
       "shipped": true,
-      "sharedWith": "sem-details",
       "bundles": [
         {
           "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-details.js",
-          "chunk": "chunks/sem-details.js"
-        },
-        {
-          "file": "semtext-fallback.js",
-          "detail": "enhancement tier"
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
         }
       ]
     },
@@ -311,13 +331,23 @@
       ]
     },
     "sem-event": {
-      "shipped": false,
-      "cssOnly": true,
-      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        }
+      ]
     },
     "sem-fact": {
       "shipped": true,
       "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        },
         {
           "file": "semtext-fallback.js",
           "detail": "enhancement tier"
@@ -363,13 +393,23 @@
       ]
     },
     "sem-procedure": {
-      "shipped": false,
-      "cssOnly": true,
-      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        }
+      ]
     },
     "sem-profile": {
       "shipped": true,
       "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        },
         {
           "file": "semtext-fallback.js",
           "detail": "enhancement tier"
@@ -379,6 +419,11 @@
     "sem-progress": {
       "shipped": true,
       "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        },
         {
           "file": "semtext-fallback.js",
           "detail": "enhancement tier"
@@ -403,6 +448,11 @@
       "shipped": true,
       "bundles": [
         {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        },
+        {
           "file": "semtext-fallback.js",
           "detail": "enhancement tier"
         }
@@ -420,12 +470,11 @@
     },
     "sem-reference": {
       "shipped": true,
-      "sharedWith": "sem-references",
       "bundles": [
         {
           "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-references.js",
-          "chunk": "chunks/sem-references.js"
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
         }
       ]
     },
@@ -442,6 +491,11 @@
     "sem-reveal": {
       "shipped": true,
       "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-reveal.js",
+          "chunk": "chunks/sem-reveal.js"
+        },
         {
           "file": "semtext-fallback.js",
           "detail": "enhancement tier"
@@ -463,9 +517,14 @@
       ]
     },
     "sem-step": {
-      "shipped": false,
-      "cssOnly": true,
-      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        }
+      ]
     },
     "sem-table": {
       "shipped": true,
@@ -481,6 +540,11 @@
       "shipped": true,
       "bundles": [
         {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        },
+        {
           "file": "semtext-fallback.js",
           "detail": "enhancement tier"
         }
@@ -489,6 +553,11 @@
     "sem-views": {
       "shipped": true,
       "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        },
         {
           "file": "semtext-fallback.js",
           "detail": "enhancement tier"
@@ -513,6 +582,11 @@
       "sharedWith": "sem-fact",
       "bundles": [
         {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        },
+        {
           "file": "semtext-fallback.js",
           "detail": "enhancement tier"
         }
@@ -531,6 +605,11 @@
       "shipped": true,
       "sharedWith": "sem-fact",
       "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-stubs.js",
+          "chunk": "chunks/sem-stubs.js"
+        },
         {
           "file": "semtext-fallback.js",
           "detail": "enhancement tier"

@@ -3,20 +3,10 @@
     "semtext.dev route parity manifest — the contract the parity harness runs",
     "against (ExUnit layer app/backend/test/parity, Node driver app/scripts/parity/parity-check.mjs,",
     "Cypress layer app/e2e). Every route the Next.js site (landing-preview web/) serves",
-    "at manifest-generation time, with the title/h1/key-text expectations the Hologram",
-    "replatform must reach.",
-    "",
-    "GAP semantics: a route the Hologram app does not serve (404) is a GAP — reported,",
-    "never a failure. A route the app DOES serve but whose title/h1/key text diverges is",
-    "a FAIL (parity regression). Regenerate with gen-manifest.mjs whenever the Next.js",
-    "site gains/changes routes — never hand-edit titles or h1s.",
-    "",
-    "Owners are the P0 port lanes: port-landing (landing page + its sections),",
-    "port-docs (docs/showcase/integrations/extend/themes + chrome),",
-    "port-reference (reference index + tag pages)."
+    "at manifest-generation time, with the title/h1/key-text expectations the Hologram"
   ],
-  "generatedAt": "2026-10-14",
-  "generatedFrom": "landing-preview web/ branch integration/landing-preview (app/*/page.tsx metadata + static export out/)",
+  "generatedAt": "2026-10-17",
+  "generatedFrom": "static export /Users/keithbrings/Work/Space/Noizu/Projects/semtext.dev/.claude/worktrees/feedback-r2-runtime/web/out (2026-10-17T19:34:59.358Z)",
   "nextSite": {
     "root": "/",
     "trailingSlash": true,
@@ -29,8 +19,15 @@
       "owner": "port-landing",
       "title": "SemText — one HTML file, in place of Markdown",
       "h1": "One HTML file",
-      "keyText": ["What it is not", "Documents that do more than read"],
-      "selectors": ["figure.code-window", "section#scope", "section#addons"]
+      "keyText": [
+        "What it is not",
+        "Documents that do more than read"
+      ],
+      "selectors": [
+        "figure.code-window",
+        "section#scope",
+        "section#addons"
+      ]
     },
     {
       "path": "/dataviz/",
@@ -48,8 +45,16 @@
       "owner": "port-docs",
       "title": "Docs — SemText",
       "h1": "Documentation",
-      "keyText": ["CLI commands", "semtext-validate", "semtext format"],
-      "selectors": ["section#cli-commands", "section#showcase", "nav[aria-label=\"Docs\"]"]
+      "keyText": [
+        "CLI commands",
+        "semtext-validate",
+        "semtext format"
+      ],
+      "selectors": [
+        "section#cli-commands",
+        "section#showcase",
+        "nav[aria-label=\"Docs\"]"
+      ]
     },
     {
       "path": "/elements/",
@@ -57,7 +62,9 @@
       "owner": "port-reference",
       "title": "Redirecting to the tag reference — SemText",
       "h1": "The elements moved",
-      "keyText": ["/reference/"],
+      "keyText": [
+        "/reference/"
+      ],
       "selectors": [],
       "redirectTarget": "/reference/",
       "note": "Next serves a meta-refresh page (works from any static server; nginx 301s). Hologram parity: either a 3xx to /reference/ OR a 200 page carrying a meta refresh to /reference/. Ported by port-reference in 5e46399 (meta-refresh + manual link per the Next fallback)."
@@ -196,13 +203,74 @@
       "title": "<{tag}> — SemText reference",
       "h1": "<{tag}>",
       "keyText": [],
-      "selectors": ["figure.code-window", "#example-"],
+      "selectors": [
+        "figure.code-window",
+        "#example-"
+      ],
       "note": "One route per tag in referenceTags. The Hologram page must SSR every tag the Next site lists; a tag that 404s on Hologram is a per-tag GAP."
     }
   ],
-  "referenceTags": ["npl-agent", "npl-artifact", "npl-cot", "npl-critique", "npl-declaration", "npl-directive", "npl-example", "npl-flag", "npl-flags", "npl-hormones", "npl-intent", "npl-mindread", "npl-mode", "npl-mood", "npl-poa", "npl-ref", "npl-rubric", "npl-section", "npl-thought", "npl-vos", "highlight", "sem-audiences", "sem-browser", "sem-chronology", "sem-code", "sem-data-join", "sem-data-query", "sem-data-source", "sem-data-visualizer", "sem-detail", "sem-details", "sem-event", "sem-fact", "sem-facts", "sem-md", "sem-note", "sem-procedure", "sem-profile", "sem-progress", "sem-properties", "sem-property", "sem-reader", "sem-reference", "sem-references", "sem-reveal", "sem-source", "sem-step", "sem-table", "sem-view", "sem-views"],
+  "referenceTags": [
+    "npl-agent",
+    "npl-artifact",
+    "npl-cot",
+    "npl-critique",
+    "npl-declaration",
+    "npl-directive",
+    "npl-example",
+    "npl-flag",
+    "npl-flags",
+    "npl-hormones",
+    "npl-intent",
+    "npl-mindread",
+    "npl-mode",
+    "npl-mood",
+    "npl-poa",
+    "npl-ref",
+    "npl-rubric",
+    "npl-section",
+    "npl-thought",
+    "npl-vos",
+    "highlight",
+    "sem-api-call",
+    "sem-api-param",
+    "sem-audiences",
+    "sem-browser",
+    "sem-chronology",
+    "sem-code",
+    "sem-data-join",
+    "sem-data-query",
+    "sem-data-source",
+    "sem-data-visualizer",
+    "sem-detail",
+    "sem-details",
+    "sem-event",
+    "sem-fact",
+    "sem-facts",
+    "sem-md",
+    "sem-note",
+    "sem-procedure",
+    "sem-profile",
+    "sem-progress",
+    "sem-properties",
+    "sem-property",
+    "sem-reader",
+    "sem-reference",
+    "sem-references",
+    "sem-reveal",
+    "sem-source",
+    "sem-step",
+    "sem-table",
+    "sem-tag-attr",
+    "sem-tag-def",
+    "sem-view",
+    "sem-views"
+  ],
   "nonRoutes": {
     "$comment": "Paths the Next site also serves that the parity harness checks only as static resources, not pages.",
-    "static": ["/semtext/semtext-manifest.json", "/js/semtext-island.js"]
+    "static": [
+      "/semtext/semtext-manifest.json",
+      "/js/semtext-island.js"
+    ]
   }
 }
