@@ -35,7 +35,7 @@ log() { echo "[live-dev $(date -u '+%Y-%m-%dT%H:%M:%SZ')] $*"; }
 # ---------------------------------------------------------------- git access
 mkdir -p "$WORKSPACE"
 umask 077
-cp "$KEY_FILE" "$KEY_COPY"   # mounted secret keys are 0644; ssh demands 600
+install -m 600 "$KEY_FILE" "$KEY_COPY"   # mounted secret keys are 0644; ssh demands 600
 export GIT_SSH_COMMAND="ssh -i $KEY_COPY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 
 if [ ! -d "$REPO_DIR/.git" ]; then
