@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-17
+## 2026-10-17 (.html sweep) — #88 → stage (#90) → main (#91), back-merge #92, prod serving sha-9026a6b
 - .html-standard sweep: landing (`landing/app/`) and static-site (`site/index.html`) copy renamed XHTML-as-artifact → HTML (titles, meta/og/twitter, hero h1, reader panels, FAQ), the literal `auth-notes.xhtml` demo filename fixed to `auth-notes.html`, the Cypress e2e h1 assertion updated in lockstep, and the spec self-description (`spec/conventions.md` + `.html`) now reads "an HTML vocabulary" / "the same HTML read structurally" — syntax-style descriptors ("XHTML-first") and the nginx `application/xhtml+xml` gzip mimetype unchanged (#88)
 
 ## 2026-10-17 (annotate feedback sweep) — #84 → stage (#85) → main (#86), back-merge #87, prod serving sha-cd458d1
