@@ -5,6 +5,9 @@ defmodule SemtextWeb.Endpoint do
     websocket: [timeout: 45_000],
     longpoll: false
 
+  # www -> apex 301 before anything else (static assets included).
+  plug SemtextWeb.Plugs.CanonicalHost
+
   # Style-guide CSS + Hologram client bundles + vendored SemText islands
   # (priv/static/semtext/** — the same artefacts the Next.js site ships at
   # /semtext/**; design v2 §2.2). The js/ dir carries the island bridge.

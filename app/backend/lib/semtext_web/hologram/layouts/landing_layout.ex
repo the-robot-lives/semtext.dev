@@ -18,6 +18,8 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
   """
   use Hologram.Component
 
+  alias SemtextWeb.Hologram.Components.AnnotateWidget
+
   alias SemtextWeb.Hologram.Components.Landing.HeaderMenu
 
   prop :page_title, :string, default: "SemText — one XHTML file, in place of Markdown"
@@ -73,6 +75,7 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
         <link rel="stylesheet" href="/css/landing.css" />
         <link rel="stylesheet" href="/semtext/themes/_vocabulary.css" />
         <link rel="stylesheet" href="/semtext/themes/minimal-tech-light.css" />
+        <script src="/js/keep-location.js"></script>
         <Hologram.UI.Runtime />
         <script>
           window.__semJsOff = true;
@@ -224,6 +227,7 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
             <p class="mt-1 font-mono text-xs text-ink-faint">© 2026 semtext</p>
           </div>
         </footer>
+        <AnnotateWidget />
       </body>
     </html>
     """
