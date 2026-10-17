@@ -252,8 +252,8 @@ Normative guidance; the validator warns on each violation:
 1. **No document carries an embedded fallback script (v0.6).** The
    `<script id="sem-fallback">` requirement is retired: interactivity lives
    in `semtext/latest/semtext.js`, which carries the vanilla fallback
-   behaviours (`dist/semtext-fallback.js`, ≤14 KB raw), the prose-reading
-   behaviours (`dist/semtext-reading.js`, ≤19.5 KB raw, marker
+   behaviours, the prose-reading behaviours
+   (`dist/semtext-reading.js`, ≤19.5 KB raw, marker
    `<!-- sem:inline reading -->`) and the Markdown renderer
    (`dist/semtext-md.js`, ≤8.5 KB raw, marker `<!-- sem:inline md -->`,
    global `SemTextMd`) alongside the Lit upgrade, plus the semtext.dev
