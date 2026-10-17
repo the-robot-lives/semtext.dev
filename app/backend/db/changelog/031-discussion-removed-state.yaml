@@ -1,0 +1,18 @@
+databaseChangeLog:
+  # Coordinator follow-up (2026-10-17): a Discussion deleted/removed on GitHub
+  # gets its own chip state. Webhook sets `removed` (only from `ok`);
+  # recreation is the moderator `recreate_discussion` action — never automatic.
+  # Additive: new enum value only, no data touched.
+
+  - changeSet:
+      id: 031-enum-discussion-state-removed
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: ALTER TYPE discussion_state_enum ADD VALUE IF NOT EXISTS 'removed';
+      rollback:
+        # Postgres cannot ALTER TYPE ... DROP VALUE; remove any rows using the
+        # value so downstream drops (table/type) stay unblocked, and note the
+        # residual enum label in this changeset's id.
+        - sql:
+            sql: DELETE FROM discussion_links WHERE state = 'removed';
