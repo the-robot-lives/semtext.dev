@@ -12,6 +12,10 @@ defmodule Semtext.Application do
     OpentelemetryOban.setup()
     Semtext.Observability.Metrics.setup()
 
+    # Digest static assets once at boot (release-safe app priv dir); see
+    # SemtextWeb.AssetVersion. Best-effort — never blocks or crashes start.
+    SemtextWeb.AssetVersion.warm()
+
     samly_children =
       if Application.get_env(:semtext, :saml_enabled) do
         [Samly.Provider]
