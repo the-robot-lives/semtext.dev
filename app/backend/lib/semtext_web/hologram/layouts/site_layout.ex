@@ -17,7 +17,6 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
 
   use Hologram.Component
 
-
   alias SemtextWeb.Hologram.Components.AnnotateWidget
 
   alias SemtextWeb.Hologram.Components.Site.Footer
@@ -41,6 +40,9 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
   # Without this, pages whose copy mentions "data-sem-theme" (e.g. /themes/)
   # carry an extra attribute mention the export does not have.
   prop :og_description, :string, default: @default_description
+  # Per-page social card (cache-busted filenames — bump the name when the
+  # art changes, e.g. /og-editor-0.8.2.jpg for the Instrument editor page).
+  prop :og_image, :string, default: "/og.jpg"
   prop :canonical, :string, default: @site_url
   # /docs loads the SemText bundle without the off-switches so the page's
   # live SemText blocks auto-wire (the current next/script behavior).
@@ -48,6 +50,9 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
   # /reference pages (port-reference lane): section CSS + the island bridge
   # (auto-boots the example render panes; runs the index filter).
   prop :reference_assets, :boolean, default: false
+  # /editor (Instrument lane): the editor fills the viewport below the
+  # header, so the footer is dropped (app tools chrome, not a content page).
+  prop :hide_footer, :boolean, default: false
 
   # Content-hashed island URL (cache busting; compile-time prop default —
   # remote calls are not client-transpilable inside templates).
@@ -70,7 +75,7 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
         <meta property="og:url" content={@canonical} />
         <meta property="og:site_name" content="semtext" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="/og.jpg" />
+        <meta property="og:image" content={@og_image} />
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
@@ -95,7 +100,9 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
         <a class="skip-link" href="#main">Skip to docs</a>
         <Header />
         <slot />
+        {%if @hide_footer}{%else}
         <Footer />
+        {/if}
         <AnnotateWidget />
       </body>
     </html>
