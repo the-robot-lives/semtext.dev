@@ -135,12 +135,56 @@
     ed = fresh;
     var verdict = window.SemTextEditor.tryParse(lastSource);
     ed.openDocument(verdict.doc);
+    distributeCodeLane();
     if (lastStatus) status(lastStatus);
   }
 
   function healChromeStyles() {
     if (!ed || !ed.isConnected || chromeStylesPresent()) return;
     remountFresh();
+  }
+
+  // One-shot page CSS for the editor shell. The 0.9.0 runtime renders
+  // light DOM, where <slot> never distributes and never fires slotchange
+  // — so the code pane's "slot a <sem-editor-code> element here" hint
+  // would stay visible forever behind the real lane. The lane is placed
+  // for real by distributeCodeLane() below; the hint is dead weight.
+  function installBootCss() {
+    if (document.querySelector("style[data-sem-editor-boot-css]")) return;
+    var s = document.createElement("style");
+    s.setAttribute("data-sem-editor-boot-css", "");
+    s.textContent =
+      ".sem-ed-pane-code p.sem-ed-empty{display:none}";
+    document.head.appendChild(s);
+  }
+
+  // The shell mounts the code view through a shadow-DOM slot
+  // (<slot name="code-view">). 0.9.0 renders the shell in LIGHT DOM
+  // (SemElement — no shadow root), where slots are inert: the
+  // sem-editor-code lane stayed outside the frame and Code/Split showed
+  // the slot fallback forever (observed live 2026-10-18). The runtime's
+  // own code path drives the lane via this.querySelector(...) — a
+  // descendant query — so physically moving the lane into the code pane
+  // is the compatible placement. No-op when a future runtime distributes
+  // the lane itself (or re-adopts shadow DOM).
+  function distributeCodeLane() {
+    if (!ed || !ed.isConnected) return;
+    var lane = ed.querySelector(":scope > sem-editor-code");
+    var pane = ed.querySelector(".sem-ed-pane-code");
+    if (lane && pane && lane.parentElement !== pane) pane.appendChild(lane);
+  }
+
+  // Invariant: #editor-root holds exactly ONE editor. Every re-attach
+  // path (self-heal observer, reassert ladder, heal remount) guards
+  // against a fresh hydration copy, but the guards check different
+  // moments — a doubled editor here means a doubled "+ Add block" row
+  // (reported 2026-10-18). Sweep instead of proving each interleaving.
+  function sweepStrayEditors() {
+    var root = document.getElementById("editor-root");
+    if (!root || !ed) return;
+    root.querySelectorAll("sem-editor").forEach(function (node) {
+      if (node !== ed) node.remove();
+    });
   }
 
   function reassert() {
@@ -150,6 +194,8 @@
     if (existing) {
       ed = existing;
       healChromeStyles();
+      distributeCodeLane();
+      sweepStrayEditors();
       if (lastStatus && (statusEl || document.getElementById("editor-status"))) {
         var current = document.getElementById("editor-status");
         if (current && current.textContent !== lastStatus) status(lastStatus);
@@ -283,6 +329,7 @@
       );
     }
     ed.openDocument(verdict.doc);
+    distributeCodeLane();
     // A purge can land between the bundle's own injection and the first
     // re-assert tick — check immediately, not just on the ladder.
     setTimeout(healChromeStyles, 0);
@@ -335,6 +382,8 @@
         status(lastStatus);
       }
       healChromeStyles();
+      distributeCodeLane();
+      sweepStrayEditors();
     }).observe(watchRoot, { childList: true, subtree: true });
   }
 
@@ -443,6 +492,7 @@
     // fall back to the starter document over the opened example).
     if (window.__semEditorBooted) return;
     window.__semEditorBooted = true;
+    installBootCss();
     installSelfHeal();
     start();
     armReassert();
