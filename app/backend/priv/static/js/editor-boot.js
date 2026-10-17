@@ -74,8 +74,11 @@
   // What boot last opened (source string + label). The shell-style heal
   // below remounts from this — the §9.2 surface takes a DOCUMENT, and the
   // only honest way back to one is re-parsing the source we opened.
-  var lastSource = null;
-  var lastName = null;
+  // Seeded with the starter (not null): a param-driven open can fail
+  // BEFORE openSource ever runs (dead ?src URL, unknown ?example tag) and
+  // the heal must still have a document to remount from.
+  var lastSource = STARTER;
+  var lastName = STARTER_NAME;
 
   // Hologram hydration can land AFTER this boot chain (cold page bundles)
   // and reset the template-rendered #editor-root to its SSR children —
@@ -111,9 +114,12 @@
     // If the running editor can hand back its current document, prefer
     // that over the last-opened source so a heal after user edits keeps
     // them (undocumented surface — probed defensively, never assumed).
-    if (ed && typeof ed.exportDocument === "function") {
+    // 0.8.x exposed exportDocument(); the 0.9.0 element surface does not
+    // (verified live 2026-10-18), so fall back to a string-valued `doc`.
+    if (ed) {
       try {
-        var current = ed.exportDocument();
+        var current =
+          typeof ed.exportDocument === "function" ? ed.exportDocument() : ed.doc;
         if (typeof current === "string" && current) lastSource = current;
       } catch (e) {
         // keep lastSource
@@ -296,6 +302,19 @@
     });
   }
 
+  /** A param-driven open that fails (dead ?src URL, unknown ?example tag,
+   *  unreachable host) must never leave a dead, UNSTYLED editor: the
+   *  bundle injects its chrome styles only when a document OPENS, so a
+   *  boot that aborts before openDocument leaves the shell as bare
+   *  light-DOM text (observed in the field 2026-10-18 with ?src=404).
+   *  Fall back to the starter document — the error stays on the status
+   *  line and the editor is styled, mounted and usable. */
+  function openStarterFallback() {
+    boot([], function (editorApi) {
+      openSource(editorApi, STARTER, STARTER_NAME);
+    });
+  }
+
   // Hydration's client-router re-render can wipe dynamically mounted
   // children of #editor-root AFTER this boot has mounted and opened the
   // document (Cypress' instrumented load hydrates late; warm-cache Chrome
@@ -355,6 +374,7 @@
       })
       .catch(function (err) {
         status("Could not load the " + tag + " example: " + err.message);
+        openStarterFallback();
       });
   }
 
@@ -365,6 +385,7 @@
       status(
         "Unsupported src — use a same-origin path or an http(s) URL. VFS keys arrive with the sem-shell integration."
       );
+      openStarterFallback();
       return;
     }
     status("Loading " + src + "…");
@@ -381,6 +402,7 @@
       })
       .catch(function (err) {
         status("Could not load " + src + ": " + err.message);
+        openStarterFallback();
       });
   }
 
