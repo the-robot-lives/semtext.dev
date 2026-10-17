@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
 
 /*
@@ -15,9 +15,15 @@ import type { KeyboardEvent, ReactNode } from "react";
  * Zero-JS: the server HTML stacks all six cards in document order and the
  * controls stay hidden (the same hidden-until-hydration pattern as
  * try-views.tsx) — a scripts-off reader gets a plain list. With scripts on,
- * the stack becomes a translated track driven by the prev/next buttons, the
- * dots, and the left/right arrow keys while focus is inside the carousel.
- * Autoplay: deliberately none — the section never moves on its own.
+ * the stack becomes a translated track driven by the side arrows, the dots,
+ * and the left/right arrow keys while focus is inside the carousel.
+ *
+ * Autoplay advances one card every 6 s and wraps. It pauses while the
+ * pointer is over the carousel or focus is inside it, while the tab is
+ * hidden, and entirely under `prefers-reduced-motion` (which also drops
+ * the slide transition). Keyboard mechanics are unchanged: the region and
+ * every control are reachable and operable, and hidden cards are
+ * `aria-hidden`.
  */
 
 function TicketEmbedMock() {
@@ -208,11 +214,22 @@ const ADDONS: Array<{
 export function AddonsCarousel() {
   const [js, setJs] = useState(false);
   const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => setJs(true), []);
+  useEffect(() => {
+    setJs(true);
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReducedMotion(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   const count = ADDONS.length;
-  const go = (next: number) => setIndex(Math.min(count - 1, Math.max(0, next)));
+  // Side arrows and autoplay wrap; the dots address cards directly.
+  const go = (next: number) => setIndex(((next % count) + count) % count);
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "ArrowRight") {
       event.preventDefault();
@@ -223,8 +240,32 @@ export function AddonsCarousel() {
     }
   };
 
+  // Autoplay: one card every 6 s, paused on hover, on focus anywhere in
+  // the carousel, while the tab is hidden, and under reduced motion.
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
+  const reducedRef = useRef(reducedMotion);
+  reducedRef.current = reducedMotion;
+  useEffect(() => {
+    if (!js) return;
+    const timer = window.setInterval(() => {
+      if (pausedRef.current || reducedRef.current) return;
+      if (document.visibilityState !== "visible") return;
+      setIndex((i) => (i + 1) % count);
+    }, 6000);
+    return () => window.clearInterval(timer);
+  }, [js, count]);
+
+  const pauseHandlers = {
+    onMouseEnter: () => setPaused(true),
+    onMouseLeave: () => setPaused(false),
+    onFocus: () => setPaused(true),
+    onBlur: () => setPaused(false),
+  };
+
   return (
     <div
+      ref={rootRef}
       {...(js
         ? {
             role: "region",
@@ -232,16 +273,19 @@ export function AddonsCarousel() {
             "aria-label": "Integration cards",
             tabIndex: 0,
             onKeyDown,
+            ...pauseHandlers,
           }
         : {})}
-      className="mt-8 max-w-4xl"
+      className="relative mt-8 max-w-4xl"
     >
       <div className="overflow-hidden">
         <ul
           className={`flex items-stretch ${
-            js
+            js && !reducedMotion
               ? "flex-row transition-transform duration-300 ease-out"
-              : "flex-col gap-4"
+              : js
+                ? "flex-row"
+                : "flex-col gap-4"
           }`}
           style={js ? { transform: `translateX(-${index * 100}%)` } : undefined}
         >
@@ -266,31 +310,35 @@ export function AddonsCarousel() {
         </ul>
       </div>
 
-      {/* Controls — rendered only after hydration, so a scripts-off page
-          has no controls in the DOM at all (a `hidden` attribute would lose
-          to the .flex utility in the cascade). */}
+      {/* Side arrows — overlay the card edges, rendered only after
+          hydration. They wrap in both directions (so does autoplay). */}
+      {js && (
+        <>
+          <button
+            type="button"
+            onClick={() => go(index - 1)}
+            aria-label="Previous integration"
+            className="absolute left-0 top-1/2 z-10 inline-flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-code-border bg-slateink font-mono text-base text-ink shadow-md hover:border-violet-soft"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            onClick={() => go(index + 1)}
+            aria-label="Next integration"
+            className="absolute right-0 top-1/2 z-10 inline-flex h-11 w-11 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-code-border bg-slateink font-mono text-base text-ink shadow-md hover:border-violet-soft"
+          >
+            ›
+          </button>
+        </>
+      )}
+
+      {/* Dots + status — rendered only after hydration, so a scripts-off
+          page has no controls in the DOM at all. The status line announces
+          only while autoplay is paused (hover/focus/reduced motion), so a
+          running carousel does not narrate every 6-second step. */}
       {js && (
         <div className="mt-5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => go(index - 1)}
-              disabled={index === 0}
-              aria-label="Previous integration"
-              className="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink hover:border-violet-soft disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              ← prev
-            </button>
-            <button
-              type="button"
-              onClick={() => go(index + 1)}
-              disabled={index === count - 1}
-              aria-label="Next integration"
-              className="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink hover:border-violet-soft disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              next →
-            </button>
-          </div>
           <div className="flex items-center gap-2">
             {ADDONS.map((addon, i) => (
               <button
@@ -305,7 +353,10 @@ export function AddonsCarousel() {
               />
             ))}
           </div>
-          <p aria-live="polite" className="font-mono text-xs text-ink-faint">
+          <p
+            aria-live={paused || reducedMotion ? "polite" : "off"}
+            className="font-mono text-xs text-ink-faint"
+          >
             {index + 1} / {count} — {ADDONS[index].title}
           </p>
         </div>

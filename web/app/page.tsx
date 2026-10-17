@@ -171,7 +171,7 @@ const QUESTIONS: Array<[string, string]> = [
   ],
   [
     "Is anyone using it?",
-    "Not yet. This is a draft spec, a reference implementation and a Cypress suite. There are no users to point at, no benchmarks to quote and no production deployments beyond this page and its demos.",
+    "Noizu Labs, Inc. and The Robot Lives use SemText internally — agent-facing docs and demo documents are authored in it. It is still a draft spec: no third-party deployments to point at and no benchmarks to quote.",
   ],
 ];
 
@@ -277,16 +277,6 @@ export default function Home() {
                 Get started
               </a>
             </div>
-            <dl className="mt-8 grid grid-cols-2 gap-3 font-mono text-xs text-ink-mute">
-              <div>
-                <dt className="text-ink-faint">files</dt>
-                <dd className="mt-1 text-ink">one, standalone</dd>
-              </div>
-              <div>
-                <dt className="text-ink-faint">build step</dt>
-                <dd className="mt-1 text-ink">none</dd>
-              </div>
-            </dl>
           </div>
 
           <HeroWindow />
@@ -505,29 +495,27 @@ export default function Home() {
                 Code
               </h3>
               <p className="mt-2 leading-relaxed text-ink-mute">
-                <code className="font-mono">sem-code</code> wraps one{" "}
-                <code className="font-mono">&lt;pre&gt;&lt;code&gt;</code> and
-                carries what the listing cannot: a filename, a language and a
-                set of marked lines. The chrome is added by the reading bundle;
-                the listing text stays byte-identical, and extraction reports
-                it verbatim.
+                <code className="font-mono">sem-code</code> carries what a
+                listing cannot: a filename, a language and a set of marked
+                lines. The listing is written directly inside the element —
+                it becomes a <code className="font-mono">&lt;pre&gt;&lt;code&gt;</code>{" "}
+                when the reading bundle runs — stays byte-identical, and
+                extraction reports it verbatim.
               </p>
               <figure
                 className="code-window mt-4"
-                aria-label="A source listing with lines 3-4 marked: a citation in prose and the reference entry it points to"
+                aria-label="A source listing of a sem-references block: a citation in prose and the reference entry it points to"
               >
                 <div className="code-chrome">
                   <span className="dot live" aria-hidden="true" />
-                  <span>doc.html · lines 3-4 marked</span>
+                  <span>doc.html</span>
                 </div>
                 <pre>
                   <code>
                     {`<p>Rotate per use<a href="#r-rfc">[1]</a>.</p>
 <sem-references id="refs" kind="bibliography" role="list">
-`}
-                    <mark className="rounded-sm bg-violet/20 text-ink">{`  <sem-reference id="r-rfc" role="listitem"
-       href="https://www.rfc-editor.org/rfc/rfc6749" cite="RFC 6749">The OAuth 2.0 Authorization Framework, §10.4.</sem-reference>`}</mark>
-                    {`
+  <sem-reference id="r-rfc" role="listitem"
+       href="https://www.rfc-editor.org/rfc/rfc6749" cite="RFC 6749">The OAuth 2.0 Authorization Framework, §10.4.</sem-reference>
 </sem-references>`}
                   </code>
                 </pre>
@@ -759,20 +747,8 @@ export default function Home() {
             .
           </p>
 
-          <div className="mt-8 rounded-xl border border-code-border bg-slateink-lift p-5">
-            <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-ink-mute">
-              sem-agent
-            </p>
-            <p className="mt-2 font-semibold text-ink">SemText Guide</p>
-            <p className="mt-1 text-sm leading-relaxed text-ink-mute">
-              Answers questions about SemText from the facts on this page.
-            </p>
-            <p className="mt-2 font-mono text-xs leading-relaxed text-ink-mute">
-              Answer only from sem-fact records in this document; cite ids.
-            </p>
-          </div>
-          <p className="mt-3 text-sm text-ink-mute">
-            A <code className="font-mono">sem-agent</code> block, above:
+          <p className="mt-8 text-sm text-ink-mute">
+            A <code className="font-mono">sem-agent</code> block is
             document-level metadata aimed at a model, carried by the same file
             a person is reading. It is inert to a browser and it is a record to
             an extractor.

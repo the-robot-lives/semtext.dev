@@ -85,7 +85,7 @@
       "kind": "page",
       "owner": "port-reference",
       "title": "Reference — every SemText and NPL tag",
-      "h1": "Every tag",
+      "h1": "Tag reference",
       "keyText": [],
       "selectors": [],
       "note": "Index links every reference tag; the tag-page set below is generated from data/elements.json."
