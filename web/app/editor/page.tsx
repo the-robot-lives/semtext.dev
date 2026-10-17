@@ -58,7 +58,7 @@ export default function EditorPage() {
       <p className="mt-3 max-w-3xl text-base leading-7 text-ink-mute">
         One document, two views: the WYSIWYG canvas and the code view are
         projections of the same model. Edit in either, insert any element from
-        the vocabulary, export the XHTML when you are done — everything stays
+        the vocabulary, export the HTML when you are done — everything stays
         in your browser.
       </p>
       <div className="mt-6">

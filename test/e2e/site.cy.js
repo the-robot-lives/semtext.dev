@@ -34,7 +34,7 @@ describe('semtext.dev landing page', () => {
   beforeEach(() => cy.visit('/site/index.html'));
 
   it('renders its hero and sections', () => {
-    cy.get('h1').should('have.text', 'One XHTML file, in place of Markdown.');
+    cy.get('h1').should('have.text', 'One HTML file, in place of Markdown.');
     cy.get('main.sem-enhanced-document').should('exist');
     cy.get('#why, #try, #tiers, #reading, #start, #surface, #scope').should('have.length', 7);
     cy.get('#try-deck .sem-fact').should('have.length', 4);

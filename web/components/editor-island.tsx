@@ -43,9 +43,9 @@ export interface EditorVariantExample {
 const STARTER_DOC = [
   '<sem-heading level="2">A SemText document, live</sem-heading>',
   "<sem-paragraph>This canvas is one SemText document. Double-click any text to edit it in place, use the plus between blocks to insert an element, or switch the toolbar to Code to edit the source — both views are projections of the same document model.</sem-paragraph>",
-  '<sem-note variant="tip"><sem-paragraph>Everything you change stays in this browser tab; the toolbar Export hands you the XHTML file.</sem-paragraph></sem-note>',
+  '<sem-note variant="tip"><sem-paragraph>Everything you change stays in this browser tab; the toolbar Export hands you the HTML file.</sem-paragraph></sem-note>',
   '<sem-facts kind="glossary">',
-  "<sem-fact><term>SemText</term><definition>One XHTML file that models read and write instead of Markdown.</definition></sem-fact>",
+  "<sem-fact><term>SemText</term><definition>One HTML file that models read and write instead of Markdown.</definition></sem-fact>",
   "<sem-fact><term>Editor</term><definition>A local-first WYSIWYG and code editor over the same document model.</definition></sem-fact>",
   "</sem-facts>",
 ].join("\n");

@@ -37,7 +37,7 @@ Then("the editor is mounted with the starter document", () => {
   cy.get(CANVAS)
     .should("be.visible")
     .and("contain", "A SemText document, live")
-    .and("contain", "One XHTML file that models read and write");
+    .and("contain", "One HTML file that models read and write");
 });
 
 Then('the editor shows the {string} note', (fragment: string) => {

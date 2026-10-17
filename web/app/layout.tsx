@@ -5,9 +5,9 @@ import "./globals.css";
 import { semtextAsset } from "@/lib/semtext-asset";
 
 const siteUrl = "https://semtext.dev";
-const title = "SemText — one XHTML file, in place of Markdown";
+const title = "SemText — one HTML file, in place of Markdown";
 const description =
-  "SemText: one XHTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components. Part of The Robot Lives portfolio.";
+  "SemText: one HTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components. Part of The Robot Lives portfolio.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   authors: [{ name: "The Robot Lives", url: "https://therobotlives.com" }],
   keywords: [
     "semtext",
-    "XHTML",
+    "HTML",
     "Markdown replacement",
     "AI prompts",
     "structured documents",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
         url: "/og.jpg",
         width: 1200,
         height: 675,
-        alt: "SemText — one XHTML file, in place of Markdown.",
+        alt: "SemText — one HTML file, in place of Markdown.",
       },
     ],
   },

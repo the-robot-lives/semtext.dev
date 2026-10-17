@@ -2,7 +2,7 @@
 
 **DRAFT v0.7 -- Lit-only surface, tag form canonical.** v0.7 renames the fact child
 `<sem-distractor>` to `<incorrect-statement>` (breaking; no backward-compatible alias).
-SemText is an XHTML vocabulary of
+SemText is an HTML vocabulary of
 **custom elements**: `<sem-enhanced-document>`, `<sem-note variant="tip">`,
 `<sem-facts view-as="quiz">`, `<sem-fact>` with `<statement>` and
 `<conclusion>`, `<sem-step status="done">`, `<sem-property key="...">`. Element
@@ -76,7 +76,7 @@ element is one row of [Appendix A](#appendix-a--class-form-alias-v04-compatibili
 ## 0. Model
 
 One file, three consumers -- human/browser (double-click, styled, interactive),
-LLM/non-visual (the same XHTML read structurally; attributes qualify every
+LLM/non-visual (the same HTML read structurally; attributes qualify every
 datum; same XML vocabulary NPL's MCP server already speaks), terminal (browser
 or DOM-text extraction). Element names are **semantic** (`sem-fact`,
 `sem-detail`) -- what content *is*; presentation is parameterized
