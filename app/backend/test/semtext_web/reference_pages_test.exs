@@ -78,10 +78,9 @@ defmodule SemtextWeb.ReferencePagesTest do
       assert body =~ "/semtext/chunks/sem-note.js"
     end
 
-    test "renders the shipped-runtime line", %{conn: conn} do
+    test "no shipped-runtime provenance line (removed, thread f6f3477a)", %{conn: conn} do
       body = html_response(conn, 200)
-      assert body =~ "Shipped runtime:"
-      assert body =~ "semtext-lazy.js loads"
+      refute body =~ "Shipped runtime:"
     end
   end
 

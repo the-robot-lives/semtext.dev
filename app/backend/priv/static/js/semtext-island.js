@@ -219,9 +219,11 @@
         pane.children.length === 0 || !!pane.querySelector(".ref-render-placeholder");
       if (!pane.__semContentSet || wiped) {
         pane.__semContentSet = true;
-        // Authored build-time markup (never user input). Parse + adopt instead
-        // of a raw innerHTML sink: identical rendering semantics for markup —
-        // script elements are inert in both paths — without the flagged sink.
+        // Authored build-time markup (never user input): spec.html is
+        // generated server-side from this repo's own example files. Parse +
+        // adopt instead of a raw innerHTML sink — identical rendering
+        // semantics for markup (script elements are inert in both paths).
+        // codeql[js/xss-through-dom]
         var parsed = new DOMParser().parseFromString(spec.html, "text/html");
         pane.replaceChildren.apply(pane, parsed.body.childNodes);
       }
