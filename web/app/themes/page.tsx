@@ -11,10 +11,11 @@ export const metadata: Metadata = {
 /*
  * The Themes page — the standalone home for theme creation (the landing
  * section's generator lives here in full). The copy states the spec's
- * conventions (spec/conventions.md §6) and what this site actually ships:
- * public/semtext/themes/ carries the vocabulary base and
- * minimal-tech-light (the default) — the other spec-named ports are not
- * shipped here yet, and the page says so rather than implying otherwise.
+ * conventions (spec/conventions.md §6, v0.6): the five shipped themes ride
+ * in the consolidated /semtext/latest/ bundle and render side by side on
+ * /themes/showcase/; this site's own rendered examples keep loading the
+ * pinned /semtext/themes/ files, and the page says so rather than implying
+ * otherwise.
  */
 
 export default function ThemesPage() {
@@ -64,11 +65,18 @@ export default function ThemesPage() {
             everything else that carries meaning.
           </li>
           <li>
-            Themes are compiled from TRP-format YAML into{" "}
+            v0.6 ships the themes consolidated: one stylesheet,{" "}
             <code className="font-mono">
-              semtext/themes/semtext-theme-&lt;slug&gt;.css
+              semtext/latest/semtext.css
             </code>
-            ; the conventions are §6 of{" "}
+            , carries the vocabulary base and{" "}
+            <strong>every shipped theme</strong>, each scoped under{" "}
+            <code className="font-mono">
+              html[data-sem-theme="&lt;slug&gt;"]
+            </code>{" "}
+            — and when the attribute is absent the default (
+            <code className="font-mono">minimal-tech-light</code>) applies.
+            The conventions are §6 of{" "}
             <a
               href="/spec/semtext.html"
               className="text-violet-soft underline-offset-4 hover:underline"
@@ -83,15 +91,24 @@ export default function ThemesPage() {
           What ships here
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-ink-mute">
-          This site serves the vocabulary base and{" "}
-          <code className="font-mono">minimal-tech-light</code>, the default
-          theme, from{" "}
-          <code className="font-mono">/semtext/themes/</code> — every rendered
-          example on /reference/ and /showcase/ uses it. The spec names three
-          further ports (<code className="font-mono">nocturne-console</code>,{" "}
+          v0.6 ships <strong>five</strong> themes:{" "}
+          <code className="font-mono">minimal-tech-light</code> (default),{" "}
+          <code className="font-mono">nocturne-console</code>,{" "}
           <code className="font-mono">organic-warm</code>,{" "}
-          <code className="font-mono">editorial-settings</code>); they are not
-          built here yet.
+          <code className="font-mono">editorial-settings</code> and{" "}
+          <code className="font-mono">newsprint</code> — all in the
+          consolidated <code className="font-mono">/semtext/latest/</code>{" "}
+          bundle. See them render the same sample document on{" "}
+          <a
+            href="/themes/showcase/"
+            className="text-violet-soft underline-offset-4 hover:underline"
+          >
+            the theme showcase
+          </a>
+          . This site&apos;s own rendered examples still load the pinned{" "}
+          <code className="font-mono">/semtext/themes/</code> files;{" "}
+          <code className="font-mono">minimal-tech-light</code> remains the
+          default theme.
         </p>
 
         <h2 id="create" className="mt-14 scroll-mt-24 text-2xl font-semibold tracking-tight text-ink">
