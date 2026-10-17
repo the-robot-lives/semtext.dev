@@ -80,3 +80,8 @@ config :semtext, :sso_open, false
 config :semtext, :session_ttl, {1, :hour}
 # Compile the dev/test login-stub route into the router (prod never sets this).
 config :semtext, :test_auth_login_route, true
+
+# Driver mock (vocabulary epic Phase 6): near-zero simulated-check delay so
+# lifecycle tests poll to terminal in milliseconds. The production default
+# (250ms per check, capped 300ms — total under ~2s) lives on the module.
+config :semtext, Semtext.Driver.MockRunner, check_delay_ms: 5
