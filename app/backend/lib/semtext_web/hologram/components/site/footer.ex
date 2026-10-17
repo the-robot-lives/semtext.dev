@@ -20,6 +20,11 @@ defmodule SemtextWeb.Hologram.Components.Site.Footer do
           align="start"
           style="text-align: left; --noizu-footer-brand-fg: var(--mute); --noizu-footer-brand-brand-color: var(--accent-soft); --noizu-footer-brand-size: 0.875rem"
         ></noizu-footer-brand>
+        <p class="mt-1 text-sm text-ink-mute">
+          SemText · draft spec · part of Noizu Prompt Lingua. Noizu Labs, Inc.
+          and The Robot Lives use SemText internally. The Robot Lives
+          portfolio.
+        </p>
         <p class="mt-1 font-mono text-xs text-ink-faint">
           © 2026 Noizu Labs, Inc.
         </p>

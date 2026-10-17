@@ -49,25 +49,25 @@
     {
       "id": "defaults",
       "label": "variant: defaults (no lang, filename or mark)",
-      "note": "With `lang`, `filename` and `mark` all unauthored and `controls` left at its default, the chrome bar still renders but carries a single Copy control — nothing is invented. This is the smallest valid listing.",
-      "code": "<sem-code><pre><code>npm run build</code></pre></sem-code>"
+      "note": "With `lang`, `filename` and `mark` all unauthored and `controls` left at its default, the chrome bar still renders but carries a single Copy control — nothing is invented. This is the smallest valid listing: the source is the element's own text; the element wraps it in `<pre><code>` when it enhances.",
+      "code": "<sem-code>npm run build</sem-code>"
     },
     {
       "id": "long-line",
       "label": "variant: a line wider than the pane",
       "note": "A single long line with default controls (Copy only). The listing overflows horizontally, so the `<pre>` becomes keyboard-scrollable (`tabindex=\"0\"`, labelled with the filename or `code`). This is the case `controls=\"copy,wrap\"` exists to soften.",
-      "code": "<sem-code lang=\"sh\">\n<pre><code>curl -sS -X POST \"$TOKEN_ENDPOINT\" -d grant_type=refresh_token -d refresh_token=\"$REFRESH\" -d client_id=\"$CLIENT_ID\" -d code_verifier=\"$VERIFIER\" -H 'Accept: application/json' | jq -r '.access_token'</code></pre>\n</sem-code>"
+      "code": "<sem-code lang=\"sh\">curl -sS -X POST \"$TOKEN_ENDPOINT\" -d grant_type=refresh_token -d refresh_token=\"$REFRESH\" -d client_id=\"$CLIENT_ID\" -d code_verifier=\"$VERIFIER\" -H 'Accept: application/json' | jq -r '.access_token'</sem-code>"
     },
     {
       "id": "wrap-start",
       "label": "variant: wrap from the start",
       "note": "The `wrap` attribute starts the listing soft-wrapped and the Wrap control renders pressed (`aria-pressed=\"true\"`). Toggling it off removes the attribute and restores horizontal scroll — `wrap` is presentation, never content.",
-      "code": "<sem-code lang=\"json\" filename=\"config.json\" wrap controls=\"copy,wrap\">\n<pre><code>{ \"retry\": { \"attempts\": 5, \"backoffMs\": 250, \"jitter\": true }, \"endpoint\": \"https://api.example.com/v1/rotate\" }</code></pre>\n</sem-code>"
+      "code": "<sem-code lang=\"json\" filename=\"config.json\" wrap controls=\"copy,wrap\">{ \"retry\": { \"attempts\": 5, \"backoffMs\": 250, \"jitter\": true }, \"endpoint\": \"https://api.example.com/v1/rotate\" }</sem-code>"
     },
     {
       "id": "class-form",
       "label": "variant: class-form alias",
-      "note": "The alias spelling (conventions Appendix A): `div.sem-code` reads the same parameters as `data-*` first, then bare. It renders one chrome and the marked line identically to the element form — both forms are one runtime.",
+      "note": "The alias spelling (conventions Appendix A): `div.sem-code` reads the same parameters as `data-*` first, then bare. It renders one chrome and the marked line identically to the element form — both forms are one runtime. The explicit `<pre><code>` child remains supported alongside the flat form.",
       "code": "<div class=\"sem-code\" data-lang=\"py\" data-filename=\"rotate.py\" data-mark=\"2\" data-controls=\"copy,wrap\">\n<pre><code>def rotate(pair):\n    return mint(pair.refresh)</code></pre>\n</div>"
     },
     {

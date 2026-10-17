@@ -26,15 +26,6 @@ defmodule SemtextWeb.Hologram.Components.Site.ShowcaseFrame do
         <h1 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
           {@title}
         </h1>
-        <p class="mt-3 text-sm leading-6 text-ink-mute">
-          <a
-            class="underline decoration-white/30 underline-offset-2 hover:decoration-white/70"
-            href="/editor"
-          >
-            Open in editor
-          </a>{" "}
-          — scratch or load this page&apos;s markup in the SemText editor.
-        </p>
         <slot />
       </main>
     </DocsShell>

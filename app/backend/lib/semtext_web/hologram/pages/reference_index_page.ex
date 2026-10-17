@@ -121,13 +121,12 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
       <main id="main">
         <p class="g-eyebrow">Reference</p>
         <h1 class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-          Every tag, on its own page
+          Tag reference
         </h1>
         <p class="mt-4 max-w-3xl text-base leading-7 text-ink-mute">
-          All {@total} SemText and NPL tags, each on its own page with its
-          options, children and an authored example — grouped by the job the
-          element does. Filter by tag name or a summary word; every card
-          links to the element's page, and a field its source does not state
+          The {@total} SemText and NPL tags, grouped by the job the element
+          does. Each card opens the element's page — its options, children
+          and an authored example — and a field its source does not state
           is marked there.
         </p>
 

@@ -197,7 +197,7 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
   @scope_qa """
   <sem-reveal summary="Why not Markdown?" collapsed>Markdown has nowhere to put the attributes that make a datum machine-readable — no way to mark a conclusion as distinct from a distractor, or a step as blocked. A converter that compiles Markdown into SemText is worth building; the canonical artifact stays XHTML, because that is what the browser, the terminal and the model all read.</sem-reveal>
   <sem-reveal summary="Does a language model really need this?" collapsed>A model can read any HTML. What it cannot do reliably is tell a conclusion from a distractor, or a caveat from a heading, when nothing in the markup says so. The claim here is narrow: the attributes remove that guesswork, and the extraction contract makes the result stable enough to cite.</sem-reveal>
-  <sem-reveal summary="Is anyone using it?" collapsed>Not yet. SemText is a published spec with a reference implementation and a Cypress suite. There are no users to point at, no benchmarks to quote and no production deployments beyond this page and its demos.</sem-reveal>
+  <sem-reveal summary="Is anyone using it?" collapsed>Noizu Labs, Inc. and The Robot Lives use SemText internally — agent-facing docs and demo documents are authored in it. It is still a draft spec: no third-party deployments to point at and no benchmarks to quote.</sem-reveal>
   """
 
   @extend_html """
@@ -256,16 +256,6 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
               <a href="/reference/" class="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft">Browse the reference</a>
               <a href="#start" class="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft">Get started</a>
             </div>
-            <dl class="mt-8 grid grid-cols-2 gap-3 font-mono text-xs text-ink-mute">
-              <div>
-                <dt class="text-ink-faint">files</dt>
-                <dd class="mt-1 text-ink">one, standalone</dd>
-              </div>
-              <div>
-                <dt class="text-ink-faint">build step</dt>
-                <dd class="mt-1 text-ink">none</dd>
-              </div>
-            </dl>
           </div>
           <HeroWindow cid="hero_window" />
         </div>
@@ -339,13 +329,13 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
             </div>
             <div>
               <h3 class="text-xl font-semibold tracking-tight text-ink">Code</h3>
-              <p class="mt-2 leading-relaxed text-ink-mute"><code class="font-mono">sem-code</code> wraps one <code class="font-mono">&lt;pre&gt;&lt;code&gt;</code> and carries what the listing cannot: a filename, a language and a set of marked lines. The chrome is added by the reading bundle; the listing text stays byte-identical, and extraction reports it verbatim.</p>
-              <figure class="code-window mt-4" aria-label="A source listing with lines 3-4 marked: a citation in prose and the reference entry it points to">
+              <p class="mt-2 leading-relaxed text-ink-mute"><code class="font-mono">sem-code</code> carries what a listing cannot: a filename, a language and a set of marked lines. The listing is written directly inside the element — it becomes a <code class="font-mono">&lt;pre&gt;&lt;code&gt;</code> when the reading bundle runs — stays byte-identical, and extraction reports it verbatim.</p>
+              <figure class="code-window mt-4" aria-label="A source listing of a sem-references block: a citation in prose and the reference entry it points to">
                 <div class="code-chrome">
                   <span class="dot live" aria-hidden="true"></span>
-                  <span>doc.html · lines 3-4 marked</span>
+                  <span>doc.html</span>
                 </div>
-                <pre><code>{@g_head}<mark class="rounded-sm bg-violet/20 text-ink">{@g_mark}</mark>{@g_tail}</code></pre>
+                <pre><code>{@g_head}{@g_mark}{@g_tail}</code></pre>
               </figure>
               <h3 class="mt-10 text-xl font-semibold tracking-tight text-ink">Reader</h3>
               <p class="mt-2 leading-relaxed text-ink-mute"><code class="font-mono">sem-reader</code> is the bar pinned to the top of the showcase page: one per document, a direct child of the root wrapper, mints nothing. Its outline is generated from the headings, <code class="font-mono">h2</code> on down. Focus, type size, face and colour scheme are attributes on <code class="font-mono">&lt;html&gt;</code> that the vocabulary CSS keys on, remembered in <code class="font-mono">localStorage</code> when the browser allows it.</p>
@@ -402,13 +392,7 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
           <h3 class="mt-10 text-xl font-semibold tracking-tight text-ink">The vocabulary</h3>
           <p class="mt-2 max-w-3xl leading-relaxed text-ink-mute">Twenty-one element types mint records: <code class="font-mono">sem-agent</code>, <code class="font-mono">sem-note</code>, <code class="font-mono">sem-facts</code> and <code class="font-mono">sem-fact</code>, <code class="font-mono">sem-details</code> and <code class="font-mono">sem-detail</code>, <code class="font-mono">sem-procedure</code> and <code class="font-mono">sem-step</code>, <code class="font-mono">sem-properties</code> and <code class="font-mono">sem-property</code>, <code class="font-mono">sem-views</code> and <code class="font-mono">sem-view</code>, <code class="font-mono">sem-reveal</code>, <code class="font-mono">sem-progress</code>, <code class="font-mono">sem-chronology</code> and <code class="font-mono">sem-event</code>, <code class="font-mono">sem-code</code>, <code class="font-mono">sem-references</code> and <code class="font-mono">sem-reference</code>, <code class="font-mono">sem-table</code> and <code class="font-mono">sem-md</code>. <code class="font-mono">sem-reader</code> is chrome and mints nothing.</p>
           <p class="mt-3 text-sm text-ink-mute">Browse all of them — purpose, options, and the authored markup — in the <a href="/reference/" class="font-mono text-violet-soft underline-offset-4 hover:underline">tag reference</a>.</p>
-          <div class="mt-8 rounded-xl border border-code-border bg-slateink-lift p-5">
-            <p class="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-ink-mute">sem-agent</p>
-            <p class="mt-2 font-semibold text-ink">SemText Guide</p>
-            <p class="mt-1 text-sm leading-relaxed text-ink-mute">Answers questions about SemText from the facts on this page.</p>
-            <p class="mt-2 font-mono text-xs leading-relaxed text-ink-mute">Answer only from sem-fact records in this document; cite ids.</p>
-          </div>
-          <p class="mt-3 text-sm text-ink-mute">A <code class="font-mono">sem-agent</code> block, above: document-level metadata aimed at a model, carried by the same file a person is reading. It is inert to a browser and it is a record to an extractor.</p>
+          <p class="mt-8 text-sm text-ink-mute">A <code class="font-mono">sem-agent</code> block is document-level metadata aimed at a model, carried by the same file a person is reading. It is inert to a browser and it is a record to an extractor.</p>
         </div>
       </section>
 
@@ -428,7 +412,7 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
           <div class="mt-4 flex max-w-3xl flex-col gap-3" data-sem-theme="minimal-tech-light" data-color-mode="dark">
             {%raw}<sem-reveal summary="Why not Markdown?" collapsed>Markdown has nowhere to put the attributes that make a datum machine-readable — no way to mark a conclusion as distinct from a distractor, or a step as blocked. A converter that compiles Markdown into SemText is worth building; the canonical artifact stays XHTML, because that is what the browser, the terminal and the model all read.</sem-reveal>
     <sem-reveal summary="Does a language model really need this?" collapsed>A model can read any HTML. What it cannot do reliably is tell a conclusion from a distractor, or a caveat from a heading, when nothing in the markup says so. The claim here is narrow: the attributes remove that guesswork, and the extraction contract makes the result stable enough to cite.</sem-reveal>
-    <sem-reveal summary="Is anyone using it?" collapsed>Not yet. SemText is a published spec with a reference implementation and a Cypress suite. There are no users to point at, no benchmarks to quote and no production deployments beyond this page and its demos.</sem-reveal>{/raw}
+    <sem-reveal summary="Is anyone using it?" collapsed>Noizu Labs, Inc. and The Robot Lives use SemText internally — agent-facing docs and demo documents are authored in it. It is still a draft spec: no third-party deployments to point at and no benchmarks to quote.</sem-reveal>{/raw}
           </div>
           <div class="mt-14 flex flex-wrap items-center gap-3">
             <details class="showcase-menu">

@@ -34,11 +34,9 @@ const EXAMPLE = `<sem-enhanced-document>
       </sem-properties>
     </sem-view>
     <sem-view name="Example" role="tabpanel">
-      <sem-code lang="markdown" filename="CHANGELOG.md" controls="copy,wrap">
-<pre><code>## 2026-10-14
+      <sem-code lang="markdown" filename="CHANGELOG.md" controls="copy,wrap">## 2026-10-14
 - otel meter scope fix (#73)
-- bump chart tag (#75)</code></pre>
-      </sem-code>
+- bump chart tag (#75)</sem-code>
     </sem-view>
   </sem-views>
 

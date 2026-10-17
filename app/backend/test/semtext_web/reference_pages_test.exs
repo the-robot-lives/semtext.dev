@@ -18,7 +18,7 @@ defmodule SemtextWeb.ReferencePagesTest do
 
     test "renders the intro, filter and count", %{conn: conn} do
       body = html_response(conn, 200)
-      assert body =~ "Every tag, on its own page"
+      assert body =~ "Tag reference"
       assert body =~ "ref-search"
       assert body =~ "ref-count"
       assert body =~ "Filter tags"

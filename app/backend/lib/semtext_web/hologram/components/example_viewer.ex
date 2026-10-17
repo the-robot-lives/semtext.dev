@@ -40,12 +40,6 @@ defmodule SemtextWeb.Hologram.Components.ExampleViewer do
   prop :filename, :string, default: ""
   prop :copy_js, :string, default: ""
   prop :save_js, :string, default: ""
-  # /editor deep link for this example (site-editor lane) — empty on
-  # viewers without an editorable source (e.g. markdown); renders a plain
-  # navigation link under the figure so it works with scripts off, unlike
-  # the boot-gated chrome actions above.
-  prop :editor_href, :string, default: ""
-
   # init/3 runs server-side (SSR), init/2 client-side; both just seed state.
   def init(props, component, _server), do: do_init(props, component)
   def init(props, component), do: do_init(props, component)
@@ -149,16 +143,6 @@ defmodule SemtextWeb.Hologram.Components.ExampleViewer do
           </div>
         </div>
       </figure>
-      {%if @editor_href != ""}
-        <p class="mt-2 text-xs">
-          <a
-            class="underline decoration-white/30 underline-offset-2 hover:decoration-white/70"
-            href={@editor_href}
-          >
-            Open in editor
-          </a>
-        </p>
-      {/if}
     </div>
     """
   end

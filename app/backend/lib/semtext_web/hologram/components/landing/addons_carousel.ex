@@ -16,8 +16,11 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
   utility in the cascade), so a scripts-off reader gets a plain list. With
   scripts on, the stack becomes a translated track driven by the prev/next
   buttons, the dots, and the left/right arrow keys while focus is inside
-  the carousel. Autoplay: deliberately none — the section never moves on
-  its own.
+  the carousel. Autoplay: the track advances every six seconds and wraps;
+  it pauses while the pointer or keyboard focus is inside the region,
+  while the tab is hidden, and never starts at all for
+  prefers-reduced-motion readers (the island script ticks the next
+  control; the element owns the index).
 
   The track transform is a single interpolated expression
   (`translateX(-index*100%)`), matching the React inline style; the card
@@ -38,6 +41,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
   def template do
     ~HOLO"""
     <div
+      data-carousel-autoplay="true"
       role={if @hydrated do "region" end}
       aria-roledescription={if @hydrated do "carousel" end}
       aria-label={if @hydrated do "Integration cards" end}
@@ -46,6 +50,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
       $key_down.arrow_left.prevent_default={action: :prev}
       class="mt-8 max-w-4xl"
     >
+      <div class="relative">
       <div class="overflow-hidden">
         <ul class={if @hydrated do "flex items-stretch flex-row transition-transform duration-300 ease-out" else "flex items-stretch flex-col gap-4" end} style={if @hydrated do track_transform(@index) end}>
           <li class={if @hydrated do "min-w-full px-0" end} aria-hidden={if @hydrated and @index != 0 do "true" end}>
@@ -167,6 +172,26 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
           </li>
         </ul>
       </div>
+      {%if @hydrated}
+        <button
+          type="button"
+          $click={action: :prev}
+          aria-label="Previous integration"
+          class="absolute left-0 top-1/2 z-10 inline-flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-code-border bg-slateink font-mono text-base text-ink shadow-md hover:border-violet-soft"
+        >
+          ‹
+        </button>
+        <button
+          type="button"
+          $click={action: :next}
+          data-carousel-next="true"
+          aria-label="Next integration"
+          class="absolute right-0 top-1/2 z-10 inline-flex h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-code-border bg-slateink font-mono text-base text-ink shadow-md hover:border-violet-soft"
+        >
+          ›
+        </button>
+      {/if}
+      </div>
 
       {%if @hydrated}
         <div class="mt-5 flex items-center justify-between gap-4">
@@ -174,7 +199,6 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
             <button
               type="button"
               $click={action: :prev}
-              disabled={@index == 0}
               aria-label="Previous integration"
               class="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink hover:border-violet-soft disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -183,7 +207,6 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
             <button
               type="button"
               $click={action: :next}
-              disabled={@index == 5}
               aria-label="Next integration"
               class="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink hover:border-violet-soft disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -198,7 +221,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
             <button type="button" $click={action: :go, params: %{index: 4}} aria-label="Go to card 5: Draftamo mockups &amp; UML" aria-current={if @index == 4 do "true" end} class={dot_class(@index == 4)}></button>
             <button type="button" $click={action: :go, params: %{index: 5}} aria-label="Go to card 6: The Robot Plans issue submission" aria-current={if @index == 5 do "true" end} class={dot_class(@index == 5)}></button>
           </div>
-          <p aria-live="polite" class="font-mono text-xs text-ink-faint">
+          <p aria-live="off" data-carousel-status="true" class="font-mono text-xs text-ink-faint">
             {@index + 1} / 6 — {addon_title(@index)}
           </p>
         </div>
@@ -214,11 +237,11 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
   end
 
   def action(:prev, _params, component) do
-    put_state(component, index: clamp(component.state.index - 1))
+    put_state(component, index: wrap(component.state.index - 1))
   end
 
   def action(:next, _params, component) do
-    put_state(component, index: clamp(component.state.index + 1))
+    put_state(component, index: wrap(component.state.index + 1))
   end
 
   def action(:go, params, component) do
@@ -230,6 +253,12 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
   defp clamp(index) do
     index = if index < 0, do: 0
     index = if index > 5, do: 5
+    index
+  end
+
+  defp wrap(index) do
+    index = if index < 0, do: index + 6
+    index = if index > 5, do: index - 6
     index
   end
 
