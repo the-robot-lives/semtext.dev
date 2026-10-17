@@ -1,4 +1,4 @@
-import{A as d,b as a}from"./lit-element-DWovE5T-.js";import{o}from"./unsafe-html-BQA5rzql.js";import{S as l}from"./base-qLn05nS2.js";const n=`<svg class="sem-review-shot-img" viewBox="0 0 640 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fixture screenshot of an agent workspace">
+import{A as d,b as a}from"./lit-element-DWovE5T-.js";import{o}from"./unsafe-html-BQA5rzql.js";import{S as l}from"./base-BKd1N4qP.js";const n=`<svg class="sem-review-shot-img" viewBox="0 0 640 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fixture screenshot of an agent workspace">
 <rect width="640" height="400" fill="#f6f7f9"/>
 <rect width="640" height="36" fill="#1f2430"/>
 <circle cx="18" cy="18" r="5" fill="#e05d5d"/><circle cx="34" cy="18" r="5" fill="#e5b355"/><circle cx="50" cy="18" r="5" fill="#5fbf77"/>
