@@ -111,8 +111,17 @@ const BUCKET_DEFS: Array<Omit<ReferenceBucket, "tags"> & { names: string[] }> = 
     id: "definitions",
     label: "Definitions & citations",
     description:
-      "Closed key/value assertions and the numbered works the prose cites.",
-    names: ["sem-properties", "sem-property", "sem-references", "sem-reference"],
+      "Closed key/value assertions, the numbered works the prose cites, and the self-describing vocabulary cards (tag/attribute/API definitions).",
+    names: [
+      "sem-properties",
+      "sem-property",
+      "sem-references",
+      "sem-reference",
+      "sem-tag-def",
+      "sem-tag-attr",
+      "sem-api-call",
+      "sem-api-param",
+    ],
   },
 ];
 

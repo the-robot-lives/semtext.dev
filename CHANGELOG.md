@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-18 (annotate feedback round 2, runtime integration)
+- runtime 0.8.3 vendored into both static trees (`web/public/semtext/` + `app/backend/priv/static/semtext/`, byte-parity verified) and /editor pins repointed 0.7.2 → 0.8.3 — round-2 annotate runtime (reveal/view-as/quiz fixes, sticky chrome) reaches the site (0003cff)
+- `npl-enhanced-content/` subtree pulled to runtime main d4569e2 (0.8.0 → 0.8.3) so docs/search data match the shipped bundle (7d2c985)
+- reference tag pages now render each element's contract as a live `<sem-tag-def>` card (`<sem-tag-attr>` per attribute) instead of a static table — both stacks (Next `reference/[element]/page.tsx` + Hologram `reference_element_page.ex`); the card upgrades in place with semtext.js and reads as a styled definition block without it
+- reference pages load the runtime bundle (defer script), so example viewers and the new definition cards enhance together
+- data-driven promptlingo.dev links: every npl-* tag page links to `https://promptlingo.dev/reference/<tag>` (verified live against all 20 slugs); sem-* pages unchanged
+- vocabulary grew 50 → 54 SemText tags (sem-tag-def, sem-tag-attr, sem-api-call, sem-api-param): buckets updated ("Definitions & citations" now covers the self-describing cards), elements.json regenerated from the runtime, plain-language description-overrides written for the four new tags and re-exported to /data/elements.json, tag-count test pins 50/57 → 54/61
+- parity harness updated for the wider route set: the four new reference routes added to parity-routes.json (54 referenceTags), sem-expectations regenerated (new tags at 0 themed hosts; npl-section 12 → 11 with the 0.8.3 example)
+
 ## 2026-10-17 (annotate feedback round 2, site side)
 - home hero code window: the "broken padding" fixed — the source `<pre>` is authored on one template line so `white-space:pre` stops rendering Hologram template indentation as text (952137a4)
 - home "See it work": inline tag mentions use the site's violet mono code style instead of bare `<code>`; "every tag, from the spec" removed from #scope; the try panel's Source/Render tabs are static component state (no island race against hydration) and the shell garble at cold load is gone (d19165a9, 6bb94d8f, 97a1afd5)
