@@ -357,16 +357,14 @@ section { padding-block: var(--pg-space) 0; }
      the shipped page is self-contained and works from file:// with no
      network — which is the same guarantee every SemText document makes.
 
-     CDN SWAP POINT: once cdn.semtext.dev exists, replace the five markers
+     CDN SWAP POINT: once cdn.semtext.dev exists, replace the four markers
      below with
-         <script src="https://cdn.semtext.dev/<version>/semtext-fallback.js"></script>
          <script src="https://cdn.semtext.dev/<version>/semtext-reading.js"></script>
          <script src="https://cdn.semtext.dev/<version>/semtext.js"></script>
          <script src="https://cdn.semtext.dev/<version>/semtext-extract.js"></script>
          <script src="https://cdn.semtext.dev/<version>/semtext-md.js"></script>
      and nothing else on this page changes. The CDN does not exist yet, so
      the page ships self-contained today. -->
-<!-- sem:inline fallback -->
 <!-- sem:inline reading -->
 <!-- sem:inline bundle -->
 <!-- sem:inline extract -->
@@ -644,7 +642,7 @@ section { padding-block: var(--pg-space) 0; }
       <div class="sem-properties" id="rd-glossary" data-kind="glossary" data-view-as="glossary" role="group" aria-labelledby="rd-glossary-h">
         <div class="sem-property" id="rd-g-record" data-key="record" role="definition" aria-label="record">One entry in the array extraction returns: a type, an id, qualifiers, a payload of fields and a one-line text.</div>
         <div class="sem-property" id="rd-g-tier" data-key="tier" role="definition" aria-label="tier">Which script, if any, is driving the document: none (CSS only), the fallback bundle, or the Lit components.</div>
-        <div class="sem-property" id="rd-g-marker" data-key="tier marker" role="definition" aria-label="tier marker">The <code>data-sem-fallback</code> or <code>data-sem-upgraded</code> attribute a script sets on what it wired; every hide rule is gated on one of them.</div>
+        <div class="sem-property" id="rd-g-marker" data-key="tier marker" role="definition" aria-label="tier marker">The <code>data-sem-upgraded</code> attribute the script sets on what it wired; every hide rule is gated on it.</div>
       </div>
       <p>
         Because every hide rule is gated on a
@@ -761,7 +759,6 @@ section { padding-block: var(--pg-space) 0; }
           <thead><tr><th scope="col">Artifact</th><th scope="col">Minified</th><th scope="col">Gzipped</th><th scope="col">Global</th></tr></thead>
           <tbody>
             <tr><td>semtext.js</td><td data-value="<!-- sem:inline size-kb bundle -->"><!-- sem:inline size-kb bundle --> KB</td><td data-value="<!-- sem:inline size-gzkb bundle -->"><!-- sem:inline size-gzkb bundle --> KB</td><td>SemText</td></tr>
-            <tr><td>semtext-fallback.js</td><td data-value="<!-- sem:inline size-kb fallback -->"><!-- sem:inline size-kb fallback --> KB</td><td data-value="<!-- sem:inline size-gzkb fallback -->"><!-- sem:inline size-gzkb fallback --> KB</td><td>SemTextFallback</td></tr>
             <tr><td>semtext-reading.js</td><td data-value="<!-- sem:inline size-kb reading -->"><!-- sem:inline size-kb reading --> KB</td><td data-value="<!-- sem:inline size-gzkb reading -->"><!-- sem:inline size-gzkb reading --> KB</td><td>SemTextReading</td></tr>
             <tr><td>semtext-extract.js</td><td data-value="<!-- sem:inline size-kb extract -->"><!-- sem:inline size-kb extract --> KB</td><td data-value="<!-- sem:inline size-gzkb extract -->"><!-- sem:inline size-gzkb extract --> KB</td><td>SemTextExtract</td></tr>
             <tr><td>semtext-md.js</td><td data-value="<!-- sem:inline size-kb md -->"><!-- sem:inline size-kb md --> KB</td><td data-value="<!-- sem:inline size-gzkb md -->"><!-- sem:inline size-gzkb md --> KB</td><td>SemTextMd</td></tr>
@@ -849,7 +846,6 @@ section { padding-block: var(--pg-space) 0; }
   &lt;title&gt;Auth notes&lt;/title&gt;
   &lt;link rel="stylesheet" href="semtext/themes/_vocabulary.css"&gt;
   &lt;link rel="stylesheet" href="semtext/themes/minimal-tech-light.css"&gt;
-  &lt;script src="semtext/semtext-fallback.js"&gt;&lt;/script&gt;
 &lt;/head&gt;
 &lt;body&gt;
 &lt;sem-enhanced-document&gt;
@@ -887,16 +883,16 @@ section { padding-block: var(--pg-space) 0; }
           <code>&lt;html&gt;</code> to that theme's name.
         </sem-step>
         <sem-step role="listitem">
-          Add <code>semtext-fallback.js</code>. Link it, or paste it inline for
-          a document you intend to send as a single file.
+          Add <code>semtext.js</code>. Link it, or paste it inline for a
+          document you intend to send as a single file.
         </sem-step>
         <sem-step role="listitem">
           Write the content with <code>sem-*</code> elements where interactivity
           or machine-readability pays. Ordinary HTML stays ordinary HTML.
         </sem-step>
         <sem-step role="listitem">
-          Optional: add <code>semtext.js</code> for the Lit tier, and
-          <code>semtext-extract.js</code> where a tool needs the records.
+          Optional: add <code>semtext-extract.js</code> where a tool needs the
+          records.
         </sem-step>
       </sem-procedure>
     </div>
@@ -918,7 +914,6 @@ section { padding-block: var(--pg-space) 0; }
       <div class="sem-properties" data-kind="artifacts" role="group"
            aria-label="Shipped artifacts">
         <div class="sem-property" data-key="semtext.js" role="definition" aria-label="semtext.js"><span>Lit 3 components · global <code>SemText</code> · <!-- sem:inline size-mg bundle --></span></div>
-        <div class="sem-property" data-key="semtext-fallback.js" role="definition" aria-label="semtext-fallback.js"><span>Vanilla interactivity, no dependencies · global <code>SemTextFallback</code> · <!-- sem:inline size-mg fallback --></span></div>
         <div class="sem-property" data-key="semtext-reading.js" role="definition" aria-label="semtext-reading.js"><span>Code chrome, reference and glossary previews, the reader bar, table sort and filter · global <code>SemTextReading</code> · <!-- sem:inline size-mg reading --></span></div>
         <div class="sem-property" data-key="semtext-extract.js" role="definition" aria-label="semtext-extract.js"><span>DOM to records and annotated text · global <code>SemTextExtract</code> · <!-- sem:inline size-mg extract --></span></div>
         <div class="sem-property" data-key="semtext-md.js" role="definition" aria-label="semtext-md.js"><span>The <code>sem-md</code> Markdown renderer · global <code>SemTextMd</code> · <!-- sem:inline size-mg md --></span></div>
@@ -1106,9 +1101,8 @@ section { padding-block: var(--pg-space) 0; }
 
   function setView(mode) {
     deck.innerHTML = pristine;
-    deck.removeAttribute('data-sem-fallback');
     deck.setAttribute('data-view-as', mode);
-    if (window.SemTextFallback) window.SemTextFallback.enhanceFacts(scope);
+    if (window.SemText && window.SemText.enhanceCore) window.SemText.enhanceCore(scope);
     if (mode === 'flashcards') makeCardsKeyboardOperable();
     if (current) current.textContent = mode;
     Array.prototype.forEach.call(toggle.querySelectorAll('button'), function (b) {

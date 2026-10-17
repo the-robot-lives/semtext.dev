@@ -19,6 +19,52 @@ declare module "react" {
         mark?: string;
         controls?: string;
       };
+      "sem-highlight": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      >;
+      "sem-list": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        ordered?: boolean | string;
+        unordered?: boolean | string;
+      };
+      "sem-note": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        variant?: string;
+        collapsed?: boolean | string;
+      };
+      "sem-table": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        controls?: string;
+        label?: string;
+        sticky?: boolean | string;
+      };
+      "sem-procedure": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        kind?: string;
+      };
+      "sem-step": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      > & {
+        status?: string;
+      };
+      "sem-break": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      >;
+      "sem-enhanced-document": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      >;
     }
   }
 }

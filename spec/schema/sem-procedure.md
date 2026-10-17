@@ -1,17 +1,17 @@
 # Schema — `sem-procedure` / `sem-step`
 
-Contract per conventions.md v0.5. BDD source of truth for
+Contract per conventions.md v0.6. BDD source of truth for
 `test/e2e/sem-procedure.cy.js`. Changes here precede spec changes
 precede code.
 
 ## Authoring form
 
 ```html
-<sem-procedure kind="runbook" role="list">
-  <sem-step role="listitem" status="done">provision Infisical path</sem-step>
-  <sem-step role="listitem" status="current">port-forward MinIO</sem-step>
-  <sem-step role="listitem">run migrations</sem-step>
-  <sem-step role="listitem" status="blocked">cut release — waiting on CI</sem-step>
+<sem-procedure kind="runbook">
+  <sem-step status="done">provision Infisical path</sem-step>
+  <sem-step status="current">port-forward MinIO</sem-step>
+  <sem-step>run migrations</sem-step>
+  <sem-step status="blocked">cut release — waiting on CI</sem-step>
 </sem-procedure>
 ```
 
@@ -29,8 +29,11 @@ Class-form alias (conventions Appendix A): `div.sem-procedure[data-kind]` › `d
 
 ## Rendered form
 
-- **Zero-JS element.** Pure CSS: `role="list"` container, each step
-  `role="listitem"`, ordinal via CSS counter, status glyph via
+- **Zero-JS element.** Pure CSS: list presentation is supplied by the
+  theme/structural stylesheet (`role="list"` on the container and
+  `role="listitem"` on each step are **optional** in v0.6 — the box and
+  counter styling no longer depend on them; documents that carry the
+  roles stay valid), ordinal via CSS counter, status glyph via
   `[status]` / `[data-status]` `::after` (✓ done · → current · ⛔ blocked · ○ todo).
 - `status="current"` step gets accent border; `blocked` muted-red.
 - Lit milestone may add click-to-toggle status; not yet.
@@ -41,7 +44,9 @@ None.
 
 ## A11y contract
 
-- `role="list"` / `role="listitem"` authored in markup (no JS needed).
+- Steps read as a list to assistive technology through the stylesheet's
+  list presentation; authored `role="list"` / `role="listitem"` are
+  optional (v0.6) and may be added for belt-and-braces AT support.
 - Status conveyed by glyph **and** `status` attribute (machine +
   AT via text alternative).
 

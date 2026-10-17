@@ -71,6 +71,11 @@
   var ed = null;
   var linkedThemes = {};
   var lastStatus = "";
+  // What boot last opened (source string + label). The shell-style heal
+  // below remounts from this — the §9.2 surface takes a DOCUMENT, and the
+  // only honest way back to one is re-parsing the source we opened.
+  var lastSource = null;
+  var lastName = null;
 
   // Hologram hydration can land AFTER this boot chain (cold page bundles)
   // and reset the template-rendered #editor-root to its SSR children —
@@ -80,7 +85,57 @@
   // on a time ladder — immune to how the wipe happens, same defence the
   // landing bootstrap uses. Every step is idempotent; ticks stop touching
   // the DOM once the editor is connected and the status text matches.
-  var REASSERT_AT = [300, 800, 1600, 3000, 5000, 8000];
+  var REASSERT_AT = [300, 800, 1600, 3000, 5000, 8000, 12000, 18000];
+
+  // The editor bundle injects its chrome styles (shell outline/toolbar/
+  // inspector frame, the code-view pane) into document.head when the
+  // document opens, and guards the work with a one-shot flag on the
+  // element — so if anything removes those <style> nodes afterwards
+  // (observed in the field 2026-10-18: Hologram's hydration-era head
+  // reconciliation dropped the id-bearing shell style on some cold
+  // loads), the running editor can never re-inject and renders its
+  // chrome as an unstyled light-DOM stack. Heal: detect the missing
+  // blocks and remount a FRESH editor over the same source — a new
+  // instance re-runs the injection (verified in the browser) and the
+  // old node is simply replaced.
+  function chromeStylesPresent() {
+    return !!(
+      document.querySelector('style[data-sem-editor-css][data-sem-ed-block="shell"]') &&
+      document.querySelector('style[data-sem-editor-css="code-view"]')
+    );
+  }
+
+  function remountFresh() {
+    var root = document.getElementById("editor-root");
+    if (!root || !lastSource || !window.SemTextEditor) return;
+    // If the running editor can hand back its current document, prefer
+    // that over the last-opened source so a heal after user edits keeps
+    // them (undocumented surface — probed defensively, never assumed).
+    if (ed && typeof ed.exportDocument === "function") {
+      try {
+        var current = ed.exportDocument();
+        if (typeof current === "string" && current) lastSource = current;
+      } catch (e) {
+        // keep lastSource
+      }
+    }
+    var fresh = document.createElement("sem-editor");
+    var lane = document.createElement("sem-editor-code");
+    lane.setAttribute("slot", "code-view");
+    fresh.appendChild(lane);
+    if (window.__semEditorReadonly) fresh.readonly = true;
+    if (ed && ed.parentNode === root) root.replaceChild(fresh, ed);
+    else root.appendChild(fresh);
+    ed = fresh;
+    var verdict = window.SemTextEditor.tryParse(lastSource);
+    ed.openDocument(verdict.doc);
+    if (lastStatus) status(lastStatus);
+  }
+
+  function healChromeStyles() {
+    if (!ed || !ed.isConnected || chromeStylesPresent()) return;
+    remountFresh();
+  }
 
   function reassert() {
     var root = document.getElementById("editor-root");
@@ -88,6 +143,7 @@
     var existing = root.querySelector("sem-editor");
     if (existing) {
       ed = existing;
+      healChromeStyles();
       if (lastStatus && (statusEl || document.getElementById("editor-status"))) {
         var current = document.getElementById("editor-status");
         if (current && current.textContent !== lastStatus) status(lastStatus);
@@ -211,6 +267,8 @@
    *  status line reports honestly before the editor opens it. */
   function openSource(editorApi, source, name) {
     var verdict = editorApi.tryParse(source);
+    lastSource = source;
+    lastName = name;
     if (!verdict.ok) {
       status(
         name +
@@ -219,6 +277,9 @@
       );
     }
     ed.openDocument(verdict.doc);
+    // A purge can land between the bundle's own injection and the first
+    // re-assert tick — check immediately, not just on the ladder.
+    setTimeout(healChromeStyles, 0);
     return verdict.ok;
   }
 
@@ -254,6 +315,7 @@
         root.appendChild(ed);
         status(lastStatus);
       }
+      healChromeStyles();
     }).observe(watchRoot, { childList: true, subtree: true });
   }
 

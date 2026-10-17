@@ -1,7 +1,7 @@
 /**
  * semtext-validate — schema-driven validation of SemText documents.
  *
- * Normative contracts: spec/conventions.md (v0.5) + spec/schema/*.md.
+ * Normative contracts: spec/conventions.md (v0.6) + spec/schema/*.md.
  * Machine-readable contract: spec/schema/semtext.schema.json — every rule
  * below READS that file; nothing here hardcodes a parallel rule set. When
  * the prose contracts change, update the JSON schema and the validator
@@ -17,6 +17,11 @@
  *   - unknown attributes = warning; runtime tier markers and generated
  *     chrome in authored source = warning
  *   - orphan record parts (e.g. `<statement>` outside `sem-fact`) = warning
+ *   - v0.6: `childForm` contracts (`sem-table` table-or-markdown,
+ *     `sem-code` pre-or-flat), `sem-list` ordered/unordered exclusivity,
+ *     `<sem-break>` emptiness, and authoring-hygiene warnings
+ *     (`<hr>`, `<br>`, `<b>`, `<strong>`, `<i>`, `<em>` — conventions §3.1;
+ *     outside code contexts only)
  *
  * Line numbers come from a source-side open-tag scan aligned against the
  * parsed tree by (tag name, attribute-name signature); they are exact for
@@ -354,6 +359,36 @@ export function validateSource(source, schema, { filename = '<input>' } = {}) {
       }
     }
 
+    // child form (v0.6): rich child OR authored text — the either/or the
+    // generic childRules grammar cannot express (conventions.md §5).
+    if (def.childForm === 'table-or-markdown') {
+      const n = countChildMatches(el, 'table');
+      if (n === 0 && el.textContent.trim() === '') {
+        push('error', 'child-structure', `${describe(el, defName)} carries neither a <table> child nor a markdown pipe table — author one of the two forms (spec/schema/sem-table.md)`, line);
+      } else if (n > 1) {
+        push('error', 'child-structure', `${describe(el, defName)} allows at most one <table> child, found ${n}`, line);
+      }
+    } else if (def.childForm === 'pre-or-flat') {
+      const n = countChildMatches(el, 'pre');
+      if (n > 1) {
+        push('error', 'child-structure', `${describe(el, defName)} allows at most one <pre> child, found ${n}`, line);
+      } else if (n === 0 && el.textContent.trim() === '') {
+        push('error', 'child-structure', `${describe(el, defName)} is empty — author the flat inline form or a <pre><code> listing (spec/schema/sem-code.md)`, line);
+      }
+    }
+
+    // v0.6 element-specific contracts
+    if (defName === 'sem-list') {
+      const ordered = el.hasAttribute('ordered') || el.hasAttribute('data-ordered');
+      const unordered = el.hasAttribute('unordered') || el.hasAttribute('data-unordered');
+      if (ordered && unordered) {
+        push('error', 'attribute-value', `${describe(el, defName)} carries both ordered and unordered — exactly one (spec/schema/sem-list.md)`, line);
+      }
+    }
+    if (defName === 'sem-break' && (el.childNodes.length > 0 || el.textContent.trim() !== '')) {
+      push('error', 'child-structure', '<sem-break> must be empty — it is a divider; content belongs outside it (spec/schema/sem-break.md)', line);
+    }
+
     // declared children must be their declared parts (orphan detection)
     if (def.partOf) {
       const parent = el.parentElement;
@@ -362,6 +397,19 @@ export function validateSource(source, schema, { filename = '<input>' } = {}) {
         push('warning', 'orphan-part', `<${tag}> is a record part of ${def.partOf.join('/')} but its parent is ${parent ? '<' + parent.tagName.toLowerCase() + '>' : 'the document root'}`, line);
       }
     }
+  }
+
+  // authoring-hygiene warnings (v0.6, conventions.md §3.1): the retired
+  // presentation tags are still valid inputs, but new authoring does not
+  // use them. Skipped inside code contexts (pre/code/sem-code/sem-md),
+  // where the listing is verbatim and emphasis markup may be authored
+  // content.
+  for (const el of doc.querySelectorAll('hr, br, b, strong, i, em')) {
+    if (el.closest('pre, code, sem-code, sem-md')) continue;
+    const alt = el.tagName.toLowerCase() === 'hr'
+      ? '<sem-break>'
+      : el.tagName.toLowerCase() === 'br' ? 'a new element (conventions §3.1)' : '<sem-highlight> or the *text* sugar';
+    push('warning', 'authoring-hygiene', `<${el.tagName.toLowerCase()}> is presentation markup — v0.6 authoring uses ${alt} (conventions.md §3.1)`, lines.get(el));
   }
 
   // document-level child rules from the schema (root scope)

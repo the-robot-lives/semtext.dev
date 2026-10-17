@@ -1,18 +1,20 @@
 # Schema — `sem-table`
 
-Contract per conventions.md v0.5. BDD source of truth for
+Contract per conventions.md v0.6. BDD source of truth for
 `test/e2e/sem-table.cy.js`. Changes here precede spec changes precede code.
 
 ## Scope semantics
 
-A data table a reader can sort and filter, whose **authored `<table>` is
+A data table a reader can sort and filter, whose **rendered `<table>` is
 the contract**. There is no JSON payload (PRD §5 planned one; it is
 dropped): the markup a person reads is the data a machine reads, which is
 the only way the extraction invariant can hold over a surface the reader
-reorders. The element exists because sort and filter are interactions,
-and because a machine reader needs the authored row order back after the
-DOM has been reordered — plain `<table kind="…">` covers a table nobody
-sorts.
+reorders. The table may be authored directly (form A) or written as a
+markdown pipe table the runtime renders (form B) — extraction and chrome
+see the same `<table>` either way. The element exists because sort and
+filter are interactions, and because a machine reader needs the authored
+row order back after the DOM has been reordered — plain `<table kind="…">`
+covers a table nobody sorts.
 
 ## Authoring form
 
@@ -34,15 +36,29 @@ Class-form alias (conventions Appendix A): `div.sem-table[data-kind][data-contro
 `td[data-value]` is a sort key on a plain HTML cell, not a vocabulary
 parameter — it is `data-*` in both forms.
 
-- Child: **exactly one `<table>`** with a `<thead>` whose header row uses
-  `<th scope="col">`, one `<tbody>`, and optionally a `<caption>`. A table
-  without a `<thead>` gets no sort control. Anything else inside the table
-  (`<tfoot>`, `colgroup`) is left alone.
-- `data-value` (optional, on `<td>`): the sort key for that cell when the
-  visible text is not the key (`15 min` vs `900`). Two numeric keys compare
-  numerically; anything else compares as text, locale-aware.
+- Child form **A — authored `<table>` (v0.5 form, still canonical for
+  rich cells)**: exactly one `<table>` with a `<thead>` whose header row
+  uses `<th scope="col">`, one `<tbody>`, and optionally a `<caption>`.
+  A table without a `<thead>` gets no sort control. Anything else inside
+  the table (`<tfoot>`, `colgroup`) is left alone.
+- **Child form B — markdown pipe table (v0.6 authoring form):** the
+  element's own text is a GFM pipe table. The first line is the header
+  row, the second a delimiter row (`| --- | :--: |` — alignment tokens
+  are accepted and become `text-align` on the column), the remaining
+  lines body rows. The extension layer renders a real `<table>` (one
+  `<thead>`/`<tbody>`, plain `<th scope="col">`/`<td>`) before the
+  chrome attaches; everything below — stamping, sorting, filtering,
+  extraction — then behaves exactly as form A. An optional
+  `label` attribute captions the rendered table
+  (`<caption>` from `attr(label)`). A `sem-table` carrying BOTH a
+  `<table>` child and markdown text is an authoring error (validator);
+  the `<table>` child wins at runtime.
+- `data-value` (optional, on `<td>`, form A): the sort key for that cell
+  when the visible text is not the key (`15 min` vs `900`). Two numeric
+  keys compare numerically; anything else compares as text, locale-aware.
 - `controls` (optional): comma flags from `sort`, `filter`; default
-  `sort`. Unknown flags are ignored.
+  `sort`. Unknown flags are ignored. Semantics are identical in both
+  child forms.
 - `sticky` (boolean, optional): the header row sticks to
   the top of the scroll container. CSS only — works with scripts off.
 - `id`, `kind`, `tags`, `audience` per the global catalog. `kind="comparison"`

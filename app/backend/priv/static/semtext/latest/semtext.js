@@ -1,3 +1,6 @@
+/* SemText — runtime bundle (latest)
+   Assembled by scripts/build-latest.mjs (spec v0.6). vendored runtime v0.8.3 (verbatim) + semtext.dev v0.6 extension layer (global SemTextV06, v0.6).
+   Do not hand-edit: change the sources and rebuild. */
 var SemText=(function(y){"use strict";var tt=typeof document<"u"?document.currentScript:null;/**
  * @license
  * Copyright 2019 Google LLC
@@ -142,3 +145,307 @@ export async function retry<T>(fn: () => Promise<T>, n: number, backoffMs = 250)
         <span class="sem-artifact-status" role="status"></span>
       </div>
     </div>`}}g.register("sem-artifact-card",hr);const en=[{id:"zai",label:"z.ai",note:"GLM models — default account"},{id:"zai-alt",label:"z.ai (alt account)",note:"GLM models — second account"},{id:"dashscope",label:"Alibaba DashScope",note:"Qwen models via DashScope"},{id:"anthropic",label:"Anthropic",note:"Claude models"},{id:"deepseek",label:"DeepSeek",note:"DeepSeek models"},{id:"qwen-flash",label:"Qwen Flash",note:"Fast, low-cost Qwen tier"},{id:"groq",label:"Groq",note:"Ultra-fast open-model inference"}],tn="zai";let lc=0;const pr=t=>en.find(e=>e.id===t);class br extends g{static{this.properties={value:{type:String,reflect:!0}}}#e="";#t=!1;#n=-1;constructor(){super(),this.#e=`sem-provider-${++lc}`,this.value=tn}connectedCallback(){super.connectedCallback(),this.addEventListener("keydown",this.#c),this.addEventListener("focusin",this.#l),this.addEventListener("change",this.#o)}disconnectedCallback(){this.removeEventListener("keydown",this.#c),this.removeEventListener("focusin",this.#l),this.removeEventListener("change",this.#o),super.disconnectedCallback()}updated(){if(!pr(this.value)){this.value=tn;return}this.#s(),this.#i()}#s(){if(!this.#t){this.#t=!0,this.hasAttribute("role")||this.setAttribute("role","radiogroup"),this.hasAttribute("aria-label")||this.setAttribute("aria-label","AI provider");for(const e of en){const n=document.createElement("input");n.type="radio",n.name=this.#e,n.value=e.id,n.className="sem-provider-input";const s=document.createElement("span");s.className="sem-provider-label",s.textContent=e.label;const r=document.createElement("span");r.className="sem-provider-note",r.textContent=e.note;const i=document.createElement("label");i.className="sem-provider-option",i.append(n,s,r),this.appendChild(i)}}}#r(){return Array.from(this.querySelectorAll('input[type="radio"]'))}#i(){const e=this.#r();if(e.length===0)return;this.#n<0&&(this.#n=e.findIndex(s=>s.value===this.value));const n=Math.min(Math.max(this.#n,0),e.length-1);e.forEach((s,r)=>{s.checked=s.value===this.value,s.tabIndex=r===n?0:-1})}#a(e){const n=pr(e);n&&(this.value=n.id,this.setAttribute("value",n.id),this.#i(),this.emit("sem-provider-change",{provider:n.id,label:n.label}))}#o=e=>{const n=e.target;n instanceof HTMLInputElement&&n.type==="radio"&&this.contains(n)&&this.#a(n.value)};#l=e=>{const n=e.target;if(!(n instanceof HTMLInputElement)||!this.contains(n))return;const r=this.#r().indexOf(n);r>=0&&r!==this.#n&&(this.#n=r,this.#i())};#c=e=>{const n=e,s=n.target;if(!(s instanceof HTMLInputElement)||s.type!=="radio"||!this.contains(s))return;const r=this.#r(),i=r.indexOf(s);if(i<0)return;const o=n.key==="ArrowDown"||n.key==="ArrowRight"?1:n.key==="ArrowUp"||n.key==="ArrowLeft"?-1:0;if(o!==0){n.preventDefault();const a=(i+o+r.length)%r.length;this.#n=a,this.#i(),r[a].focus();return}(n.key===" "||n.key==="Enter")&&(n.preventDefault(),this.#a(r[i].value))}}g.register("sem-provider-picker",br);const yr=6e4;class Te extends g{static{this.properties={used:{type:Number},limit:{type:Number},label:{type:String},resetsAt:{type:String,attribute:"resets-at"}}}#e=null;#t=null;constructor(){super(),this.used=0,this.limit=0,this.label="quota",this.resetsAt=null}disconnectedCallback(){this.#u(),super.disconnectedCallback()}updated(){this.#r(),this.#c()}#n(){const e=Number.isFinite(this.limit)?this.limit:0,n=Number.isFinite(this.used)?this.used:0,s=e>0;return{used:s?Math.min(Math.max(n,0),e):Math.max(n,0),limit:e,hasLimit:s}}#s(e,n){const s=e/n;return s>=.9?"hot":s>=.75?"warn":"ok"}#r(){const{used:e,limit:n,hasLimit:s}=this.#n(),r=s?Math.round(e/n*100):0;this.setAttribute("role","meter"),this.setAttribute("aria-label",this.label),this.setAttribute("aria-valuemin","0"),this.setAttribute("aria-valuenow",String(s?e:0)),this.setAttribute("aria-valuemax",String(s?n:0)),this.setAttribute("data-level",s?this.#s(e,n):"none");let i=this.#t;(!i||!i.isConnected)&&(i=document.createElement("div"),i.className="sem-quota-meter-box",this.appendChild(i),this.#t=i),i.innerHTML="";const o=document.createElement("span");o.className="sem-quota-meter-label",o.textContent=this.label,i.appendChild(o);const a=document.createElement("span");if(a.className="sem-quota-meter-value",a.textContent=s?e+" of "+n:"no limit set",i.appendChild(a),s){const c=document.createElement("span");c.className="sem-quota-meter-track";const u=document.createElement("span");u.className="sem-quota-meter-fill",u.style.width=r+"%",c.appendChild(u),i.appendChild(c)}this.#i()!==null&&i.appendChild(this.#a())}#i(){if(!this.resetsAt)return null;const e=Date.parse(this.resetsAt);return Number.isNaN(e)?null:e}#a(){const e=document.createElement("span");return e.className="sem-quota-meter-reset",e.textContent=Te.#o(this.#i()-Date.now()),e}static#o(e){if(e<=0)return"resets now";const n=Math.floor(e/yr),s=Math.floor(n/1440),r=Math.floor(n%1440/60),i=n%60;return s>0?"resets in "+s+"d "+r+"h":r>0?"resets in "+r+"h"+(i>0?" "+i+"m":""):"resets in "+i+"m"}#l(){const e=this.#i(),n=this.querySelector(".sem-quota-meter-reset");e===null||!n||(n.textContent=Te.#o(e-Date.now()))}#c(){const e=this.#i()!==null&&this.isConnected;e&&this.#e===null?this.#e=setInterval(()=>this.#l(),yr):e||this.#u()}#u(){this.#e!==null&&(clearInterval(this.#e),this.#e=null)}}g.register("sem-quota-meter",Te);const gr=["view-as","variant","name","active","summary","value","label","key"],uc=gr.map(t=>"["+t+"]").join(",");function vr(t){t.querySelectorAll(uc).forEach(e=>{if(e.tagName.slice(0,4)==="SEM-")for(const n of gr)e.hasAttribute(n)&&!e.hasAttribute("data-"+n)&&e.setAttribute("data-"+n,e.getAttribute(n))})}const wr=q("fact"),Ar=se("conclusion");function Er(t){t.querySelectorAll(q("facts")+":not([data-sem-upgraded])").forEach(e=>{const n=e.getAttribute("data-view-as")||"list",s=Array.from(e.querySelectorAll(wr));if(n==="list"||s.length===0)return;e.setAttribute("data-sem-upgraded","");const r=ft(e),i=document.createElement("div");i.className="sem-facts-chrome",i.innerHTML='<button type="button" data-act="prev" aria-label="previous">←</button><span class="sem-facts-meter"></span><button type="button" data-act="next" aria-label="next">→</button>',e.insertBefore(i,e.firstChild);let o=0;const a={correct:0,answered:0},c=i.querySelector(".sem-facts-meter");function u(d){const m=d.querySelector(Ar),h=Array.from(d.querySelectorAll(se("incorrect-statement"))),b=s.filter(v=>v!==d).map(v=>v.querySelector(Ar)).filter(Boolean),p=h.concat(b).slice(0,3);return mt(p.concat([m]),r).map(v=>({text:(v.textContent||"").trim(),correct:v===m}))}function f(d){let m=d.querySelector(".sem-quiz-options");m||(m=document.createElement("div"),m.className="sem-quiz-options",d.appendChild(m));const h=m;h.innerHTML="",u(d).forEach(b=>{const p=document.createElement("button");p.type="button",p.textContent=b.text,p.setAttribute("data-correct",String(b.correct)),p.addEventListener("click",()=>{h.hasAttribute("data-answered")||(h.setAttribute("data-answered",""),p.classList.add(b.correct?"sem-answered":"sem-wrong-pick"),b.correct&&a.correct++,a.answered++,c.textContent=o+1+"/"+s.length+" · score "+a.correct+"/"+a.answered)}),h.appendChild(p)})}function l(){const d=s[o];s.forEach((m,h)=>{m.classList.toggle("sem-current",h===o),m.classList.remove("sem-flipped")}),n==="flashcards"?c.textContent=o+1+"/"+s.length:(c.textContent=o+1+"/"+s.length,f(d))}i.addEventListener("click",d=>{const m=d.target,h=m.getAttribute&&m.getAttribute("data-act");h&&(h==="prev"&&(o=(o-1+s.length)%s.length,l()),h==="next"&&(o=(o+1)%s.length,l()),(h==="flip"||m.closest(wr))&&s[o].classList.toggle("sem-flipped"))}),n==="flashcards"&&s.forEach(d=>{d.addEventListener("click",()=>d.classList.toggle("sem-flipped"))}),e.addEventListener("sem-activate",d=>{const m=s.indexOf(d.target);m>=0&&m!==o&&(o=m,l())}),l()})}function Cr(t){t.querySelectorAll(q("details")+'[data-view-as="quiz"]:not([data-sem-upgraded])').forEach(e=>{e.querySelectorAll(se("highlight")).forEach(n=>{const s=document.createElement("span");s.className="sem-occluded",s.textContent=n.textContent,s.setAttribute("role","button"),s.setAttribute("tabindex","0"),s.setAttribute("aria-label","reveal");const r=()=>{s.className="sem-highlight sem-revealed",s.removeAttribute("role"),s.removeAttribute("tabindex"),s.removeAttribute("aria-label")};s.addEventListener("click",r),s.addEventListener("keydown",i=>{(i.key==="Enter"||i.key===" ")&&(i.preventDefault(),r())}),n.replaceWith(s)})})}function Sr(t){t.querySelectorAll(q("note")+"[collapsed]:not([data-sem-upgraded])").forEach(e=>{let n=e.querySelector(".sem-note-body");if(!n){if(!e.firstChild)return;for(n=document.createElement("div"),n.className="sem-note-body";e.firstChild;)n.appendChild(e.firstChild);e.appendChild(n)}e.setAttribute("data-sem-upgraded","");const s=document.createElement("div");s.className="sem-note-summary",s.textContent=(n.textContent||"").trim().split(/\s+/).slice(0,10).join(" ")+" …",e.insertBefore(s,n),s.addEventListener("click",()=>{e.removeAttribute("collapsed"),s.remove()})})}function kr(t){t.querySelectorAll(q("properties")).forEach(e=>{const n={};e.querySelectorAll(q("property")).forEach(s=>{const r=s.getAttribute("data-key")??s.getAttribute("key");r!==null&&(n[r]&&console.warn('sem-properties: duplicate key "'+r+'"'),n[r]=!0)})})}const xr=q("view");function $r(t){t.querySelectorAll(q("views")+"[id]").forEach(e=>{const n=Array.from(e.querySelectorAll(xr));if(!n.length)return;e.setAttribute("data-sem-upgraded",""),e.hasAttribute("role")||e.setAttribute("role","region"),e.hasAttribute("aria-label")||e.setAttribute("aria-label",e.id);const s=n.filter(l=>l.hasAttribute("data-active"));s.length>1&&(console.warn(`[semtext] <sem-views id="${e.id}">: ${s.length} views carry active; first wins.`),s.slice(1).forEach(l=>l.removeAttribute("data-active"))),s.length||n[0].setAttribute("data-active","");let r=Math.max(0,n.findIndex(l=>l.hasAttribute("data-active")));const i=n.map(l=>l.id||(l.getAttribute("data-name")||"").toLowerCase()),o=document.createElement("div");o.className="sem-views-tabs",o.setAttribute("role","tablist");const a=[],c=l=>`${e.id}-tab-${l+1}`;n.forEach((l,d)=>{l.id||(l.id=`${e.id}-view-${d+1}`,l.setAttribute("data-sem-minted-id","")),l.setAttribute("role","tabpanel"),l.setAttribute("aria-labelledby",c(d));const m=document.createElement("button");m.type="button",m.id=c(d),m.setAttribute("role","tab"),m.textContent=l.getAttribute("data-name")||`View ${d+1}`,m.setAttribute("aria-selected",String(d===r)),m.setAttribute("aria-controls",l.id),m.tabIndex=d===r?0:-1,m.addEventListener("click",()=>{u(d)}),m.addEventListener("keydown",h=>{const b=n.length-1;h.key==="ArrowRight"&&(h.preventDefault(),u(r===b?0:r+1,!0)),h.key==="ArrowLeft"&&(h.preventDefault(),u(r===0?b:r-1,!0)),h.key==="Home"&&(h.preventDefault(),u(0,!0)),h.key==="End"&&(h.preventDefault(),u(b,!0))}),a.push(m),o.appendChild(m)}),e.insertBefore(o,e.firstChild);function u(l,d,m){const h=r;r=l,n.forEach((A,v)=>{v===l?A.setAttribute("data-active",""):A.removeAttribute("data-active")}),a.forEach((A,v)=>{A.setAttribute("aria-selected",String(v===l)),A.tabIndex=v===l?0:-1});const b=n[l];m||pi(e.id,i[l]),b.dispatchEvent(new CustomEvent("sem-navigate",{bubbles:!0,detail:{id:e.id,name:b.getAttribute("data-name"),index:l}}));const p=h!==l&&n[h].contains(document.activeElement);(d||p)&&a[l].focus()}function f(){const l=e.id+"/",d=pt().find(b=>b.startsWith(l));if(!d)return;const m=d.slice(l.length),h=n.findIndex(b=>b.id===m||(b.getAttribute("data-name")||"").toLowerCase()===m);h>=0&&h!==r&&u(h)}window.addEventListener("hashchange",f),e.addEventListener("sem-activate",l=>{const d=l.target instanceof Element?l.target.closest(xr):null,m=d?n.indexOf(d):-1;m>=0&&m!==r&&u(m,!1,!0)}),f()})}function Nr(t){t.querySelectorAll(q("reveal")+":not([data-sem-upgraded])").forEach(e=>{const n=document.createElement("details");e.hasAttribute("open")&&n.setAttribute("open","");const s=document.createElement("summary");s.textContent=e.getAttribute("data-summary")||De(Ln(e.textContent)),n.appendChild(s);const r=document.createElement("div");for(r.className="sem-reveal-body";e.firstChild;)r.appendChild(e.firstChild);n.appendChild(r),e.appendChild(n),e.setAttribute("data-sem-upgraded","")})}function qr(t){t.querySelectorAll(q("progress")+"[data-value]").forEach(e=>{const n=parseFloat(e.getAttribute("data-value")),s=Math.min(1,Math.max(0,isNaN(n)?0:n)),r=e.getAttribute("data-label")||"progress",i=Math.round(s*100);e.textContent=r+" :: "+i+"%",e.setAttribute("data-sem-upgraded","");const o=document.createElement("span");o.className="sem-progress-track";const a=document.createElement("span");a.className="sem-progress-fill",a.style.width=i+"%",o.appendChild(a),e.appendChild(o)})}const nn="sem-enhanced-document, .sem-enhanced-document";function Lr(t){const e=document.documentElement,n=t===document,s=n||t.querySelector("sem-audiences, .sem-audiences")===null?document:t,r=n?document.querySelector(nn):t.querySelector(nn)??document.querySelector(nn),i=r&&(r.getAttribute("data-audience")||r.getAttribute("audience"))||e.getAttribute("data-audience"),o=dt(s),a=()=>{const c=bt("sem-audience")||i||null;c?e.setAttribute("data-audience",c):e.removeAttribute("data-audience"),t.querySelectorAll("[data-audience], [audience]").forEach(u=>{if(u===e||u===r)return;const f=u.getAttribute("data-audience")??u.getAttribute("audience");u.toggleAttribute("hidden",!ut(f,c,o))})};window.addEventListener("hashchange",a),a()}const Tr=q("view"),sn=q("reveal"),dc=q("source")+'[data-view-as="source"]',mc=q("note")+"[collapsed], "+Tr+":not([data-active]), "+q("facts")+"[data-sem-upgraded] > "+q("fact")+":not(.sem-current)";let _r=0;function fc(t){try{return decodeURIComponent(t)}catch{return t}}function hc(t){const[e,n]=t.split("/").map(fc),s=document.getElementById(e);if(!s||n===void 0)return s;const r=document.getElementById(n);return r&&s.contains(r)?r:Array.from(s.querySelectorAll(Tr)).find(i=>(i.getAttribute("data-name")||"").toLowerCase()===n.toLowerCase())||null}function Rr(){for(const t of pt()){const e=hc(t);if(!e)continue;const n=[];for(let r=e;r;r=r.parentElement)n.unshift(r);n.forEach(r=>{if(r.matches(sn)){const o=r.querySelector(":scope > details");o?o.setAttribute("open",""):r.querySelector(":scope > button.sem-reveal-control")?.click()}if(r.matches(dc)){const o=r.querySelector(':scope > .sem-source-chrome [data-act="html"]');o?o.click():r.setAttribute("data-view-as","html")}if(!r.matches(mc))return;const i=r.querySelector(":scope > .sem-note-summary");i?i.click():r.hasAttribute("collapsed")?r.removeAttribute("collapsed"):r.dispatchEvent(new CustomEvent("sem-activate",{bubbles:!0}))});const s=typeof matchMedia=="function"&&matchMedia("(prefers-reduced-motion: reduce)").matches;e.scrollIntoView({block:"start",behavior:s?"auto":"smooth"}),document.querySelectorAll(".sem-target").forEach(r=>r.classList.remove("sem-target")),clearTimeout(_r),e.classList.add("sem-target"),_r=window.setTimeout(()=>e.classList.remove("sem-target"),1500);return}}function Mr(t){if(t!==document)return;window.addEventListener("hashchange",Rr),window.setTimeout(Rr,0);let e=[];window.addEventListener("beforeprint",()=>{e=Array.from(document.querySelectorAll(sn+" > details:not([open])")),e.forEach(n=>n.setAttribute("open","")),document.querySelectorAll(sn+":not([data-revealed]) > button.sem-reveal-control").forEach(n=>n.click())}),window.addEventListener("afterprint",()=>{e.forEach(n=>n.removeAttribute("open")),e=[]})}const pc=[xs,vr,Er,Cr,Sr,kr,$r,Nr,qr,Lr,Mr];function Or(t=document){t===document&&document.documentElement.setAttribute("data-sem-upgraded","");for(const e of pc)e(t)}function Pr(t){t.querySelectorAll(Bo).forEach(e=>{e.hasAttribute("data-sem-upgraded")||(Pt(e),e.querySelector(":scope > .sem-md-chrome")&&e.setAttribute("data-sem-upgraded",""))})}function Dr(t=document){Pr(t)}const ee=t=>t.hasAttribute("data-sem-upgraded");function bc(t){t.querySelectorAll(po).forEach(e=>{ee(e)||(re(e),e.querySelector(":scope > .sem-code-chrome")&&e.setAttribute("data-sem-upgraded",""))})}function yc(t){t.querySelectorAll(wo).forEach(e=>{ee(e)||(Ct(e),e.setAttribute("data-sem-upgraded",""))})}function gc(t){t.querySelectorAll(Co).forEach(e=>{ee(e)||St(e)&&e.setAttribute("data-sem-upgraded","")})}function vc(t){t.querySelectorAll(_o).forEach(e=>{ee(e)||(Lt(e),e.querySelector(":scope > .sem-table-chrome")&&e.setAttribute("data-sem-upgraded",""))})}function wc(t){t.querySelectorAll(Cs).forEach(e=>{ee(e)||(Tt(e),e.querySelector(":scope > .sem-source-chrome")&&e.setAttribute("data-sem-upgraded",""))})}function Ac(t){t.querySelectorAll(Va).forEach(e=>{ee(e)||(Yt(e),e.querySelector(":scope > "+Le+" > :is(.sem-data-body, .sem-data-error, .sem-data-pending)")&&e.setAttribute("data-sem-upgraded",""))})}function Ec(t){t.querySelectorAll(xo).forEach(e=>{ee(e)||(Nt(e),e.querySelector(":scope > .sem-reader-chrome")&&e.setAttribute("data-sem-upgraded",""))})}const Cc=[bc,yc,gc,vc,Ac,wc,Ec];function Ir(t=document){t===document&&document.documentElement.setAttribute("data-sem-upgraded","");for(const e of Cc)e(t)}function jr(){Or(document),Dr(document),Ir(document)}return typeof document<"u"&&(document.readyState==="loading"?document.addEventListener("DOMContentLoaded",jr,{once:!0}):jr()),y.DEFAULT_PROVIDER_ID=tn,y.PROVIDERS=en,y.SEM_BROWSER_TAG=Go,y.SemApiCall=ss,y.SemArtifactCard=hr,y.SemBrowser=Is,y.SemCode=is,y.SemDataVisualizer=fr,y.SemDetails=Qn,y.SemElement=g,y.SemFacts=Zn,y.SemMd=Ps,y.SemNote=Wn,y.SemProperties=hs,y.SemProviderPicker=br,y.SemQuotaMeter=Te,y.SemReader=vs,y.SemReferences=fs,y.SemReveal=Kn,y.SemSource=$s,y.SemTable=Es,y.SemTagDef=es,y.SemTldr=Ds,y.bareSegments=pt,y.buildClosure=En,y.closureFor=dt,y.deriveSummary=De,y.disposeReaderElement=gs,y.elementTokens=ui,y.enhanceAttrs=vr,y.enhanceAudience=Lr,y.enhanceCodeElement=re,y.enhanceCore=Or,y.enhanceDataVisualizerElement=Yt,y.enhanceDetails=Cr,y.enhanceFacts=Er,y.enhanceGlossaryElement=St,y.enhanceMd=Pr,y.enhanceMdDocument=Dr,y.enhanceMdElement=Pt,y.enhanceNote=Sr,y.enhanceProgress=qr,y.enhanceProperties=kr,y.enhanceReaderElement=Nt,y.enhanceReading=Ir,y.enhanceReferencesElement=Ct,y.enhanceReveal=Nr,y.enhanceSource=xs,y.enhanceSourceElement=Tt,y.enhanceTableElement=Lt,y.enhanceTarget=Mr,y.enhanceViews=$r,y.extractRecords=Bn,y.extractText=Vi,y.getParam=bt,y.hashSegments=ve,y.inferSchema=Ye,y.matches=ut,y.mulberry32=Cn,y.normalizeMd=gt,y.parseBlocks=Ze,y.parseGfmTable=Us,y.parseProfiles=lt,y.parseTokens=ge,y.parseViews=Se,y.randomFor=ft,y.readLocal=Nn,y.removeLocal=bi,y.renderRecordsAsText=Fn,y.resolveSeed=xn,y.resolveView=Qe,y.safeUrl=_t,y.setParam=B,y.shuffle=mt,y.visibleColumns=ke,y.warn=_,y.writeLocal=qn,Object.defineProperty(y,Symbol.toStringTag,{value:"Module"}),y})({});
+
+/**
+ * SemText v0.6 extension layer — semtext.dev authoring forms.
+ *
+ * Appended to the vendored runtime in the consolidated
+ * `semtext/latest/semtext.js` bundle (scripts/build-latest.mjs). The
+ * vendored IIFE (`SemText`) is untouched; this layer defines a separate
+ * global, `SemTextV06`, and upgrades the v0.6 authoring forms into the
+ * real markup the rest of the runtime (and the vocabulary CSS) already
+ * understands. Contracts: spec/schema/sem-list.md, sem-table.md (form B),
+ * sem-code.md (flat form), sem-references.md (AUTO-ID rule),
+ * conventions.md §3 (*text* sugar).
+ *
+ * Transforms (idempotent; each container stamped `data-sem-v06`):
+ *   refIds          sem-reference auto ids  = block id (default `refs`)
+ *                   + '-' + slug(cite)      (pure function, sem-references.md)
+ *   flatCode        sem-code without a <pre>: decorated or multi-line text
+ *                   wraps into <pre><code>; plain single-line text is the
+ *                   inline form (CSS chip, no restructure)
+ *   lists           sem-list markdown lines -> real <ul>/<ol>/<li>
+ *                   (2-space indent = one nesting level)
+ *   mdTables        sem-table pipe-table text -> real <table> (form B);
+ *                   an already-upgraded element is cloned and reconnected
+ *                   so the Lit enhance re-runs over real rows
+ *   highlightMirror <sem-highlight> gains the .sem-highlight class so the
+ *                   vocabulary + occlusion handlers key on one spelling
+ *   emphasis        *text* -> <em> in prose text nodes; never inside
+ *                   pre/code/sem-code/sem-md/sem-source/script/style
+ *
+ * JS-off behaviour is the contract, not a fallback: every form reads as
+ * pre-wrapped text and extracts unchanged without this file.
+ */
+(function () {
+  'use strict';
+  if (window.SemTextV06) return;
+
+  var VERSION = '0.6';
+  var MARK = 'data-sem-v06';
+  var SKIP_FOR_EMPHASIS =
+    'pre, code, sem-code, script, style, template, textarea, sem-md, sem-source, .sem-source-fence';
+
+  function all(root, selector) {
+    return Array.prototype.slice.call(root.querySelectorAll(selector));
+  }
+
+  function scope() {
+    return document.querySelector('sem-enhanced-document, .sem-enhanced-document') || document.body;
+  }
+
+  /* AUTO-ID slug (sem-references.md): lowercase, non-alphanumeric runs to
+     one '-', trim leading/trailing dashes. */
+  function slug(s) {
+    return String(s)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  function refIds(root) {
+    all(root, 'sem-reference, .sem-reference').forEach(function (el) {
+      if (el.id) return;
+      var cite = el.getAttribute('cite') || el.getAttribute('data-cite') ||
+        el.getAttribute('href') || el.getAttribute('data-href') || '';
+      if (!cite) return;
+      var block = el.closest('sem-references, .sem-references');
+      var base = (block && (block.getAttribute('id') || block.getAttribute('data-id'))) || 'refs';
+      var id = base + '-' + slug(cite);
+      if (!document.getElementById(id)) el.id = id;
+    });
+  }
+
+  function flatCode(root) {
+    all(root, 'sem-code, .sem-code').forEach(function (el) {
+      if (el.hasAttribute(MARK)) return;
+      if (el.querySelector('pre')) { el.setAttribute(MARK, 'block'); return; }
+      var decorated = ['filename', 'lang', 'mark', 'controls'].some(function (a) {
+        return el.hasAttribute(a) || el.hasAttribute('data-' + a);
+      });
+      var text = el.textContent;
+      var multiline = /\n[^\s]/.test(text.replace(/^[^\S\n]*\n+/, '').replace(/\s+$/, ''));
+      if (decorated || multiline) {
+        var pre = document.createElement('pre');
+        var code = document.createElement('code');
+        code.textContent = text.replace(/^[^\S\n]*\n+/, '').replace(/\s+$/, '');
+        pre.appendChild(code);
+        el.textContent = '';
+        el.appendChild(pre);
+        el.setAttribute(MARK, 'block');
+      } else {
+        el.setAttribute(MARK, 'inline');
+      }
+    });
+  }
+
+  /* --- sem-list: markdown-style lines -> real list --- */
+
+  function parseListLines(text) {
+    var items = [];
+    var ulRe = /^[-*]\s+(.*)$/;
+    var olRe = /^\d+[.)]\s+(.*)$/;
+    text.split(/\r?\n/).forEach(function (line) {
+      if (!line.trim()) return;
+      var indent = (line.match(/^ */) || [''])[0].length;
+      var body = line.slice(indent);
+      var m;
+      if ((m = ulRe.exec(body))) {
+        items.push({ depth: Math.floor(indent / 2), type: 'ul', text: m[1] });
+      } else if ((m = olRe.exec(body))) {
+        items.push({ depth: Math.floor(indent / 2), type: 'ol', text: m[1] });
+      } else if (items.length) {
+        items[items.length - 1].text += ' ' + body;
+      } else {
+        items.push({ depth: 0, type: 'ul', text: body });
+      }
+    });
+    return items;
+  }
+
+  function buildList(items, start, forceType) {
+    var type = forceType || items[start].type;
+    var list = document.createElement(type);
+    var i = start;
+    var baseDepth = items[start].depth;
+    while (i < items.length && items[i].depth >= baseDepth) {
+      if (items[i].depth > baseDepth && list.lastElementChild) {
+        var sub = buildList(items, i, null);
+        list.lastElementChild.appendChild(sub.list);
+        i = sub.next;
+        continue;
+      }
+      var li = document.createElement('li');
+      li.textContent = items[i].text;
+      list.appendChild(li);
+      i++;
+    }
+    return { list: list, next: i };
+  }
+
+  function lists(root) {
+    all(root, 'sem-list, .sem-list').forEach(function (el) {
+      if (el.hasAttribute(MARK)) return;
+      if (el.querySelector('ul, ol')) { el.setAttribute(MARK, 'native'); return; }
+      var items = parseListLines(el.textContent);
+      if (!items.length) { el.setAttribute(MARK, 'empty'); return; }
+      var orderedRoot = el.hasAttribute('ordered') || el.hasAttribute('data-ordered');
+      el.textContent = '';
+      el.appendChild(buildList(items, 0, orderedRoot ? 'ol' : null).list);
+      el.setAttribute(MARK, 'list');
+    });
+  }
+
+  /* --- sem-table form B: pipe-table text -> real <table> --- */
+
+  function splitRow(line) {
+    return line.replace(/^\|/, '').replace(/\|$/, '')
+      .split('|').map(function (c) { return c.trim(); });
+  }
+
+  function isDelimiter(cells) {
+    return cells.length > 0 && cells.every(function (c) { return /^:?-{2,}:?$/.test(c); });
+  }
+
+  function parsePipeRows(text) {
+    var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); })
+      .filter(function (l) {
+        return l.charAt(0) === '|' && l.indexOf('|', 1) !== -1 && l.charAt(l.length - 1) === '|';
+      });
+    if (lines.length < 2) return null;
+    var align = null;
+    var start = 0;
+    if (isDelimiter(splitRow(lines[1]))) {
+      align = splitRow(lines[1]).map(function (c) {
+        var l = c.charAt(0) === ':';
+        var r = c.charAt(c.length - 1) === ':';
+        return l && r ? 'center' : l ? 'left' : r ? 'right' : '';
+      });
+      start = 2;
+    }
+    var rows = [splitRow(lines[0])];
+    for (var i = start; i < lines.length; i++) rows.push(splitRow(lines[i]));
+    return { rows: rows, align: align };
+  }
+
+  function buildTable(parsed, label) {
+    var table = document.createElement('table');
+    if (label) {
+      var caption = document.createElement('caption');
+      caption.textContent = label;
+      table.appendChild(caption);
+    }
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    parsed.rows[0].forEach(function (cell, idx) {
+      var th = document.createElement('th');
+      th.setAttribute('scope', 'col');
+      th.textContent = cell;
+      if (parsed.align && parsed.align[idx]) th.style.textAlign = parsed.align[idx];
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    for (var i = 1; i < parsed.rows.length; i++) {
+      var tr = document.createElement('tr');
+      parsed.rows[i].forEach(function (cell, idx) {
+        var td = document.createElement('td');
+        td.textContent = cell;
+        if (parsed.align && parsed.align[idx]) td.style.textAlign = parsed.align[idx];
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    return table;
+  }
+
+  function mdTables(root) {
+    all(root, 'sem-table, .sem-table').forEach(function (el) {
+      if (el.hasAttribute(MARK)) return;
+      if (el.querySelector('table')) { el.setAttribute(MARK, 'native'); return; }
+      var parsed = parsePipeRows(el.textContent);
+      if (!parsed) { el.setAttribute(MARK, 'skip'); return; }
+      var table = buildTable(parsed, el.getAttribute('label') || el.getAttribute('data-label'));
+      if (el.hasAttribute('data-sem-upgraded')) {
+        /* Lit already enhanced the (table-less) element: swap in a clone
+           carrying the rendered table so connectedCallback re-runs and the
+           chrome attaches to real rows. */
+        var clone = el.cloneNode(false);
+        clone.setAttribute(MARK, 'table');
+        clone.appendChild(table);
+        el.parentNode.replaceChild(clone, el);
+      } else {
+        el.textContent = '';
+        el.insertBefore(table, el.firstChild);
+        el.setAttribute(MARK, 'table');
+      }
+    });
+  }
+
+  /* --- sem-highlight -> .sem-highlight class mirror --- */
+
+  function highlightMirror(root) {
+    all(root, 'sem-highlight').forEach(function (el) {
+      el.classList.add('sem-highlight');
+    });
+  }
+
+  /* --- *text* emphasis sugar (conventions.md §3) --- */
+
+  function emphasis(root) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        var parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (parent.closest && parent.closest(SKIP_FOR_EMPHASIS)) return NodeFilter.FILTER_REJECT;
+        if (node.nodeValue.indexOf('*') === -1) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    var re = /(^|[^\\*])\*([^*\n]+)\*(?!\*)/g;
+    nodes.forEach(function (node) {
+      var text = node.nodeValue;
+      re.lastIndex = 0;
+      if (!re.test(text)) return;
+      re.lastIndex = 0;
+      var frag = document.createDocumentFragment();
+      var last = 0;
+      var m;
+      while ((m = re.exec(text)) !== null) {
+        frag.appendChild(document.createTextNode(text.slice(last, m.index) + m[1]));
+        var em = document.createElement('em');
+        em.textContent = m[2];
+        frag.appendChild(em);
+        last = m.index + m[0].length;
+      }
+      frag.appendChild(document.createTextNode(text.slice(last)));
+      node.parentNode.replaceChild(frag, node);
+    });
+  }
+
+  function runAll() {
+    var root = scope();
+    if (!root) return;
+    refIds(root);
+    flatCode(root);
+    lists(root);
+    mdTables(root);
+    highlightMirror(root);
+    emphasis(root);
+  }
+
+  function run() { runAll(); }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runAll);
+  } else {
+    runAll();
+  }
+
+  window.SemTextV06 = { run: run, version: VERSION };
+})();
+
