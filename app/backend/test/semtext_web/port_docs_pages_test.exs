@@ -23,6 +23,21 @@ defmodule SemtextWeb.PortDocsPagesTest do
       assert body =~ "https://semtext.dev/themes/"
     end
 
+    test "GET /themes/showcase", %{conn: conn} do
+      conn = get(conn, "/themes/showcase")
+      body = html_response(conn, 200)
+      assert body =~ "Theme showcase"
+      assert body =~ "https://semtext.dev/themes/showcase/"
+
+      # one themed panel per shipped theme, scoped on its wrapper
+      for slug <- ~w(minimal-tech-light nocturne-console organic-warm editorial-settings newsprint) do
+        assert body =~ "data-sem-theme=\"#{slug}\""
+      end
+
+      # the consolidated latest bundle is what themes the panels
+      assert body =~ "/semtext/latest/semtext.css"
+    end
+
     test "GET /extend", %{conn: conn} do
       conn = get(conn, "/extend")
       body = html_response(conn, 200)
