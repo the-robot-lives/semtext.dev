@@ -49,11 +49,14 @@ Parameters are read as `data-<name>` first, then bare `<name>`.
 
 ### Fallback
 
-Two scripts share the work, because the raw markup must be captured before
+Two handlers share the work, because the raw markup must be captured before
 any behaviour has touched it and the fence needs `sem-code`, which lives
-in the reading bundle.
+with the reading behaviours. Since 0.9.0 both ship in the one runtime
+bundle, `semtext/latest/semtext.js` — the standalone
+`dist/semtext-fallback.js` is retired (the reading bundle,
+`dist/semtext-reading.js`, still ships standalone).
 
-**Core fallback (`dist/semtext-fallback.js`) — snapshot, registered
+**Core fallback (in `semtext/latest/semtext.js`) — snapshot, registered
 FIRST.** Before any other handler runs, every `sem-source` receives a
 child `<template class="sem-source-raw">` whose content is a DOM clone of
 the element's children as they stood at that moment — the section before
