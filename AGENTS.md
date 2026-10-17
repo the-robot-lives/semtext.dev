@@ -11,7 +11,7 @@ Static Next.js landing page (`web/`, `output: 'export'`). No backend.
 ## Deploy
 
 GitHub Actions builds `sha-*` images, CI commits the helm tag bump in
-`helm/semtext/values.yaml`, ArgoCD auto-syncs. See trl-infra
+`app/helm/semtext/values.yaml`, ArgoCD auto-syncs. See trl-infra
 `docs/arch/deployment.md`.
 
 Never hand-edit the image tag for a release. Never push `main`.
