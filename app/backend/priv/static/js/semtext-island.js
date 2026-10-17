@@ -345,7 +345,7 @@
     }
 
     function render(q) {
-      list.innerHTML = "";
+      while (list.firstChild) list.removeChild(list.firstChild);
       options = [];
       active = -1;
       var ql = q.toLowerCase();
@@ -383,7 +383,6 @@
           li.className = "cursor-pointer px-3 py-2 hover:bg-white/5";
           li.setAttribute("role", "option");
           li.setAttribute("data-href", "/reference/" + tag.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "/");
-          li.innerHTML = "";
           var nameEl = document.createElement("span");
           nameEl.className = "font-mono text-xs text-ink";
           nameEl.textContent = tag.name;
