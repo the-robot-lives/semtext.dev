@@ -26,23 +26,17 @@ defmodule Mix.Tasks.Semtext.GenReference do
 
   @impl Mix.Task
   def run(args) do
-    web =
-      # OptionParser.parse!/2 returns {opts, invalid} on Elixir 1.20+ and
-      # {opts, args, invalid} before it. tuple_size dispatch keeps both
-      # toolchains' gradual type checker quiet (a literal 3-tuple clause
-      # draws a "will never match" warning on 1.20, and vice versa).
-      case OptionParser.parse!(args, strict: [web: :string]) do
-        parsed when tuple_size(parsed) == 2 ->
-          {opts, invalid} = parsed
-          if invalid == [], do: opts[:web]
-
-        parsed when tuple_size(parsed) == 3 ->
-          {opts, args, invalid} = parsed
-          if args == [] and invalid == [], do: opts[:web]
-
-        _ ->
-          nil
-      end
+    # OptionParser.parse!/2 returns {opts, invalid} on Elixir 1.20+ and
+    # {opts, args, invalid} before it. Dispatching on the tuple shape
+    # draws a "will never match" warning from the gradual type checker
+    # on whichever toolchain sees the other shape, so index from the
+    # END instead: the last element is always `invalid`, and whatever
+    # sits between opts and it is positional args.
+    parsed = OptionParser.parse!(args, strict: [web: :string])
+    [opts | rest] = Tuple.to_list(parsed)
+    positional = tl(rest)
+    invalid = List.last(rest)
+    web = if positional == [] and invalid == [], do: opts[:web]
 
     web || raise_usage()
 
