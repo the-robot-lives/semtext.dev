@@ -48,7 +48,7 @@
       "owner": "port-docs",
       "title": "Docs — SemText",
       "h1": "Documentation",
-      "keyText": ["CLI commands", "semtext validate", "semtext --render"],
+      "keyText": ["CLI commands", "semtext-validate", "semtext format"],
       "selectors": ["section#cli-commands", "section#showcase", "nav[aria-label=\"Docs\"]"]
     },
     {

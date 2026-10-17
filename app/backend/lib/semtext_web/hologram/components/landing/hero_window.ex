@@ -59,6 +59,9 @@ defmodule SemtextWeb.Hologram.Components.Landing.HeroWindow do
     )
   end
 
+  # The source <pre> is written on ONE line on purpose: template whitespace
+  # inside white-space:pre renders as text — a leading blank line + indent,
+  # i.e. the "broken padding" the round-2 feedback flagged.
   def template do
     ~HOLO"""
     <figure class="code-window" aria-label="A SemText document fragment">
@@ -88,9 +91,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.HeroWindow do
           </span>
         {/if}
       </div>
-      <pre hidden={@view != "source"}>
-        <code>{@source}</code>
-      </pre>
+      <pre hidden={@view != "source"}><code>{@source}</code></pre>
       <div
         id="hero-render-pane"
         hidden={@view != "rendered"}

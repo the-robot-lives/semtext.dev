@@ -59,7 +59,8 @@ defmodule SemtextWeb.Docs.NavGroups do
         title: "Guides",
         items: [
           %{key: "docs", label: "Docs", href: "/docs/", data_ref: nil},
-          %{key: "cli", label: "CLI commands", href: "/docs/#cli-commands", data_ref: nil}
+          %{key: "cli", label: "CLI commands", href: "/docs/#cli-commands", data_ref: nil},
+          %{key: "editor", label: "Try the editor →", href: "/editor/", data_ref: nil}
         ]
       }
       | reference_groups()

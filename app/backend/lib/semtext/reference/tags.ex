@@ -9,6 +9,15 @@ defmodule Semtext.Reference.Tags do
   `Semtext.Reference.Glossary` supplements the elements the generator cannot
   emit (see its header). A `npl-enhanced-content` subtree pull + `mix
   semtext.gen_reference` + rebuild is the whole refresh path.
+
+  COPY LAYER (round-2, thread 858cc161): the generated summaries/descriptions
+  read like changelog notes (Lit file paths, BDD contracts, resolved-question
+  flags). `priv/data/description-overrides.json` carries the hand-authored
+  plain-language copy for every tag — `"tag-name": [summary, description]` —
+  applied HERE at consolidation, so index cards, element pages and everything
+  else reading this module show it. `mix semtext.export_elements` applies the
+  same file to the public /data/elements.json search index. Edit the JSON,
+  rebuild, re-export; never edit the generated files.
   """
 
   alias Semtext.Reference.{Bundles, Elements, Glossary}
@@ -18,7 +27,42 @@ defmodule Semtext.Reference.Tags do
 
   @spec_version Elements.spec_version()
 
-  @all_tags Enum.sort(Elements.all() ++ Glossary.all(), &(&1.name <= &2.name))
+  @overrides_path Path.expand("../../../priv/data/description-overrides.json", __DIR__)
+  @external_resource @overrides_path
+  # Module-body attributes cannot call this module's own functions (the
+  # nested-Norm pattern in Elements/Glossary exists for the same reason),
+  # so the decode is inlined here.
+  @overrides (case File.exists?(@overrides_path) do
+                true ->
+                  @overrides_path |> File.read!() |> Jason.decode!() |> Map.fetch!("overrides")
+
+                false ->
+                  %{}
+              end)
+
+  # Apply the copy layer, then sort. A tag without an override fails the
+  # build — new elements must ship plain-language copy, not stale generated
+  # prose. An overlay name matching no tag fails too (rename/typo guard).
+  @raw_tags Enum.sort(Elements.all() ++ Glossary.all(), &(&1.name <= &2.name))
+
+  @unknown_overrides Map.keys(@overrides) -- Enum.map(@raw_tags, & &1.name)
+  :ok =
+    case @unknown_overrides do
+      [] -> :ok
+      extra -> raise ArgumentError, "description-overrides.json names unknown tags: #{inspect(extra)}"
+    end
+
+  @all_tags Enum.map(@raw_tags, fn t ->
+              case Map.fetch(@overrides, t.name) do
+                # JSON shape: "tag-name": [summary, description]
+                {:ok, [s, d]} ->
+                  %{t | summary: s, description: d}
+
+                :error ->
+                  raise ArgumentError,
+                        "description-overrides.json has no entry for tag #{t.name}"
+              end
+            end)
 
   @by_name Map.new(@all_tags, fn t -> {t.name, t} end)
 

@@ -49,7 +49,7 @@ defmodule SemtextWeb.HomePageTest do
     refute body =~ "aria-pressed"
   end
 
-  test "try views: tablist hidden pre-hydration, panels visible, no roledescription", %{
+  test "try views render pre-hydration; carousel carries the ARIA roledescription", %{
     conn: conn
   } do
     body =
@@ -61,8 +61,10 @@ defmodule SemtextWeb.HomePageTest do
     assert body =~ "hidden"
     assert body =~ "try-tab-code"
     assert body =~ "demo/example-deck.sem.html"
-    # Carousel/generator chrome only exists after hydration dispatch.
-    refute body =~ "aria-roledescription"
+    # The integrations carousel is server-rendered now and carries the
+    # WAI-ARIA carousel roledescription; the try-view tablist does not.
+    assert body =~ "aria-roledescription=\"carousel\""
+    refute body =~ "aria-roledescription=\"tablist\""
   end
 
   test "code windows and Sem blocks ship authored markup", %{conn: conn} do

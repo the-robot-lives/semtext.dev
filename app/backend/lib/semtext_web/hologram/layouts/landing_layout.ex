@@ -28,10 +28,13 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
   prop :landing_css, :string, default: SemtextWeb.AssetVersion.url("css/landing.css")
   prop :page_title, :string, default: "SemText — one HTML file, in place of Markdown"
 
+  # Content-hashed bootstrap URL (cache busting; compile-time prop default).
+  prop :bootstrap_js, :string, default: SemtextWeb.AssetVersion.url("js/landing-bootstrap.js")
+
   def template do
     ~HOLO"""
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="en" class="sem-booting">
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -85,7 +88,7 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
           window.__semJsOff = true;
         </script>
         <script defer="defer" src="/semtext/semtext-fallback.js"></script>
-        <script defer="defer" src="/js/landing-bootstrap.js"></script>
+        <script defer="defer" src={@bootstrap_js}></script>
       </head>
       <body class="docs-bg min-h-screen antialiased">
         <a class="skip-link" href="#main">Skip to docs</a>
@@ -141,12 +144,6 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
                   autocomplete="off"
                   class="w-44 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 font-mono text-xs text-ink placeholder:text-ink-faint focus:border-violet-soft focus:outline-none"
                 />
-                <kbd
-                  aria-hidden="true"
-                  class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-white/20 px-1 font-mono text-[0.65rem] text-ink-faint"
-                >
-                  /
-                </kbd>
                 <ul
                   id="docs-search-list"
                   role="listbox"
