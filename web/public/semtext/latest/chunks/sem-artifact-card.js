@@ -1,4 +1,4 @@
-import{b as a,A as u}from"./lit-element-DWovE5T-.js";import{o as h}from"./unsafe-html-BQA5rzql.js";import{S as p}from"./base-qLn05nS2.js";import{c as v,a as g}from"./clipboard-BS2qawu8.js";const y=[{id:"artifact-md-001",title:"Run summary — repo audit",type:"markdown","active-version":"v3",versions:[{id:"v1",label:"First pass",createdAt:"2026-10-12T09:14:00Z",content:`## Run summary
+import{b as a,A as u}from"./lit-element-DWovE5T-.js";import{o as h}from"./unsafe-html-BQA5rzql.js";import{S as p}from"./base-BKd1N4qP.js";import{c as v,a as g}from"./clipboard-BS2qawu8.js";const y=[{id:"artifact-md-001",title:"Run summary — repo audit",type:"markdown","active-version":"v3",versions:[{id:"v1",label:"First pass",createdAt:"2026-10-12T09:14:00Z",content:`## Run summary
 Agent **repo-audit** finished in 4m 12s.
 
 - 3 findings, 1 blocking
