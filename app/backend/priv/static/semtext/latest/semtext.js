@@ -1,5 +1,5 @@
 /* SemText — runtime bundle (latest)
-   Assembled by scripts/build-latest.mjs (spec v0.6). vendored runtime v0.8.3 (verbatim) + semtext.dev v0.6 extension layer (global SemTextV06, v0.6).
+   Assembled by scripts/build-latest.mjs (spec v0.6). vendored runtime v0.9.0 (verbatim) + semtext.dev v0.6 extension layer (global SemTextV06, v0.6).
    Do not hand-edit: change the sources and rebuild. */
 var SemText=(function(y){"use strict";var tt=typeof document<"u"?document.currentScript:null;/**
  * @license

@@ -560,7 +560,8 @@
     },
     "agent": {
       "shipped": false,
-      "note": "no shipped runtime — the authored example renders as plain HTML"
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
     },
     "statement": {
       "shipped": true,
@@ -597,7 +598,8 @@
     },
     "sem-question": {
       "shipped": false,
-      "note": "no shipped runtime — the authored example renders as plain HTML"
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
     },
     "sem-option": {
       "shipped": false,
