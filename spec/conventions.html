@@ -159,8 +159,9 @@
   <sem-md id="md-notation" kind="notation" label="Compact notation" controls="toggle,copy">
     | Notation | Meaning | Where |
     | :-- | :-- | :-- |
-    | `&lt;highlight&gt;` | recall target — occludes in quiz/flashcard views, `&lt;em&gt;` in plain view | any prose element |
-    | `[[cloze]]` | inline occlusion sugar (equivalent to `&lt;highlight&gt;`) | `sem-detail`, `sem-fact` |
+    | `&lt;sem-highlight&gt;` (alias `&lt;highlight&gt;`) | recall target — occludes in quiz/flashcard views, emphasised in plain view | any prose element |
+    | `[[cloze]]` | inline occlusion sugar (equivalent to `&lt;sem-highlight&gt;`) | `sem-detail`, `sem-fact` |
+    | `*text*` | inline emphasis sugar — renders as `&lt;em&gt;`; never crosses a code block, a `sem-code`/`sem-md` element, or an attribute | any prose text |
     | `term :: value` | pair | `sem-property` text, `sem-fact` compact form |
     | `✅ …` / `✗ …` | correct / distractor | `sem-option` sugar |
     | `→ …` | current | `sem-step` status sugar |
@@ -168,6 +169,17 @@
   </sem-md>
 
   <p><code>&lt;statement&gt;</code>/<code>&lt;conclusion&gt;</code> children always win over <code>::</code> compact form when both present; authors pick one per fact.</p>
+
+  <h3 id="31-authoring-style-v06">3.1 Authoring style (v0.6)</h3>
+  <p>Normative guidance; the validator warns on each violation:</p>
+  <ul>
+    <li><strong>Plain text over <code>&lt;p&gt;</code>.</strong> Do not wrap a lone line in <code>&lt;p&gt;</code> unless paragraph semantics matter (grouping, spacing a distinct block, a <code>&lt;p&gt;</code>-anchored citation). Bare text nodes inside the root wrapper or a section element are first-class content.</li>
+    <li><strong>No <code>&lt;br&gt;</code>.</strong> Line breaks are a presentation concern; start a new element (a new line of bare text, a <code>sem-list</code> item) instead.</li>
+    <li><strong>No <code>&lt;b&gt;</code>, <code>&lt;strong&gt;</code>, <code>&lt;i&gt;</code>, <code>&lt;em&gt;</code>.</strong> An important term is <code>&lt;sem-highlight&gt;</code> (§3); any other emphasis is the <code>*text*</code> sugar. The four raw tags still parse — documents carrying them are valid — but new authoring does not use them.</li>
+    <li><strong>No <code>&lt;hr&gt;</code>.</strong> A visual break is <code>&lt;sem-break&gt;</code>; a structural block boundary is <code>&lt;sem-section&gt;</code> (§5).</li>
+    <li><strong>Inline code is <code>&lt;sem-code&gt;</code> flat form</strong> — the element's own text is the code (§5, sem-code). Raw <code>&lt;code&gt;</code> still parses.</li>
+    <li>Never encode meaning in presentation: emphasis sugar and highlights qualify prose for readers; <code>kind</code> / <code>tags</code> qualify it for machines.</li>
+  </ul>
 
   <h2 id="4-fallback-handler--degradation-rules">4. Fallback handler &amp; degradation rules</h2>
 
