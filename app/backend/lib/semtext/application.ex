@@ -38,6 +38,8 @@ defmodule Semtext.Application do
         samly_children ++
         [
           Semtext.Events.WebhookHandler,
+          # Owns the driver mock's ETS job table (vocabulary epic Phase 6)
+          Semtext.Driver.MockRunner,
           SemtextWeb.Endpoint
         ]
 

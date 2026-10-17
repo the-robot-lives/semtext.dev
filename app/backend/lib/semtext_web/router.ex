@@ -144,6 +144,18 @@ defmodule SemtextWeb.Router do
     get "/threads", AnnotateThreadsController, :index
   end
 
+  # Driver mock backend (vocabulary epic Phase 6 — contract in Semtext.Driver):
+  # POST /run enqueues a simulated cypress/cucumber run, GET /runs/:id polls
+  # it to terminal. Same posture as the Phase 5 live-fetch proxies above: no
+  # auth (nothing sensitive — every payload is `mode: "mock"`, only a script
+  # ref is accepted, nothing logged), shared `proxy_read` rate limit. The
+  # real runner is a follow-up lane.
+  scope "/api/v1/driver", SemtextWeb do
+    pipe_through [:api, :rate_limited_proxy]
+    post "/run", DriverController, :create
+    get "/runs/:id", DriverController, :show
+  end
+
   # Editor island data (site-editor lane): the /editor page's client-side
   # document feed — one tag's authored reference example (+ the pane spec),
   # fetched after load so no document markup ever rides in page state.
