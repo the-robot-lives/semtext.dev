@@ -1,6 +1,6 @@
 # SemText — Format Spec & Conventions
 
-**DRAFT v0.5 — tag form canonical.** SemText is an XHTML vocabulary of
+**DRAFT v0.5 — tag form canonical.** SemText is an HTML vocabulary of
 **custom elements**: `<sem-enhanced-document>`, `<sem-note variant="tip">`,
 `<sem-facts view-as="quiz">`, `<sem-fact>` with `<statement>` and
 `<conclusion>`, `<sem-step status="done">`, `<sem-property key="…">`. Element
@@ -50,7 +50,7 @@ questions (§10).
 ## 0. Model
 
 One file, three consumers — human/browser (double-click, styled, interactive),
-LLM/non-visual (the same XHTML read structurally; attributes qualify every
+LLM/non-visual (the same HTML read structurally; attributes qualify every
 datum; same XML vocabulary NPL's MCP server already speaks), terminal (browser
 or DOM-text extraction). Element names are **semantic** (`sem-fact`,
 `sem-detail`) — what content *is*; presentation is parameterized

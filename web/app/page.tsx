@@ -163,7 +163,7 @@ const ARTIFACTS: Array<[string, React.ReactNode]> = [
 const QUESTIONS: Array<[string, string]> = [
   [
     "Why not Markdown?",
-    "Markdown has nowhere to put the attributes that make a datum machine-readable — no way to mark a conclusion as distinct from a distractor, or a step as blocked. A converter that compiles Markdown into SemText is worth building; the canonical artifact stays XHTML, because that is what the browser, the terminal and the model all read.",
+    "Markdown has nowhere to put the attributes that make a datum machine-readable — no way to mark a conclusion as distinct from a distractor, or a step as blocked. A converter that compiles Markdown into SemText is worth building; the canonical artifact stays HTML, because that is what the browser, the terminal and the model all read.",
   ],
   [
     "Does a language model really need this?",
@@ -233,12 +233,12 @@ export default function Home() {
               a semantic text format
             </p>
             <h1 className="mt-3 text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl">
-              One XHTML file,
+              One HTML file,
               <br />
               in place of Markdown.
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-ink-mute sm:text-lg">
-              SemText is a semantic text format: a single XHTML file that a
+              SemText is a semantic text format: a single HTML file that a
               language model reads and writes the way it writes Markdown
               today. The difference is what the text can say. A fact, a step,
               a caveat, an incorrect statement, a term and its definition are each

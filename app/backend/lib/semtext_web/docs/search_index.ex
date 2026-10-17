@@ -58,7 +58,7 @@ defmodule SemtextWeb.Docs.SearchIndex do
       %{
         command: "semtext doc.semtext.html",
         summary:
-          "Read a document raw — prints the authored XHTML in the terminal: sections, facts, steps, readable as plain text.",
+          "Read a document raw — prints the authored HTML in the terminal: sections, facts, steps, readable as plain text.",
         href: "/docs/#cli-commands"
       },
       %{

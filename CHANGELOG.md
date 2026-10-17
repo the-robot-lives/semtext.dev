@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-10-17
+- .html-standard sweep: landing (`landing/app/`) and static-site (`site/index.html`) copy renamed XHTML-as-artifact → HTML (titles, meta/og/twitter, hero h1, reader panels, FAQ), the literal `auth-notes.xhtml` demo filename fixed to `auth-notes.html`, the Cypress e2e h1 assertion updated in lockstep, and the spec self-description (`spec/conventions.md` + `.html`) now reads "an HTML vocabulary" / "the same HTML read structurally" — syntax-style descriptors ("XHTML-first") and the nginx `application/xhtml+xml` gzip mimetype unchanged (#88)
+
 ## 2026-10-17 (annotate feedback sweep) — #84 → stage (#85) → main (#86), back-merge #87, prod serving sha-cd458d1
 - runtime 0.7.2 vendored: npl-enhanced-content v0.7.2 bundles replace the v0.7.1 alias set (sem-shell no longer runs the hard-coded refused-CDN demo line at boot; sem-code accepts the flat authoring form — the listing as the element's own text, adopted into `<pre><code>` on enhance; validator childRule relaxed to atMostOne; extraction reads the flat form byte-identically). Alias root + new `priv/static/semtext/v0.7.2/` snapshot (63 files, editor page pins repointed; v0.7.1 kept for deep links); `semtext.css` + `themes/semtext-theme-minimal-tech-light.css` new
 - home: hero `<dl>` stats block removed (d941dfaa); FAQ "Is anyone using it?" now states internal use honestly (Noizu Labs, Inc. and The Robot Lives use it internally; a published spec with a reference implementation — no third-party deployments, no benchmarks) (c8ca98f5); the styled sem-agent mockup card removed, the explanation paragraph kept standalone (9c66daf8); Code section prose rewritten for the flat authoring form, `<mark>` lines + "lines 3-4 marked" captions dropped from the code window (2b93a553)
