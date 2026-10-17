@@ -597,13 +597,24 @@
       ]
     },
     "sem-question": {
-      "shipped": false,
-      "cssOnly": true,
-      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-question.js",
+          "chunk": "chunks/sem-question.js"
+        }
+      ]
     },
     "sem-option": {
-      "shipped": false,
-      "note": "no shipped runtime — the authored example renders as plain HTML"
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-question.js",
+          "chunk": "chunks/sem-question.js"
+        }
+      ]
     }
   }
 }

@@ -1,0 +1,52 @@
+# syntax=docker/dockerfile:1.7
+# live-dev image — toolchain for the semtext.dev live dev slot
+# (dev.semtext.dev, chart devSlot toggle, ArgoCD app semtext-live-dev).
+#
+# The app CODE is NOT baked in: bin/live-dev clones origin/develop at runtime
+# and redeploys on every new commit. This image only moves when the toolchain
+# does, so the chart can pull the mutable :live-dev tag with imagePullPolicy
+# Always. Built by app-ci.yml's live-dev-image job (develop pushes publish).
+#
+# Toolchain versions stay in lockstep with app/backend/Dockerfile BASE_IMAGE
+# and app/.tool-versions; Liquibase + pg driver match app-ci.yml's test job.
+ARG BASE_IMAGE="elixir:1.20.1-otp-29-slim"
+
+FROM ${BASE_IMAGE}
+
+# Keep BEAM JIT mappings compatible with cross-arch builds (same as release).
+ENV ERL_AFLAGS="+JMsingle true"
+
+RUN apt-get update -y && \
+    apt-get install -y build-essential git inotify-tools curl ca-certificates openssh-client postgresql-client && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y nodejs && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    mix local.hex --force && mix local.rebar --force
+
+# Liquibase owns the schema (`mix liquibase.update` runs the JVM CLI).
+ENV JAVA_HOME=/opt/java/openjdk
+COPY --from=eclipse-temurin:21-jre /opt/java/openjdk /opt/java/openjdk
+ARG LIQUIBASE_VERSION="4.29.2"
+RUN mkdir -p /opt/liquibase && \
+    curl -fsSL "https://github.com/liquibase/liquibase/releases/download/v${LIQUIBASE_VERSION}/liquibase-${LIQUIBASE_VERSION}.tar.gz" | tar -xz -C /opt/liquibase && \
+    curl -fsSL "https://jdbc.postgresql.org/download/postgresql-42.7.4.jar" -o /opt/liquibase/lib/postgresql.jar
+ENV PATH="/opt/liquibase:${JAVA_HOME}/bin:${PATH}"
+
+# tobor_kit_hologram path dep: mix.exs walks UP from the project dir and finds
+# it at /Portfolio/Libs/tobor-kit/hologram — the exact layout the release
+# build uses. bin/live-dev repoints the deps symlink at the cloned app's deps.
+COPY --from=tobor_kit_hologram mix.exs mix.lock /Portfolio/Libs/tobor-kit/hologram/
+COPY --from=tobor_kit_hologram lib /Portfolio/Libs/tobor-kit/hologram/lib
+COPY --from=tobor_kit_hologram priv /Portfolio/Libs/tobor-kit/hologram/priv
+RUN test -f /Portfolio/Libs/tobor-kit/hologram/mix.exs || { \
+      echo "tobor_kit_hologram build context missing: pass --build-context tobor_kit_hologram=<tobor-kit>/hologram" >&2; exit 1; }
+
+COPY bin/live-dev /usr/local/bin/live-dev
+RUN chmod +x /usr/local/bin/live-dev
+
+# The dev slot runs as root: it compiles the full dev deps tree into the
+# workspace volume and manages its own processes. This container is behind
+# the house Authentik gate and holds zero prod secrets.
+WORKDIR /workspace
+
+ENTRYPOINT ["/usr/local/bin/live-dev"]

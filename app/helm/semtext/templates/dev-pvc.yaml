@@ -1,0 +1,18 @@
+{{- if .Values.devSlot.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "hologram-start-app.fullname" . }}-live-dev-workspace
+  labels:
+    {{- include "hologram-start-app.labels" . | nindent 4 }}
+    semtext.dev/slot: live-dev
+spec:
+  accessModes:
+  - ReadWriteOnce
+  {{- if .Values.devSlot.workspace.storageClass }}
+  storageClassName: {{ .Values.devSlot.workspace.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.devSlot.workspace.size }}
+{{- end }}

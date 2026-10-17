@@ -25,6 +25,8 @@
   "sem-plan": "chunks/sem-plan.js",
   "sem-properties": "chunks/sem-properties.js",
   "sem-provider-picker": "chunks/sem-provider-picker.js",
+  "sem-question": "chunks/sem-question.js",
+  "sem-option": "chunks/sem-question.js",
   "sem-quota-meter": "chunks/sem-quota-meter.js",
   "sem-reader": "chunks/sem-reader.js",
   "sem-references": "chunks/sem-references.js",

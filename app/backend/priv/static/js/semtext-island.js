@@ -560,6 +560,66 @@
     input.addEventListener("input", apply);
   }
 
+  // ————— backlink copy (SEMTEX-010) —————
+  // Rendered `sem-references` examples carry per-citation back arrows
+  // (`span.sem-references-backlinks a`, the "↩" glyph). Following one jumps
+  // the docs page to an in-document anchor and the boot pass makes the jump
+  // read as a page refresh — the arrow copies its link instead. Delegated
+  // capture-phase click listener, port of the Next site's
+  // components/reference-link-copy.tsx (same selector, same feedback
+  // contract): plain left clicks are prevented and the absolute href goes
+  // to the clipboard; modifier clicks keep native behaviour. Feedback lands
+  // on the arrow itself (data-copied marker + transient title) so no chrome
+  // is added to the example document; clipboard failure still surfaces the
+  // resolved link in the title.
+  function initBacklinkCopy() {
+    var revertTimer = null;
+
+    function flash(anchor, message, ok) {
+      anchor.setAttribute("data-copied", ok ? "true" : "error");
+      anchor.setAttribute("title", message);
+      if (revertTimer) window.clearTimeout(revertTimer);
+      revertTimer = window.setTimeout(function () {
+        anchor.removeAttribute("data-copied");
+        anchor.removeAttribute("title");
+      }, 1800);
+    }
+
+    document.addEventListener(
+      "click",
+      function (event) {
+        if (event.defaultPrevented) return;
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+          return;
+        var target = event.target instanceof Element ? event.target : null;
+        var anchor = target && target.closest("span.sem-references-backlinks a");
+        if (!anchor) return;
+        var raw = anchor.getAttribute("href");
+        if (!raw) return;
+        var href;
+        try {
+          href = new URL(raw, window.location.href).toString();
+        } catch (e) {
+          return;
+        }
+        event.preventDefault();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(href).then(
+            function () {
+              flash(anchor, "Link copied to clipboard", true);
+            },
+            function () {
+              flash(anchor, "Copy failed — link: " + href, false);
+            }
+          );
+        } else {
+          flash(anchor, "Copy failed — link: " + href, false);
+        }
+      },
+      true
+    );
+  }
+
   // ————— auto-boot —————
   // The only entry point pages rely on: on DOMContentLoaded (or now, if the
   // document is already parsed) walk every pane the SSR markup rendered and
@@ -577,6 +637,7 @@
       initRefFilter();
       initDocsSearch();
       initSearchShortcut();
+      initBacklinkCopy();
     });
   } else {
     bootAll();
@@ -584,6 +645,7 @@
     initRefFilter();
     initDocsSearch();
     initSearchShortcut();
+    initBacklinkCopy();
   }
 
   window.SemtextIsland = {

@@ -63,6 +63,10 @@ defmodule Semtext.MixProject do
       {:phoenix_live_dashboard, "~> 0.8.3"},
       # Isomorphic UI (replaces the Next.js frontend from start-app)
       {:hologram, "~> 0.10.0"},
+      # Browser live-reload for the dev endpoint (SemtextWeb.Endpoint plugs it
+      # inside `if code_reloading?`). Dev-only: the live dev slot
+      # (dev.semtext.dev) serves pages that refresh as code lands on develop.
+      {:phoenix_live_reload, "~> 1.5", only: :dev},
       # tobor-kit Hologram mirrors (Lit → native Hologram component kit).
       # Path dep resolved by walking up from this file: the scaffold sits at
       # components/hologram-start-app/backend in the monorepo, but worktrees
