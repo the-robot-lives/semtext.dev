@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-17 (annotate feedback sweep)
+## 2026-10-17 (annotate feedback sweep) — #84 → stage (#85) → main (#86), back-merge #87, prod serving sha-cd458d1
 - runtime 0.7.2 vendored: npl-enhanced-content v0.7.2 bundles replace the v0.7.1 alias set (sem-shell no longer runs the hard-coded refused-CDN demo line at boot; sem-code accepts the flat authoring form — the listing as the element's own text, adopted into `<pre><code>` on enhance; validator childRule relaxed to atMostOne; extraction reads the flat form byte-identically). Alias root + new `priv/static/semtext/v0.7.2/` snapshot (63 files, editor page pins repointed; v0.7.1 kept for deep links); `semtext.css` + `themes/semtext-theme-minimal-tech-light.css` new
 - home: hero `<dl>` stats block removed (d941dfaa); FAQ "Is anyone using it?" now states internal use honestly (Noizu Labs, Inc. and The Robot Lives use it internally; a published spec with a reference implementation — no third-party deployments, no benchmarks) (c8ca98f5); the styled sem-agent mockup card removed, the explanation paragraph kept standalone (9c66daf8); Code section prose rewritten for the flat authoring form, `<mark>` lines + "lines 3-4 marked" captions dropped from the code window (2b93a553)
 - header search: the fake "Search … /" link replaced by a real combobox (`#docs-search`, island-driven over `/data/elements.json`, grouped SemText/NPL results, arrow-key + Enter navigation, `/` focuses it from anywhere; no-JS falls back to the reference filter) (0ef652e0); `data` added to Plug.Static's serving list for the JSON
