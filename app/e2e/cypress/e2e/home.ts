@@ -28,7 +28,7 @@ Then("the SemText headline is visible", () => {
     cy.get("h1")
       .should("be.visible")
       .invoke("text")
-      .should("match", /One XHTML file/i);
+      .should("match", /One HTML file/i);
     cy.contains("header a", "SemText").should("be.visible");
   });
 });

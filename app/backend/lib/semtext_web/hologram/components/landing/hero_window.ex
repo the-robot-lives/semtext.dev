@@ -66,7 +66,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.HeroWindow do
         <span class="dot live" aria-hidden="true"></span>
         <span class="dot" aria-hidden="true"></span>
         <span class="dot" aria-hidden="true"></span>
-        <span>auth-notes.xhtml · what the model reads</span>
+        <span>auth-notes.html · what the model reads</span>
         {%if @hydrated}
           <span class="ml-auto flex items-center gap-1.5">
             <button

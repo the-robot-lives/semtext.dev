@@ -43,7 +43,7 @@
   <h1>SemText -- Format Spec &amp; Conventions</h1>
   <p>DRAFT v0.7 -- tag form canonical -- this page is written in the format it specifies. v0.7 renames the fact child <code>&lt;sem-distractor&gt;</code> to <code>&lt;incorrect-statement&gt;</code> (breaking; no backward-compatible alias). Normative source: <a href="#r-conventions-md">spec/conventions.md</a><a href="#r-conventions-md" id="cite-md">[1]</a>; where the two diverge, the Markdown wins.</p>
 
-  <p>SemText is an XHTML vocabulary of <strong>custom elements</strong>: <code>&lt;sem-enhanced-document&gt;</code>, <code>&lt;sem-note variant="tip"&gt;</code>, <code>&lt;sem-facts view-as="quiz"&gt;</code>, <code>&lt;sem-fact&gt;</code> with <code>&lt;statement&gt;</code> and <code>&lt;conclusion&gt;</code>, <code>&lt;sem-step status="done"&gt;</code>, <code>&lt;sem-property key="&hellip;"&gt;</code>. Element names say what content <em>is</em>; <strong>attributes are attributes</strong> (<code>view-as</code>, <code>status</code>, <code>key</code>, <code>kind</code>, <code>tags</code>, <code>controls</code>), never <code>data-*</code>. That is the form every example in this spec, the schemas and the reference documents use, and the form every consumer -- theme CSS, the one script, extraction and the JS-off artifact -- accepts as its first-class input.</p>
+  <p>SemText is an HTML vocabulary of <strong>custom elements</strong>: <code>&lt;sem-enhanced-document&gt;</code>, <code>&lt;sem-note variant="tip"&gt;</code>, <code>&lt;sem-facts view-as="quiz"&gt;</code>, <code>&lt;sem-fact&gt;</code> with <code>&lt;statement&gt;</code> and <code>&lt;conclusion&gt;</code>, <code>&lt;sem-step status="done"&gt;</code>, <code>&lt;sem-property key="&hellip;"&gt;</code>. Element names say what content <em>is</em>; <strong>attributes are attributes</strong> (<code>view-as</code>, <code>status</code>, <code>key</code>, <code>kind</code>, <code>tags</code>, <code>controls</code>), never <code>data-*</code>. That is the form every example in this spec, the schemas and the reference documents use, and the form every consumer -- theme CSS, the one script, extraction and the JS-off artifact -- accepts as its first-class input.</p>
 
   <p>The v0.4 baseline rendered the same vocabulary as <strong>classes on plain elements</strong> with <code>data-*</code> parameters. That spelling is retained as a <strong>compatibility alias</strong>: the mechanical mapping is in <a href="#appendix-a--class-form-alias-v04-compatibility">Appendix A</a>, the script and the CSS keep accepting it, and a document may mix the two forms. New documents and new tooling write the tag form.</p>
 
@@ -80,7 +80,7 @@
       <p>Double-click, styled, interactive. The theme CSS renders the vocabulary; the script adds the behaviour.</p>
     </sem-view>
     <sem-view name="LLM / non-visual" role="tabpanel">
-      <p>The same XHTML read structurally; attributes qualify every datum; the same XML vocabulary NPL's MCP server already speaks.</p>
+      <p>The same HTML read structurally; attributes qualify every datum; the same XML vocabulary NPL's MCP server already speaks.</p>
     </sem-view>
     <sem-view name="Terminal" role="tabpanel">
       <p>Browser render or DOM-text extraction; the content is complete without JS.</p>

@@ -195,7 +195,7 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
   """
 
   @scope_qa """
-  <sem-reveal summary="Why not Markdown?" collapsed>Markdown has nowhere to put the attributes that make a datum machine-readable — no way to mark a conclusion as distinct from a distractor, or a step as blocked. A converter that compiles Markdown into SemText is worth building; the canonical artifact stays XHTML, because that is what the browser, the terminal and the model all read.</sem-reveal>
+  <sem-reveal summary="Why not Markdown?" collapsed>Markdown has nowhere to put the attributes that make a datum machine-readable — no way to mark a conclusion as distinct from a distractor, or a step as blocked. A converter that compiles Markdown into SemText is worth building; the canonical artifact stays HTML, because that is what the browser, the terminal and the model all read.</sem-reveal>
   <sem-reveal summary="Does a language model really need this?" collapsed>A model can read any HTML. What it cannot do reliably is tell a conclusion from a distractor, or a caveat from a heading, when nothing in the markup says so. The claim here is narrow: the attributes remove that guesswork, and the extraction contract makes the result stable enough to cite.</sem-reveal>
   <sem-reveal summary="Is anyone using it?" collapsed>Noizu Labs, Inc. and The Robot Lives use SemText internally — agent-facing docs and demo documents are authored in it. SemText is a published spec with a reference implementation; there are no third-party deployments to point at and no benchmarks to quote.</sem-reveal>
   """
@@ -247,8 +247,8 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
         <div class="mx-auto grid max-w-docs grid-cols-1 gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.18fr)] lg:py-16">
           <div>
             <p class="font-mono text-xs uppercase tracking-[0.22em] text-violet-soft">a semantic text format</p>
-            <h1 class="mt-3 text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl">One XHTML file,<br />in place of Markdown.</h1>
-            <p class="mt-5 max-w-md text-base leading-relaxed text-ink-mute sm:text-lg">SemText is a semantic text format: a single XHTML file that a language model reads and writes the way it writes Markdown today. The difference is what the text can say. A fact, a step, a caveat, an incorrect statement, a term and its definition are each written as what they <em>are</em> — a tag and a few attributes — so the structure is in the text itself, not inferred from it.</p>
+            <h1 class="mt-3 text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl">One HTML file,<br />in place of Markdown.</h1>
+            <p class="mt-5 max-w-md text-base leading-relaxed text-ink-mute sm:text-lg">SemText is a semantic text format: a single HTML file that a language model reads and writes the way it writes Markdown today. The difference is what the text can say. A fact, a step, a caveat, an incorrect statement, a term and its definition are each written as what they <em>are</em> — a tag and a few attributes — so the structure is in the text itself, not inferred from it.</p>
             <p class="mt-4 max-w-md text-base leading-relaxed text-ink-mute">Read it as-is. A model, a diff, a terminal, or an editor shows readable text in document order, with every qualifier spelled out next to the thing it qualifies. Nothing has to run first.</p>
             <p class="mt-4 max-w-md text-base leading-relaxed text-ink-mute">Open it in a browser and the same markup becomes working web components: flashcards flip, quizzes score, tabs switch, code copies, terms preview, and a reader bar tracks the outline. All of it works from a double-clicked file in any current browser, and none of it changes the text the model wrote.</p>
             <div class="mt-8 flex flex-wrap items-center gap-3">
@@ -410,7 +410,7 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
           </div>
           <h3 class="mt-10 text-xl font-semibold tracking-tight text-ink">The obvious questions</h3>
           <div class="mt-4 flex max-w-3xl flex-col gap-3" data-sem-theme="minimal-tech-light" data-color-mode="dark">
-            {%raw}<sem-reveal summary="Why not Markdown?" collapsed>Markdown has nowhere to put the attributes that make a datum machine-readable — no way to mark a conclusion as distinct from a distractor, or a step as blocked. A converter that compiles Markdown into SemText is worth building; the canonical artifact stays XHTML, because that is what the browser, the terminal and the model all read.</sem-reveal>
+            {%raw}<sem-reveal summary="Why not Markdown?" collapsed>Markdown has nowhere to put the attributes that make a datum machine-readable — no way to mark a conclusion as distinct from a distractor, or a step as blocked. A converter that compiles Markdown into SemText is worth building; the canonical artifact stays HTML, because that is what the browser, the terminal and the model all read.</sem-reveal>
     <sem-reveal summary="Does a language model really need this?" collapsed>A model can read any HTML. What it cannot do reliably is tell a conclusion from a distractor, or a caveat from a heading, when nothing in the markup says so. The claim here is narrow: the attributes remove that guesswork, and the extraction contract makes the result stable enough to cite.</sem-reveal>
     <sem-reveal summary="Is anyone using it?" collapsed>Noizu Labs, Inc. and The Robot Lives use SemText internally — agent-facing docs and demo documents are authored in it. SemText is a published spec with a reference implementation; there are no third-party deployments to point at and no benchmarks to quote.</sem-reveal>{/raw}
           </div>
