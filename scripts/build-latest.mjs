@@ -26,7 +26,7 @@
  *
  * Usage: node scripts/build-latest.mjs
  */
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -34,6 +34,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '..');
 
 const VENDORED = resolve(repo, 'app/backend/priv/static/semtext/v0.8.3/semtext.js');
+const VERSION_SOURCE = resolve(repo, 'web/public/semtext/VERSION.md');
 const OUTS = [
   resolve(repo, 'web/public/semtext/latest'),
   resolve(repo, 'app/backend/priv/static/semtext/latest'),
@@ -61,6 +62,21 @@ const banner = (title, note) => `/* SemText — ${title}
    Do not hand-edit: change the sources and rebuild. */
 `;
 
+// VERSION.md — the provenance note for the /semtext/ tree is composed by
+// web/scripts/sync-bundles.mjs and committed at web/public/semtext/
+// VERSION.md; its "v0.6 assembly" paragraph already documents this
+// script's output, so the latest/ mirrors carry the note verbatim. The
+// file must pre-exist (run sync-bundles first): this script never
+// invents sync provenance it did not perform.
+function versionMd() {
+  if (!existsSync(VERSION_SOURCE)) {
+    throw new Error(
+      `missing ${VERSION_SOURCE} — run web/scripts/sync-bundles.mjs first`,
+    );
+  }
+  return readFileSync(VERSION_SOURCE, 'utf8');
+}
+
 for (const [src] of CSS_PARTS) {
   if (!readFileSync(resolve(repo, src), 'utf8')) throw new Error(`empty theme part: ${src}`);
 }
@@ -82,6 +98,7 @@ for (const out of OUTS) {
   for (const [src, name] of THEME_FILES) {
     writeFileSync(resolve(out, 'themes', name), readFileSync(resolve(repo, src), 'utf8'));
   }
+  writeFileSync(resolve(out, 'VERSION.md'), versionMd());
   console.log(`built ${out}`);
 }
 console.log(`semtext.css ${(css.length / 1024).toFixed(1)} KB, semtext.js ${(js.length / 1024).toFixed(1)} KB`);
