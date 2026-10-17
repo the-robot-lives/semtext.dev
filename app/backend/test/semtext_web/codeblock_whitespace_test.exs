@@ -44,4 +44,35 @@ defmodule SemtextWeb.CodeBlockWhitespaceTest do
       end
     end
   end
+
+  describe "reference/showcase code viewers (Site.CodeBody / ExampleViewer)" do
+    test "highlighter tokens are always binaries (integer code points rendered as digits)" do
+      for line <- SemtextWeb.Docs.Highlighter.tokenize_html("<h1>Rotation keys</h1>\nplain é text"),
+          tok <- line do
+        assert is_binary(tok.text), inspect(tok)
+      end
+    end
+
+    test "showcase source pane shows the authored text, not code points", %{conn: conn} do
+      body = html_response(get(conn, "/showcase/documentation"), 200)
+      refute body =~ "8211111697116105111110"
+      assert body =~ "<span>R</span><span>o</span><span>t</span>"
+    end
+
+    test "viewer containers are white-space: normal; only line text preserves whitespace" do
+      css = File.read!(Path.expand("../../priv/static/css/semtext-site.css", __DIR__))
+      [_, rule] = Regex.run(~r/\.code-content\{([^}]*)\}/, css)
+      assert rule =~ "white-space:normal"
+      refute rule =~ "pre-wrap"
+      assert css =~ ~r/\.code-line-text,\.code-linetext\{[^}]*white-space:pre-wrap/
+    end
+
+    test "reference element source lines render tight", %{conn: conn} do
+      for path <- ["/reference/sem-note/", "/reference/sem-facts/", "/reference/sem-enhanced-document/"] do
+        body = html_response(get(conn, path), 200)
+        refute body =~ ~r/<span class="code-line-text">\s/, path
+        assert_tight(body)
+      end
+    end
+  end
 end
