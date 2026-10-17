@@ -34,7 +34,10 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
     page_title: "SemText reference",
     description: "SemText reference: options, children and an authored example.",
     canonical: "https://semtext.dev/reference/",
-    reference_assets: true
+    reference_assets: true,
+    # The definition card below is authored vocabulary (<sem-tag-def>):
+    # the page-level stable bundle upgrades it in the browser.
+    load_semtext_bundle: true
 
   def init(%{element: slug}, component, _server) do
     case Tags.tag_by_slug(slug) do
@@ -85,8 +88,12 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
       description: dedupe_description(tag.description, tag.summary) || "",
       options_in: tag.options_in || "",
       options_in_href: options_in_href(tag),
-      attr_rows: attr_rows(tag.attributes),
-      has_attrs: tag.attributes != [],
+      # The self-describing definition card (<sem-tag-def>): raw attribute
+      # fields for the authored markup, the bucket id as its group token,
+      # and the derived PromptLingo docs link on NPL conventions.
+      tag_attrs: tag_attrs(tag.attributes),
+      group: group_token(t),
+      promptlingo_href: promptlingo_href(tag),
       no_options_note: no_options_note(missing),
       children: tag.children,
       has_children: tag.children != [],
@@ -180,40 +187,42 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
     end
   end
 
-  # One options-table row (TS AttrRow): type + allowed values, default
-  # rendering ("—" for null, "(empty)" for ""), required tri-state.
-  defp attr_rows(attributes) do
+  # Raw attribute fields for the authored <sem-tag-attr> markup — nil omits
+  # the attribute entirely (Hologram renders nil-valued attributes as
+  # absent), so optional rows stay clean and `required` only appears when
+  # the schema marks it required.
+  defp tag_attrs(attributes) do
     for a <- attributes do
       %{
         name: a.name,
-        required: required_text(a.required),
-        type: attr_type(a),
-        default: default_text(a.default),
-        description: if(a.description == "", do: "—", else: a.description)
+        type: if(a.type == "", do: nil, else: a.type),
+        required: a.required,
+        default: a.default,
+        allowed:
+          if(a.allowed_values == [],
+            do: nil,
+            else: Enum.join(a.allowed_values, ",")
+          ),
+        description: a.description
       }
     end
   end
 
-  defp required_text(true), do: "yes"
-  defp required_text(false), do: "no"
-  defp required_text(_), do: "—"
-
-  defp attr_type(a) do
-    type_part = if a.type == "", do: nil, else: a.type
-
-    values_part =
-      if a.allowed_values == [],
-        do: nil,
-        else: Enum.map_join(a.allowed_values, " | ", &("`" <> &1 <> "`"))
-
-    [type_part, values_part]
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(" · ")
+  # The definition card's group token: the reference bucket id.
+  defp group_token(name) do
+    case Buckets.bucket_of(name) do
+      nil -> nil
+      b -> b.id
+    end
   end
 
-  defp default_text(nil), do: "—"
-  defp default_text(""), do: "(empty)"
-  defp default_text(other), do: other
+  # Data-driven PromptLingo docs link (verified live 2026-10-18):
+  # promptlingo.dev serves /reference/<tag> for every npl-* convention;
+  # sem-* tags have no PromptLingo page and get no link.
+  defp promptlingo_href(tag) do
+    if tag.family == :npl, do: "https://promptlingo.dev/reference/#{tag.name}", else: ""
+  end
+
 
   # ————— example blocks —————
 
@@ -333,14 +342,16 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
             <span class="ref-family-pill">{@family_pill}</span>
           </p>
 
-          {%if @summary != ""}
-            <p class="mt-4 max-w-3xl text-base leading-7 text-ink">{@summary}</p>
-          {%else}
-            {%if @gap_note}
-              <p class="mt-4 max-w-3xl text-sm italic leading-6 text-ink-faint">
-                The schema file does not state a summary for this tag{%if @missing != []} (missing: {Enum.join(@missing, ", ")}){/if} — see the normative schema for the contract.
-              </p>
-            {/if}
+          {%if @gap_note}
+            <p class="mt-4 max-w-3xl text-sm italic leading-6 text-ink-faint">
+              The schema file does not state a summary for this tag{%if @missing != []} (missing: {Enum.join(@missing, ", ")}){/if} — see the normative schema for the contract.
+            </p>
+          {/if}
+
+          {%if @promptlingo_href != ""}
+            <p class="mt-3 max-w-3xl text-sm leading-6 text-ink-mute">
+              <a href={@promptlingo_href} class="ref-inline-link">PromptLingo reference ↗</a>
+            </p>
           {/if}
 
           {%if @description != ""}
@@ -355,32 +366,17 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
             </p>
           {/if}
 
-          {%if @has_attrs}
-            <div class="ref-attrs-wrap mt-5">
-              <table class="ref-attrs">
-                <thead>
-                  <tr>
-                    <th scope="col">Option</th>
-                    <th scope="col">Required</th>
-                    <th scope="col">Type · values</th>
-                    <th scope="col">Default</th>
-                    <th scope="col">Description</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {%for row <- @attr_rows}
-                    <tr>
-                      <td class="ref-attr-name">{row.name}</td>
-                      <td class="ref-attr-req">{row.required}</td>
-                      <td class="ref-attr-type">{if row.type != "" do row.type else "—" end}</td>
-                      <td class="ref-attr-type">{row.default}</td>
-                      <td class="ref-attr-desc">{row.description}</td>
-                    </tr>
-                  {/for}
-                </tbody>
-              </table>
-            </div>
-          {%else}
+          <div class="ref-attrs-wrap mt-5 max-w-3xl">
+            <sem-tag-def tag={@name} group={@group}>
+              {@summary}
+              {@description}
+              {%for a <- @tag_attrs}
+                <sem-tag-attr name={a.name} type={a.type} required={a.required} default={a.default} allowed={a.allowed}>{a.description}</sem-tag-attr>
+              {/for}
+            </sem-tag-def>
+          </div>
+
+          {%if @tag_attrs == []}
             <p class="mt-5 max-w-3xl text-sm leading-6 text-ink-mute">{@no_options_note}</p>
           {/if}
 
