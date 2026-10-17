@@ -15,7 +15,7 @@ actually need, open a repo issue — that is a finding.
 
 ## Your first document
 
-SemText is XHTML: valid HTML5 whose custom elements carry meaning, not
+SemText is HTML: valid HTML5 whose custom elements carry meaning, not
 presentation. The minimal valid document:
 
 ```html
@@ -46,6 +46,26 @@ to the file (or see the [integration quickstart](./integration-quickstart.md))
 and it also becomes interactive. The repo's own spec pages
 (`spec/conventions.html`) and site (`web/site/index.html`) are real,
 dogfooded SemText documents — steal from them freely.
+
+## Agents pick it up — the `semtext-prompt` head snippet
+
+Documents that agents will read or author advertise the SemText prompt in
+the `<head>`, so it is the first thing an agent sees when it reads the raw
+file:
+
+```html
+<!-- Agents: if you have not read this SemText prompt in this session, read it first. -->
+<link rel="semtext-prompt" href="https://cdn.semtext.dev/semtext-prompt.sem.html">
+```
+
+The comment is the instruction; the `link` (`rel="semtext-prompt"`) is the
+machine-findable handle. The URL serves the concise core prompt — the
+format's conventions plus one prompt page per element, generated from the
+spec's element index (`npm run build:prompts`). An agent that has not read
+it this session reads it before the body. Keep prompts out of the document
+itself: the prompt reference lives in the head, never as body content.
+(The CDN host does not serve the prompts yet — the publish job is off by
+default — so the URL may 404 until that ships.)
 
 ## Checking your work today
 
