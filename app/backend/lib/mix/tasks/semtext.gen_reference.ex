@@ -27,14 +27,27 @@ defmodule Mix.Tasks.Semtext.GenReference do
   @impl Mix.Task
   def run(args) do
     web =
+      # OptionParser.parse!/2 returns {opts, invalid} on Elixir 1.20+ and
+      # {opts, args, invalid} before it. tuple_size dispatch keeps both
+      # toolchains' gradual type checker quiet (a literal 3-tuple clause
+      # draws a "will never match" warning on 1.20, and vice versa).
       case OptionParser.parse!(args, strict: [web: :string]) do
-        {opts, [], []} -> opts[:web]
-        _ -> raise_usage()
+        parsed when tuple_size(parsed) == 2 ->
+          {opts, invalid} = parsed
+          if invalid == [], do: opts[:web]
+
+        parsed when tuple_size(parsed) == 3 ->
+          {opts, args, invalid} = parsed
+          if args == [] and invalid == [], do: opts[:web]
+
+        _ ->
+          nil
       end
 
     web || raise_usage()
 
-    script = Path.expand("../../../scripts/gen-reference.mjs", __DIR__)
+    # lib/mix/tasks -> app/backend -> app: the script lives at app/scripts/.
+    script = Path.expand("../../../../scripts/gen-reference.mjs", __DIR__)
     Mix.shell().info("==> Running #{script} --web #{web}")
 
     case Mix.shell().cmd("node #{script} --web #{web}", quiet: false) do
