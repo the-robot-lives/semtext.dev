@@ -4,6 +4,7 @@ import { CodeViewer } from "@/components/code-viewer";
 import { ThemeGenerator } from "@/components/theme-generator";
 import { AddonsCarousel } from "@/components/addons-carousel";
 import { Sem, SHOWCASE_ITEMS, INTEGRATIONS } from "@/components/docs-shell";
+import { semtextAsset } from "@/lib/semtext-asset";
 
 const REPO = "https://github.com/noizu-labs-ml/npl-enhanced-content";
 const SPEC = `${REPO}/blob/develop/spec`;
@@ -45,37 +46,40 @@ const FACTS: Array<{
   id: string;
   statement: string;
   conclusion: string;
-  distractor: string;
+  incorrectStatement: string;
 }> = [
   {
     id: "f-view-as",
     statement: "view-as is a parameter, not an identity",
     conclusion:
       "A fact is a fact in every view; the attribute only selects a rendering.",
-    distractor: "Each view is a different element type.",
+    incorrectStatement: "Each view is a different element type.",
   },
   {
     id: "f-light-dom",
     statement: "Components render into light DOM",
     conclusion:
       "Content stays in the page, so find-in-page, copy and plain CSS all still reach it.",
-    distractor: "Content moves into a shadow root for encapsulation.",
+    incorrectStatement: "Content moves into a shadow root for encapsulation.",
   },
   {
     id: "f-invariant",
     statement: "Extraction reads the authored document",
     conclusion:
       "Generated chrome is skipped, so records do not depend on the view on screen.",
-    distractor: "Extraction reads whatever is currently rendered.",
+    incorrectStatement: "Extraction reads whatever is currently rendered.",
   },
   {
     id: "f-no-build",
     statement: "Authoring needs no build step",
     conclusion:
       "One stylesheet and one script tag in a plain HTML file; a theme is optional.",
-    distractor: "A bundler compiles the vocabulary down to HTML.",
+    incorrectStatement: "A bundler compiles the vocabulary down to HTML.",
   },
 ];
+
+// Degradation section is disabled on the landing page (user, 2026-10-14) — kept, not deleted.
+const SHOW_TIERS = false;
 
 const TIERS: Array<[string, string]> = [
   [
@@ -84,7 +88,7 @@ const TIERS: Array<[string, string]> = [
   ],
   [
     "Tier 2 — the fallback script",
-    "Under 14 KB of vanilla JavaScript wires flashcards, quizzes, tabs and disclosure. No dependencies, no network, no build — and it is embedded in the file, so a copy you email keeps this tier.",
+    "Up to 64 KB of vanilla JavaScript wires flashcards, quizzes, tabs and disclosure. No dependencies, no network, no build — and it is embedded in the file, so a copy you email keeps this tier.",
   ],
   [
     "Tier 3 — Lit components",
@@ -223,7 +227,7 @@ export default function Home() {
     <main id="main">
       {/* Hero ------------------------------------------------------------- */}
       <section className="border-b border-white/10">
-        <div className="mx-auto grid max-w-docs gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.18fr)] lg:py-16">
+        <div className="mx-auto grid max-w-docs grid-cols-1 gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.18fr)] lg:py-16">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.22em] text-violet-soft">
               a semantic text format
@@ -237,7 +241,7 @@ export default function Home() {
               SemText is a semantic text format: a single XHTML file that a
               language model reads and writes the way it writes Markdown
               today. The difference is what the text can say. A fact, a step,
-              a caveat, a distractor, a term and its definition are each
+              a caveat, an incorrect statement, a term and its definition are each
               written as what they <em>are</em> — a tag and a few attributes —
               so the structure is in the text itself, not inferred from it.
             </p>
@@ -261,10 +265,10 @@ export default function Home() {
                 See it work
               </a>
               <a
-                href="/spec/semtext.html"
+                href="/reference/"
                 className="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft"
               >
-                Read the spec
+                Browse the reference
               </a>
               <a
                 href="#start"
@@ -302,7 +306,7 @@ export default function Home() {
               <code className="font-mono">&lt;sem-fact&gt;</code> elements
               holding a <code className="font-mono">&lt;statement&gt;</code>, a{" "}
               <code className="font-mono">&lt;conclusion&gt;</code> and a{" "}
-              <code className="font-mono">&lt;sem-distractor&gt;</code>.{" "}
+              <code className="font-mono">&lt;incorrect-statement&gt;</code>.{" "}
               <code className="font-mono">view-as</code> on the{" "}
               <code className="font-mono">&lt;sem-facts&gt;</code> element
               selects how they render — switching it rewrites nothing, and the
@@ -335,8 +339,11 @@ export default function Home() {
           <div className="mt-8">
             <TryViews facts={FACTS} />
             <p className="mt-3 text-sm text-ink-mute">
-              The view toggle and flashcards in the browser pane are live —
-              this page is the showcase. More sample documents sit in the{" "}
+              The browser pane renders{" "}
+              <code className="font-mono">demo/example-deck.sem.html</code>{" "}
+              itself — the same file double-clicking opens. The shell panes
+              type their first commands once the shell bundle lands. More
+              sample documents sit in the{" "}
               <a
                 href="#scope"
                 className="text-violet-soft underline-offset-4 hover:underline"
@@ -349,7 +356,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Tiers ------------------------------------------------------------ */}
+      {/* Tiers (disabled: see SHOW_TIERS) ---------------------------------- */}
+      {SHOW_TIERS ? (
       <section
         id="tiers"
         aria-labelledby="tiers-h"
@@ -376,6 +384,7 @@ export default function Home() {
           </ol>
         </div>
       </section>
+      ) : null}
 
       {/* Reading ---------------------------------------------------------- */}
       <section
@@ -404,7 +413,7 @@ export default function Home() {
             </p>
           </SectionHead>
 
-          <div className="mt-10 grid gap-12 lg:grid-cols-2">
+          <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-2">
             <div>
               <h3 className="text-xl font-semibold tracking-tight text-ink">
                 Glossary
@@ -937,7 +946,7 @@ export default function Home() {
           after the deferred bundle has loaded. The hero window re-checks
           the html[data-sem-fallback] marker before touching anything. */}
       <script dangerouslySetInnerHTML={{ __html: "window.__semJsOff=true;" }} />
-      <script defer src="/semtext/semtext.js" />
+      <script defer src={semtextAsset("semtext-fallback.js")} />
       <script
         dangerouslySetInnerHTML={{
           __html:

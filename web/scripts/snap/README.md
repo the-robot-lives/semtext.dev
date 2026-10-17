@@ -14,8 +14,7 @@ npm run snap:tag -- --stop          # stop the harness-managed dev server
 |---|---|---|
 | `<tag>` | — | reference tag slug (`highlight`, `sem-note`, `npl-declaration`, …) |
 | `--base` | harness-managed dev server (see below) | render against this URL instead; the managed server is then left untouched |
-| `--dist <dir>` | shipped `web/public/semtext/` | serve `/semtext/**` from a privately built npl bundle dir (route interception) |
-| `--out <dir>` | `.tmp/semtext-docs-overhaul/snaps/<tag>/` (or `$SNAP_OUT_ROOT/<tag>`) | private output dir; wiped at run start |
+| `--dist <dir>` | shipped `web/public/semtext/` | serve `/semtext/**` from a privately built npl bundle dir (route interception) || `--out <dir>` | `.tmp/semtext-docs-overhaul/snaps/<tag>/` (or `$SNAP_OUT_ROOT/<tag>`) | private output dir; wiped at run start |
 
 Exit codes: `0` ok · `1` capture failures (incl. output-gate rejections) ·
 `2` usage · `3` no render server / tag page unreachable.
@@ -26,7 +25,7 @@ one `<tag>-fullpage-<width>.png` per width, and an `index.md` manifest
 (file table with pixel dimensions + a Notes section). Views captured:
 Source pill, Render pill, then every visible mode control inside the
 rendered pane (buttons, summaries, tabs, radio/checkbox inputs — e.g. the
-quiz reveal controls on `highlight`). Widths: 1280 and 390. Theme: dark
+quiz reveal controls on `highlight`). Widths: 1280, 1024, and 390. Theme: dark
 only — the site chrome is dark-only (no theme toggle, no
 `prefers-color-scheme` variant in `globals.css`), so there is no light
 capture to take.
@@ -104,10 +103,24 @@ server. `index.md` Notes record hits vs pass-throughs. Typical use:
 
 ```
 # in the npl epic worktree (private out dir, never the shared dist/):
-npm run build -- --out /tmp/semtext-snap/<lane>/
+# NOTE: call build.mjs directly — `npm run build -- --out` appends the flag
+# to the LAST chained script (build-extension.mjs) and rebuilds the SHARED
+# dist/ instead.
+node scripts/build.mjs --out /tmp/semtext-snap/<lane>
 npm --prefix <semtext worktree>/web run snap:tag -- highlight \
-  --dist /tmp/semtext-snap/<lane>/dist
+  --dist /tmp/semtext-snap/<lane>
 ```
+
+`build.mjs --out <dir>` writes its artifacts directly into `<dir>` (no
+nested `dist/`), so `--dist` points at the same dir. The intercept map must
+contain `themes/_vocabulary.css` — the example viewer fetches
+`/semtext/themes/_vocabulary.css`, and without it the request falls through
+to the site's shipped (possibly stale) copy. Builds emit it verbatim next to
+the flattened `semtext.css`; older builds without the twin need the
+vocabulary copied in by hand. The theme file needs its site name too: copy
+`themes/semtext-theme-minimal-tech-light.css` to `themes/minimal-tech-light.css`
+in the `--dist` dir (the viewer fetches the latter path — `sync-bundles.mjs`
+does both when the phase-2 sync runs).
 
 ## Concurrency safety
 
@@ -126,21 +139,35 @@ Produced in the npl epic worktree
 (`Projects/npl-enhanced-content/.claude/worktrees/epic-docs-overhaul`,
 branch `epic.docs-overhaul`):
 
-1. `npm run build` — `scripts/build.mjs` (esbuild bundles
-   `semtext.js`, `semtext-fallback.js`, `semtext-reading.js`,
-   `semtext-extract.js`, `semtext-md.js`, plus theme CSS in `dist/themes/`;
-   NOTE it `rm -rf`s `dist/` first — never two builds at once in one
-   worktree) then `scripts/build-standalone.mjs` (`dist/demo`, `dist/site`,
-   `dist/spec`). On lazy-capable branches the build also emits
-   `semtext-lazy.js`, `chunks/`, `semtext-manifest.json`, `npl-lazy.js`,
-   `npl-chunks/`, `npl-manifest.json`.
+1. `npm run build` — `scripts/build.mjs` (vite IIFE bundles `semtext.js`,
+   `npl.js`, `semtext-agent.js` when its entry exists, `semtext-js-shell.js`,
+   plus the lazy loaders `semtext-lazy.js` / `npl-lazy.js` with `chunks/` +
+   `npl-chunks/` and the `semtext-manifest.json` / `npl-manifest.json` /
+   `semtext-js-shell-manifest.json` manifests, plus theme CSS in
+   `dist/themes/`; NOTE it `rm -rf`s its target dir first — never two
+   builds at once against one dir) then `scripts/build-standalone.mjs`
+   (`dist/demo`, `dist/site`, `dist/spec`). The vocabulary stylesheet
+   ships twice: flattened as `dist/semtext.css` and verbatim as
+   `dist/themes/_vocabulary.css` (the site's example viewer fetches the
+   latter path).
 2. Build to a PRIVATE out dir when verifying (`--out /tmp/semtext-snap/…`);
    the shared `dist/` belongs to whoever runs there.
-3. Copy into `web/public/semtext/` (the LEAD does this, not the harness):
-   `semtext-fallback.js`, `semtext-lazy.js`, `semtext-manifest.json`,
-   `chunks/`, and `themes/_vocabulary.css` +
-   `themes/minimal-tech-light.css`. Then bump the digest/commit line in
-   `web/public/semtext/VERSION.md`.
+3. Sync into `web/public/semtext/` (the LEAD does this, not the harness) —
+   one command since the asset-versioning scheme landed:
+
+   ```
+   node scripts/sync-bundles.mjs --from <npl-dist>
+   ```
+
+   It reads the stamped snapshot (`dist/v<semver>/` + `dist/version.json`,
+   written by upstream `npm run build`) and publishes
+   `public/semtext/v<semver>/` (immutable per-release snapshot), refreshes
+   `stable/` and `latest/`, rewrites `versions.json` + `VERSION.md`, keeps
+   the unversioned alias mirroring STABLE, and regenerates
+   `data/bundles.json`. Previous `v*/` directories are kept. The frozen
+   legacy `semtext-fallback.js` (retired upstream, still named by
+   `data/bundles.json`) is carried into new snapshots automatically.
+   `--dry-run` prints the plan; `--version` overrides the stamped tag.
 4. Regression warning: the copies of `themes/_vocabulary.css` (body paint
    scoped to `[data-sem-theme]`) and `themes/minimal-tech-light.css`
    (`--sem-muted` contrast fix) currently in `web/public/semtext/` carry a
@@ -150,3 +177,23 @@ branch `epic.docs-overhaul`):
 5. `web/data/elements.json` (feeds the reference pages) is generated by
    `scripts/build-elements-index.mjs` in the npl repo, output copied to
    `web/data/elements.json`.
+
+## `web/scripts/sync-bundles.mjs` — the sync, scripted (phase 2)
+
+The lead's copy step, mechanized — idempotent (sha256-gated: only differing
+files are written), mirrors chunk dirs (stale hash-named extras deleted;
+anything not hash-named is reported and kept), preserves the frozen
+`semtext-fallback.js` unless the build still emits it, handles both theme
+renames (vocabulary verbatim; a flattened `semtext.css` is accepted as a
+stand-in when the verbatim sheet is absent), syncs `spec/` → `public/spec/`,
+then re-runs `build-bundle-map.mjs` so `data/bundles.json` (shipped /
+cssOnly / aliasRuntime) always describes exactly what was synced:
+
+```
+# from web/ — plan first, then for real:
+node scripts/sync-bundles.mjs --from <npl-build-dir> --dry-run
+node scripts/sync-bundles.mjs --from <npl-build-dir>
+```
+
+`--site <web-root>` syncs a different checkout. Not wired into npm scripts
+yet — the phase-2 lead runs it by hand.

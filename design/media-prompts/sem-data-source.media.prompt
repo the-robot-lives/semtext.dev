@@ -1,0 +1,167 @@
+# sem-data-source — UX design sheet prompt (tag review 2026-10-14, Loom)
+schema: "0.4"
+id: sem-data-source-ux-design
+type: image
+quality: high
+product_targets:
+  - semtext.dev
+tags:
+  - semtext
+  - sem-data-source
+  - ux-design
+  - reference
+
+prompt:
+  text: |
+    UX design sheet for the SemText `<sem-data-source>` element — a named,
+    typed dataset bucket rendered as a native table inside a
+    `<sem-data-visualizer>` container. One example card per display mode,
+    minimal-tech-light theme surfaces on a dark slate canvas
+    (bg #0f172a, card surface #162130, fg #e2e8f0, accent #60a5fa).
+    Each card is a bordered rounded rectangle (hairline #334155, radius
+    12px) with a small mono uppercase caption above it. Every table card
+    shows the same content shape: a caption row with the dataset name, a
+    column-header row in small-caps with a faint sort caret glyph per
+    column, two or three data rows, and alternating row tinting. The
+    authored payload text NEVER appears on any card with a rendered table.
+
+    Card 1 — caption "TABLE (GFM, DEFAULT)". "Token lifetimes": columns
+    TOKEN / MAX USES / LIFETIME / ROTATES / SINCE; rows access·200·15 min·
+    true·2026-01-05 and id·1000·1 hour·false·2026-02-14. Numeric column
+    right-tinted. No view pills (single implicit view).
+
+    Card 2 — caption "CSV". "Service ports": SVC / PORT / READY from
+    gateway·443·true, search·7700·true.
+
+    Card 3 — caption "CSV · NO HEADER (DATA-HEADER=FALSE)". Same rows,
+    headers instead read COL-1 / COL-2 / COL-3 (synthesized names),
+    first data row kept intact.
+
+    Card 4 — caption "YAML". "Service ports" again — YAML block sequence
+    becomes the identical three-column table.
+
+    Card 5 — caption "JSON · DATA-PATH". "Services (API shape)": a nested
+    response extracted at data.items renders SVC / PORT / READY.
+
+    Card 6 — caption "SQL · RESULT SHAPE". "Services": header row NAME /
+    PORT only, an empty body — a declared projection with zero rows,
+    clearly intentional, not broken.
+
+    Card 7 — caption "ROWS DECLARATION". "Service ports": NAME / PORT /
+    READY with one blank cell (a declared-nullable column missing data);
+    types render right for numbers, left for strings.
+
+    Card 8 — caption "YAML-SCHEMA (OPENAPI FLATTEN)". "Endpoints": dotted
+    columns SVC / ENDPOINT.HOST / ENDPOINT.PORT, rows gateway·
+    edge.noizu.com·443 and search·query.noizu.com·7700.
+
+    Card 9 — caption "NAMED VIEWS · TOGGLE". The card-1 dataset at two
+    widths inside one card: left half shows pill "core" pressed (accent
+    fill) with only TOKEN / MAX USES columns; right half shows pill "all"
+    pressed with all five columns. Pills are small rounded mono chips
+    above the table; the pressed chip is accent-filled, the idle chip is
+    outlined. Hidden columns are simply absent from view.
+
+    Card 10 — caption "ERRORS (NEVER A BLANK PANE)". Two stacked slim
+    cards: top shows red (#f87171) alert text "sem-data-source: an inline
+    payload and source=\"/data/tokens.csv\" are mutually exclusive — keep
+    one"; bottom shows "sem-data-source: failed to load
+    \"/data/tokens.csv\": HTTP 404". Above the first, the authored text is
+    visible in pre-wrapped monospace form alongside the alert — that
+    pairing (payload kept readable when parsing failed) is required here,
+    unlike the table cards.
+
+    Card 11 — caption "ZERO-JS / BARE (PRE-WRAPPED TEXT)". The bordered
+    box contains ONLY the authored payload as pre-wrapped monospace text,
+    line breaks preserved exactly as typed, no table, no chrome.
+
+    Card 12 — caption "MOBILE 390PX · PAN". The card-1 table at narrow
+    width: columns clipped at the card edge with a slim horizontal scroll
+    bar affordance at the bottom of the card; caption and pills still
+    fully visible.
+
+    Typography: system sans body 15px, mono captions 10px uppercase
+    letterspaced. Restrained single-accent palette; no other UI chrome.
+  negative: >
+    raw pipe-delimited or CSV payload text echoing above a rendered table
+    on cards 1–9 and 12; blank or spinner-only data cards; missing sort
+    carets on header columns; hidden view columns rendered grayed-out
+    instead of absent; light page background; multiple accent hues;
+    invented buttons, nav bars, search fields; lorem ipsum; watermark;
+    photorealistic style; visible cell editing controls.
+  style: >
+    Flat UI spec sheet, minimal-tech aesthetic, hairline borders, 12px
+    card radius, generous negative space, design-system-guide panel look.
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-source/enhanced/primary-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-source/enhanced/primary-view-core-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-source/enhanced/format-csv-noheader-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-source/enhanced/yaml-schema-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-source/enhanced/format-sql-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-source/enhanced/error-inline-plus-source-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-source/enhanced/source-file-load-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-source/enhanced/bare-js-off-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-source/enhanced/primary-render-390.png
+    role: reference
+
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+    aspect_ratio: "3:2"
+  formats:
+    - format: png
+      filename: sem-data-source-ux-design.png
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    table-fidelity:
+      weight: 0.35
+      description: >
+        Every rendered-mode card shows a captioned native table with
+        small-caps headers, per-column sort carets and clean row rhythm;
+        the col-n, dotted-path, zero-row shape and blank-nullable
+        variants are visibly distinct modes.
+      fail_signals:
+        - payload text echoed above a table
+        - any card blank, spinner-only, or table missing headers
+        - sql shape card showing invented data rows
+    views-and-states:
+      weight: 0.25
+      description: >
+        The views card shows pill affordances with pressed/idle states and
+        genuinely different column sets; error cards carry legible red
+        alert copy naming a cause.
+      fail_signals:
+        - identical column sets under different pills
+        - errors rendered as generic toast icons or blank space
+    zero-js-honesty:
+      weight: 0.2
+      description: >
+        The zero-JS card is pure pre-wrapped authored text — no chrome,
+        no table; the mobile card shows horizontal pan, not squashed
+        unreadable columns.
+      fail_signals:
+        - rendered table on the zero-JS card
+        - mobile columns compressed to illegibility with no scroll hint
+    theme-fidelity:
+      weight: 0.2
+      description: >
+        Dark minimal-tech single-accent palette, hairline borders, mono
+        uppercase captions, twelve labeled cards.
+      fail_signals:
+        - light background or multi-accent palette
+        - more or fewer than twelve cards
+  reject_if:
+    - any rendered-table card echoes the raw authored payload text
+    - any card is illegible or blank

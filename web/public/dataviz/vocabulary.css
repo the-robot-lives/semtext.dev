@@ -39,7 +39,7 @@ sem-details, sem-detail, sem-procedure, sem-step, sem-properties, sem-property,
 sem-views, sem-view, sem-reveal, sem-progress,
 sem-chronology, sem-event, sem-code, sem-references, sem-reference, sem-reader, sem-table, sem-source, sem-md,
 sem-data-visualizer, sem-data-source,
-sem-agent > :is(name, bio, instructions), sem-fact > :is(statement, conclusion, sem-distractor) { display: block; }
+sem-agent > :is(name, bio, instructions), sem-fact > :is(statement, conclusion, incorrect-statement) { display: block; }
 /* The audience fallback hides with the native attribute; keep it winning
    over the block rule above for element forms. */
 :is(sem-enhanced-document, .sem-enhanced-document) [hidden] { display: none !important; }
@@ -109,11 +109,11 @@ sem-agent > :is(name, bio, instructions), sem-fact > :is(statement, conclusion, 
 :is(sem-fact, .sem-fact) :is(conclusion, .sem-conclusion) { margin: .5rem 0 0; color: var(--sem-muted); }
 /* distractors are quiz decoys: hidden once a script drives the document,
    labelled and readable when none does (D12) */
-:root:is([data-sem-fallback], [data-sem-upgraded]) :is(sem-fact, .sem-fact) :is(sem-distractor, .sem-distractor) { display: none; }
-:root:not([data-sem-fallback], [data-sem-upgraded]) :is(sem-fact, .sem-fact) :is(sem-distractor, .sem-distractor) {
+:root:is([data-sem-fallback], [data-sem-upgraded]) :is(sem-fact, .sem-fact) :is(incorrect-statement, .incorrect-statement) { display: none; }
+:root:not([data-sem-fallback], [data-sem-upgraded]) :is(sem-fact, .sem-fact) :is(incorrect-statement, .incorrect-statement) {
   margin: .5rem 0 0; color: var(--sem-muted); font-size: .875rem; }
-:root:not([data-sem-fallback], [data-sem-upgraded]) :is(sem-fact, .sem-fact) :is(sem-distractor, .sem-distractor)::before {
-  content: "distractor · "; font-variant-caps: all-small-caps; letter-spacing: .05em; }
+:root:not([data-sem-fallback], [data-sem-upgraded]) :is(sem-fact, .sem-fact) :is(incorrect-statement, .incorrect-statement)::before {
+  content: "incorrect statement · "; font-variant-caps: all-small-caps; letter-spacing: .05em; }
 /* quiz + flashcards (hide rules gated on the tier marker — JS-off stays readable) */
 :is(sem-facts, .sem-facts):is([data-sem-fallback], [data-sem-upgraded])[data-view-as="quiz"] :is(sem-fact, .sem-fact) :is(conclusion, .sem-conclusion) { display: none; }
 :is(sem-facts, .sem-facts):is([data-sem-fallback], [data-sem-upgraded])[data-view-as="flashcards"] :is(sem-fact, .sem-fact) { display: none; cursor: pointer;

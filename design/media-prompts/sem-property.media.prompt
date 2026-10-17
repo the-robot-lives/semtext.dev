@@ -1,0 +1,133 @@
+# sem-property — UX design brief for the image model
+#
+# Design the reference experience for <sem-property>, the key/value
+# assertion row of a SemText definition block. One example page per
+# display mode, using the attached captures of the CURRENT production
+# render as the baseline to refine, not to replace. Dark theme (the site
+# chrome is dark-only), type-led, no decorative art: this is a reading
+# surface for machine-checkable definitions.
+schema: "0.4"
+id: sem-property-ux-modes
+type: image
+quality: high
+prompt:
+  text: |
+    Design sheet for the SemText "sem-property" element: one key/value
+    assertion inside a definition block. Render six example pages, one per
+    display mode, each as a plausible docs-site viewport screenshot in the
+    attached dark theme (near-black page, elevated card surface, single
+    accent, muted key column).
+
+    Mode 1 — default row (reference: primary render): a bordered rounded
+    container of stacked rows; each row is a two-column grid. Key column
+    (left, min 8rem): the term in small-caps, muted colour — attr(key) is
+    display-only. Value column (right, wider): the property text, normal
+    body type, fully legible. Alternate rows carry a barely-lighter surface
+    tint. The pair reads as term :: value at a glance.
+
+    Mode 2 — multi-line value: same grid, but a value authored on two
+    lines renders on two lines (authored whitespace is preserved, never
+    collapsed, never ellipsized). Keys still wrap as free text.
+
+    Mode 3 — glossary term (view-as="glossary"): the block restacks —
+    term as a bold upright heading line, its definition directly under it,
+    one term card per property. Each term card is an anchor target: show a
+    prose sentence above the block with two accent-coloured links to terms,
+    and one link in its hover state with a small preview popover floating
+    under the anchor showing the bold term and its value. Popover has a
+    subtle border, shadow, role=tooltip affordance; Esc-closable.
+
+    Mode 4 — compact "::" sugar with key: a row whose value text is
+    "ttl :: 15m" renders verbatim in the value column while the key column
+    still shows the canonical term from the key attribute (key wins).
+
+    Mode 5 — sugar without key (honest failure mode): one row with NO key
+    authored — the raw text "storage :: httpOnly cookie" sits in the value
+    column, no term is drawn, nothing is hidden. Show it as a clearly
+    readable, unstyled row that still invites the author to add key.
+
+    Mode 6 — narrow viewport (390px): the grid collapses to key stacked
+    above value; rows keep their tint; long unbroken tokens in values wrap
+    instead of overflowing.
+
+    Every page: language en, left-aligned, generous line-height, AA
+    contrast, focus-visible ring on the glossary links, no scrollbars, no
+    decorative imagery — the design must read as quiet, technical,
+    documentation-grade.
+  negative: >-
+    occluded or blurred value text, spoiler-style hiding, gradient art,
+    illustrations, mascots, watermarks, more than one accent colour,
+    truncated values with ellipses, monospace value text in default mode,
+    bright white cards, drop caps, justified text
+  style: >-
+    minimal-tech dark documentation UI; small-caps muted labels; 1px hairline
+    borders; 12px radius; single violet accent used sparingly for links and
+    focus states
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-property-dist/sem-property-primary-render-1280.png
+    role: reference
+    note: baseline default-row render, 1280px
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-property-dist/sem-property-multiline-value-render-1280.png
+    role: reference
+    note: baseline multi-line value render (whitespace preserved)
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-property-dist/sem-property-glossary-term-render-1280.png
+    role: reference
+    note: baseline glossary view with prose anchors
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-property-dist/sem-property-sugar-keyless-render-1280.png
+    role: reference
+    note: baseline "::" sugar rows, key wins / keyless verbatim
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-property-dist/sem-property-class-form-render-1280.png
+    role: reference
+    note: baseline class-form alias (renders identically to element form)
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-property-dist/sem-property-primary-render-390.png
+    role: reference
+    note: baseline narrow-viewport collapse (key above value)
+output:
+  formats:
+    - format: png
+      filename: sem-property-ux-modes.png
+  dimensions:
+    width: 1536
+    height: 1024
+requirements:
+  text_fidelity: labels and values in the reference captures must stay
+    readable where reused; do not paraphrase keys or values
+eval:
+  pass_threshold: 0.75
+  criteria:
+    mode_coverage:
+      weight: 0.3
+      description: all six modes present as distinct example pages
+      fail_signals:
+        - fewer than six distinct pages
+        - modes merged into one collage page
+    term_value_reading:
+      weight: 0.3
+      description: "every default-mode row reads unambiguously as term :: value"
+      fail_signals:
+        - key rendered in body weight or accent colour
+        - value occluded, blurred, truncated, or styled as code
+    glossary_affordances:
+      weight: 0.2
+      description: glossary mode shows stacked term/definition and one hover preview popover
+      fail_signals:
+        - popover hiding or replacing prose
+        - no visible anchor affordance on prose links
+    whitespace_honesty:
+      weight: 0.1
+      description: multi-line values keep their line breaks
+      fail_signals:
+        - values reflowed to one line
+    theme_discipline:
+      weight: 0.1
+      description: dark documentation-grade surface, single accent, no decorative art
+      fail_signals:
+        - multiple accent hues
+        - illustration or watermark present
+  reject_if:
+    - any value text is unreadable or occluded
+    - any key column missing while a key is authored
+tags:
+  - semtext
+  - sem-property
+  - reference-ux

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { semtextAsset } from "@/lib/semtext-asset";
 
 /*
  * The rendered view uses the real SemText bundle, copied verbatim
@@ -28,8 +29,8 @@ const SOURCE = `<sem-note variant="warning">
     <statement>JWTs rotate per session</statement>
     <conclusion>Short-lived access tokens;
     the refresh grant issues a new pair.</conclusion>
-    <sem-distractor>Store the token in
-    localStorage for durability.</sem-distractor>
+    <incorrect-statement>Store the token in
+    localStorage for durability.</incorrect-statement>
   </sem-fact>
 </sem-facts>`;
 
@@ -43,23 +44,23 @@ const RENDERED_HTML = `<sem-note variant="warning">
     <statement>JWTs rotate per session</statement>
     <conclusion>Short-lived access tokens;
     the refresh grant issues a new pair.</conclusion>
-    <sem-distractor>Store the token in
-    localStorage for durability.</sem-distractor>
+    <incorrect-statement>Store the token in
+    localStorage for durability.</incorrect-statement>
   </sem-fact>
 </sem-facts>`;
 
 declare global {
   interface Window {
     // The bundle's enhance(root) accepts a Document or any element subtree
-    // (it only calls root.querySelectorAll — see semtext.js K()).
+    // (it only calls root.querySelectorAll — see semtext-fallback.js K()).
     SemTextFallback?: { enhance: (root: Document | HTMLElement) => void };
     __semJsOff?: boolean;
   }
 }
 
 const THEME_CSS = [
-  "/semtext/semtext.css",
-  "/semtext/semtext-theme-minimal-tech-light.css",
+  semtextAsset("themes/_vocabulary.css"),
+  semtextAsset("themes/minimal-tech-light.css"),
 ];
 
 function pillClasses(active: boolean) {
@@ -98,9 +99,9 @@ export function HeroWindow() {
           window.__semJsOff = true;
           await new Promise<void>((resolve, reject) => {
             const script = document.createElement("script");
-            script.src = "/semtext/semtext.js";
+            script.src = semtextAsset("semtext-fallback.js");
             script.onload = () => resolve();
-            script.onerror = () => reject(new Error("semtext.js failed to load"));
+            script.onerror = () => reject(new Error("semtext-fallback.js failed to load"));
             document.head.appendChild(script);
           });
         }

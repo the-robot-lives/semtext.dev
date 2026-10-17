@@ -1,263 +1,176 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type HTMLAttributes } from "react";
+import { semtextAsset } from "@/lib/semtext-asset";
 
 /*
  * The Try section's four view surfaces — code, browser, tui, cli — over the
- * same four facts, plus a simulated terminal card. The terminal reads only
- * from the fact data passed in as props and the sample constants below: it
- * executes nothing, it renders strings. The CLI itself is not shipped yet;
- * the command surface here (view / expand / collapse / filter / list /
- * help / clear) mirrors the copy's promises for `semtext tui` and
- * `semtext --render`.
+ * demo documents under /demo/. Each tab is a live window: a <sem-shell>
+ * whose start script is typed and executed in view (semtext-js-shell.js,
+ * global SemTextShell), or a <sem-browser> rendering the document
+ * (semtext-lazy.js scans the page for /^sem-/ tags and loads the
+ * sem-browser chunk). Without JS the placeholders below still carry the
+ * full static content:
  *
- * Zero-JS: every panel except browser is server-rendered and the code panel
- * is visible by default; the switch buttons are only revealed after
- * hydration, and the terminal card below shows its prefilled session (the
- * tui flashcard screen) with scripts off — the input line only exists once
- * scripts run. The browser pane is enhanced pane-scoped with the real
- * bundle on first show (same pattern as hero-window.tsx).
+ *   - shell tabs: a <sem-shell> placeholder carrying start-script="<site
+ *     path to a demo-runner script file>" whose fallback content is a
+ *     static transcript — the script's `cat` and the message file it
+ *     prints, i.e. the command a visitor will run in this shell. When the
+ *     bundle defines the element, the in-view runner takes over.
+ *   - browser tab: a <sem-browser> placeholder carrying src="<site path to
+ *     the .sem.html document>"; its fallback children are a framed iframe
+ *     of that exact document (which renders live with the shipped fallback
+ *     tier). When the element defines, it takes over and the children go.
  *
- * The terminal simulates `semtext tui` over the page's sample facts only:
- * it executes nothing, it renders strings. Commands (help, view, expand,
- * collapse, filter, list, clear) are answered from the fact data below;
- * Enter with an empty prompt flips the current flashcard, and the arrow
- * keys recall command history.
+ * Placeholder contract for the later lanes (keep these attribute names and
+ * the window layout stable; the transcript text may change):
+ *
+ *   <sem-shell start-script="/demo/scripts/<tab>.txt" aria-label="...">
+ *     ...static transcript (script line + catted message)...
+ *   </sem-shell>
+ *
+ *   <sem-browser src="/demo/example-deck.sem.html" aria-label="...">
+ *     ...address bar + iframe fallback...
+ *   </sem-browser>
+ *
+ * The tablist appears only after hydration; with scripts off all four
+ * panels render stacked and readable (no interaction is promised).
  */
+
+/* ------------------------------------------------------------------ */
+/* Runtime wiring — one injection per bundle, guarded.                 */
+/* ------------------------------------------------------------------ */
+
+const SHELL_JS = semtextAsset("semtext-js-shell.js");
+const LAZY_JS = semtextAsset("semtext-lazy.js");
+
+/** Scripts this component asked for. Custom-element bundles throw on a
+ * second define, so a remount (React StrictMode, route return) must not
+ * inject twice — the window-global check covers other loaders, this set
+ * covers concurrent mounts of ours. */
+const requested = new Set<string>();
+
+function loadViewBundle(
+  src: string,
+  globalReady: () => boolean,
+  module: boolean,
+) {
+  if (globalReady() || requested.has(src)) return;
+  requested.add(src);
+  const script = document.createElement("script");
+  if (module) {
+    // type="module" is the artifact embedding contract for the lazy
+    // loader — it carries import.meta and throws as a classic script.
+    // (It assigns window.SemTextLazy itself, so the global survives.)
+    script.type = "module";
+  }
+  // The shell bundle stays classic: its embedding contract is a top-level
+  // `var SemTextShell`, which only reaches window from a classic script.
+  script.src = src;
+  document.head.appendChild(script);
+}
+
+/** The landing loads no SemText runtime by default (hero-window ships the
+ * frozen fallback tier only), so this component owns its own: the shell
+ * bundle for the three shell tabs, the lazy loader for the browser tab. */
+function loadViewRuntimes() {
+  loadViewBundle(SHELL_JS, () => "SemTextShell" in window, false);
+  loadViewBundle(LAZY_JS, () => "SemTextLazy" in window, true);
+}
 
 export interface TryFact {
   id: string;
   statement: string;
   conclusion: string;
-  distractor: string;
+  incorrectStatement: string;
 }
 
-const THEME_CSS = [
-  "/semtext/semtext.css",
-  "/semtext/semtext-theme-minimal-tech-light.css",
-];
-
-declare global {
-  interface Window {
-    SemTextFallback?: { enhance: (root: Document | HTMLElement) => void };
-    __semJsOff?: boolean;
+declare module "react" {
+  namespace JSX {
+    interface IntrinsicElements {
+      "sem-shell": HTMLAttributes<HTMLElement> & { "start-script"?: string };
+      "sem-browser": HTMLAttributes<HTMLElement> & { src?: string };
+    }
   }
 }
 
 /* ------------------------------------------------------------------ */
-/* Sample document constants — the simulated CLI renders these.        */
+/* The four tabs — one document each, one window each.                 */
 /* ------------------------------------------------------------------ */
 
-const DECK_ID = "try-deck";
-const COLLAPSED_SECTIONS: Array<{ id: string; title: string; body: string }> = [
+type TabKey = "code" | "browser" | "tui" | "cli";
+
+interface TabDef {
+  key: TabKey;
+  label: string;
+  chrome: string; // window title bar text
+  aria: string; // window + iframe accessible name
+  script?: string; // shell tabs: site path of the demo-runner start script
+  src?: string; // browser tab: site path of the rendered document
+  lines?: string[]; // shell tabs: static transcript (script + message)
+}
+
+const TABS: TabDef[] = [
   {
-    id: "s-sizes",
-    title: "asset sizes",
-    body:
-      "semtext.css 4.1 KB · semtext-theme-minimal-tech-light.css 3.8 KB ·\n" +
-      "semtext.js 7.2 KB gzipped — no other assets, no network calls",
+    key: "code",
+    label: "code",
+    chrome: "sem-shell · demo/example-deck.sem.html · code view",
+    aria: "The deck file in a shell pager",
+    script: "/demo/scripts/code.txt",
+    lines: [
+      "$ cat demo/messages/code.txt",
+      "code view — the pager over the deck file:",
+      "",
+      "    bat demo/example-deck.sem.html",
+      "",
+      "Up/Down line · PgUp/PgDn page · / find · n/N next/prev · q quit",
+      "",
+      "(placeholder — this shell types and runs the script once the shell bundle lands)",
+    ],
   },
   {
-    id: "s-procedure",
-    title: "publishing a document",
-    body:
-      "1. author the facts, one <sem-fact> each\n" +
-      "2. link semtext.css and semtext.js — a theme is one more link\n" +
-      "3. open the file — or hand it to a model as-is",
+    key: "browser",
+    label: "browser",
+    chrome: "sem-browser · demo/example-deck.sem.html",
+    aria: "The deck file rendered in a browser window",
+    src: "/demo/example-deck.sem.html",
+  },
+  {
+    key: "tui",
+    label: "tui",
+    chrome: "sem-shell · demo/auth-notes.sem.html · terminal",
+    aria: "The notes file in the interactive terminal view",
+    script: "/demo/scripts/tui.txt",
+    lines: [
+      "$ cat demo/messages/tui.txt",
+      "tui view — the interactive terminal over the notes file:",
+      "",
+      "    semtext tui demo/auth-notes.sem.html",
+      "",
+      "arrow keys or click: sections, flashcards, quiz · Esc exits",
+      "",
+      "(placeholder — this shell types and runs the script once the shell bundle lands)",
+    ],
+  },
+  {
+    key: "cli",
+    label: "cli",
+    chrome: "sem-shell · plain-text readers",
+    aria: "The plain-text commands agents run on the demo files",
+    script: "/demo/scripts/cli.txt",
+    lines: [
+      "$ cat demo/messages/cli.txt",
+      "cli view — plain text out, one command per reader:",
+      "",
+      "    render-card demos/render-demo.card",
+      "    semtext --render demo/auth-notes.sem.html",
+      "    render-card demos/render-subsection.card",
+      "    render-card demos/render-toc.card",
+      "",
+      "(placeholder — this shell types and runs the script once the shell bundle lands)",
+    ],
   },
 ];
-const EMBEDS: string[] = [
-  "glossary.semtext.html#view-as",
-  "schema/sem-facts.semtext.html",
-];
-
-/* ------------------------------------------------------------------ */
-/* Renderers — pure functions over the facts + terminal state.         */
-/* ------------------------------------------------------------------ */
-
-const TERM_W = 58;
-
-function wrap(text: string, width: number, indent = ""): string[] {
-  const words = text.split(/\s+/);
-  const lines: string[] = [];
-  let line = "";
-  for (const w of words) {
-    if (line && (line + " " + w).length > width) {
-      lines.push(indent + line);
-      line = w;
-    } else {
-      line = line ? line + " " + w : w;
-    }
-  }
-  if (line) lines.push(indent + line);
-  return lines;
-}
-
-function boxCard(f: TryFact, revealed = true): string[] {
-  const inner = TERM_W - 2;
-  const head = ` ${f.id} `;
-  const kind = " rule ";
-  const lines: string[] = [];
-  lines.push("┌" + head + "─".repeat(Math.max(0, inner - head.length - kind.length)) + kind + "┐");
-  for (const l of wrap(f.statement, inner - 2, "")) lines.push("│ " + l.padEnd(inner - 2) + " │");
-  lines.push("│ " + " ".repeat(inner - 2) + " │");
-  if (revealed) {
-    for (const l of wrap("→ " + f.conclusion, inner - 4, "")) lines.push("│  " + l.padEnd(inner - 2) + "│");
-  } else {
-    lines.push("│" + " (enter flips)".padEnd(inner) + "│");
-  }
-  lines.push("└" + "─".repeat(inner) + "┘");
-  return lines;
-}
-
-type ViewMode = "flashcards" | "list" | "quiz";
-
-function factsListing(facts: TryFact[], mode: ViewMode): string[] {
-  const out: string[] = [];
-  const title = `FACTS #${DECK_ID} · ${facts.length} records`;
-  if (mode === "flashcards") {
-    out.push(title + "   view: flashcards");
-    for (const f of facts) out.push(...boxCard(f));
-    out.push("(flip with Enter · `view list` for the plain list)");
-  } else if (mode === "list") {
-    out.push(title + "            view: list");
-    for (const f of facts) {
-      out.push(`  ${f.id}`);
-      out.push(...wrap(f.statement + " :: " + f.conclusion, TERM_W - 4, "    "));
-    }
-  } else {
-    out.push(title + "            view: quiz");
-    facts.forEach((f, i) => {
-      out.push(`  Q${i + 1} ${f.statement}`);
-      out.push(...wrap("✓ " + f.conclusion, TERM_W - 4, "    "));
-      out.push(...wrap("✗ " + f.distractor, TERM_W - 4, "    "));
-    });
-  }
-  return out;
-}
-
-function bar(label: string, n: number, total: number): string {
-  const w = 16;
-  return `${label} ${"█".repeat(Math.max(1, Math.round((n / total) * w)))} ${n}/${total}`;
-}
-
-interface TermState {
-  view: ViewMode;
-  expanded: Set<string>;
-  filter: string;
-  cardIdx: number;
-  hidden: boolean[];
-}
-
-function cliRender(facts: TryFact[], st: TermState): string[] {
-  const out: string[] = [];
-  for (const e of EMBEDS) out.push(`<embed: ${e} — loaded>`);
-  out.push("");
-  const shown = st.filter
-    ? facts.filter((f) =>
-        (f.statement + " " + f.conclusion + " " + f.distractor)
-          .toLowerCase()
-          .includes(st.filter.toLowerCase())
-      )
-    : facts;
-  out.push(
-    `FACTS #${DECK_ID} · view: ${st.view}` +
-      (st.filter ? ` · filter: "${st.filter}" (${shown.length}/${facts.length})` : ` · ${facts.length} records`)
-  );
-  if (st.view === "flashcards") {
-    facts.forEach((f, i) => {
-      if (st.filter && !shown.includes(f)) return;
-      out.push(...boxCard(f, !st.hidden[i]));
-    });
-    out.push("(flip with Enter · `view list` for the plain list)");
-  } else if (st.view === "quiz") {
-    facts.forEach((f, i) => {
-      if (st.filter && !shown.includes(f)) return;
-      out.push(`  Q${i + 1} ${f.statement}`);
-      out.push(...wrap("✓ " + f.conclusion, TERM_W - 4, "    "));
-      out.push(...wrap("✗ " + f.distractor, TERM_W - 4, "    "));
-    });
-  } else {
-    for (const f of shown) {
-      out.push(`  ▸ ${f.id}  ${f.statement}`);
-      out.push(...wrap("└ " + f.conclusion, TERM_W - 4, "    "));
-    }
-    if (st.filter && shown.length === 0) out.push("  (no matches — `filter` clears)");
-  }
-  out.push("");
-  out.push(
-    bar("kinds", facts.length, facts.length) +
-      `   rule ×${facts.length}`
-  );
-  out.push("");
-  out.push("SKELETON");
-  out.push("sem-enhanced-document");
-  out.push(`├── sem-facts #${DECK_ID}   view-as: ${st.view}`);
-  out.push(`└── sem-details ×${COLLAPSED_SECTIONS.length}`);
-  for (const s of COLLAPSED_SECTIONS) {
-    if (st.expanded.has(s.id)) {
-      out.push(`  ▾ ${s.id}  ${s.title}`);
-      out.push(...wrap(s.body, TERM_W - 6, "      "));
-    } else {
-      out.push(`  ▸ ${s.id}  ${s.title}   (expand ${s.id})`);
-    }
-  }
-  return out;
-}
-
-function prefill(facts: TryFact[], st: TermState): string[] {
-  return [
-    "$ semtext tui auth-notes.semtext.html",
-    ...cliRender(facts, st),
-    "",
-    "type `help` for commands — this is a simulation, it runs nothing",
-  ];
-}
-
-const HELP: string[] = [
-  "commands:",
-  "  view flashcards|list|quiz   switch the facts view",
-  "  expand <id>|all             open a collapsed section",
-  "  collapse <id>|all           close it again",
-  "  filter <text>               keep matching facts (`filter` clears)",
-  "  list                        the fact ids on screen",
-  "  clear                       back to the rendered session",
-  "  help                        this list",
-];
-
-/* ------------------------------------------------------------------ */
-/* The component                                                       */
-/* ------------------------------------------------------------------ */
-
-type Panel = "code" | "browser" | "tui" | "cli";
-
-let bootPromise: Promise<void> | null = null;
-function bootSemtext(): Promise<void> {
-  if (!bootPromise) {
-    bootPromise = (async () => {
-      for (const href of THEME_CSS) {
-        if (document.querySelector(`link[href="${href}"]`)) continue;
-        const link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.href = href;
-        document.head.appendChild(link);
-      }
-      if (!window.SemTextFallback) {
-        // Keep the bundle from auto-wiring the document on injection;
-        // wiring is explicit below.
-        window.__semJsOff = true;
-        await new Promise<void>((resolve, reject) => {
-          const script = document.createElement("script");
-          script.src = "/semtext/semtext.js";
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error("semtext.js failed to load"));
-          document.head.appendChild(script);
-        });
-      }
-    })();
-  }
-  return bootPromise;
-}
 
 function pill(active: boolean): string {
   return [
@@ -269,361 +182,147 @@ function pill(active: boolean): string {
   ].join(" ");
 }
 
-function sourceMarkup(facts: TryFact[]): string {
-  const factsEl = facts
-    .map(
-      (f) =>
-        `  <sem-fact id="${f.id}" kind="rule">\n` +
-        `    <statement>${f.statement}</statement>\n` +
-        `    <conclusion>${f.conclusion}</conclusion>\n` +
-        `    <sem-distractor>${f.distractor}</sem-distractor>\n` +
-        `  </sem-fact>`
-    )
-    .join("\n");
-  return `<sem-facts id="${DECK_ID}" view-as="flashcards" kind="capability">\n${factsEl}\n</sem-facts>`;
-}
-
-function browserMarkup(facts: TryFact[]): string {
-  // Same document as sourceMarkup — this pane is the rendered form.
-  return sourceMarkup(facts);
-}
-
-function tuiPanelLines(facts: TryFact[]): string[] {
-  return ["$ semtext tui auth-notes.semtext.html", "", ...factsListing(facts, "flashcards")];
-}
-
-function cliPanelLines(facts: TryFact[]): string[] {
-  return ["$ semtext --render auth-notes.semtext.html", "", ...cliRender(facts, {
-    view: "list",
-    expanded: new Set<string>(),
-    filter: "",
-    cardIdx: 0,
-    hidden: [],
-  })];
-}
-
-export function TryViews({ facts }: { facts: TryFact[] }) {
-  const [js, setJs] = useState(false);
-  const [panel, setPanel] = useState<Panel>("code");
-  const paneRef = useRef<HTMLDivElement>(null);
-  const bootedRef = useRef(false);
-
-  const [log, setLog] = useState<string[]>(() =>
-    prefill(facts, {
-      view: "flashcards",
-      expanded: new Set<string>(),
-      filter: "",
-      cardIdx: 0,
-      hidden: facts.map(() => false),
-    })
+/* The shell placeholder: real element, static transcript as its fallback
+   content. start-script names the script the runner will type and run;
+   the transcript shows that script's one `cat` and the message it prints. */
+function ShellWindow({ tab }: { tab: TabDef }) {
+  return (
+    <sem-shell start-script={tab.script} aria-label={tab.aria} className="block">
+      <figure className="code-window">
+        <div className="code-chrome">
+          <span className="dot live" aria-hidden="true" />
+          <span className="min-w-0 truncate">{tab.chrome}</span>
+          <span className="ml-auto hidden min-w-0 truncate font-mono text-[0.66rem] text-ink-faint sm:inline">
+            start-script {tab.script}
+          </span>
+        </div>
+        <pre className="max-h-[26rem] min-h-[16rem] overflow-auto p-4 font-mono text-[0.78rem] leading-relaxed text-ink-mute">
+          <code>
+            {(tab.lines ?? []).map((line, i) => (
+              <span
+                key={i}
+                className={
+                  line.startsWith("$ ")
+                    ? "block whitespace-pre text-violet-soft"
+                    : "block whitespace-pre"
+                }
+              >
+                {line === "" ? " " : line}
+              </span>
+            ))}
+          </code>
+        </pre>
+      </figure>
+    </sem-shell>
   );
-  const [input, setInput] = useState("");
-  const termState = useRef<TermState>({
-    view: "flashcards",
-    expanded: new Set<string>(),
-    filter: "",
-    cardIdx: 0,
-    hidden: facts.map(() => false),
-  });
-  const historyRef = useRef<string[]>([]);
-  const histIdxRef = useRef<number | null>(null);
-  const logRef = useRef<HTMLDivElement>(null);
+}
 
-  useEffect(() => setJs(true), []);
+/* The browser placeholder: real element, framed live document as fallback
+   children. The chrome row is inert decoration with the document path in
+   an address-bar pill; the sem-browser element replaces all of it once
+   defined. */
+function BrowserWindow({ tab }: { tab: TabDef }) {
+  return (
+    <sem-browser src={tab.src} aria-label={tab.aria} className="block">
+      <figure className="code-window">
+        <div className="code-chrome">
+          <span className="select-none text-ink-faint" aria-hidden="true">
+            ← →
+          </span>
+          <span className="select-none text-ink-faint" aria-hidden="true">
+            ⟳
+          </span>
+          <span className="mx-1 min-w-0 flex-1 truncate rounded-md border border-code-border bg-[#0a101c] px-2 py-0.5 font-mono text-[0.68rem] text-code-gray">
+            {tab.src?.replace(/^\//, "")}
+          </span>
+        </div>
+        <iframe
+          src={tab.src}
+          title={tab.aria}
+          loading="lazy"
+          className="h-[26rem] w-full border-0 bg-white"
+        />
+      </figure>
+    </sem-browser>
+  );
+}
+
+export function TryViews({
+  facts: _facts,
+}: {
+  facts: TryFact[];
+}) {
+  // `facts` stays on the signature for the live views (the script-runner
+  // lane re-derives transcripts from the deck); the placeholder windows
+  // read only the static demo assets under /demo/.
+  const [js, setJs] = useState(false);
+  const [active, setActive] = useState<TabKey>("code");
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
   useEffect(() => {
-    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
-  }, [log]);
+    setJs(true);
+    loadViewRuntimes();
+  }, []);
 
-  // Browser pane: enhance only this pane, on first show, with re-checks —
-  // React may reset the SSR'd pane around hydration (same self-healing
-  // schedule as the hero window).
-  useEffect(() => {
-    if (panel !== "browser") return;
-    const wirePane = () => {
-      const pane = paneRef.current;
-      const deck = pane?.querySelector("sem-facts");
-      if (pane && deck && !deck.hasAttribute("data-sem-fallback")) {
-        window.SemTextFallback?.enhance(pane);
-      }
-    };
-    let cancelled = false;
-    bootSemtext()
-      .then(() => {
-        if (cancelled) return;
-        bootedRef.current = true;
-        wirePane();
-        for (const ms of [150, 500, 1200]) setTimeout(wirePane, ms);
-      })
-      .catch(() => {
-        // Without the bundle the rendered view still shows every element:
-        // the vocabulary CSS hides nothing until a tier marker is set.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [panel]);
-
-  function run(raw: string) {
-    const cmd = raw.trim();
-    const st = termState.current;
-    const out: string[] = [`$ ${cmd}`];
-    const [head, ...rest] = cmd.split(/\s+/);
-    const arg = rest.join(" ");
-    switch (head) {
-      case "": {
-        if (st.view !== "flashcards") break;
-        const i = st.cardIdx % facts.length;
-        st.hidden[i] = !st.hidden[i];
-        out[0] = `$ flip ${facts[i].id}`;
-        st.cardIdx = (i + 1) % facts.length;
-        break;
-      }
-      case "help":
-        out.push(...HELP);
-        break;
-      case "clear":
-        setLog(prefill(facts, st));
-        return;
-      case "list": {
-        for (const f of facts) out.push(`  ${f.id}  ${f.statement}`);
-        break;
-      }
-      case "view": {
-        const mode = arg as ViewMode;
-        if (mode === "flashcards" || mode === "list" || mode === "quiz") {
-          st.view = mode;
-          out.push(`view: ${mode}`);
-        } else {
-          out.push(`usage: view flashcards|list|quiz (current: ${st.view})`);
-        }
-        break;
-      }
-      case "expand":
-      case "collapse": {
-        const targets =
-          arg === "all"
-            ? COLLAPSED_SECTIONS.map((s) => s.id)
-            : COLLAPSED_SECTIONS.some((s) => s.id === arg)
-              ? [arg]
-              : [];
-        if (targets.length === 0) {
-          out.push(
-            `usage: ${head} ${COLLAPSED_SECTIONS.map((s) => s.id).join("|")}|all`
-          );
-          break;
-        }
-        for (const t of targets) {
-          if (head === "expand") st.expanded.add(t);
-          else st.expanded.delete(t);
-        }
-        out.push(`${head}ed: ${targets.join(", ")}`);
-        break;
-      }
-      case "filter": {
-        st.filter = arg;
-        out.push(arg ? `filter: "${arg}" (\`filter\` clears)` : "filter cleared");
-        break;
-      }
-      default:
-        out.push(`unknown command: ${head} — try \`help\``);
-    }
-    if (cmd !== "clear") {
-      out.push("");
-      out.push(...cliRender(facts, st));
-      setLog((prev) => [...prev, ...out]);
-    }
+  function onTablistKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    const idx = TABS.findIndex((t) => t.key === active);
+    let next = idx;
+    if (e.key === "ArrowRight") next = (idx + 1) % TABS.length;
+    else if (e.key === "ArrowLeft")
+      next = (idx - 1 + TABS.length) % TABS.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = TABS.length - 1;
+    else return;
+    e.preventDefault();
+    setActive(TABS[next].key);
+    requestAnimationFrame(() => tabRefs.current[next]?.focus());
   }
-
-  const source = sourceMarkup(facts);
-  const rendered = browserMarkup(facts);
-  const tuiLines = tuiPanelLines(facts);
-  const cliLines = cliPanelLines(facts);
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2" hidden={!js}>
-        {(
-          [
-            ["code", "code"],
-            ["browser", "browser"],
-            ["tui", "tui"],
-            ["cli", "cli"],
-          ] as Array<[Panel, string]>
-        ).map(([key, label]) => (
+      {/* Rendered only after hydration: with no JS the panels are stacked
+          and the tab list is not in the DOM, so the static page stays
+          zero-JS honest. */}
+      <div
+        role="tablist"
+        aria-label="SemText views"
+        className="flex flex-wrap items-center gap-2"
+        hidden={!js}
+        onKeyDown={onTablistKeyDown}
+      >
+        {TABS.map((t, i) => (
           <button
-            key={key}
+            key={t.key}
+            ref={(el) => {
+              tabRefs.current[i] = el;
+            }}
             type="button"
-            onClick={() => setPanel(key)}
-            aria-pressed={panel === key}
-            className={pill(panel === key)}
+            role="tab"
+            id={`try-tab-${t.key}`}
+            aria-selected={active === t.key}
+            aria-controls={`try-panel-${t.key}`}
+            tabIndex={active === t.key ? 0 : -1}
+            onClick={() => setActive(t.key)}
+            className={pill(active === t.key)}
           >
-            {label}
+            {t.label}
           </button>
         ))}
       </div>
 
-      {/* code */}
-      <div className="mt-4" hidden={panel !== "code"}>
-        <figure
-          className="code-window"
-          aria-label="The four facts as authored"
-        >
-          <div className="code-chrome">
-            <span className="dot live" aria-hidden="true" />
-            <span>try-deck.xhtml · the source</span>
-          </div>
-          <pre>
-            <code>{source}</code>
-          </pre>
-        </figure>
-      </div>
-
-      {/* browser */}
-      <div className="mt-4" hidden={panel !== "browser"}>
-        <figure
-          className="code-window"
-          aria-label="The four facts rendered in the browser"
-        >
-          <div className="code-chrome">
-            <span className="dot live" aria-hidden="true" />
-            <span>try-deck.xhtml · rendered</span>
-          </div>
-          <div
-            ref={paneRef}
-            data-sem-theme="minimal-tech-light"
-            data-color-mode="dark"
-            className="px-4 py-4 sm:px-5"
-            dangerouslySetInnerHTML={{ __html: rendered }}
-          />
-        </figure>
-      </div>
-
-      {/* tui */}
-      <div className="mt-4" hidden={panel !== "tui"}>
-        <figure
-          className="code-window"
-          aria-label="The four facts in the tui viewer"
-        >
-          <div className="code-chrome">
-            <span className="dot live" aria-hidden="true" />
-            <span>semtext tui · terminal viewer</span>
-          </div>
-          <pre>
-            <code>{tuiLines.join("\n")}</code>
-          </pre>
-        </figure>
-        <p className="mt-3 text-sm text-ink-mute">
-          The <code className="font-mono">semtext tui</code> view — the
-          terminal below is the same session. Type{" "}
-          <code className="font-mono">help</code> to drive it.
-        </p>
-      </div>
-
-      {/* cli */}
-      <div className="mt-4" hidden={panel !== "cli"}>
-        <figure
-          className="code-window"
-          aria-label="The four facts as --render output"
-        >
-          <div className="code-chrome">
-            <span className="dot live" aria-hidden="true" />
-            <span>semtext --render · agent output</span>
-          </div>
-          <pre>
-            <code>{cliLines.join("\n")}</code>
-          </pre>
-        </figure>
-        <p className="mt-3 text-sm text-ink-mute">
-          The <code className="font-mono">semtext --render</code> output —
-          expand and filter it in the terminal below.
-        </p>
-      </div>
-
-      {/* The shared terminal card: always present, prefilled, simulated. */}
-      <figure
-        className="code-window mt-4"
-        aria-label="Simulated semtext terminal (runs nothing)"
-      >
-        <div className="code-chrome">
-          <span className="dot live" aria-hidden="true" />
-          <span>semtext — simulation · reads the page's sample data, executes nothing</span>
-        </div>
+      {TABS.map((t) => (
         <div
-          ref={logRef}
-          role="log"
-          aria-live="polite"
-          aria-label="Terminal output"
-          className="min-h-[20rem] max-h-[32rem] overflow-y-auto p-4 font-mono text-[0.78rem] leading-relaxed text-ink-mute"
+          key={t.key}
+          role="tabpanel"
+          id={`try-panel-${t.key}`}
+          aria-labelledby={`try-tab-${t.key}`}
+          tabIndex={0}
+          hidden={js && active !== t.key}
+          className="mt-4"
         >
-          {log.map((line, i) => (
-            <div
-              key={i}
-              className={
-                line.startsWith("$ ")
-                  ? "text-violet-soft"
-                  : "whitespace-pre-wrap"
-              }
-            >
-              {line === "" ? " " : line}
-            </div>
-          ))}
+          {t.src ? <BrowserWindow tab={t} /> : <ShellWindow tab={t} />}
         </div>
-        {js && (
-          <form
-            className="flex items-center gap-2 border-t border-white/5 px-4 py-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const cmd = input.trim();
-              if (cmd) {
-                historyRef.current.push(cmd);
-                histIdxRef.current = null;
-              }
-              run(input);
-              setInput("");
-            }}
-          >
-            <span className="font-mono text-[0.78rem] text-violet-soft">$</span>
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                const h = historyRef.current;
-                if (e.key === "ArrowUp") {
-                  if (h.length === 0) return;
-                  e.preventDefault();
-                  histIdxRef.current =
-                    histIdxRef.current === null
-                      ? h.length - 1
-                      : Math.max(0, histIdxRef.current - 1);
-                  setInput(h[histIdxRef.current]);
-                } else if (e.key === "ArrowDown") {
-                  if (histIdxRef.current === null) return;
-                  e.preventDefault();
-                  histIdxRef.current += 1;
-                  if (histIdxRef.current >= h.length) {
-                    histIdxRef.current = null;
-                    setInput("");
-                  } else {
-                    setInput(h[histIdxRef.current]);
-                  }
-                }
-              }}
-              aria-label="Terminal command input"
-              className="min-h-9 w-full bg-transparent font-mono text-[0.78rem] text-ink outline-none"
-              placeholder="help"
-              autoCapitalize="off"
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </form>
-        )}
-      </figure>
-      {!js && (
-        <p className="mt-2 text-xs text-ink-faint">
-          With scripts off the terminal shows the rendered session; with them
-          on, type <code className="font-mono">help</code> inside it.
-        </p>
-      )}
+      ))}
     </div>
   );
 }

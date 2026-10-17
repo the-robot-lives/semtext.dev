@@ -42,7 +42,6 @@ const BUCKET_DEFS: Array<Omit<ReferenceBucket, "tags"> & { names: string[] }> = 
       "sem-audiences",
       "sem-profile",
       "agent",
-      "sem-embed",
     ],
   },
   {
@@ -50,7 +49,7 @@ const BUCKET_DEFS: Array<Omit<ReferenceBucket, "tags"> & { names: string[] }> = 
     label: "Prose & code",
     description:
       "Content blocks beyond plain HTML — Markdown bodies, callouts and source listings with provenance.",
-    names: ["sem-md", "sem-note", "sem-code"],
+    names: ["sem-md", "sem-note", "sem-code", "sem-browser"],
   },
   {
     id: "disclosure",
@@ -77,7 +76,7 @@ const BUCKET_DEFS: Array<Omit<ReferenceBucket, "tags"> & { names: string[] }> = 
       "sem-fact",
       "statement",
       "conclusion",
-      "sem-distractor",
+      "incorrect-statement",
       "sem-question",
       "sem-option",
     ],

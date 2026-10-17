@@ -177,6 +177,7 @@ const GROUPS: NavGroup[] = [
   {
     title: "Platform",
     items: [
+      { key: "editor", label: "Editor", href: "/editor/" },
       { key: "integrations", label: "Integrations", href: "/integrations/" },
       { key: "extend", label: "Extend", href: "/extend/" },
       { key: "themes", label: "Themes", href: "/themes/" },

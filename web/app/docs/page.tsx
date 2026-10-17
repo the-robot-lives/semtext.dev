@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DocsShell, Sem, SHOWCASE_ITEMS } from "@/components/docs-shell";
+import { semtextAsset } from "@/lib/semtext-asset";
 
 export const metadata: Metadata = {
   title: "Docs — SemText",
@@ -153,7 +154,7 @@ Facts
   JWTs rotate per session
   conclusion:
     Short-lived access tokens; the refresh grant issues a new pair.
-  distractors:
+  incorrectStatements:
     Store the token in localStorage for durability.
 
 $`}
@@ -239,7 +240,7 @@ $`}
           <Sem className="mt-4 flex max-w-3xl flex-col gap-3" html={SHOWCAES_HTML} />
         </section>
 
-        <script defer src="/semtext/semtext.js" />
+        <script defer src={semtextAsset("semtext.js")} />
       </main>
     </DocsShell>
   );

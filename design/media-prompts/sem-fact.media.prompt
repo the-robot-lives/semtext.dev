@@ -1,0 +1,169 @@
+schema: "0.4"
+id: sem-fact-ux-design
+type: image
+quality: high
+product_targets:
+  - semtext.dev
+tags:
+  - semtext
+  - sem-fact
+  - ux-design
+  - reference
+
+prompt:
+  text: |
+    UX design sheet for the SemText `<sem-fact>` element — the atomic
+    statement/conclusion pair inside a `sem-facts` container. The element
+    has three display modes (`view-as`); show one example reading page per
+    mode, stacked vertically, rendered in the minimal-tech-light theme on a
+    dark slate canvas (bg #0f172a, surface #1e293b, fg #e2e8f0, muted
+    #94a3b8, accent #60a5fa). Each page sits in a browser-chrome frame with
+    a small mono uppercase caption. A fact is drawn as a bordered card
+    (12px radius, hairline #334155 border, 16px inner padding): the
+    statement in the normal foreground at 600 weight, the conclusion below
+    it in the muted color. The statement and conclusion are plain text —
+    never buttons, never tinted.
+
+    Page 1 — caption "LIST (default)". Two fact cards stacked with a 12px
+    gap, both fully readable, document order, NO controls anywhere on the
+    page — no arrows, no meter, no options. Card 1: statement "Refresh
+    tokens rotate on every use", conclusion "Each exchange retires the
+    presented token; a replayed one is rejected." Card 2: statement "Scope
+    is the durable control, not token lifetime", conclusion "Tight scopes
+    outlive short expiries; extending an expiry only widens the blast
+    radius."
+
+    Page 2 — caption "FLASHCARDS". A deck: a small chrome strip at the top
+    with a left arrow button, a text meter reading "1/2", and a right arrow
+    button. Below it exactly ONE card is shown: the front, statement only,
+    reading "OAuth device flow targets input-constrained devices" — the
+    conclusion is NOT visible on the front. Beside/below that card show a
+    small inset of the SAME card after the flip, rendered with the
+    conclusion revealed: "TVs, consoles and CLIs poll the token endpoint
+    with a device code." Nothing else on the page.
+
+    Page 3 — caption "QUIZ". Both question cards stacked (the quiz does
+    not hide non-current cards; the meter tracks position and score).
+    Each card's front holds its statement as the prompt, the conclusion
+    NOT shown in the card body; under each prompt, a short stack of
+    answer buttons (left-aligned text, 8px radius, hairline border,
+    same size): "Cookie", "X-Auth-Token", "Authorization" — three equal
+    buttons, none pre-selected. The first card shows the answered state:
+    the "Authorization" button with a soft green border (#86efac), the
+    wrong buttons muted, and the meter reading "1/2 · score 1/1". The
+    second card keeps its buttons unselected. The wrong candidates are
+    option BUTTONS only.
+
+    Typography: clean system sans (Inter-like), 15–16px body, 1.5 line
+    height, generous margins. Restrained: one accent, one muted tone, no
+    other color. No extra chrome beyond the flashcards deck strip and the
+    option buttons.
+  negative: >
+    a fact card drawn as a button or link; statement or conclusion tinted,
+    occluded, blurred or barred; the conclusion visible on a flashcard
+    front or inside a quiz card body; wrong candidates (incorrect
+    statements) rendered as inline prose text in the card body instead of
+    answer buttons; more than one card visible in flashcards view; an
+    arrow strip on the quiz page; chrome (arrows, meter) on the list
+    page; neon glow; light background; watermark; lorem ipsum.
+  style: >
+    Flat UI spec sheet, minimal-tech aesthetic, restrained single-accent
+    palette, crisp 12px card radius, hairline #334155 borders, generous
+    negative space. Looks like a panel from a design-system guide.
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-fact/sem-fact-list-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-fact/sem-fact-flashcards-render-1280.png
+    role: reference
+
+output:
+  dimensions:
+    width: 1280
+    height: 1280
+    aspect_ratio: "1:1"
+  formats:
+    - format: png
+      filename: sem-fact-ux-design.png
+
+requirements:
+  modes:
+    - id: list
+      label: "LIST (default)"
+      must_show:
+        - two bordered fact cards, each with its statement (600 weight) and
+          its conclusion (muted) fully readable
+        - no interactive chrome at all on the page
+      must_never:
+        - draw a fact card as a button or add arrows / meter / options
+        - occlude or tint the statement or conclusion
+    - id: flashcards
+      label: "FLASHCARDS"
+      must_show:
+        - the deck strip — left arrow, "1/2" meter, right arrow
+        - exactly one card visible, front = statement only
+        - an inset showing the flipped back with the conclusion revealed
+      must_never:
+        - show the conclusion on the card front
+        - show more than one card at once
+        - render the statement as an option button
+    - id: quiz
+      label: "QUIZ"
+      must_show:
+        - both question cards stacked, each with its answer buttons
+        - the answered first card — the correct button with a soft green
+          border, the meter reading "1/2 · score 1/1"
+        - the unanswered second card with its buttons unselected
+      must_never:
+        - show the conclusion in a card body outside the answer buttons
+        - render the wrong candidates as inline card prose
+        - hide non-current question cards — stacking is the quiz contract,
+          one card at a time is flashcards-only
+        - pre-select an answer or show the answer before it is picked
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    fact-card-is-prose:
+      weight: 0.35
+      description: >
+        Every fact reads as content, not as a control: border + surface +
+        padding only; statement in normal foreground, conclusion muted.
+      fail_signals:
+        - button fills or outlines on the card body
+        - tinted, occluded or blurred statement or conclusion
+    modes-are-distinct:
+      weight: 0.35
+      description: >
+        List has no chrome; flashcards shows one card plus a flip inset;
+        quiz stacks both question cards with answer buttons and shows one
+        answered state.
+      fail_signals:
+        - arrows or meter on the list page
+        - the conclusion shown on a flashcard front or a quiz card body
+        - wrong candidates rendered as inline prose rather than buttons
+        - quiz cards hidden instead of stacked
+    deck-chrome:
+      weight: 0.2
+      description: >
+        The flashcards page carries the left arrow / meter / right arrow
+        strip with the meter reading "1/2"; the quiz page keeps only the
+        meter, reading "1/2 · score 1/1" over the stacked cards.
+      fail_signals:
+        - chrome present on the list page
+        - an arrow strip on the quiz page
+        - meter text missing or wrong
+    theme-fidelity:
+      weight: 0.1
+      description: >
+        Dark minimal-tech palette (#0f172a bg, #60a5fa accent, green
+        #86efac for the correct pick only), hairline borders, mono
+        uppercase captions, exactly three labeled pages.
+      fail_signals:
+        - light background or multiple accent hues
+        - more or fewer than three labeled pages
+  reject_if:
+    - the conclusion is visible on a flashcard front or a quiz prompt
+    - wrong candidates appear as inline card prose instead of buttons
+    - a fact card is drawn as a clickable button across its whole area
+    - the list page carries any interactive chrome

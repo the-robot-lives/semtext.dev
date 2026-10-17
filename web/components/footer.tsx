@@ -13,7 +13,7 @@ const LINKS: Array<[string, string]> = [
   ["Vocabulary", `/reference/`],
   ["Lit views", `/#try`],
   ["Reading", `/#reading`],
-  ["Scripts-off tier", `/#tiers`],
+  // ["Scripts-off tier", `/#tiers`], // Degradation section disabled (2026-10-14)
 ];
 
 export function Footer() {

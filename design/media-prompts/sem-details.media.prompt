@@ -1,0 +1,145 @@
+schema: "0.4"
+id: sem-details-ux-design
+type: image
+quality: high
+product_targets:
+  - semtext.dev
+tags:
+  - semtext
+  - sem-details
+  - ux-design
+  - reference
+
+prompt:
+  text: |
+    UX design sheet for the SemText `<sem-details>` element — the CONTAINER
+    that groups one or more `<sem-detail>` prose passages whose `<highlight>`
+    words are recall targets. One example page per display mode the container
+    provides, rendered in the minimal-tech theme on a dark slate canvas
+    (bg #0f172a, surface #1e293b, fg #e2e8f0, accent #60a5fa). TWO stacked
+    example pages, each a container holding TWO prose passages inside a
+    browser-chrome frame, labeled with a small mono uppercase caption.
+
+    Page 1 — caption "PLAIN (default)". The container holds two short prose
+    passages, each in a hairline #334155 rounded card (12px radius). Passage 1:
+    "The OIDC token travels in the Authorization header." with "Authorization"
+    emphasized — an accent-blue tint behind the text at 18% opacity (a soft
+    luminous wash, color(srgb 0.376 0.647 0.980 / 0.18)), 4px rounded corners,
+    a few pixels of horizontal padding, the glyphs fully saturated foreground
+    color and completely legible. Passage 2: "A refresh grant mints a new
+    access token without a new login." with "access token" emphasized the same
+    way. Nothing is occluded; the container reads as one grouped recall passage.
+    This is the default — `view-as` omitted IS plain.
+
+    Page 2 — caption "QUIZ". The identical container and the identical two
+    passages with the same words, but each emphasized word is occluded: a solid
+    slate chip (#475569), rounded 4px, at least 3ch wide, no visible glyphs —
+    a self-check recall mask with a subtle pointer affordance. One chip is
+    shown revealed beside a still-occluded chip: the revealed word is the
+    accent-tinted, fully legible word from page 1, demonstrating the one-way
+    per-item reveal (click or Enter/Space). The prose wording is identical to
+    page 1 — only the interaction model changes; `view-as` is display-only
+    sugar and never rewrites the words.
+
+    Typography: clean system sans (Inter-like), 16px body, 1.6 line height,
+    generous margins. No extra chrome, no buttons other than the caption
+    labels, no pointer cursors drawn as graphics.
+  negative: >
+    occluded or blurred text on the plain page; black bars over text;
+    strikethrough; redaction-marker aesthetic on page 1; the container drawn
+    as a button, tab strip, accordion or disclosure widget; fewer than two
+    passages per container; different words between the plain and quiz pages;
+    neon glow; drop shadows on text; italic highlight text; more than two
+    example pages; light background; watermark; lorem ipsum in the caption
+    labels.
+  style: >
+    Flat UI spec sheet, minimal-tech aesthetic, restrained single-accent
+    palette, crisp 12px card radius, hairline #334155 borders, generous
+    negative space. Looks like a panel from a design-system guide.
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-details/sem-details-primary-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-details/sem-details-quiz-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-details/sem-details-quiz-render-reveal-1280.png
+    role: reference
+
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+    aspect_ratio: "3:2"
+  formats:
+    - format: png
+      filename: sem-details-ux-design.png
+
+requirements:
+  modes:
+    - id: plain
+      label: "PLAIN (default)"
+      must_show:
+        - the container holding two prose passages, each in a hairline card
+        - every word readable, highlights as an accent-blue tint behind the
+          text at reduced opacity (18%), 4px rounded corners, horizontal padding
+        - highlighted glyphs in the normal foreground color, full contrast
+      must_never:
+        - occlude, blur, bar or mask any highlighted text
+        - render a highlight as an opaque filled block that hides glyphs
+        - style the container as clickable chrome (button, tab, accordion)
+    - id: quiz
+      label: "QUIZ"
+      must_show:
+        - the same two passages and the same words, highlights replaced by
+          solid slate occlusion chips (#475569), rounded, min 3ch wide, no glyphs
+        - "one chip revealed beside a still-occluded chip: the accent-tinted,
+          fully legible word from the plain page"
+        - keyboard/click reveal affordance implied, one-way per item
+      must_never:
+        - leave quiz-view occlusion on the plain page
+        - reveal more than the demonstrated item at once
+        - change the passage wording away from the plain page
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    plain-legibility:
+      weight: 0.4
+      description: >
+        Page 1's highlighted words are fully readable — normal foreground
+        glyphs over a light accent tint; the tint reads as emphasis, and the
+        container's two passages read as one grouped prose block.
+      fail_signals:
+        - highlighted text hidden behind an opaque block
+        - highlighted text blurred, crossed out, or lower-contrast
+        - occlusion chip present on the plain page
+    quiz-occlusion:
+      weight: 0.3
+      description: >
+        Page 2 occludes each recall target as a solid rounded chip with no
+        visible glyphs, and shows one accent-tinted revealed state beside it.
+      fail_signals:
+        - quiz chip shows ghosted or partially readable glyphs
+        - revealed state missing or occluded
+        - quiz wording differs from the plain page
+    container-grouping:
+      weight: 0.2
+      description: >
+        Both pages show a container of two passages — the container reads as a
+        group of passages, never as a single passage or as clickable chrome.
+      fail_signals:
+        - only one passage per container
+        - container drawn as a button, tab strip, or accordion
+    theme-fidelity:
+      weight: 0.1
+      description: >
+        Dark minimal-tech palette (#0f172a bg, #60a5fa accent), hairline
+        borders, mono uppercase captions, two labeled example pages.
+      fail_signals:
+        - light background or multiple accent hues
+        - more or fewer than two labeled pages
+        - watermark, lorem ipsum, decorative noise
+  reject_if:
+    - the plain page occludes or hides any text
+    - the two pages show different prose wording
+    - any page shows illegible body copy

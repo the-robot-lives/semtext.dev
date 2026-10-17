@@ -1,0 +1,158 @@
+schema: "0.4"
+id: sem-detail-ux-design
+type: image
+quality: high
+product_targets:
+  - semtext.dev
+tags:
+  - semtext
+  - sem-detail
+  - ux-design
+  - reference
+
+prompt:
+  text: |
+    UX design sheet for the SemText `<sem-detail>` element — one prose
+    passage inside a `sem-details` container, shown in all three of its
+    reading states — one example reading page per state, stacked vertically,
+    rendered in the minimal-tech-light theme on a dark slate canvas
+    (bg #0f172a, surface #1e293b, fg #e2e8f0, accent #60a5fa). Each page is
+    a bordered passage card (12px radius, hairline #334155 border,
+    16px inner padding) inside a browser-chrome frame, labeled with a small
+    mono uppercase caption. The card holds ordinary prose text — the card
+    itself is NEVER drawn as a button: no fill change, no outline, no
+    pointer-art on the card; only inline chips inside the prose carry
+    interactive looks.
+
+    Page 1 — caption "PLAIN (default)". One passage card: "The OIDC token
+    travels in the Authorization header." The word "Authorization" is a
+    recall target rendered as emphasis: an accent-blue tint behind the text
+    at 18% opacity (soft luminous wash), 4px rounded corners, a few pixels
+    of horizontal padding, glyphs in the normal foreground color and
+    completely legible. Nothing on this page is occluded.
+
+    Page 2 — caption "QUIZ". The identical passage, but "Authorization" is
+    an occluded chip: a solid slate block (#475569), rounded 4px, at least
+    3ch wide, no visible glyphs — a self-check recall mask set inline in the
+    sentence, the rest of the prose fully readable. Beside the sentence, a
+    small secondary state shows the same card after reveal: the word reads
+    as in page 1 (accent tint, fully legible), demonstrating the one-way
+    per-item reveal.
+
+    Page 3 — caption "TWO PASSAGES IN ONE CONTAINER". Two passage cards
+    stacked with a 12px gap inside one quiet container region: the first
+    reads "Access tokens expire after 15 minutes; the client mints a new
+    one from the refresh grant." (tinted target "15 minutes"); the second
+    reads "Refresh tokens never reach the browser — they live in the
+    server-side session." (tinted target "never reach the browser"). Plain
+    view: both targets emphasized and legible, both cards calm prose blocks
+    of identical weight — each passage is one independent unit.
+
+    Typography: clean system sans (Inter-like), 16px body, 1.6 line
+    height, generous margins. No extra chrome, no buttons other than the
+    caption labels.
+  negative: >
+    occluded or blurred text on page 1 or on page 3; black bars over prose;
+    redaction-marker aesthetic on the tint states; whole cards drawn as
+    clickable buttons (fills, shadows, outlines, pointer cursors rendered
+    as graphics); neon glow; italic highlight text; more or fewer than the
+    three labeled pages; light background; watermark; lorem ipsum.
+  style: >
+    Flat UI spec sheet, minimal-tech aesthetic, restrained single-accent
+    palette, crisp 12px card radius, hairline #334155 borders, generous
+    negative space. Looks like a panel from a design-system guide.
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-detail/sem-detail-primary-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-detail/sem-detail-quiz-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-detail/sem-detail-quiz-render-reveal-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-detail/sem-detail-multi-passage-render-1280.png
+    role: reference
+
+output:
+  dimensions:
+    width: 1280
+    height: 1280
+    aspect_ratio: "1:1"
+  formats:
+    - format: png
+      filename: sem-detail-ux-design.png
+
+requirements:
+  modes:
+    - id: plain
+      label: "PLAIN (default)"
+      must_show:
+        - one bordered prose passage card with the full sentence readable
+        - the recall target as an accent-blue tint behind the text at
+          reduced opacity (18%), 4px rounded, horizontal padding
+        - tinted glyphs in the normal foreground color, full contrast
+      must_never:
+        - occlude, blur, bar or mask the target on this page
+        - present the passage card itself as a button or link
+    - id: quiz
+      label: "QUIZ"
+      must_show:
+        - the same passage with the target replaced by a solid slate
+          occlusion chip (#475569), rounded, min 3ch wide, no glyphs
+        - the surrounding prose fully readable next to the chip
+        - "a revealed state shown beside it: accent-tinted, fully legible
+          word, demonstrating the one-way per-item reveal"
+      must_never:
+        - keep the occlusion on the plain or two-passage pages
+        - reveal more than the demonstrated item at once
+        - use transparency or partial legibility for the occluded chip
+    - id: multi-passage
+      label: "TWO PASSAGES IN ONE CONTAINER"
+      must_show:
+        - two equal-weight passage cards as siblings in one container
+        - each card with its own emphasized, fully legible target
+        - calm 12px gap between the cards; no nesting boxes
+      must_never:
+        - merge the two passages into one card
+        - draw the second card differently (size, border, tint) from the first
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    passage-is-prose:
+      weight: 0.35
+      description: >
+        Every passage card reads as prose content, not as an interactive
+        control: border + surface + padding only, on all three pages.
+      fail_signals:
+        - button fills, strong shadows or outlines on cards
+        - pointer/affordance art on the card itself
+    target-states:
+      weight: 0.35
+      description: >
+        Plain and two-passage pages show targets as 18% accent tint with
+        fully legible glyphs; the quiz page shows one solid slate chip plus
+        its revealed counterpart.
+      fail_signals:
+        - occluded text anywhere on page 1 or page 3
+        - chip on the quiz page shows ghosted or partially readable glyphs
+        - revealed state missing
+    card-structure:
+      weight: 0.2
+      description: >
+        Page 3 shows two independent, equal passage cards with their own
+        targets inside one quiet container.
+      fail_signals:
+        - a single merged card
+        - unequal cards (different borders, tints or sizes)
+    theme-fidelity:
+      weight: 0.1
+      description: >
+        Dark minimal-tech palette (#0f172a bg, #60a5fa accent), hairline
+        borders, mono uppercase captions, exactly three labeled pages.
+      fail_signals:
+        - light background or multiple accent hues
+        - more or fewer than three labeled pages
+  reject_if:
+    - any page occludes or hides body prose outside a quiz chip
+    - a passage card is drawn as a clickable button across its whole area
+    - any page shows illegible body copy

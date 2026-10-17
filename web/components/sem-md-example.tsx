@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CopySaveButtons } from "@/components/code-viewer";
+import { semtextAsset } from "@/lib/semtext-asset";
 
 /*
  * The sem-md example's Render/Source toggle — the landing hero window's
@@ -41,7 +42,7 @@ declare global {
   }
 }
 
-const LAZY_JS = "/semtext/semtext-lazy.js";
+const LAZY_JS = semtextAsset("semtext-lazy.js");
 
 function pill(active: boolean): string {
   return [
