@@ -124,11 +124,7 @@ defmodule SemtextWeb.Hologram.Components.ExampleViewer do
               {%for line <- @lines}
                 <div class="code-line">
                   <span class="code-line-no">{line.n}</span>
-                  <span class="code-line-text">
-                    {%for tok <- line.toks}
-                      <span class={if Enum.at(tok, 1) == "" do "tok-plain" else Enum.at(tok, 1) end}>{Enum.at(tok, 0)}</span>
-                    {/for}
-                  </span>
+                  <span class="code-line-text">{%for tok <- line.toks}<span class={if Enum.at(tok, 1) == "" do "tok-plain" else Enum.at(tok, 1) end}>{Enum.at(tok, 0)}</span>{/for}</span>
                 </div>
               {/for}
             </div>
