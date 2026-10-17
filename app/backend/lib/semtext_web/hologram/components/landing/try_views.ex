@@ -15,26 +15,26 @@ defmodule SemtextWeb.Hologram.Components.Landing.TryViews do
     - browser tab: a `<sem-browser src="...">` placeholder whose fallback
       children are a framed iframe of that exact document.
 
-  The tablist is in the DOM always but `[hidden]` until hydration; with
-  scripts off all four panels render stacked and readable (no interaction
-  is promised). Bundle loading lives in `/js/landing-bootstrap.js` (one
-  guarded injection per bundle); roving focus after arrow keys is
-  `SemtextLanding.focusActiveTab()` (imperative focus is not a data
-  action).
+  This component is FULLY STATIC — no client state, no actions. Every
+  Hologram state flip re-renders the panels and wipes runtime-mounted DOM
+  (the mounted shell clears the placeholder transcript; the re-render puts
+  it back, and the shell prints over it — the round-2 feedback bug). All
+  behaviour lives in `/js/landing-bootstrap.js` behind delegated listeners:
+
+    - the tablist is always in the DOM and gated by the `js-only` class
+      (hidden with scripts off via `html.no-js .js-only { display: none }`);
+    - with scripts on, bootstrap hides the inactive panels, wires the
+      roving-tabindex tablist (click + arrow/Home/End keys), and only then
+      injects the view-runtime bundles, so the shells mount into stable DOM
+      exactly once.
 
   Placeholder contract for the later lanes (keep these attribute names and
   the window layout stable; the transcript text may change):
   `<sem-shell start-script="/demo/scripts/<tab>.txt" aria-label="...">` and
   `<sem-browser src="/demo/example-deck.sem.html" aria-label="...">`.
-
-  `facts` stays on the old signature for the live views (the script-runner
-  lane re-derives transcripts from the deck); the placeholder windows read
-  only the static demo assets under /demo/.
   """
 
   use Hologram.Component
-
-  prop :facts, :list, default: []
 
   @tabs [
     %{
@@ -107,80 +107,47 @@ defmodule SemtextWeb.Hologram.Components.Landing.TryViews do
     }
   ]
 
+  # The transcript lines carry their final class + text so the template
+  # needs no string logic. They are prepped once server-side and travel to
+  # the client inside the serialized component state (Hologram re-renders
+  # the template once at hydration; with no actions there are no further
+  # client renders, and the identical markup is diff-patched harmlessly).
   def init(_props, component, _server) do
     tabs =
       Enum.map(@tabs, fn tab ->
-        Map.put(tab, :lines, Enum.map(tab.lines, &transcript_line/1))
+        Map.put(tab, :lines, Enum.map(tab.lines, fn
+          "" -> %{cls: "block whitespace-pre", text: " "}
+          "$ " <> rest -> %{cls: "block whitespace-pre text-violet-soft", text: "$ " <> rest}
+          line -> %{cls: "block whitespace-pre", text: line}
+        end))
       end)
 
-    put_state(component,
-      active: "code",
-      hydrated: false,
-      tabs: tabs
-    )
+    put_state(component, tabs: tabs)
   end
 
   def template do
     ~HOLO"""
-    <div>
+    <div data-sem-try-views="true">
       <div
         role="tablist"
         aria-label="SemText views"
-        class="flex flex-wrap items-center gap-2"
-        hidden={@hydrated}
-        $key_down.arrow_right.prevent_default={action: :tab_right}
-        $key_down.arrow_left.prevent_default={action: :tab_left}
-        $key_down.home.prevent_default={action: :tab_home}
-        $key_down.end.prevent_default={action: :tab_end}
+        class="js-only flex flex-wrap items-center gap-2"
+        data-sem-tablist="true"
       >
-        <button
-          type="button"
-          role="tab"
-          id="try-tab-code"
-          aria-selected={if @active == "code" do "true" else "false" end}
-          aria-controls="try-panel-code"
-          tabindex={if @active == "code" do 0 else -1 end}
-          $click={action: :set_tab, params: %{tab: "code"}}
-          class={pill_class(@active == "code")}
-        >
-          code
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="try-tab-browser"
-          aria-selected={if @active == "browser" do "true" else "false" end}
-          aria-controls="try-panel-browser"
-          tabindex={if @active == "browser" do 0 else -1 end}
-          $click={action: :set_tab, params: %{tab: "browser"}}
-          class={pill_class(@active == "browser")}
-        >
-          browser
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="try-tab-tui"
-          aria-selected={if @active == "tui" do "true" else "false" end}
-          aria-controls="try-panel-tui"
-          tabindex={if @active == "tui" do 0 else -1 end}
-          $click={action: :set_tab, params: %{tab: "tui"}}
-          class={pill_class(@active == "tui")}
-        >
-          tui
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="try-tab-cli"
-          aria-selected={if @active == "cli" do "true" else "false" end}
-          aria-controls="try-panel-cli"
-          tabindex={if @active == "cli" do 0 else -1 end}
-          $click={action: :set_tab, params: %{tab: "cli"}}
-          class={pill_class(@active == "cli")}
-        >
-          cli
-        </button>
+        {%for tab <- @tabs}
+          <button
+            type="button"
+            role="tab"
+            id={"try-tab-" <> tab.key}
+            aria-selected={if tab.key == "code" do "true" else "false" end}
+            aria-controls={"try-panel-" <> tab.key}
+            tabindex={if tab.key == "code" do 0 else -1 end}
+            data-sem-tab={tab.key}
+            class={pill_class(tab.key == "code")}
+          >
+            {tab.label}
+          </button>
+        {/for}
       </div>
 
       {%for tab <- @tabs}
@@ -189,7 +156,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.TryViews do
           id={"try-panel-" <> tab.key}
           aria-labelledby={"try-tab-" <> tab.key}
           tabindex="0"
-          hidden={if @hydrated do @active != tab.key else false end}
+          data-sem-panel={tab.key}
           class="mt-4"
         >
           {%if tab.src}
@@ -225,57 +192,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.TryViews do
     """
   end
 
-  # -- actions -----------------------------------------------------------
-
-  def action(:on_hydrated, _params, component) do
-    put_state(component, hydrated: true)
-  end
-
-  def action(:set_tab, params, component) do
-    component = put_state(component, active: params.tab)
-    focus_active_tab()
-    component
-  end
-
-  def action(:tab_right, _params, component) do
-    component = put_state(component, active: next_tab(component.state.active))
-    focus_active_tab()
-    component
-  end
-
-  def action(:tab_left, _params, component) do
-    component = put_state(component, active: prev_tab(component.state.active))
-    focus_active_tab()
-    component
-  end
-
-  def action(:tab_home, _params, component) do
-    component = put_state(component, active: "code")
-    focus_active_tab()
-    component
-  end
-
-  def action(:tab_end, _params, component) do
-    component = put_state(component, active: "cli")
-    focus_active_tab()
-    component
-  end
-
-  # -- internals (client-safe: no Enum, no regex, no processes) ----------
-
-  defp focus_active_tab do
-    Hologram.JS.exec("window.SemtextLanding && SemtextLanding.focusActiveTab()")
-  end
-
-  defp next_tab("code"), do: "browser"
-  defp next_tab("browser"), do: "tui"
-  defp next_tab("tui"), do: "cli"
-  defp next_tab("cli"), do: "code"
-
-  defp prev_tab("code"), do: "cli"
-  defp prev_tab("browser"), do: "code"
-  defp prev_tab("tui"), do: "browser"
-  defp prev_tab("cli"), do: "tui"
+  # -- internals (server-side only) ---------------------------------------
 
   defp pill_class(true) do
     "inline-flex min-h-7 cursor-pointer items-center rounded-full border px-3 py-1 font-mono text-[0.68rem] uppercase tracking-[0.14em] transition-colors border-violet bg-violet text-white"
@@ -284,14 +201,4 @@ defmodule SemtextWeb.Hologram.Components.Landing.TryViews do
   defp pill_class(false) do
     "inline-flex min-h-7 cursor-pointer items-center rounded-full border px-3 py-1 font-mono text-[0.68rem] uppercase tracking-[0.14em] transition-colors border-code-border text-code-gray hover:border-violet-soft hover:text-ink"
   end
-
-  # Server-side init helpers (never client-compiled): the transcript lines
-  # carry their final class + text so the template needs no string logic.
-
-  defp transcript_line(""), do: %{cls: "block whitespace-pre", text: " "}
-
-  defp transcript_line("$ " <> rest),
-    do: %{cls: "block whitespace-pre text-violet-soft", text: "$ " <> rest}
-
-  defp transcript_line(line), do: %{cls: "block whitespace-pre", text: line}
 end

@@ -266,7 +266,7 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
           <div class="max-w-2xl">
             <p class="font-mono text-xs uppercase tracking-[0.22em] text-violet-soft">The idea, in one control</p>
             <h2 id="try-h" class="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Switch the view. The content does not change.</h2>
-            <p class="mt-3 leading-relaxed text-ink-mute">These four facts are authored once, as <code class="font-mono">&lt;sem-fact&gt;</code> elements holding a <code class="font-mono">&lt;statement&gt;</code>, a <code class="font-mono">&lt;conclusion&gt;</code> and a <code class="font-mono">&lt;incorrect-statement&gt;</code>. <code class="font-mono">view-as</code> on the <code class="font-mono">&lt;sem-facts&gt;</code> element selects how they render — switching it rewrites nothing, and the records a machine reads are the same in every view. One file, three readers:</p>
+            <p class="mt-3 leading-relaxed text-ink-mute">These four facts are authored once, as <code class="font-mono text-violet-soft">&lt;sem-fact&gt;</code> elements holding a <code class="font-mono text-violet-soft">&lt;statement&gt;</code>, a <code class="font-mono text-violet-soft">&lt;conclusion&gt;</code> and a <code class="font-mono text-violet-soft">&lt;incorrect-statement&gt;</code>. <code class="font-mono text-violet-soft">view-as</code> on the <code class="font-mono text-violet-soft">&lt;sem-facts&gt;</code> element selects how they render — switching it rewrites nothing, and the records a machine reads are the same in every view. One file, three readers:</p>
             <ul role="list" class="mt-4 flex max-w-3xl flex-col gap-2 text-sm leading-relaxed text-ink-mute">
               <li><code class="font-mono text-violet-soft">semtext.html</code> — the in-browser render: double-click the file and it runs.</li>
               <li><code class="font-mono text-violet-soft">semtext tui</code> — the same file in an interactive terminal for people: navigate sections, flip flashcards, run quizzes.</li>
@@ -450,7 +450,6 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
               </div>
             </details>
             <a href="/reference/" class="inline-flex min-h-11 items-center border border-code-border px-5 py-2 font-mono text-sm text-ink hover:border-violet-soft">Browse the reference</a>
-            <span class="font-mono text-xs text-ink-faint">every tag, from the spec</span>
           </div>
         </div>
       </section>

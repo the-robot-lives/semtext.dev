@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-17 (annotate feedback round 2, site side)
+- home hero code window: the "broken padding" fixed — the source `<pre>` is authored on one template line so `white-space:pre` stops rendering Hologram template indentation as text (952137a4)
+- home "See it work": inline tag mentions use the site's violet mono code style instead of bare `<code>`; "every tag, from the spec" removed from #scope; the try panel's Source/Render tabs are static component state (no island race against hydration) and the shell garble at cold load is gone (d19165a9, 6bb94d8f, 97a1afd5)
+- integrations carousel rebuilt: clean layout, working side arrows, 4s auto-advance pausing on hover/focus/hidden tab and under prefers-reduced-motion, dots, keyboard accessible, all listeners delegated so hydration cannot kill them (3eb2a224)
+- reference example viewers hydration-proof: the island re-syncs render panes whenever hydration wipes them back to the placeholder (watchPanes MutationObserver + booting guard); verified over sem-note, sem-facts, sem-md, sem-table, npl-agent, sem-views, sem-data-visualizer — renders persist on cold loads (984b8e9d)
+- toolbar consistency: sem-md example gains the split pill (split/render/source like every viewer) and now actually receives its lazy-loader pane spec (`data-sem-pane` was built but never emitted — the upgrade + is-live chrome reveal never fired) (a9b97c78)
+- /editor: boots past hydration (content-hashed boot scripts via init/3, re-assert ladder re-attaches the editor if a late hydration wipes the mount, self-heal observer on documentElement, code lane ensured before connect, semtext.css link + `sem-editor{display:block}` rule added) — editor renders styled, types, toggles Visual/Code/Split, opens ?example= docs (coordinator item)
+- header/auth: fake "Search /" button and both "Sign in coming soon" stubs removed everywhere; `[/]` glyph removed from the header (6a1d418a, ce10a4d1)
+- reference copy: every element's summary + description rewritten in plain language via `priv/data/description-overrides.json` (57 tags), applied in `Semtext.Reference.Tags` and exported to the /data/elements.json search index by the new `mix semtext.export_elements`; generated files untouched (858cc161)
+- /reference/all: new one-table inventory of all 57 elements (tag, family, description), linked from the index intro and the reference sidebar (858cc161)
+- runtime provenance lines ("semtext-fallback.js · fallback" / "theme CSS only") removed from reference cards and element pages (f6f3477a)
+- docs: CLI section rewritten around the real CLI (`semtext view/outline/filter/expand/format/tui` + `semtext-validate`) with outputs captured by running it against a demo document; search-index CLI entries match; "Open the editor →" added to the intro, the docs sidebar, the reference sidebar and the reference index (7b2969f9, coordinator item)
+
 ## 2026-10-17 (.html sweep) — #88 → stage (#90) → main (#91), back-merge #92, prod serving sha-9026a6b
 - .html-standard sweep: landing (`landing/app/`) and static-site (`site/index.html`) copy renamed XHTML-as-artifact → HTML (titles, meta/og/twitter, hero h1, reader panels, FAQ), the literal `auth-notes.xhtml` demo filename fixed to `auth-notes.html`, the Cypress e2e h1 assertion updated in lockstep, and the spec self-description (`spec/conventions.md` + `.html`) now reads "an HTML vocabulary" / "the same HTML read structurally" — syntax-style descriptors ("XHTML-first") and the nginx `application/xhtml+xml` gzip mimetype unchanged (#88)
 

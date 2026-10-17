@@ -561,3 +561,6 @@ html.dark body {
     max-height: 80vh;
   }
 }
+
+/* /editor island: the JS-mounted editor renders as a block (spec demo page CSS) */
+sem-editor{display:block}

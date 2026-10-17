@@ -42,14 +42,16 @@ defmodule SemtextWeb.Parity.EditorRouteTest do
     # Bundle paths are the VERSION-PINNED immutable snapshot.
     assert body =~ "id=\"editor-root\""
     assert body =~ "id=\"editor-status\""
-    assert raw =~ "src=\"/js/editor-flags.js\""
+    # Site-local boot scripts carry AssetVersion content hashes (?v=hex);
+    # the /semtext/ snapshot bundles are version-pinned paths — no hash.
+    assert raw =~ ~r|src="/js/editor-flags\.js(\?v=[0-9a-f]+)?"|
     assert raw =~ "src=\"/semtext/v0.7.2/semtext.js\""
     assert raw =~ "src=\"/semtext/v0.7.2/semtext-editor.js\""
-    assert raw =~ "src=\"/js/editor-boot.js\""
+    assert raw =~ ~r|src="/js/editor-boot\.js(\?v=[0-9a-f]+)?"|
 
     order =
       Regex.run(
-        ~r/editor-flags\.js[\s\S]*v0\.7\.1\/semtext\.js[\s\S]*v0\.7\.1\/semtext-editor\.js[\s\S]*editor-boot\.js/,
+        ~r/editor-flags\.js(\?v=[0-9a-f]+)?[\s\S]*v0\.7\.\d+\/semtext\.js[\s\S]*v0\.7\.\d+\/semtext-editor\.js[\s\S]*editor-boot\.js(\?v=[0-9a-f]+)?/,
         raw
       )
 
