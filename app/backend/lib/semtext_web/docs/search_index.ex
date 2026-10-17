@@ -56,38 +56,45 @@ defmodule SemtextWeb.Docs.SearchIndex do
   def cli_commands do
     [
       %{
-        command: "semtext doc.semtext.html",
+        command: "semtext view doc.sem.html",
         summary:
-          "Read a document raw — prints the authored XHTML in the terminal: sections, facts, steps, readable as plain text.",
+          "Read a document — prints the whole document as plain text: every record with its id and attributes.",
         href: "/docs/#cli-commands"
       },
       %{
-        command: "semtext tui doc.semtext.html",
+        command: "semtext outline doc.sem.html",
         summary:
-          "Interactive terminal UI — navigate sections, flip flashcards, run quizzes, inspect structured records.",
+          "The block tree — one line per block with its stable id in brackets; --depth trims, --json for machines.",
         href: "/docs/#cli-commands"
       },
       %{
-        command: "semtext --render doc.semtext.html",
+        command: "semtext filter doc.sem.html --type sem-fact",
         summary:
-          "Render for agents — a plain-text representation designed for language models, to stdout.",
+          "Select records — matching blocks as normalised XHTML; filter by type, attr, text, id, kind, tag, audience or selector.",
         href: "/docs/#cli-commands"
       },
       %{
-        command: "semtext extract [--format yaml|json] doc.semtext.html",
+        command: "semtext expand doc.sem.html <id>",
         summary:
-          "Extract structured records — facts, steps, properties, references — as YAML or JSON.",
+          "One block in full — the on-demand counterpart to a collapsed outline or filtered result.",
         href: "/docs/#cli-commands"
       },
       %{
-        command: "semtext validate doc.semtext.html",
+        command: "semtext format doc.sem.html --text",
         summary:
-          "Check a document — reports structural issues; exits 0 when the document is valid.",
+          "Normalise a document — rewrites it in normal form; --text plain text, --json machine-readable.",
         href: "/docs/#cli-commands"
       },
       %{
-        command: "semtext --version",
-        summary: "Print the CLI and vocabulary version.",
+        command: "semtext tui doc.sem.html",
+        summary:
+          "Interactive terminal UI — j/k move, Enter expands, / searches, r shows raw source.",
+        href: "/docs/#cli-commands"
+      },
+      %{
+        command: "semtext-validate doc.sem.html",
+        summary:
+          "Check a document — validates against the spec schema per line; exits 0 when clean.",
         href: "/docs/#cli-commands"
       }
     ]

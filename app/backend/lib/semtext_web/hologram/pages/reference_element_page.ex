@@ -94,7 +94,6 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
       is_sem_md: t == "sem-md",
       primary: primary_block(tag, renderable, render_note),
       variants: Enum.map(variants, &variant_block(&1, tag, renderable, render_note)),
-      runtime: runtime_line(t, tag.family, b),
       source_ref: tag.source
     )
   end
@@ -317,45 +316,6 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
       ";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u)"
   end
 
-  # ————— shipped-runtime line (TS RuntimeLine) —————
-
-  defp runtime_line(_t, _family, nil), do: nil
-
-  defp runtime_line(t, family, b) do
-    cond do
-      family == :npl ->
-        %{kind: :npl}
-
-      b.css_only and not b.shipped ->
-        %{kind: :css_only}
-
-      not b.shipped ->
-        %{kind: :none}
-
-      true ->
-        files = b.bundles || []
-        lazy = Enum.find(files, &(&1.file == "semtext-lazy.js"))
-        chunk = lazy && String.replace_prefix(lazy.detail, "loads ", "")
-        fallback? = Enum.any?(files, &(&1.file == "semtext-fallback.js"))
-        # The fallback tier IS the listed bundle on fallback-only tags —
-        # say it once ("semtext-fallback.js enhancement tier").
-        already_listed = is_nil(chunk) and files != [] and hd(files).file == "semtext-fallback.js"
-
-        %{
-          kind: :shipped,
-          shared_with: b.shared_with,
-          chunk: chunk,
-          first_file: if(files != [], do: hd(files).file, else: nil),
-          fallback:
-            cond do
-              fallback? and already_listed -> :fallback_only
-              fallback? -> :fallback
-              true -> nil
-            end
-        }
-    end
-  end
-
   # ————— template —————
   # Template references STATE ONLY (plus transpilable Enum/Kernel calls) —
   # the client re-renders it and cannot reach the server-only data modules.
@@ -501,12 +461,6 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
             </p>
           {/if}
 
-          {%if @runtime}
-            <p class="ref-runtime mt-4 max-w-3xl text-xs leading-5 text-ink-faint">
-              Shipped runtime: {runtime_body(@runtime)}
-            </p>
-          {/if}
-
           <p class="mt-4 text-xs text-ink-faint">
             Source: <code class="font-mono">{@source_ref}</code>
           </p>
@@ -521,38 +475,4 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
     </DocsShell>
     """
   end
-
-  # Rendered into an attr value via template interpolation below —
-  # plain string, built from the precomputed runtime map.
-  def runtime_body(%{kind: :npl}) do
-    "not in the shipped site bundles — the npl-* namespace ships upstream as npl.js / npl-lazy.js + npl-chunks/, not copied into public/semtext/"
-  end
-
-  def runtime_body(%{kind: :css_only}) do
-    "none — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
-  end
-
-  def runtime_body(%{kind: :none}) do
-    "none — the authored example renders as plain HTML"
-  end
-
-  def runtime_body(%{kind: :shipped} = r) do
-    parts =
-      [
-        if(r.shared_with, do: "same runtime as <" <> r.shared_with <> ">: ", else: nil),
-        cond do
-          r.chunk -> "semtext-lazy.js loads " <> r.chunk
-          r.first_file -> r.first_file
-          true -> nil
-        end,
-        runtime_fallback_text(r.fallback)
-      ]
-      |> Enum.reject(&is_nil/1)
-
-    Enum.join(parts, " · ")
-  end
-
-  defp runtime_fallback_text(:fallback_only), do: "semtext-fallback.js enhancement tier"
-  defp runtime_fallback_text(:fallback), do: "semtext-fallback.js enhancement tier"
-  defp runtime_fallback_text(_), do: nil
 end

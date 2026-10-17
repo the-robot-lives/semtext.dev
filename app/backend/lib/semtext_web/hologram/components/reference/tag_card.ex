@@ -1,11 +1,12 @@
 defmodule SemtextWeb.Hologram.Components.Reference.TagCard do
   @moduledoc """
-  One element card on the reference index (port of the Next TagCard +
-  BundleBadge, prebuilt into a plain map by the page's init): tag name,
-  family badge, summary (or the gap note when the schema file states
-  none), and the compact shipped-runtime line whose `title` carries the
-  full provenance. `data_ref` is the filter payload the island bridge
-  narrows against; `data_ref_tag` marks the card for the same script.
+  One element card on the reference index (port of the Next TagCard,
+  prebuilt into a plain map by the page's init): tag name, family badge,
+  and summary (or the gap note when the schema file states none). The
+  shipped-runtime line the Next card carried is gone (round-2 feedback):
+  provenance lives on the element page's bundles section, not on every
+  card. `data_ref` is the filter payload the island bridge narrows
+  against; `data_ref_tag` marks the card for the same script.
   """
 
   use Hologram.Component
@@ -27,9 +28,6 @@ defmodule SemtextWeb.Hologram.Components.Reference.TagCard do
         {%else}
           <span class="ref-card-summary is-gap">See the element's page.</span>
         {/if}
-      {/if}
-      {%if @card.badge}
-        <span class="ref-card-badge" title={@card.badge.title}>{@card.badge.text}</span>
       {/if}
     </a>
     """

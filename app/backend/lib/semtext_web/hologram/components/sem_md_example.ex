@@ -14,7 +14,9 @@ defmodule SemtextWeb.Hologram.Components.SemMdExample do
   render. A failed chunk load changes nothing: the static table already IS
   the render.
 
-  Source view: the authored markup as plain line-numbered text.
+  Source view: the authored markup as plain line-numbered text. Split shows
+  both columns side by side — the same split/render/source toolbar every
+  reference example viewer carries (thread a9b97c78).
 
   Zero-JS: the pills and Copy/Save stay `display:none` until the bridge
   flips `.is-live` on the figure (same rule as ExampleViewer); the static
@@ -78,6 +80,11 @@ defmodule SemtextWeb.Hologram.Components.SemMdExample do
           </span>
           <span class="ref-view-pills" role="group" aria-label="View mode">
             <button type="button" class="ref-view-pill"
+              aria-pressed={if @view == "split" do "true" else "false" end}
+              $click={:set_view, view: "split"}>
+              split
+            </button>
+            <button type="button" class="ref-view-pill"
               aria-pressed={if @view == "render" do "true" else "false" end}
               $click={:set_view, view: "render"}>
               render
@@ -94,6 +101,7 @@ defmodule SemtextWeb.Hologram.Components.SemMdExample do
             <div
               id={"sem-pane-" <> @anchor}
               class="ref-md-example"
+              data-sem-pane={@spec_json}
             >
               <div class="ref-md-static">
                 <div class="ref-md-static-label">Token lifetimes</div>

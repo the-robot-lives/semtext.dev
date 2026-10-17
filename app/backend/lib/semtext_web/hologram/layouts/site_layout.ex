@@ -49,6 +49,10 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
   # (auto-boots the example render panes; runs the index filter).
   prop :reference_assets, :boolean, default: false
 
+  # Content-hashed island URL (cache busting; compile-time prop default —
+  # remote calls are not client-transpilable inside templates).
+  prop :island_js, :string, default: SemtextWeb.AssetVersion.url("js/semtext-island.js")
+
   def template do
     ~HOLO"""
     <!DOCTYPE html>
@@ -81,7 +85,7 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
         <link rel="stylesheet" href={@site_css} />
         {%if @reference_assets}
           <link rel="stylesheet" href={@reference_css} />
-          <script defer src="/js/semtext-island.js"></script>
+          <script defer src={@island_js}></script>
         {/if}
         <script defer src="/js/site-chrome.js"></script>
         <script src="/js/keep-location.js"></script>
