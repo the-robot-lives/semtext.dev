@@ -1,27 +1,50 @@
 /*
- * editor-boot.js — the /editor page bootstrap (site-editor lane).
+ * editor-boot.js — the /editor page bootstrap (site-editor lane; real
+ * bundle cutover, release sync 2026-10-17).
  *
- * Deferred AFTER the island bridge and the editor bundle (script order in
- * the page template is load-bearing): by the time this runs,
- * `SemtextIsland` and `window.SemTextEditor` (which registers
- * `<sem-editor>`) are both installed — or the page says so honestly in the
- * status line.
+ * Bundle loading is HYDRATION-SAFE BY CONSTRUCTION: the two bundles load
+ * as template-authored <script defer> tags (editor_page.ex, order
+ * load-bearing), the way the spec repo's own web/demo/editor.html does —
+ * driving them through the island bridge's appended script tags races
+ * Hologram hydration (a hydration re-render can detach a pending script
+ * and its onload never fires, hanging the chain). The page-level boot
+ * switches come from /js/editor-flags.js (first defer tag): nothing
+ * auto-wires, so page-wide the bundles only register — every wiring on
+ * this page is imperative and lives here.
+ *
+ *   /js/editor-flags.js        __semJsOff + __semLazyOff (first!)
+ *   /semtext/semtext.js        the core vocabulary — registers every
+ *                              sem-* element the editor's canvas renders
+ *   /semtext/semtext-editor.js the editor (§9.2): registers <sem-editor>
+ *                              + <sem-editor-code>, installs the
+ *                              `SemTextEditor` global
+ *                              (claim / claimPending / createDocument /
+ *                              tryParse / version)
+ *   /js/editor-boot.js         this file
  *
  * Reads the query params, fetches the document CLIENT-SIDE (the /editor
  * page state carries no document markup — the payload-leak rule), mounts
- * one <sem-editor> into #editor-root and hands it the source:
+ * one <sem-editor> into #editor-root and opens the document through the
+ * §9.2 door: SemTextEditor.tryParse/createDocument + el.openDocument(doc):
  *
  *   ?example=<tag>[&variant=<id>]  → GET /editor/examples/<tag> (JSON:
  *                                    compile-time reference data + the
- *                                    tag's shipped-runtime pane spec)
- *   ?src=<path-or-url>             → same-origin path or http(s) URL,
+ *                                    tag's theme pair)
+ *   ?src=<path-or-url>             → same-origin path or an http(s) URL,
  *                                    fetched as text; VFS keys arrive
  *                                    with the sem-shell integration
  *   (no params)                    → a small built-in starter document
  *
- * This file is site-side and survives the final bundle sync; it only ever
- * talks to the documented element surface (setDocument / runtime /
- * renderPreview), never to placeholder internals.
+ * This file is site-side and survives bundle syncs; it only ever talks to
+ * the documented element surface (SemTextEditor factory + <sem-editor>
+ * openDocument / mode / data-mode), never to bundle internals.
+ *
+ * Hydration defences (the client router strips the query string and its
+ * re-render can re-execute template scripts and wipe mounted children):
+ *   - QUERY is snapshotted from the navigation timing entry at eval time
+ *   - run() executes once per page (window.__semEditorBooted)
+ *   - mount() adopts an existing <sem-editor> instead of mounting a rival
+ *   - installSelfHeal() re-attaches the editor if a wipe removes it
  */
 (function () {
   "use strict";
@@ -30,9 +53,9 @@
   var STARTER = [
     "<sem-note variant=\"info\">",
     "<p>",
-    "  This is a scratch <strong>SemText</strong> document. Edit the source",
-    "  on the left — the preview re-renders as you type (debounced), and",
-    "  the preview never executes scripts.",
+    "  This is a scratch <strong>SemText</strong> document. Double-click",
+    "  any block to edit it; switch Visual / Code / Split in the toolbar,",
+    "  and export with the toolbar or Ctrl/Cmd+S.",
     "</p>",
     "<p>",
     "  Open any reference example with <code>?example=sem-note</code>, or a",
@@ -43,6 +66,8 @@
 
   var statusEl = null;
   var ed = null;
+  var linkedThemes = {};
+  var lastStatus = "";
 
   // The Hologram client router rewrites the URL during hydration and
   // drops the query string, so location.search is unreliable by the time
@@ -66,16 +91,17 @@
   var QUERY = originalSearch();
 
   function status(msg) {
+    lastStatus = msg;
+    // Re-resolve each call: hydration's re-render can replace the SSR
+    // status <p> with a fresh copy carrying the original placeholder text.
+    statusEl = document.getElementById("editor-status");
     if (!statusEl) {
-      statusEl = document.getElementById("editor-status");
-      if (!statusEl) {
-        statusEl = document.createElement("p");
-        statusEl.id = "editor-status";
-        statusEl.setAttribute("aria-live", "polite");
-        statusEl.className = "text-sm leading-6 text-ink-mute";
-        var root = document.getElementById("editor-root");
-        if (root) root.appendChild(statusEl);
-      }
+      statusEl = document.createElement("p");
+      statusEl.id = "editor-status";
+      statusEl.setAttribute("aria-live", "polite");
+      statusEl.className = "text-sm leading-6 text-ink-mute";
+      var root = document.getElementById("editor-root");
+      if (root) root.appendChild(statusEl);
     }
     statusEl.textContent = msg;
   }
@@ -86,14 +112,28 @@
     return last === "" ? "document.html" : decodeURIComponent(last);
   }
 
+  /** Theme stylesheets for the opened document (the example feed carries
+   *  the tag's theme pair). Idempotent: one link per href. */
+  function applyTheme(themeCss) {
+    (themeCss || []).forEach(function (href) {
+      if (!href || linkedThemes[href]) return;
+      linkedThemes[href] = true;
+      var link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      document.head.appendChild(link);
+    });
+  }
+
   function waitForEditor(attempt, cb) {
     if (window.SemTextEditor && customElements.get("sem-editor")) {
       cb(window.SemTextEditor);
       return;
     }
     if (attempt > 50) {
-      // Deferred scripts run in order, so this means the bundle failed to
-      // load (network, bad deploy) — say so instead of spinning forever.
+      // The bundles are template-authored deferred scripts, so this means
+      // a bundle failed to load (network, bad deploy) — say so instead of
+      // spinning forever.
       status("The editor bundle did not load. Check the network tab — the page stays readable without it.");
       return;
     }
@@ -105,16 +145,63 @@
   function mount() {
     var root = document.getElementById("editor-root");
     if (!root) return;
-    ed = document.createElement("sem-editor");
-    root.appendChild(ed);
+    // Idempotent: Hologram hydration can re-execute template scripts after
+    // the client router has rewritten the URL (dropping the query string) —
+    // a second run must adopt the existing editor, never mount a rival.
+    ed = root.querySelector("sem-editor");
+    if (!ed) {
+      ed = document.createElement("sem-editor");
+      root.appendChild(ed);
+    }
   }
 
-  function applyRuntime(doc) {
-    ed.runtime = {
-      files: doc.files || [],
-      themeCss: doc.themeCss || [],
-      lazy: !!doc.lazy,
-    };
+  /** Parse + open through the §9.2 door. Parse problems never throw —
+   *  a failed verdict still carries the best-effort tree, which the
+   *  status line reports honestly before the editor opens it. */
+  function openSource(editorApi, source, name) {
+    var verdict = editorApi.tryParse(source);
+    if (!verdict.ok) {
+      status(
+        name +
+          " parsed with errors — opening the best-effort view: " +
+          String(verdict.error && verdict.error.message ? verdict.error.message : "invalid document")
+      );
+    }
+    ed.openDocument(verdict.doc);
+    return verdict.ok;
+  }
+
+  /** done(editorApi) opens whichever document the params selected. */
+  function boot(themeCss, done) {
+    waitForEditor(0, function (editorApi) {
+      try {
+        applyTheme(themeCss);
+        done(editorApi);
+      } catch (err) {
+        // The editor never blocks the page on a defect — say what broke.
+        status("The editor failed to open the document: " + (err && err.message ? err.message : String(err)));
+      }
+    });
+  }
+
+  // Hydration's client-router re-render can wipe dynamically mounted
+  // children of #editor-root AFTER this boot has mounted and opened the
+  // document (Cypress' instrumented load hydrates late; warm-cache Chrome
+  // usually hydrates before boot and never shows it). Self-heal: watch
+  // the document and re-attach our editor if a wipe removes it — the
+  // detached node keeps its state, so the reopened document survives.
+  function installSelfHeal() {
+    if (typeof MutationObserver === "undefined") return;
+    var watchRoot = document.body || document.documentElement;
+    if (!watchRoot) return;
+    new MutationObserver(function () {
+      if (!ed || ed.isConnected) return;
+      var root = document.getElementById("editor-root");
+      if (root && root.querySelector("sem-editor") === null) {
+        root.appendChild(ed);
+        status(lastStatus);
+      }
+    }).observe(watchRoot, { childList: true, subtree: true });
   }
 
   function loadExample(tag, variant) {
@@ -140,16 +227,16 @@
       })
       .then(function (doc) {
         var name = doc.tag + (doc.variant ? "-" + doc.variant : "") + ".html";
-        applyRuntime(doc);
-        ed.setDocument(doc.source, name);
-        ed.renderPreview();
-        status(
-          "Opened the " +
-            doc.tag +
-            " example" +
-            (doc.variant ? " (variant: " + doc.label + ")" : "") +
-            "."
-        );
+        boot(doc.themeCss, function (editorApi) {
+          openSource(editorApi, doc.source, name);
+          status(
+            "Opened the " +
+              doc.tag +
+              " example" +
+              (doc.variant ? " (variant: " + doc.label + ")" : "") +
+              ". Double-click a block to edit it."
+          );
+        });
       })
       .catch(function (err) {
         status("Could not load the " + tag + " example: " + err.message);
@@ -172,10 +259,10 @@
         return resp.text();
       })
       .then(function (text) {
-        ed.runtime = { files: [], themeCss: [], lazy: false };
-        ed.setDocument(text, basename(src));
-        ed.renderPreview();
-        status("Opened " + src + ".");
+        boot([], function (editorApi) {
+          openSource(editorApi, text, basename(src));
+          status("Opened " + src + ".");
+        });
       })
       .catch(function (err) {
         status("Could not load " + src + ": " + err.message);
@@ -196,21 +283,27 @@
     } else if (src) {
       loadSrc(src);
     } else {
-      ed.runtime = { files: [], themeCss: [], lazy: false };
-      ed.setDocument(STARTER, STARTER_NAME);
-      ed.renderPreview();
-      status("Scratch document ready — edit the source, or open an example with ?example=<tag>.");
+      boot([], function (editorApi) {
+        openSource(editorApi, STARTER, STARTER_NAME);
+        status("Scratch document ready — double-click to edit, or open an example with ?example=<tag>.");
+      });
     }
   }
 
-  function boot() {
-    statusEl = document.getElementById("editor-status");
-    waitForEditor(0, start);
+  function run() {
+    // Hydration re-executes template scripts — the first run owns the boot
+    // (its QUERY snapshot carries the navigation-entry query string the
+    // client router strips; a re-run would see an empty query and wrongly
+    // fall back to the starter document over the opened example).
+    if (window.__semEditorBooted) return;
+    window.__semEditorBooted = true;
+    installSelfHeal();
+    start();
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
+    document.addEventListener("DOMContentLoaded", run);
   } else {
-    boot();
+    run();
   }
 })();

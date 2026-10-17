@@ -16,11 +16,18 @@ defmodule SemtextWeb.Hologram.Pages.EditorPage do
     ?src=<path-or-url>a same-origin path or an http(s) URL; VFS keys arrive
                       with the sem-shell integration
 
-  The editor bundle is the vendored /semtext/semtext-editor.js — the
-  placeholder IIFE today (registers `<sem-editor>`, installs the
-  `SemTextEditor` global, previews through the island bridge). The real
-  bundle from the editor build's integrate lane replaces it byte-for-byte
-  at the same path in the final sync.
+  The editor bundles are the vendored /semtext/ artifacts, loaded as
+  template-authored deferred scripts in load-bearing order (the way the
+  spec repo's own web/demo/editor.html does — driving them through the
+  island bridge's appended script tags races Hologram hydration):
+  /js/editor-flags.js pins the page boot switches first (nothing
+  auto-wires), the VERSION-PINNED /semtext/v0.7.1/semtext.js registers
+  the core vocabulary the canvas renders (immutable snapshot — same
+  pinned base the static site's editor served; cache-stable across
+  bundle syncs), and the REAL /semtext/v0.7.1/semtext-editor.js (§9.2
+  surface: SemTextEditor.createDocument/tryParse + openDocument,
+  Visual/Code/Split modes reflected as data-mode). /js/editor-boot.js
+  fetches the document and opens it.
   """
 
   use Hologram.Page
@@ -77,8 +84,9 @@ defmodule SemtextWeb.Hologram.Pages.EditorPage do
           </div>
         </section>
       </main>
-      <script defer src="/js/semtext-island.js"></script>
-      <script defer src="/semtext/semtext-editor.js"></script>
+      <script defer src="/js/editor-flags.js"></script>
+      <script defer src="/semtext/v0.7.1/semtext.js"></script>
+      <script defer src="/semtext/v0.7.1/semtext-editor.js"></script>
       <script defer src="/js/editor-boot.js"></script>
     </div>
     """

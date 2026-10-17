@@ -36,21 +36,24 @@ defmodule SemtextWeb.Parity.EditorRouteTest do
     assert h1_text(body) == "Editor"
 
     # the island mount + the deferred boot chain (order is load-bearing in
-    # the template: island bridge → editor bundle → boot script). Match on
-    # src against the RAW body — script_stripped removes these tags.
+    # the template: flags → core bundle → editor bundle → boot script; the
+    # bundles are TEMPLATE-AUTHORED defer tags, not island-driven — the
+    # island bridge's appended script tags race Hologram hydration).
+    # Bundle paths are the VERSION-PINNED immutable snapshot.
     assert body =~ "id=\"editor-root\""
     assert body =~ "id=\"editor-status\""
-    assert raw =~ "src=\"/js/semtext-island.js\""
-    assert raw =~ "src=\"/semtext/semtext-editor.js\""
+    assert raw =~ "src=\"/js/editor-flags.js\""
+    assert raw =~ "src=\"/semtext/v0.7.1/semtext.js\""
+    assert raw =~ "src=\"/semtext/v0.7.1/semtext-editor.js\""
     assert raw =~ "src=\"/js/editor-boot.js\""
 
     order =
       Regex.run(
-        ~r/semtext-island\.js[\s\S]*semtext-editor\.js[\s\S]*editor-boot\.js/,
+        ~r/editor-flags\.js[\s\S]*v0\.7\.1\/semtext\.js[\s\S]*v0\.7\.1\/semtext-editor\.js[\s\S]*editor-boot\.js/,
         raw
       )
 
-    assert order != [], "boot chain must load island → bundle → boot script in that order"
+    assert order != [], "boot chain must load flags → core bundle → editor bundle → boot script in that order"
 
     # payload-leak rule: no SemText markup in the served page or its
     # hydration payload — refutes run against the RAW body so script
@@ -63,9 +66,10 @@ defmodule SemtextWeb.Parity.EditorRouteTest do
 
   test "the editor static assets serve" do
     for path <- [
-          "/semtext/semtext-editor.js",
-          "/js/editor-boot.js",
-          "/js/semtext-island.js"
+          "/js/editor-flags.js",
+          "/semtext/v0.7.1/semtext.js",
+          "/semtext/v0.7.1/semtext-editor.js",
+          "/js/editor-boot.js"
         ] do
       conn = get(build_conn(), path)
       assert conn.status == 200, "#{path} must serve (got #{conn.status})"
