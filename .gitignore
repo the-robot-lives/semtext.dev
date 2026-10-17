@@ -22,3 +22,5 @@ landing/out/
 # worktrees (also in .git/info/exclude)
 .claude/worktrees/
 .claude/mix-builds/
+.tmp/
+erl_crash.dump
