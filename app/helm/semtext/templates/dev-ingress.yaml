@@ -1,0 +1,39 @@
+{{- if .Values.devSlot.enabled }}
+{{- $slot := .Values.devSlot }}
+# Live dev slot ingress. NON-NEGOTIABLE auth gate: Phoenix dev mode ships a
+# code reloader (remote code execution) and a dev login stub, so EVERY path —
+# including /health — sits behind the house Authentik forward-auth gate.
+# An unauthenticated request is 302'd to auth.derobot.is sign-in, never 200.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "hologram-start-app.fullname" . }}-live-dev
+  labels:
+    {{- include "hologram-start-app.labels" . | nindent 4 }}
+    semtext.dev/slot: live-dev
+  annotations:
+    nginx.ingress.kubernetes.io/auth-url: {{ $slot.auth.authUrl | quote }}
+    nginx.ingress.kubernetes.io/auth-signin: {{ $slot.auth.authSignin | quote }}
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    {{- if .Values.ingress.cloudflareOnly }}
+    nginx.ingress.kubernetes.io/whitelist-source-range: {{ include "hologram-start-app.cloudflareWhitelist" . | quote }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  tls:
+  - hosts:
+    - {{ $slot.host }}
+    secretName: {{ $slot.tls.secretName }}
+  rules:
+  - host: {{ $slot.host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "hologram-start-app.fullname" . }}-live-dev
+            port:
+              number: 80
+{{- end }}
