@@ -1,4 +1,7 @@
 # Changelog
+## 2026-10-18 (Hologram home glossary: 0.9.0 wording)
+- home_page.ex glossary rows ("tier", "tier marker") and the header comment reworded for the one-bundle 0.9.0 reality — the Next home got this in the 0.9.0 pass; the Hologram twin was missed (surfaced as `data-sem-fallback` strings in the prod home payload)
+
 ## 2026-10-18 (runtime 0.9.0 — SemText fallback tier removal)
 - runtime 0.9.0 vendored into both static trees (`web/public/semtext/` + `app/backend/priv/static/semtext/`, rsync byte-parity verified; the legacy unreferenced `v0.8.2` snapshot dir wiped by the mirror was restored from git — published artifacts stay immutable); the standalone `semtext-fallback.js` is gone upstream — its handlers were folded into the one `semtext.js` bundle (renamed `src/vanilla/`), so every page that previously loaded two scripts now loads one; retired root copies `git rm`'d from both trees and old `v0.8.3`-and-earlier snapshots keep their published files
 - every fallback reference purged from the site: `data-sem-fallback` marker dropped (suppression + settle checks now key on `[data-sem-upgraded]` alone), `window.SemTextFallback` call sites (hero window, example viewer, landing-bootstrap, snap harness, cypress specs) reworked onto `window.SemText.enhanceCore` / `SemTextLazy`, sync/bundle-map scripts stop carrying the retired file, Hologram landing layout loads `/semtext/semtext.js` (its `__semJsOff` stub removed — 0.9.0 has no kill switch), demo `.sem.html` fixtures point at `stable/semtext.js`
