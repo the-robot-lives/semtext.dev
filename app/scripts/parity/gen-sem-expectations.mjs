@@ -16,6 +16,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseHTML } from 'linkedom'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const manifest = JSON.parse(readFileSync(join(here, 'parity-routes.json'), 'utf8'))
@@ -23,9 +24,10 @@ const nextOut = process.env.PARITY_NEXT_OUT ?? '/Users/keithbrings/Work/Space/No
 
 function countSemPanes(routePath) {
   const rel = routePath === '/' ? 'index.html' : `${routePath.replace(/^\//, '')}index.html`
-  const html = readFileSync(join(nextOut, rel), 'utf8')
-  const visible = html.replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, '')
-  return (visible.match(/data-sem-theme/g) ?? []).length
+  // Real HTML parser (linkedom, root devDependency): the count is a DOM query,
+  // so script-payload bytes can never inflate it and no strip regex exists.
+  const { document } = parseHTML(readFileSync(join(nextOut, rel), 'utf8'))
+  return document.querySelectorAll('[data-sem-theme]').length
 }
 
 const pages = {}
@@ -49,7 +51,7 @@ const panes = {}
 if (appBase) {
   for (const route of routes) {
     const html = await (await fetch(appBase + route)).text()
-    panes[route] = (html.match(/data-sem-html/g) ?? []).length
+    panes[route] = parseHTML(html).document.querySelectorAll('[data-sem-html]').length
   }
 }
 

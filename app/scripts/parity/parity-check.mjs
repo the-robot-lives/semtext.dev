@@ -31,6 +31,7 @@
 import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseHTML } from "linkedom";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_MANIFEST = path.join(SCRIPT_DIR, "parity-routes.json");
@@ -103,48 +104,30 @@ async function fetchPage(base, routePath) {
   return last;
 }
 
-// Entity decode via a single table-backed replace (no reconstructing
-// replace-chain).
-var ENTITY_MAP = { lt: "<", gt: ">", quot: '"', "#039": "'", "#39": "'", amp: "&" };
-function decodeEntities(s) {
-  return String(s || "").replace(/&(lt|gt|quot|#0?39|amp);/gi, function (m, name) {
-    var k = name.toLowerCase();
-    return Object.prototype.hasOwnProperty.call(ENTITY_MAP, k) ? ENTITY_MAP[k] : m;
-  });
-}
-
-function clean(s) {
-  // Decode, then strip script regions (an encoded &lt;script&gt; payload can
-  // never survive as live markup), then drop the remaining tags. This is text
-  // extraction for parity comparison — never a markup sink.
-  return stripScripts(decodeEntities(s))
-    .replace(/<[^>]+>/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, "");
-}
-
-/** Drop <script> regions: Hologram's SSR embeds a large serialized-VDOM
- * payload in an early script whose example SOURCE carries literal markup
- * bytes ("<h1 …") — title/h1/text checks must never read inside it. */
-function stripScripts(html) {
-  return html.replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, "");
-}
-
-/** title + first h1 + flattened text of a rendered page. The page h1 is
- * scoped to <main> when present (both sides keep it there) so payload
- * residue or chrome-level headings never win the comparison. */
+/** title + first h1 + flattened text of a rendered page, extracted with a
+ * real HTML parser (linkedom, a root devDependency — imported as a bare
+ * specifier, so no markup ever round-trips through string surgery here).
+ * Script/style/template nodes are removed as DOM nodes, which excludes
+ * Hologram's serialized-VDOM payloads (their literal "<h1 …" bytes are text
+ * inside removed script elements); entity normalization is the parser's job,
+ * so no decode step exists. The page h1 is scoped to <main> when present
+ * (both sides keep it there) so payload residue or chrome-level headings
+ * never win the comparison. */
 function extract(html) {
-  const visible = stripScripts(html);
-  const title = visible.match(/<title[^>]*>([\s\S]*?)<\/title>/);
-  const mainScope = visible.match(/<main\b[\s\S]*<\/main>/i);
-  const h1Scope = mainScope ? mainScope[0] : visible;
-  const h1 = h1Scope.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+  const { document } = parseHTML(String(html || ""));
+  document.querySelectorAll("script, style, template").forEach(function (el) {
+    el.remove();
+  });
+  const h1Scope = document.querySelector("main") || document.body;
   return {
-    title: clean(title?.[1]),
-    h1: clean(h1?.[1]),
-    text: clean(visible),
+    title: flat(document.title),
+    h1: flat(h1Scope?.querySelector("h1")?.textContent),
+    text: flat(document.body?.textContent),
   };
+}
+
+function flat(s) {
+  return String(s || "").replace(/\s+/g, " ").trim();
 }
 
 /** The "route not ported" signatures: 404 unknown route, 405 a catch-all

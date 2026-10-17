@@ -24,6 +24,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseHTML } from "linkedom";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_MANIFEST = path.join(SCRIPT_DIR, "parity-routes.json");
@@ -56,43 +57,27 @@ if (fromDir) fromDir = path.resolve(fromDir);
 
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 
-var ENTITY_MAP = { lt: "<", gt: ">", quot: '"', "#039": "'", "#39": "'", amp: "&" };
-function decodeEntities(s) {
-  return String(s || "").replace(/&(lt|gt|quot|#0?39|amp);/gi, function (m, name) {
-    var k = name.toLowerCase();
-    return Object.prototype.hasOwnProperty.call(ENTITY_MAP, k) ? ENTITY_MAP[k] : m;
-  });
-}
-
-function cleanHtml(s) {
-  // Decode, then strip script regions (decoded payloads included), then drop
-  // remaining tags — text extraction only, never a markup sink.
-  return stripScripts(decodeEntities(s))
-    .replace(/<[^>]+>/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, "");
-}
-
-/** title + first h1 from a rendered Next page. */
-// Hologram SSR (and any page embedding code samples in scripts) can carry
-// literal markup bytes inside <script> payloads — never extract from those.
-function stripScripts(html) {
-  return html.replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, "");
-}
-
+/** title + first h1 from a rendered page, extracted with a real HTML parser
+ * (linkedom, a root devDependency). Hologram SSR (and any page embedding code
+ * samples in scripts) can carry literal markup bytes inside <script> payloads
+ * — removing script/style/template as DOM nodes keeps them out, and the
+ * parser normalizes entities, so no decode/strip regex chain exists. */
 function extract(html) {
-  const visible = stripScripts(html);
-  const title = visible.match(/<title[^>]*>([\s\S]*?)<\/title>/);
+  const { document } = parseHTML(String(html || ""));
+  document.querySelectorAll("script, style, template").forEach(function (el) {
+    el.remove();
+  });
   // the page h1 lives inside <main> on both sides; scoping keeps payload
   // residue or chrome-level headings out of the seed
-  const mainScope = visible.match(/<main\b[\s\S]*<\/main>/i);
-  const h1Scope = mainScope ? mainScope[0] : visible;
-  const h1 = h1Scope.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+  const h1Scope = document.querySelector("main") || document.body;
   return {
-    title: cleanHtml(title?.[1]) || null,
-    h1: cleanHtml(h1?.[1]) || null,
+    title: flat(document.title) || null,
+    h1: flat(h1Scope?.querySelector("h1")?.textContent) || null,
   };
+}
+
+function flat(s) {
+  return String(s || "").replace(/\s+/g, " ").trim();
 }
 
 const failures = [];

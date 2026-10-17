@@ -96,10 +96,12 @@ describe('Sem hydration + SSR parity contract', () => {
     it(`${path}: ${paneCount} pane(s) hydrated, ${themeCount} theme host(s)`, () => {
       // Deterministic SSR tiers first (no browser, no hydration interference).
       cy.request(path).then((res) => {
-        const ssr = String(res.body).replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, '')
-        const ssrPanes = (ssr.match(/data-sem-html/g) ?? []).length
+        // Parse with the browser's own HTML parser: attribute counts are DOM
+        // queries, so script-payload bytes can never inflate them.
+        const doc = new DOMParser().parseFromString(String(res.body), 'text/html')
+        const ssrPanes = doc.querySelectorAll('[data-sem-html]').length
         expect(ssrPanes, `SSR Sem pane count (data-sem-html)`).to.eq(paneCount)
-        const ssrTheme = (ssr.match(/data-sem-theme/g) ?? []).length
+        const ssrTheme = doc.querySelectorAll('[data-sem-theme]').length
         expect(ssrTheme, `SSR theme-host count vs Next export`).to.eq(themeCount)
       })
 
