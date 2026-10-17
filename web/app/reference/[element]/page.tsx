@@ -291,7 +291,6 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
                   bundles={bundles?.bundles ?? []}
                   aliasRuntime={aliasRuntime()}
                   renderNote={renderNote}
-                  editorHref={`/editor/?example=${tagSlug(t.name)}`}
                 />
               )}
             </div>
@@ -311,7 +310,6 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
                   aliasRuntime={aliasRuntime()}
                   exampleLabel={v.label}
                   renderNote={renderNote}
-                  editorHref={`/editor/?example=${tagSlug(t.name)}&variant=${v.id}`}
                 />
               </div>
             </div>
@@ -330,14 +328,6 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
         <code className="font-mono">{t.source}</code>
       </p>
 
-      <p className="mt-10 text-sm">
-        <a
-          href="/reference/"
-          className="underline decoration-white/30 underline-offset-2 hover:decoration-white/70"
-        >
-          ← All tags in the reference
-        </a>
-      </p>
     </>
   );
 }

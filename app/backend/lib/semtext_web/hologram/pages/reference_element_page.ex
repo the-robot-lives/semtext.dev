@@ -246,7 +246,6 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
           filename: "#{tag.name}.html",
           copy_js: copy_js(tag.example, "#{tag.name}.html"),
           save_js: save_js(tag.example, "#{tag.name}.html", "text/html;charset=utf-8"),
-          editor_href: editor_href(tag.name, nil)
         }
       end
     end
@@ -286,16 +285,13 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
       chrome_label: v.label,
       filename: "#{tag.name}-#{v.id}.html",
       copy_js: copy_js(v.code, "#{tag.name}-#{v.id}.html"),
-      save_js: save_js(v.code, "#{tag.name}-#{v.id}.html", "text/html;charset=utf-8"),
-      editor_href: editor_href(tag.name, v.id)
+      save_js: save_js(v.code, "#{tag.name}-#{v.id}.html", "text/html;charset=utf-8")
     }
   end
 
   # /editor deep links (site-editor lane): the editor island fetches the
   # same compile-time source back through /editor/examples/:tag. Tag names
   # are [a-z0-9-] by construction, so no escaping is needed.
-  defp editor_href(tag_name, nil), do: "/editor?example=#{tag_name}"
-  defp editor_href(tag_name, variant_id), do: "/editor?example=#{tag_name}&variant=#{variant_id}"
 
   defp viewer_spec_json(tag, code) do
     Tags.viewer_spec(tag, code, false)
@@ -470,7 +466,6 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
                       filename={@primary.filename}
                       copy_js={@primary.copy_js}
                       save_js={@primary.save_js}
-                      editor_href={@primary.editor_href}
                     />
                   {/if}
                 </div>
@@ -495,7 +490,6 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
                       filename={v.filename}
                       copy_js={v.copy_js}
                       save_js={v.save_js}
-                      editor_href={v.editor_href}
                     />
                   </div>
                 </div>
@@ -515,10 +509,6 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
 
           <p class="mt-4 text-xs text-ink-faint">
             Source: <code class="font-mono">{@source_ref}</code>
-          </p>
-
-          <p class="mt-10 text-sm">
-            <a href="/reference/" class="ref-inline-link">← All tags in the reference</a>
           </p>
         {%else}
           <p class="g-eyebrow">Reference</p>

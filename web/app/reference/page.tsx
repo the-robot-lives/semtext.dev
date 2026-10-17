@@ -102,14 +102,14 @@ export default function ReferencePage() {
       <main id="main">
         <p className="g-eyebrow">Reference</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-          Every tag, on its own page
+          Tag reference
         </h1>
         <p className="mt-4 max-w-3xl text-base leading-7 text-ink-mute">
-          All {SEM_TAGS.length + NPL_TAGS.length} SemText and NPL tags, each
-          on its own page with its options, children and an authored example
-          — grouped by the job the element does. Filter by tag name or a
-          summary word; every card links to the element&apos;s page, and a
-          field its source does not state is marked there.
+          The {SEM_TAGS.length + NPL_TAGS.length} SemText and NPL tags,
+          grouped by the job the element does. Each card opens the
+          element&apos;s page: what it is for, its options, its children and
+          an authored example. A field the element&apos;s source does not
+          state is marked there.
         </p>
 
         <div className="mt-8 max-w-3xl">

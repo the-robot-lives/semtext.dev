@@ -125,19 +125,37 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
               >
                 Get started
               </a>
-              <a
-                href="/reference/"
-                class="hidden items-center gap-2 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 font-mono text-xs text-ink-mute hover:border-white/40 hover:text-ink sm:flex"
-                aria-label="Search the docs (opens the reference)"
+              <div
+                class="relative hidden sm:block"
+                data-docs-search
               >
-                <span aria-hidden="true">Search</span>
+                <input
+                  id="docs-search"
+                  type="search"
+                  role="combobox"
+                  aria-expanded="false"
+                  aria-controls="docs-search-list"
+                  aria-autocomplete="list"
+                  aria-label="Search the docs"
+                  placeholder="Search the docs"
+                  autocomplete="off"
+                  class="w-44 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 font-mono text-xs text-ink placeholder:text-ink-faint focus:border-violet-soft focus:outline-none"
+                />
                 <kbd
                   aria-hidden="true"
-                  class="rounded border border-white/20 px-1 font-mono text-[0.65rem] text-ink-faint"
+                  class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-white/20 px-1 font-mono text-[0.65rem] text-ink-faint"
                 >
                   /
                 </kbd>
-              </a>
+                <ul
+                  id="docs-search-list"
+                  role="listbox"
+                  aria-label="Search results"
+                  hidden
+                  class="absolute right-0 z-50 mt-1 max-h-80 w-80 overflow-auto rounded-lg border border-code-border bg-slateink py-1 shadow-xl"
+                >
+                </ul>
+              </div>
               <a
                 href="https://therobotlives.com"
                 class="hidden min-h-11 items-center font-medium text-violet-soft underline-offset-4 hover:underline sm:inline-flex"

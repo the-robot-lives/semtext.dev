@@ -239,7 +239,6 @@ export function ExampleViewer({
   aliasRuntime,
   exampleLabel,
   renderNote,
-  editorHref,
 }: {
   name: string;
   code: string;
@@ -254,9 +253,6 @@ export function ExampleViewer({
   exampleLabel?: string;
   /** Why the render pane is a note instead of a live render. */
   renderNote?: string;
-  /** /editor/?example=… deep link for THIS example (primary or one
-   * variant); absent → no link. A plain <a>, so it works scripts-off. */
-  editorHref?: string;
 }) {
   const [js, setJs] = useState(false);
   const [view, setView] = useState<ViewMode>("split");
@@ -469,19 +465,6 @@ export function ExampleViewer({
     </>
   );
 
-  /* The Open-in-editor link: outside the figure's view-switch markup so it
-   * renders identically in every view and survives scripts-off. */
-  const editorLink = editorHref ? (
-    <p className="mt-1.5 text-xs text-ink-faint">
-      <a
-        href={editorHref}
-        className="underline decoration-white/25 underline-offset-2 transition-colors hover:text-ink hover:decoration-white/60"
-      >
-        Open in editor
-      </a>
-    </p>
-  ) : null;
-
   if (view === "source") {
     return (
       <>
@@ -492,7 +475,6 @@ export function ExampleViewer({
           {chrome}
           {sourcePane}
         </figure>
-        {editorLink}
       </>
     );
   }
@@ -507,7 +489,6 @@ export function ExampleViewer({
           {chrome}
           {renderPane}
         </figure>
-        {editorLink}
       </>
     );
   }
@@ -533,7 +514,6 @@ export function ExampleViewer({
           </div>
         </div>
       </figure>
-      {editorLink}
     </>
   );
 }
