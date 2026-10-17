@@ -168,7 +168,7 @@ PAGES.forEach((page) => {
         expect(html).to.match(/<script src="\.\.\/semtext-fallback\.js">/);
         expect(html).to.match(/<link rel="stylesheet" href="\.\.\/themes\/_vocabulary\.css">/);
         // escaped examples are text, not tags: the rewrite must not touch them
-        expect(html).to.contain('href="semtext/themes/minimal-tech-light.css"');
+        expect(html).to.contain('href="semtext/latest/semtext.css"');
       });
       cy.request('/themes/_vocabulary.css').its('status').should('eq', 200);
       cy.request('/spec/spec.css').its('status').should('eq', 200);

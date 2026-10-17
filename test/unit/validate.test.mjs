@@ -105,10 +105,61 @@ describe('element and attribute contracts', () => {
     expect(errorsOf(r).some((d) => d.rule === 'missing-attribute' && d.message.includes('"name"'))).toBe(true);
   });
 
-  it('a required child (sem-code without exactly one pre) is an error', () => {
-    const src = `<sem-enhanced-document><sem-code lang="ts">no pre here</sem-code></sem-enhanced-document>`;
+  it('an empty sem-code (neither pre child nor flat text) is an error', () => {
+    const src = `<sem-enhanced-document><sem-code lang="ts">   </sem-code></sem-enhanced-document>`;
     const r = validateSource(src, schema);
     expect(errorsOf(r).some((d) => d.rule === 'child-structure')).toBe(true);
+  });
+
+  it('sem-code flat form (own text, no pre) is valid — v0.6 inline form', () => {
+    const src = `<sem-enhanced-document><sem-code>npm run validate</sem-code></sem-enhanced-document>`;
+    const r = validateSource(src, schema);
+    expect(errorsOf(r).some((d) => d.rule === 'child-structure' && d.message.includes('sem-code'))).toBe(false);
+  });
+
+  it('sem-table carrying neither table child nor markdown text is an error', () => {
+    const src = `<sem-enhanced-document><sem-table controls="sort"></sem-table></sem-enhanced-document>`;
+    const r = validateSource(src, schema);
+    expect(errorsOf(r).some((d) => d.rule === 'child-structure' && d.message.includes('sem-table'))).toBe(true);
+  });
+
+  it('v0.6 hygiene: authored hr/br/b/strong/i/em warn (outside code contexts)', () => {
+    const src = `<sem-enhanced-document><p>rotate <strong>per session</strong> now<br>please</p><hr></sem-enhanced-document>`;
+    const r = validateSource(src, schema);
+    const hygiene = r.diagnostics.filter((d) => d.rule === 'authoring-hygiene');
+    expect(hygiene.length).toBe(3);
+    expect(errorsOf(r)).toEqual([]);
+  });
+
+  it('v0.6 hygiene skips code contexts (listing markup is verbatim content)', () => {
+    const src = `<sem-enhanced-document><sem-code><pre><code>a <b>bold</b> line</code></pre></sem-code></sem-enhanced-document>`;
+    const r = validateSource(src, schema);
+    expect(r.diagnostics.some((d) => d.rule === 'authoring-hygiene')).toBe(false);
+  });
+
+  it('sem-list with both ordered and unordered is an error', () => {
+    const src = `<sem-enhanced-document><sem-list ordered unordered>- a</sem-list></sem-enhanced-document>`;
+    const r = validateSource(src, schema);
+    expect(errorsOf(r).some((d) => d.rule === 'attribute-value')).toBe(true);
+  });
+
+  it('sem-break with content is an error; empty is valid', () => {
+    const bad = `<sem-enhanced-document><sem-break>text</sem-break></sem-enhanced-document>`;
+    expect(errorsOf(validateSource(bad, schema)).some((d) => d.rule === 'child-structure')).toBe(true);
+    const good = `<sem-enhanced-document><sem-break></sem-break></sem-enhanced-document>`;
+    expect(errorsOf(validateSource(good, schema)).some((d) => d.rule === 'child-structure')).toBe(false);
+  });
+
+  it('sem-reference without cite is an error (v0.6: cite required)', () => {
+    const src = `<sem-enhanced-document><sem-references id="refs"><sem-reference id="r1">no cite</sem-reference></sem-references></sem-enhanced-document>`;
+    const r = validateSource(src, schema);
+    expect(errorsOf(r).some((d) => d.rule === 'missing-attribute' && d.message.includes('"cite"'))).toBe(true);
+  });
+
+  it('sem-highlight tag resolves to the highlight contract', () => {
+    const src = `<sem-enhanced-document><sem-note variant="tip">rotation is <sem-highlight>per session</sem-highlight></sem-note></sem-enhanced-document>`;
+    const r = validateSource(src, schema);
+    expect(errorsOf(r)).toEqual([]);
   });
 
   it('unknown controls flags are a warning (spec: ignored), not an error', () => {

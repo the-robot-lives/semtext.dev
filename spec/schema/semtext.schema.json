@@ -2,9 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://semtext.noizu.com/schemas/semtext.schema.json",
   "title": "SemText document schema",
-  "description": "Machine-readable contract for SemText documents, derived from spec/conventions.md (v0.5) and the per-element prose contracts in spec/schema/*.md. The prose files are normative; this file is the enforcement layer that semtext-validate reads. Changes here precede spec changes precede code, same as the prose contracts.",
+  "description": "Machine-readable contract for SemText documents, derived from spec/conventions.md (v0.6) and the per-element prose contracts in spec/schema/*.md. The prose files are normative; this file is the enforcement layer that semtext-validate reads. Changes here precede spec changes precede code, same as the prose contracts.",
   "x-semtext": {
-    "specVersion": "0.5",
+    "specVersion": "0.6",
     "document": {
       "root": {
         "tag": "sem-enhanced-document",
@@ -366,6 +366,10 @@
     "highlight": {
       "source": "spec/conventions.md#1",
       "record": false,
+      "tagAliases": [
+        "sem-highlight",
+        "highlight"
+      ],
       "classAliases": [
         "span.sem-highlight",
         "div.sem-highlight"
@@ -551,13 +555,7 @@
           "severityOnUnknown": "warning"
         }
       },
-      "childRules": [
-        {
-          "rule": "exactlyOne",
-          "selector": "pre",
-          "severity": "error"
-        }
-      ]
+      "childForm": "pre-or-flat"
     },
     "sem-references": {
       "source": "spec/schema/sem-references.md",
@@ -575,11 +573,13 @@
       "source": "spec/schema/sem-references.md",
       "record": true,
       "attributes": {
-        "id": {
-          "required": true
+        "id": {},
+        "href": {
+          "note": "compat alias of cite (sem-references.md v0.6); warn when authored without cite"
         },
-        "href": {},
-        "cite": {}
+        "cite": {
+          "required": true
+        }
       }
     },
     "sem-source": {
@@ -669,15 +669,34 @@
         },
         "sticky": {
           "type": "flag"
+        },
+        "label": {
+          "note": "caption for the markdown-form rendered table (sem-table.md v0.6)"
         }
       },
-      "childRules": [
-        {
-          "rule": "exactlyOne",
-          "selector": "table",
-          "severity": "error"
+      "childForm": "table-or-markdown"
+    },
+    "sem-list": {
+      "source": "spec/schema/sem-list.md",
+      "record": false,
+      "attributes": {
+        "ordered": {
+          "type": "flag"
+        },
+        "unordered": {
+          "type": "flag"
         }
-      ]
+      }
+    },
+    "sem-section": {
+      "source": "spec/schema/sem-section.md",
+      "record": false,
+      "attributes": {}
+    },
+    "sem-break": {
+      "source": "spec/schema/sem-break.md",
+      "record": false,
+      "attributes": {}
     }
   }
 }
