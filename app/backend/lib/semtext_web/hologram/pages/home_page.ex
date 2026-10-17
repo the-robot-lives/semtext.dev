@@ -8,9 +8,9 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
   user 2026-10-14) and is not rendered here.
 
   The Scope/Extend Sem blocks ship their authored markup verbatim via
-  `{%raw}` (real DOM after SSR, exactly like the Next.js `Sem(html=…)`,
-  so the fallback bundle wires them once loaded); `window.__semJsOff` and
-  the deferred bundles are the layout's job — the page ships no scripts.
+  `{%raw}` (real DOM after SSR, exactly like the Next.js `Sem(html=…)`);
+  semtext.js (the one bundle since 0.9.0) wires them on load — the
+  deferred script is the layout's job, the page ships no scripts.
 
   Data tables (glossary, chronology, references, artifacts, showcase menu,
   integrations) hydrate as serialized state; the small helpers used by the
@@ -46,12 +46,12 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
     %{
       term: "tier",
       def:
-        "Which script, if any, is driving the document: none (CSS only), the fallback bundle, or the Lit components."
+        "Which script, if any, is driving the document: none (CSS only), or the one SemText bundle."
     },
     %{
       term: "tier marker",
       def:
-        "The data-sem-fallback or data-sem-upgraded attribute a script sets on what it wired; every hide rule is gated on one of them."
+        "The data-sem-upgraded attribute the runtime sets on what it wired; every hide rule is gated on it."
     }
   ]
 
