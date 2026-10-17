@@ -32,8 +32,11 @@ defmodule SemtextWeb.Parity.EditorRouteTest do
     raw = conn.resp_body
 
     assert body =~ ~r/<title[^>]*>Editor — SemText<\/title>/
-    assert body =~ "<main id=\"main\">"
-    assert h1_text(body) == "Editor"
+    # Instrument revamp (2026-10-18): the page is app chrome — the <main>
+    # carries the frame-fit class and the hero (h1 + copy) is gone.
+    assert body =~ ~r/<main id="main"[^>]*class="sem-ed-page-main"/
+    assert body =~ ~r/<main id="main"[^>]*>/
+    refute h1_in_main?(body), "the Instrument /editor has no hero h1"
 
     # the island mount + the deferred boot chain (order is load-bearing in
     # the template: flags → core bundle → editor bundle → boot script; the
@@ -43,17 +46,18 @@ defmodule SemtextWeb.Parity.EditorRouteTest do
     assert body =~ "id=\"editor-root\""
     assert body =~ "id=\"editor-status\""
     assert raw =~ "src=\"/js/editor-flags.js\""
-    assert raw =~ "src=\"/semtext/v0.7.2/semtext.js\""
-    assert raw =~ "src=\"/semtext/v0.7.2/semtext-editor.js\""
+    assert raw =~ "src=\"/semtext/v0.8.2/semtext.js\""
+    assert raw =~ "src=\"/semtext/v0.8.2/semtext-editor.js\""
     assert raw =~ "src=\"/js/editor-boot.js\""
 
     order =
       Regex.run(
-        ~r/editor-flags\.js[\s\S]*v0\.7\.1\/semtext\.js[\s\S]*v0\.7\.1\/semtext-editor\.js[\s\S]*editor-boot\.js/,
+        ~r/editor-flags\.js[\s\S]*v0\.8\.2\/semtext\.js[\s\S]*v0\.8\.2\/semtext-editor\.js[\s\S]*editor-boot\.js/,
         raw
       )
 
-    assert order != [], "boot chain must load flags → core bundle → editor bundle → boot script in that order"
+    assert order != [],
+           "boot chain must load flags → core bundle → editor bundle → boot script in that order"
 
     # payload-leak rule: no SemText markup in the served page or its
     # hydration payload — refutes run against the RAW body so script
@@ -67,8 +71,8 @@ defmodule SemtextWeb.Parity.EditorRouteTest do
   test "the editor static assets serve" do
     for path <- [
           "/js/editor-flags.js",
-          "/semtext/v0.7.2/semtext.js",
-          "/semtext/v0.7.2/semtext-editor.js",
+          "/semtext/v0.8.2/semtext.js",
+          "/semtext/v0.8.2/semtext-editor.js",
           "/js/editor-boot.js"
         ] do
       conn = get(build_conn(), path)
@@ -115,8 +119,12 @@ defmodule SemtextWeb.Parity.EditorRouteTest do
     assert %{"errors" => %{"detail" => _}} = json_response(conn, 404)
 
     case Enum.find(Tags.all_tags(), &(&1.example == "")) do
-      nil -> :ok
-      tag -> assert %{"errors" => _} = json_response(get(build_conn(), "/editor/examples/#{tag.name}"), 404)
+      nil ->
+        :ok
+
+      tag ->
+        assert %{"errors" => _} =
+                 json_response(get(build_conn(), "/editor/examples/#{tag.name}"), 404)
     end
   end
 
@@ -137,22 +145,13 @@ defmodule SemtextWeb.Parity.EditorRouteTest do
 
   # -- helpers --
 
-  defp h1_text(body) do
+  defp h1_in_main?(body) do
     scope =
       case :binary.match(body, "<main") do
         {pos, _} -> binary_part(body, pos, byte_size(body) - pos)
         :nomatch -> body
       end
 
-    case Regex.run(~r/<h1[^>]*>([\s\S]*?)<\/h1>/, scope) do
-      [_, h1] ->
-        h1
-        |> String.replace(~r/<[^>]+>/, "")
-        |> String.replace(~r/\s+/, " ")
-        |> String.trim()
-
-      nil ->
-        flunk("/editor rendered no <h1> inside <main>")
-    end
+    Regex.match?(~r/<h1[\s>]/, scope)
   end
 end
