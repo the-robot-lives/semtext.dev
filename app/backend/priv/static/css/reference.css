@@ -272,6 +272,7 @@
 }
 
 .code-line-no {
+  flex-shrink: 0;
   display: inline-block;
   width: 2.5rem;
   margin-right: 1rem;

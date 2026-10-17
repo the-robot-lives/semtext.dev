@@ -7,7 +7,7 @@ name: CI
 #   The legacy Next.js `web` image no longer deploys. The deployed Hologram app
 #   is built and bumped by app-ci.yml (app/helm/semtext, ArgoCD path). This
 #   workflow's bump-chart job was retired 2026-10-17: it edited the dead
-#   helm/semtext/values.yaml and raced the real bump, leaving ArgoCD on a
+#   root helm/semtext chart (since deleted) and raced the real bump, leaving ArgoCD on a
 #   revision that did not name the new image.
 #
 # Component bundles are additionally published to the cdn.semtext.dev bucket
