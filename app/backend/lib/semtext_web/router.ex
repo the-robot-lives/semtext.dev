@@ -45,6 +45,10 @@ defmodule SemtextWeb.Router do
     plug SemtextWeb.Plugs.RateLimit, action: :auth_sensitive
   end
 
+  pipeline :rate_limited_proxy do
+    plug SemtextWeb.Plugs.RateLimit, action: :proxy_read
+  end
+
   pipeline :org_viewer do
     plug SemtextWeb.Plugs.RequireRole, role: "viewer"
   end
@@ -120,6 +124,24 @@ defmodule SemtextWeb.Router do
     pipe_through [:api]
     get "/:short_id", MediaServeController, :show
     get "/:short_id/*filename", MediaServeController, :show
+  end
+
+  # Read-only live-fetch proxy (vocabulary epic Phase 5 — contract + route
+  # table in Semtext.LiveProxy): agent-kit lookups + annotate thread
+  # collections for the embed chrome. Public-ish GETs: no auth (data is
+  # org-public or already-public; upstream credentials are server-side
+  # only), proxy_read rate limit. Fail-soft on any upstream trouble —
+  # clients treat non-200 / live:false as "stay cached".
+  scope "/api/v1/agent-kit", SemtextWeb do
+    pipe_through [:api, :rate_limited_proxy]
+    get "/tickets/:org/:project/:key", AgentKitProxyController, :ticket
+    get "/personas/:org", AgentKitProxyController, :personas
+    get "/boards/:org", AgentKitProxyController, :boards
+  end
+
+  scope "/api/v1/annotate", SemtextWeb do
+    pipe_through [:api, :rate_limited_proxy]
+    get "/threads", AnnotateThreadsController, :index
   end
 
   # Editor island data (site-editor lane): the /editor page's client-side
