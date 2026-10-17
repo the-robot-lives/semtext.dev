@@ -4,7 +4,11 @@ defmodule SemtextWeb.Plugs.RateLimit do
 
   @default_limits %{
     auth: {10, 60_000},
-    auth_sensitive: {5, 60_000}
+    auth_sensitive: {5, 60_000},
+    # Read-only live-fetch proxy (/api/v1/agent-kit/*, /api/v1/annotate/*):
+    # embed chrome calls these per page view, so the budget is per-page-load
+    # friendly — 60/min/IP.
+    proxy_read: {60, 60_000}
   }
 
   @impl true

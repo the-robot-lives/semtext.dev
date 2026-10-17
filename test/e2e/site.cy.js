@@ -234,17 +234,17 @@ describe('semtext.dev landing page', () => {
       cy.get('#rd-table th').eq(1).should('have.attr', 'aria-sort', 'ascending');
       cy.get('#rd-table tbody tr').then(($r) => {
         expect(Array.from($r, (r) => r.cells[0].textContent)).to.deep.equal(
-          ['semtext-md.js', 'semtext-extract.js', 'semtext-fallback.js', 'semtext-reading.js', 'semtext.js']);
+          ['semtext-md.js', 'semtext-extract.js', 'semtext-reading.js', 'semtext.js']);
       });
-      cy.get('#rd-table .sem-table-filter').type('fallback');
-      cy.get('#rd-table tbody tr[hidden]').should('have.length', 4);
-      cy.get('#rd-table .sem-table-status').should('have.text', '1 of 5 rows, sorted by Minified, ascending');
+      cy.get('#rd-table .sem-table-filter').type('reading');
+      cy.get('#rd-table tbody tr[hidden]').should('have.length', 3);
+      cy.get('#rd-table .sem-table-status').should('have.text', '1 of 4 rows, sorted by Minified, ascending');
       cy.window().then((win) => {
         const t = win.SemTextExtract.extractRecords(win.document).find((r) => r.id === 'rd-table');
         expect(t.type).to.equal('sem-table');
         expect(t.fields.columns).to.deep.equal(['Artifact', 'Minified', 'Gzipped', 'Global']);
         expect(t.fields.rows.map((row) => row[0])).to.deep.equal(
-          ['semtext.js', 'semtext-fallback.js', 'semtext-reading.js', 'semtext-extract.js', 'semtext-md.js']);
+          ['semtext.js', 'semtext-reading.js', 'semtext-extract.js', 'semtext-md.js']);
       });
     });
 
@@ -252,7 +252,7 @@ describe('semtext.dev landing page', () => {
       cy.visit('/site/index.html', { onBeforeLoad(win) { win.__semJsOff = true; } });
       cy.get('.sem-reader-chrome, .sem-table-chrome, .sem-table-sort').should('not.exist');
       cy.get('#pg-reader').then(($r) => expect($r[0].getBoundingClientRect().height).to.equal(0));
-      cy.get('#rd-table tbody tr').should('have.length', 5);
+      cy.get('#rd-table tbody tr').should('have.length', 4);
       cy.get('#rd-table th').should('not.have.attr', 'aria-sort');
     });
 
