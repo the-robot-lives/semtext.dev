@@ -19,10 +19,16 @@ defmodule SemtextWeb.FooterTest do
       refute f =~ "no build step"
       assert f =~ "© 2026 Noizu Labs, Inc."
       refute f =~ "© 2026 semtext"
-      assert f =~ "part of Noizu Prompt Lingua"
+      refute f =~ "Noizu Prompt Lingua"
+      refute f =~ "SemText ·"
       assert f =~ "<noizu-footer-brand"
       assert f =~ "components/footer-brand/noizu-footer-brand.js"
-      assert f =~ "Extraction contract"
+      for label <- ~w(Format\ spec Extraction\ contract Repository Vocabulary Lit\ views Reading) do
+        refute f =~ label
+      end
+
+      refute f =~ "<ul"
+      refute f =~ "<a "
       assert length(String.split(body, "<footer")) == 2
     end
   end

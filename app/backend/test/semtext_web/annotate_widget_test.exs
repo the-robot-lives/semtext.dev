@@ -1,13 +1,15 @@
 defmodule SemtextWeb.AnnotateWidgetTest do
   use SemtextWeb.ConnCase, async: true
 
-  @script ~s(src="https://cdn.derobot.is/tobor-kit/sha-0e5a20e04fefcb400f9f395795c438a7312f27ec/components/page-comments/page-comments.js")
+  @script ~s(src="https://cdn.derobot.is/tobor-kit/latest/annotate.js")
 
   for path <- ["/integrations", "/themes", "/extend"] do
     test "SiteLayout page #{path} carries the annotate widget", %{conn: conn} do
       body = html_response(get(conn, unquote(path)), 200)
       assert body =~ ~s(<script type="module" #{@script})
       assert body =~ "<noizu-page-comments"
+      refute body =~ ~r/<noizu-page-comments[^>]*\benabled\b/
+      refute body =~ "components/page-comments/page-comments.js"
       assert body =~ ~s(site="semtext")
       assert body =~ ~s(api-base="https://annotate-srv.therobotlives.com")
     end
