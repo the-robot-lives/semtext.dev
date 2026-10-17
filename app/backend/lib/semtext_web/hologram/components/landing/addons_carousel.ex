@@ -10,50 +10,43 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
   screenshots of shipped product — nothing in them is a claim of
   availability.
 
-  Zero-JS: the server HTML stacks all six cards in document order and the
-  controls are not in the DOM at all (the same reveal-on-hydration pattern
-  as the Next.js site — a `hidden` attribute would lose to the .flex
-  utility in the cascade), so a scripts-off reader gets a plain list. With
-  scripts on, the stack becomes a translated track driven by the prev/next
-  buttons, the dots, and the left/right arrow keys while focus is inside
-  the carousel. Autoplay: the track advances every six seconds and wraps;
-  it pauses while the pointer or keyboard focus is inside the region,
-  while the tab is hidden, and never starts at all for
-  prefers-reduced-motion readers (the island script ticks the next
-  control; the element owns the index).
+  This component is FULLY STATIC — no client state, no actions. The
+  previous on_hydrated/index-state version broke two ways: the component
+  never defined a client `init/2`, so hydrated actions met empty state
+  (ArithmeticError on nil arithmetic) and every control click died; and
+  every state flip re-rendered the track. All behaviour lives in
+  `/js/landing-bootstrap.js` behind delegated listeners on the
+  `[data-carousel-autoplay]` region: prev/next wrap, the dots jump,
+  left/right arrows work while focus is inside the region, the track
+  advances every 4 seconds (pausing on hover, focus and hidden tabs, and
+  never starting for prefers-reduced-motion readers), and the status line
+  plus `aria-hidden` flags follow the index.
 
-  The track transform is a single interpolated expression
-  (`translateX(-index*100%)`), matching the React inline style; the card
-  mocks are static template markup, unrolled per card (six branches), so
-  no string building or dynamic component dispatch is needed on the
-  client.
+  Zero-JS: the server HTML stacks all six cards in document order; the
+  controls carry the `js-only` class and stay hidden (`html.sem-booting
+  .js-only { display: none }` — landing-bootstrap removes `sem-booting`
+  when it runs), so a scripts-off reader gets a plain list and nothing
+  promises interaction. The card mocks are static template markup,
+  unrolled per card (six branches), so no string building or dynamic
+  component dispatch is needed anywhere.
   """
 
   use Hologram.Component
-
-  def init(_props, component, _server) do
-    put_state(component,
-      hydrated: false,
-      index: 0
-    )
-  end
 
   def template do
     ~HOLO"""
     <div
       data-carousel-autoplay="true"
-      role={if @hydrated do "region" end}
-      aria-roledescription={if @hydrated do "carousel" end}
-      aria-label={if @hydrated do "Integration cards" end}
-      tabindex={if @hydrated do 0 end}
-      $key_down.arrow_right.prevent_default={action: :next}
-      $key_down.arrow_left.prevent_default={action: :prev}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Integration cards"
+      tabindex="0"
       class="mt-8 max-w-4xl"
     >
       <div class="relative">
       <div class="overflow-hidden">
-        <ul class={if @hydrated do "flex items-stretch flex-row transition-transform duration-300 ease-out" else "flex items-stretch flex-col gap-4" end} style={if @hydrated do track_transform(@index) end}>
-          <li class={if @hydrated do "min-w-full px-0" end} aria-hidden={if @hydrated and @index != 0 do "true" end}>
+        <ul data-carousel-track="true" class="flex items-stretch flex-col gap-4">
+          <li data-carousel-card="0">
             <article class="flex h-full flex-col rounded-xl border border-code-border bg-slateink-panel p-5" aria-labelledby="addon-ticket-embedding-h">
               <h3 id="addon-ticket-embedding-h" class="text-lg font-semibold text-ink">Ticket embedding</h3>
               <p class="mt-2 text-sm leading-relaxed text-ink-mute">An account key enables ticket embedding — live tickets from your tracker, cited inline like any other datum.</p>
@@ -72,7 +65,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
               </div>
             </article>
           </li>
-          <li class={if @hydrated do "min-w-full px-0" end} aria-hidden={if @hydrated and @index != 1 do "true" end}>
+          <li data-carousel-card="1">
             <article class="flex h-full flex-col rounded-xl border border-code-border bg-slateink-panel p-5" aria-labelledby="addon-the-robot-knows-h">
               <h3 id="addon-the-robot-knows-h" class="text-lg font-semibold text-ink">The Robot Knows hookup</h3>
               <p class="mt-2 text-sm leading-relaxed text-ink-mute">Point a document at your knowledge base, so facts and procedures draw on live KB entries.</p>
@@ -86,7 +79,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
               </div>
             </article>
           </li>
-          <li class={if @hydrated do "min-w-full px-0" end} aria-hidden={if @hydrated and @index != 2 do "true" end}>
+          <li data-carousel-card="2">
             <article class="flex h-full flex-col rounded-xl border border-code-border bg-slateink-panel p-5" aria-labelledby="addon-the-robot-learns-h">
               <h3 id="addon-the-robot-learns-h" class="text-lg font-semibold text-ink">The Robot Learns courses</h3>
               <p class="mt-2 text-sm leading-relaxed text-ink-mute">Courses load as SemText and track each reader's quiz progress; sign-in is prompted when tracking starts.</p>
@@ -106,7 +99,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
               </div>
             </article>
           </li>
-          <li class={if @hydrated do "min-w-full px-0" end} aria-hidden={if @hydrated and @index != 3 do "true" end}>
+          <li data-carousel-card="3">
             <article class="flex h-full flex-col rounded-xl border border-code-border bg-slateink-panel p-5" aria-labelledby="addon-embedded-quizzes-h">
               <h3 id="addon-embedded-quizzes-h" class="text-lg font-semibold text-ink">Private &amp; public quizzes</h3>
               <p class="mt-2 text-sm leading-relaxed text-ink-mute">Private exams and quizzes from The Robot Learns embed in your pages, beside a public catalogue of embedded quizzes.</p>
@@ -124,7 +117,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
               </div>
             </article>
           </li>
-          <li class={if @hydrated do "min-w-full px-0" end} aria-hidden={if @hydrated and @index != 4 do "true" end}>
+          <li data-carousel-card="4">
             <article class="flex h-full flex-col rounded-xl border border-code-border bg-slateink-panel p-5" aria-labelledby="addon-draftamo-renders-h">
               <h3 id="addon-draftamo-renders-h" class="text-lg font-semibold text-ink">Draftamo mockups &amp; UML</h3>
               <p class="mt-2 text-sm leading-relaxed text-ink-mute">Mockups and UML renders from Draftamo-hosted projects, or from local Draftamo XML.</p>
@@ -153,7 +146,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
               </div>
             </article>
           </li>
-          <li class={if @hydrated do "min-w-full px-0" end} aria-hidden={if @hydrated and @index != 5 do "true" end}>
+          <li data-carousel-card="5">
             <article class="flex h-full flex-col rounded-xl border border-code-border bg-slateink-panel p-5" aria-labelledby="addon-issue-submission-h">
               <h3 id="addon-issue-submission-h" class="text-lg font-semibold text-ink">The Robot Plans issue submission</h3>
               <p class="mt-2 text-sm leading-relaxed text-ink-mute">Submit an issue from the page itself — The Robot Plans files it in Jira, ClickUp, or GitHub.</p>
@@ -172,107 +165,56 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
           </li>
         </ul>
       </div>
-      {%if @hydrated}
-        <button
-          type="button"
-          $click={action: :prev}
-          aria-label="Previous integration"
-          class="absolute left-0 top-1/2 z-10 inline-flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-code-border bg-slateink font-mono text-base text-ink shadow-md hover:border-violet-soft"
-        >
-          ‹
-        </button>
-        <button
-          type="button"
-          $click={action: :next}
-          data-carousel-next="true"
-          aria-label="Next integration"
-          class="absolute right-0 top-1/2 z-10 inline-flex h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-code-border bg-slateink font-mono text-base text-ink shadow-md hover:border-violet-soft"
-        >
-          ›
-        </button>
-      {/if}
+      <button
+        type="button"
+        data-carousel-prev="true"
+        aria-label="Previous integration"
+        class="js-only absolute left-0 top-1/2 z-10 inline-flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-code-border bg-slateink font-mono text-base text-ink shadow-md hover:border-violet-soft"
+      >
+        ‹
+      </button>
+      <button
+        type="button"
+        data-carousel-next="true"
+        aria-label="Next integration"
+        class="js-only absolute right-0 top-1/2 z-10 inline-flex h-11 w-11 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-code-border bg-slateink font-mono text-base text-ink shadow-md hover:border-violet-soft"
+      >
+        ›
+      </button>
       </div>
 
-      {%if @hydrated}
-        <div class="mt-5 flex items-center justify-between gap-4">
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              $click={action: :prev}
-              aria-label="Previous integration"
-              class="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink hover:border-violet-soft disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              ← prev
-            </button>
-            <button
-              type="button"
-              $click={action: :next}
-              aria-label="Next integration"
-              class="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink hover:border-violet-soft disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              next →
-            </button>
-          </div>
-          <div class="flex items-center gap-2">
-            <button type="button" $click={action: :go, params: %{index: 0}} aria-label="Go to card 1: Ticket embedding" aria-current={if @index == 0 do "true" end} class={dot_class(@index == 0)}></button>
-            <button type="button" $click={action: :go, params: %{index: 1}} aria-label="Go to card 2: The Robot Knows hookup" aria-current={if @index == 1 do "true" end} class={dot_class(@index == 1)}></button>
-            <button type="button" $click={action: :go, params: %{index: 2}} aria-label="Go to card 3: The Robot Learns courses" aria-current={if @index == 2 do "true" end} class={dot_class(@index == 2)}></button>
-            <button type="button" $click={action: :go, params: %{index: 3}} aria-label="Go to card 4: Private &amp; public quizzes" aria-current={if @index == 3 do "true" end} class={dot_class(@index == 3)}></button>
-            <button type="button" $click={action: :go, params: %{index: 4}} aria-label="Go to card 5: Draftamo mockups &amp; UML" aria-current={if @index == 4 do "true" end} class={dot_class(@index == 4)}></button>
-            <button type="button" $click={action: :go, params: %{index: 5}} aria-label="Go to card 6: The Robot Plans issue submission" aria-current={if @index == 5 do "true" end} class={dot_class(@index == 5)}></button>
-          </div>
-          <p aria-live="off" data-carousel-status="true" class="font-mono text-xs text-ink-faint">
-            {@index + 1} / 6 — {addon_title(@index)}
-          </p>
+      <div class="js-only mt-5 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            data-carousel-prev="true"
+            aria-label="Previous integration"
+            class="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink hover:border-violet-soft"
+          >
+            ← prev
+          </button>
+          <button
+            type="button"
+            data-carousel-next="true"
+            aria-label="Next integration"
+            class="inline-flex min-h-11 items-center border border-code-border px-4 py-2 font-mono text-sm text-ink hover:border-violet-soft"
+          >
+            next →
+          </button>
         </div>
-      {/if}
+        <div class="flex items-center gap-2" data-carousel-dots="true">
+          <button type="button" data-carousel-go="0" aria-label="Go to card 1: Ticket embedding" class="h-2.5 w-2.5 rounded-full bg-code-border"></button>
+          <button type="button" data-carousel-go="1" aria-label="Go to card 2: The Robot Knows hookup" class="h-2.5 w-2.5 rounded-full bg-code-border"></button>
+          <button type="button" data-carousel-go="2" aria-label="Go to card 3: The Robot Learns courses" class="h-2.5 w-2.5 rounded-full bg-code-border"></button>
+          <button type="button" data-carousel-go="3" aria-label="Go to card 4: Private &amp; public quizzes" class="h-2.5 w-2.5 rounded-full bg-code-border"></button>
+          <button type="button" data-carousel-go="4" aria-label="Go to card 5: Draftamo mockups &amp; UML" class="h-2.5 w-2.5 rounded-full bg-code-border"></button>
+          <button type="button" data-carousel-go="5" aria-label="Go to card 6: The Robot Plans issue submission" class="h-2.5 w-2.5 rounded-full bg-code-border"></button>
+        </div>
+        <p aria-live="off" data-carousel-status="true" class="font-mono text-xs text-ink-faint">
+          1 / 6 — Ticket embedding
+        </p>
+      </div>
     </div>
     """
   end
-
-  # -- actions -----------------------------------------------------------
-
-  def action(:on_hydrated, _params, component) do
-    put_state(component, hydrated: true)
-  end
-
-  def action(:prev, _params, component) do
-    put_state(component, index: wrap(component.state.index - 1))
-  end
-
-  def action(:next, _params, component) do
-    put_state(component, index: wrap(component.state.index + 1))
-  end
-
-  def action(:go, params, component) do
-    put_state(component, index: clamp(params.index))
-  end
-
-  # -- internals (client-safe: no Enum, no regex, no processes) ----------
-
-  defp clamp(index) do
-    index = if index < 0, do: 0
-    index = if index > 5, do: 5
-    index
-  end
-
-  defp wrap(index) do
-    index = if index < 0, do: index + 6
-    index = if index > 5, do: index - 6
-    index
-  end
-
-  defp track_transform(index) do
-    "transform: translateX(-" <> Integer.to_string(index * 100) <> "%)"
-  end
-
-  defp dot_class(true), do: "h-2.5 w-2.5 rounded-full bg-violet"
-  defp dot_class(false), do: "h-2.5 w-2.5 rounded-full bg-code-border"
-
-  defp addon_title(0), do: "Ticket embedding"
-  defp addon_title(1), do: "The Robot Knows hookup"
-  defp addon_title(2), do: "The Robot Learns courses"
-  defp addon_title(3), do: "Private & public quizzes"
-  defp addon_title(4), do: "Draftamo mockups & UML"
-  defp addon_title(5), do: "The Robot Plans issue submission"
 end

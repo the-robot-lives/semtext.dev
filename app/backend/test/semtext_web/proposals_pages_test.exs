@@ -290,7 +290,9 @@ defmodule SemtextWeb.ProposalsPagesTest do
     # client env (CI parity) — anonymous visitors must see the disabled
     # state, never a dead /auth/github link.
     body = conn |> get("/extend") |> html_response(200)
-    assert body =~ "Sign in coming soon"
+    # "Sign in coming soon" stub copy removed (thread 6a1d418a); the
+    # disabled state is the wizard's status line, no dead auth link.
+    assert body =~ "Name, summary and motivation make the draft submittable"
     refute body =~ ~s(href="/auth/github")
   end
 

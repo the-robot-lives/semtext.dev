@@ -41,10 +41,6 @@ defmodule SemtextWeb.Hologram.Components.Auth.UserMenu do
           <a class="btn btn-outline btn-sm" href={Auth.sso_path("github")} data-cy="login-github">
             {Auth.sso_label("github")}
           </a>
-        {%else}
-          <span class="btn btn-outline btn-sm sg-user-menu__login-disabled" data-cy="login-disabled" aria-disabled="true">
-            Sign in coming soon
-          </span>
         {/if}
       {/if}
     </div>
@@ -55,9 +51,8 @@ defmodule SemtextWeb.Hologram.Components.Auth.UserMenu do
   def init(_props, component, server) do
     # `github_enabled` is computed server-side (Application env is not
     # client-transpilable) and ships in the hydration payload as a plain
-    # boolean — with GITHUB_CLIENT_ID unset the menu renders the disabled
-    # "Sign in coming soon" state instead of a link that would dead-end
-    # on the unmounted /auth/github route.
+    # boolean — with GITHUB_CLIENT_ID unset the menu renders nothing rather
+    # than a link that would dead-end on the unmounted /auth/github route.
     put_state(
       component,
       user: Auth.current_user(server),
