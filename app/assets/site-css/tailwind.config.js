@@ -5,13 +5,28 @@
  * classes resolve with the same values. Only `content` differs: it scans
  * the Hologram app's page/component templates instead of the Next tree.
  *
- * Regenerate the committed stylesheet with the vendored CLI (any checkout
- * of the Next site has it in web/node_modules):
+ * Regenerate the committed stylesheet (from this directory — the content
+ * globs resolve against the CWD, so run it from app/assets/site-css):
  *
- *   <repo>/.../landing-preview/web/node_modules/.bin/tailwindcss \
- *     -c app/assets/site-css/tailwind.config.js \
- *     -i app/assets/site-css/site.css \
- *     -o app/backend/priv/static/css/semtext-site.css
+ *   cd app/assets/site-css
+ *   npx tailwindcss@3.4.19 -c tailwind.config.js -i site.css \
+ *     -o ../../backend/priv/static/css/semtext-site.css --minify
+ *
+ * (2026-10-18: do NOT use the vendored landing-preview
+ * web/node_modules CLI the original comment pointed at — that install
+ * no-ops and emits zero utilities even on a trivial fixture; npx pinned
+ * to the same 3.4.19 reproduces the committed sheet byte-for-byte. The
+ * output IS deterministic — verified with a back-to-back byte compare.)
+ *
+ * The committed output is MINIFIED (the whitespace contract tests pin the
+ * minified form). site.css MUST keep its three @tailwind directives at the
+ * top — they are what makes the CLI emit the preflight + utility layers
+ * (a run against a directive-less input silently emits only the custom
+ * css, ~12 KB, dropping every utility the templates use; that happened
+ * on 2026-10-18 and is why this note exists). Content scans the Hologram
+ * templates AND priv/static/js — editor-boot.js injects Tailwind classes
+ * at runtime (the status line's text-sm/leading-6/text-ink-mute), so the
+ * JS chrome belongs in the scan.
  *
  * The compiled output is committed (the fleet Hologram apps ship no node
  * build); rerun it after adding or changing template classes. Wiring the
@@ -20,6 +35,7 @@
 const config = {
   content: [
     "../../backend/lib/semtext_web/**/*.{ex,holo}",
+    "../../backend/priv/static/js/**/*.js",
   ],
   theme: {
     extend: {
