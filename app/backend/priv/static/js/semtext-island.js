@@ -215,9 +215,7 @@
       // of a raw innerHTML sink: identical rendering semantics for markup —
       // script elements are inert in both paths — without the flagged sink.
       var parsed = new DOMParser().parseFromString(spec.html, "text/html");
-      var frag = document.createDocumentFragment();
-      while (parsed.body.firstChild) frag.appendChild(parsed.body.firstChild);
-      pane.replaceChildren(frag);
+      pane.replaceChildren.apply(pane, parsed.body.childNodes);
     }
 
     var classForm = !!spec.classForm;

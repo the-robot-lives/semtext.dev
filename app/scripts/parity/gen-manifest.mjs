@@ -70,7 +70,8 @@ function cleanHtml(s) {
   return stripScripts(decodeEntities(s))
     .replace(/<[^>]+>/g, "")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim()
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, "");
 }
 
 /** title + first h1 from a rendered Next page. */

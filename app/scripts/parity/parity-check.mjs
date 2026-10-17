@@ -120,7 +120,8 @@ function clean(s) {
   return stripScripts(decodeEntities(s))
     .replace(/<[^>]+>/g, "")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim()
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script[^>]*>/gi, "");
 }
 
 /** Drop <script> regions: Hologram's SSR embeds a large serialized-VDOM

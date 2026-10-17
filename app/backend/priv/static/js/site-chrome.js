@@ -54,9 +54,7 @@
       // Authored build-time markup (never user input). Parse + adopt rather
       // than a raw innerHTML write — same rendered markup, no sink.
       var parsed = new DOMParser().parseFromString(html, "text/html");
-      var frag = document.createDocumentFragment();
-      while (parsed.body.firstChild) frag.appendChild(parsed.body.firstChild);
-      el.replaceChildren(frag);
+      el.replaceChildren.apply(el, parsed.body.childNodes);
       el.removeAttribute("data-sem-html");
     }
   }
