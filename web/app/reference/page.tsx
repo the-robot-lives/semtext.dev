@@ -237,10 +237,7 @@ function BundleBadge({
     const files = b.bundles ?? [];
     const lazy = files.find((f) => f.file === "semtext-lazy.js");
     const chunk = lazy?.detail.replace(/^loads\s+/, "");
-    text = [
-      chunk ?? files[0]?.file,
-      files.some((f) => f.file === "semtext-fallback.js") ? "fallback" : null,
-    ]
+    text = [chunk ?? files[0]?.file]
       .filter((x): x is string => Boolean(x))
       .join(" · ");
     title =

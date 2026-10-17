@@ -33,10 +33,10 @@ Then("the hero {string} toggle renders the SemText snippet", (toggle: string) =>
     .should("have.attr", "aria-pressed", "false")
     .click();
   cy.get(`${HERO} div[data-sem-theme]`).should("be.visible");
-  // The fallback bundle wires the deck inside the pane.
+  // The bundle wires the deck inside the pane.
   cy.get(`${HERO} div[data-sem-theme] sem-facts`).should(
     "have.attr",
-    "data-sem-fallback"
+    "data-sem-upgraded"
   );
   cy.get(`${HERO} .code-chrome`)
     .contains("button", toggle)

@@ -103,21 +103,20 @@ const GLOSSARY: Array<[string, React.ReactNode]> = [
   ],
   [
     "tier",
-    "Which script, if any, is driving the document: none (CSS only), the fallback bundle, or the Lit components.",
+    "Which script, if any, is driving the document: none (CSS only), or the one SemText bundle.",
   ],
   [
     "tier marker",
     <>
-      The <code className="font-mono">data-sem-fallback</code> or{" "}
-      <code className="font-mono">data-sem-upgraded</code> attribute a script
-      sets on what it wired; every hide rule is gated on one of them.
+      The <code className="font-mono">data-sem-upgraded</code> attribute a
+      script sets on what it wired; every hide rule is gated on it.
     </>,
   ],
 ];
 
 const CHRONOLOGY: Array<[string, string, string?]> = [
   ["Jan 2026", "Format spec v0 and the Tier-0 schemas.", "done"],
-  ["Mar 2026", "Fallback tier, extraction contract, scripts-stripped artifact.", "done"],
+  ["Mar 2026", "Extraction contract, scripts-stripped artifact.", "done"],
   ["Sep 2026", "Reading experience: foundations, then the prose elements on this page.", "current"],
   ["2026 Q4", "Theme pipeline and the reader chrome.", undefined],
 ];
@@ -185,7 +184,7 @@ const QUESTIONS: Array<[string, string]> = [
  */
 const SCOPE_NOTES = `<sem-note variant="info">SemText is a markup vocabulary, two stylesheets and one script. It is not a CMS, a site generator or an application framework, and it has no opinion about how you produce the HTML.</sem-note>
 <sem-note variant="warning">A new version should not break markup authored against an older one. New elements and attributes land alongside the ones a document already uses — never swapped out from under it — so a file authored today keeps rendering as the vocabulary grows. Pin a version when you ship.</sem-note>
-<sem-note variant="tip">Nothing in the SemText bundle is React, and none is planned. Lit 3 is the only runtime dependency, and it is optional — the fallback tier has none.</sem-note>`;
+<sem-note variant="tip">Nothing in the SemText bundle is React, and none is planned. Lit 3 is the only runtime dependency, and it is optional — the vanilla handlers have none.</sem-note>`;
 
 const SCOPE_QA = QUESTIONS.map(
   ([q, a]) => `<sem-reveal summary="${q}" collapsed>${a}</sem-reveal>`
@@ -916,19 +915,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SemText runtime for the Scope / Extend blocks above.
-          __semJsOff keeps the bundle from auto-wiring on injection; the
-          one-shot listener below enhances the whole document exactly once,
-          after the deferred bundle has loaded. The hero window re-checks
-          the html[data-sem-fallback] marker before touching anything. */}
-      <script dangerouslySetInnerHTML={{ __html: "window.__semJsOff=true;" }} />
-      <script defer src={semtextAsset("semtext-fallback.js")} />
-      <script
-        dangerouslySetInnerHTML={{
-          __html:
-            "document.addEventListener('DOMContentLoaded',function(){if(window.SemTextFallback&&!document.documentElement.hasAttribute('data-sem-fallback')){window.SemTextFallback.enhance(document);}});",
-        }}
-      />
+      {/* SemText runtime for the Scope / Extend blocks above. The one
+          bundle (semtext.js) auto-wires the document on DOMContentLoaded —
+          no manual pass needed. The hero window re-checks the pane's own
+          data-sem-upgraded marker before touching anything. */}
+      <script defer src={semtextAsset("semtext.js")} />
     </main>
   );
 }

@@ -105,12 +105,12 @@ defmodule Semtext.Reference.ReferenceDataTest do
       end
     end
 
-    test "sem-note ships lazy + fallback" do
+    test "sem-note ships lazy" do
       b = Bundles.for_tag("sem-note")
       assert b.shipped
       files = Enum.map(b.bundles, & &1.file)
       assert "semtext-lazy.js" in files
-      assert "semtext-fallback.js" in files
+      refute "semtext-fallback.js" in files
     end
 
     test "alias_runtime loads (class-form alias map)" do
@@ -140,7 +140,7 @@ defmodule Semtext.Reference.ReferenceDataTest do
       srcs = Enum.map(spec["files"], & &1["src"])
 
       assert "/semtext/semtext-lazy.js" in srcs
-      assert "/semtext/semtext-fallback.js" in srcs
+      refute "/semtext/semtext-fallback.js" in srcs
       assert Enum.any?(srcs, &(&1 =~ ~r{/chunks/}))
       assert hd(spec["files"])["type"] == "module"
       assert spec["renderable"]
@@ -157,7 +157,7 @@ defmodule Semtext.Reference.ReferenceDataTest do
       assert Tags.script_type("semtext-lazy.js") == "module"
       assert Tags.script_type("chunks/sem-note.js") == "module"
       assert Tags.script_type("semtext.js") == "classic"
-      assert Tags.script_type("semtext-fallback.js") == "classic"
+      assert Tags.script_type("semtext-fallback.js") == nil
     end
   end
 

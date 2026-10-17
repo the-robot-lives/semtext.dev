@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-18 (runtime 0.9.0 — SemText fallback tier removal)
+- runtime 0.9.0 vendored into both static trees (`web/public/semtext/` + `app/backend/priv/static/semtext/`, rsync byte-parity verified; the legacy unreferenced `v0.8.2` snapshot dir wiped by the mirror was restored from git — published artifacts stay immutable); the standalone `semtext-fallback.js` is gone upstream — its handlers were folded into the one `semtext.js` bundle (renamed `src/vanilla/`), so every page that previously loaded two scripts now loads one; retired root copies `git rm`'d from both trees and old `v0.8.3`-and-earlier snapshots keep their published files
+- every fallback reference purged from the site: `data-sem-fallback` marker dropped (suppression + settle checks now key on `[data-sem-upgraded]` alone), `window.SemTextFallback` call sites (hero window, example viewer, landing-bootstrap, snap harness, cypress specs) reworked onto `window.SemText.enhanceCore` / `SemTextLazy`, sync/bundle-map scripts stop carrying the retired file, Hologram landing layout loads `/semtext/semtext.js` (its `__semJsOff` stub removed — 0.9.0 has no kill switch), demo `.sem.html` fixtures point at `stable/semtext.js`
+- /editor version pins 0.8.3 → 0.9.0 and now link semtext.js + semtext-editor.js + semtext.css from `/semtext/v0.9.0/`; editor shell/insert style blocks no longer set an `id` attribute (Hologram head reconciliation was dropping the editor's styles when the ids collided — site workaround semtext.dev#110 no longer needed)
+- backend reference data/tests updated: `data/bundles.json` regenerated with zero fallback rows, viewer specs list only files that exist, script_type returns nil for unknown files, reference_data_test asserts the absence
+- dataviz page keeps its own frozen `semtext-reading.js` (site-local legacy reading bundle, not part of the runtime's tier system) — untouched
+
 ## 2026-10-18 (annotate feedback round 2, runtime integration)
 - runtime 0.8.3 vendored into both static trees (`web/public/semtext/` + `app/backend/priv/static/semtext/`, byte-parity verified) and /editor pins repointed 0.7.2 → 0.8.3 — round-2 annotate runtime (reveal/view-as/quiz fixes, sticky chrome) reaches the site (0003cff)
 - `npl-enhanced-content/` subtree pulled to runtime main d4569e2 (0.8.0 → 0.8.3) so docs/search data match the shipped bundle (7d2c985)

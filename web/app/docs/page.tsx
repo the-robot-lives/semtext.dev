@@ -23,8 +23,8 @@ const SHOWCAES_HTML = (function () {
  * The CDN stub is illustrative: cdn.semtext.dev is the planned origin;
  * today the same three files ship in the spec repo's dist/ (and in this
  * site's public/semtext/). The page renders live SemText below, so the
- * bundle is loaded WITHOUT __semJsOff — its DOMContentLoaded auto-wire
- * enhances everything on the page.
+ * bundle is loaded plain — its DOMContentLoaded auto-wire enhances
+ * everything on the page.
  */
 
 const STUB = `<!doctype html>
