@@ -41,6 +41,8 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     services:
       # vector/cube/earthdistance/pg_trgm/citext are all created by the
       # Liquibase changelog; pgvector's image carries every one of them.
@@ -197,6 +199,8 @@ jobs:
   docker-build:
     if: github.event_name != 'push' || github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/create-github-app-token@v1
@@ -228,6 +232,8 @@ jobs:
     needs: [test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       short: ${{ steps.sha.outputs.short }}
     steps:

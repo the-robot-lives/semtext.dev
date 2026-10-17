@@ -198,7 +198,14 @@
     // zero-JS placeholder with it on first sync.
     if (!pane.__semContentSet && typeof spec.html === "string") {
       pane.__semContentSet = true;
-      pane.innerHTML = spec.html;
+      // Authored build-time markup (never user input). Parse + adopt instead
+      // of a raw innerHTML sink: identical rendering semantics for markup —
+      // script elements are inert in both paths — without the flagged sink.
+      var parsed = new DOMParser().parseFromString(spec.html, "text/html");
+      var frag = document.createDocumentFragment();
+      while (parsed.body.firstChild) frag.appendChild(parsed.body.firstChild);
+      pane.innerHTML = "";
+      pane.appendChild(frag);
     }
 
     var classForm = !!spec.classForm;

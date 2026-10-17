@@ -104,13 +104,17 @@ async function fetchPage(base, routePath) {
 }
 
 function clean(s) {
-  return (s || "")
-    .replace(/<[^>]+>/g, "")
+  // Decode entities FIRST, then strip script regions (so an encoded
+  // &lt;script&gt; payload can never survive as live markup), then drop the
+  // remaining tags. The strip is the LAST markup-capable step by design —
+  // this is text extraction for parity comparison, never a sink.
+  return stripScripts((s || "")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#0?39;/g, "'")
-    .replace(/&amp;/g, "&")
+    .replace(/&amp;/g, "&"))
+    .replace(/<[^>]+>/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -119,7 +123,7 @@ function clean(s) {
  * payload in an early script whose example SOURCE carries literal markup
  * bytes ("<h1 …") — title/h1/text checks must never read inside it. */
 function stripScripts(html) {
-  return html.replace(/<script\b[\s\S]*?<\/script>/gi, "");
+  return html.replace(/<script\b[\s\S]*?<\/script\s*>/gi, "");
 }
 
 /** title + first h1 + flattened text of a rendered page. The page h1 is
@@ -323,7 +327,7 @@ const results = {
 writeFileSync(path.join(out, "parity-results.json"), JSON.stringify(results, null, 2));
 
 /* ---- markdown report ---- */
-const esc = (s) => String(s || "").replace(/\|/g, "\\|");
+const esc = (s) => String(s || "").replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
 const md = [
   `# Route parity — Next.js → Hologram`,
   "",

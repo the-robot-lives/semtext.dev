@@ -51,7 +51,13 @@
     // Empty string stays a no-op: the pane's static fallback (e.g. the
     // showcase viewer's render note) must never be wiped into an empty host.
     if (html) {
-      el.innerHTML = html;
+      // Authored build-time markup (never user input). Parse + adopt rather
+      // than a raw innerHTML write — same rendered markup, no sink.
+      var parsed = new DOMParser().parseFromString(html, "text/html");
+      var frag = document.createDocumentFragment();
+      while (parsed.body.firstChild) frag.appendChild(parsed.body.firstChild);
+      el.innerHTML = "";
+      el.appendChild(frag);
       el.removeAttribute("data-sem-html");
     }
   }

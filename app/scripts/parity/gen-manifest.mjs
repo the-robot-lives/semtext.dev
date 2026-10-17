@@ -57,13 +57,15 @@ if (fromDir) fromDir = path.resolve(fromDir);
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 
 function cleanHtml(s) {
-  return (s || "")
-    .replace(/<[^>]+>/g, "")
+  // Decode first, then strip script regions (decoded payloads included),
+  // then drop remaining tags — text extraction only, never a sink.
+  return stripScripts((s || "")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#0?39;/g, "'")
-    .replace(/&amp;/g, "&")
+    .replace(/&amp;/g, "&"))
+    .replace(/<[^>]+>/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -72,7 +74,7 @@ function cleanHtml(s) {
 // Hologram SSR (and any page embedding code samples in scripts) can carry
 // literal markup bytes inside <script> payloads — never extract from those.
 function stripScripts(html) {
-  return html.replace(/<script\b[\s\S]*?<\/script>/gi, "");
+  return html.replace(/<script\b[\s\S]*?<\/script\s*>/gi, "");
 }
 
 function extract(html) {
