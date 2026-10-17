@@ -19,6 +19,7 @@ defmodule SemtextWeb.Endpoint do
     at: "/",
     from: :semtext,
     gzip: false,
+    cache_control_for_etags: "public, no-cache",
     only: ~w(themes css hologram favicon.ico robots.txt semtext js demo spec dataviz icon.svg apple-touch-icon.png manifest.webmanifest icons)
 
   if code_reloading? do

@@ -17,6 +17,7 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
 
   use Hologram.Component
 
+
   alias SemtextWeb.Hologram.Components.AnnotateWidget
 
   alias SemtextWeb.Hologram.Components.Site.Footer
@@ -30,6 +31,9 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
   working web components. Part of The Robot Lives portfolio.\
   """
 
+  # Content-hashed stylesheet URLs (cache busting; see SemtextWeb.AssetVersion).
+  prop :site_css, :string, default: SemtextWeb.AssetVersion.url("css/semtext-site.css")
+  prop :reference_css, :string, default: SemtextWeb.AssetVersion.url("css/reference.css")
   prop :page_title, :string, default: @default_title
   prop :description, :string, default: @default_description
   # The Next site's og:description is the site-wide tagline on EVERY page,
@@ -74,9 +78,9 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
         {/if}
         <link rel="stylesheet" href="/semtext/themes/_vocabulary.css" />
         <link rel="stylesheet" href="/semtext/themes/minimal-tech-light.css" />
-        <link rel="stylesheet" href="/css/semtext-site.css" />
+        <link rel="stylesheet" href={@site_css} />
         {%if @reference_assets}
-          <link rel="stylesheet" href="/css/reference.css" />
+          <link rel="stylesheet" href={@reference_css} />
           <script defer src="/js/semtext-island.js"></script>
         {/if}
         <script defer src="/js/site-chrome.js"></script>
