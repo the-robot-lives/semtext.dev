@@ -83,6 +83,9 @@ defmodule SemtextWeb.Hologram.Components.Landing.CodeViewer do
     )
   end
 
+  # NB: the token <span>s are emitted with NO whitespace between them (and none
+  # inside .code-text). .code-line/.code-text are white-space:pre, so template
+  # indentation between spans renders as a line break per token.
   def template do
     ~HOLO"""
     <figure class="code-window mt-8" aria-label={@label}>
@@ -114,11 +117,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.CodeViewer do
         {%for line <- code_lines()}
           <div class="code-line">
             <span class="code-ln" aria-hidden="true">{line.num}</span>
-            <span class="code-text">
-              {%for tok <- line.toks}
-                <span class={if tok.cls == "" do nil else tok.cls end}>{tok.text}</span>
-              {/for}
-            </span>
+            <span class="code-text">{%for tok <- line.toks}<span class={if tok.cls == "" do nil else tok.cls end}>{tok.text}</span>{/for}</span>
           </div>
         {/for}
       </div>
