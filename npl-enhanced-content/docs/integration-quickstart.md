@@ -10,7 +10,7 @@ documents (as opposed to serving them), see the
 
 ## The model in one paragraph
 
-A SemText document is a plain HTML file. Two states can drive it:
+A SemText document is a plain XHTML file. Two states can drive it:
 **no script** (the vocabulary CSS alone renders a readable document —
 this is the contract tier) and **the one bundle** (dist/semtext.js: Lit
 custom elements, the vanilla handlers for everything no component
