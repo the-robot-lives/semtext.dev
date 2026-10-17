@@ -220,11 +220,11 @@
       if (!pane.__semContentSet || wiped) {
         pane.__semContentSet = true;
         // Authored build-time markup (never user input): spec.html is
-        // generated server-side from this repo's own example files (SSR
-        // data-sem-pane; see PR #89 for the full provenance). Parse +
+        // generated server-side from this repo's own example files. Parse +
         // adopt instead of a raw innerHTML sink — identical rendering
         // semantics for markup (script elements are inert in both paths).
-        var parsed = new DOMParser().parseFromString(spec.html, "text/html"); // codeql[js/xss-through-dom]
+        // codeql[js/xss-through-dom]
+        var parsed = new DOMParser().parseFromString(spec.html, "text/html");
         pane.replaceChildren.apply(pane, parsed.body.childNodes);
       }
     }
