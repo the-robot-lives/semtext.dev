@@ -19,15 +19,7 @@ defmodule SemtextWeb.Hologram.Components.Site.CodeBody do
       {%for line <- @lines}
         <div class="code-line">
           <span class="code-lineno" aria-hidden="true">{line.number}</span>
-          <span class="code-linetext">
-            {%for tok <- line.tokens}
-              {%if tok.type == "default"}
-                <span>{tok.text}</span>
-              {%else}
-                <span class={"tok-" <> tok.type}>{tok.text}</span>
-              {/if}
-            {/for}
-          </span>
+          <span class="code-linetext">{%for tok <- line.tokens}{%if tok.type == "default"}<span>{tok.text}</span>{%else}<span class={"tok-" <> tok.type}>{tok.text}</span>{/if}{/for}</span>
         </div>
       {/for}
     </div>
