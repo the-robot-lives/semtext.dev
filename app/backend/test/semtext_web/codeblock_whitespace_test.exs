@@ -75,4 +75,17 @@ defmodule SemtextWeb.CodeBlockWhitespaceTest do
       end
     end
   end
+
+  describe "stylesheet cache busting" do
+    test "layouts link content-hashed stylesheets", %{conn: conn} do
+      assert html_response(get(conn, "/integrations"), 200) =~ ~r|/css/semtext-site\.css\?v=[0-9a-f]{8}|
+      assert html_response(get(conn, "/"), 200) =~ ~r|/css/landing\.css\?v=[0-9a-f]{8}|
+    end
+
+    test "static assets revalidate (no heuristic caching)", %{conn: conn} do
+      conn = get(conn, "/css/semtext-site.css")
+      assert conn.status == 200
+      assert get_resp_header(conn, "cache-control") == ["public, no-cache"]
+    end
+  end
 end
