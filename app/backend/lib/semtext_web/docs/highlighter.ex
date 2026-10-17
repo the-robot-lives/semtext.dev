@@ -78,7 +78,10 @@ defmodule SemtextWeb.Docs.Highlighter do
           # (emoji in authored examples) must stay one token (upstream keeps
           # UTF-16 astral chars whole for the same reason).
           <<glyph::utf8, _::binary>> = rest
-          tok(line, pos + byte_size(<<glyph::utf8>>), [%{text: glyph, type: "default"} | acc])
+          # `glyph` is an integer code point: it MUST be re-encoded to a
+          # binary, or the token text renders as its decimal code ("R" -> "82").
+          text = <<glyph::utf8>>
+          tok(line, pos + byte_size(text), [%{text: text, type: "default"} | acc])
         else
           tok(line, pos + n, [%{text: binary_part(rest, 0, n), type: "default"} | acc])
         end
