@@ -9,7 +9,7 @@ Session: noizu-labs / noizu-infra `8a675934-4fd9-4899-8678-2137f051ae78`
 ## 1. Vision
 
 `SemText` defines the **XML/HTML variant of NPL**: rich documents
-whose canonical artifact is a **standalone XHTML file**. Element names are
+whose canonical artifact is a **standalone HTML file**. Element names are
 **semantic** (`sem-fact`, `sem-detail`, `sem-procedure`), never
 UI-descriptive; presentation is a parameter (`view-as="quiz|flashcards|list"`),
 not the identity. One file, three consumers:
@@ -17,7 +17,7 @@ not the identity. One file, three consumers:
 | Consumer | Experience |
 | :-- | :-- |
 | **Human, browser** | Double-click the `.html`/`.mhtml` — current Chrome/Edge/Brave/Firefox/Safari render styled, interactive documents. No server, no build, no install. |
-| **LLM / non-visual** | The same file read as XHTML: heavy semantic attributes qualify every piece of data. The markup IS the machine contract — and the same XML vocabulary the NPL MCP server already speaks. |
+| **LLM / non-visual** | The same file read as HTML: heavy semantic attributes qualify every piece of data. The markup IS the machine contract — and the same XML vocabulary the NPL MCP server already speaks. |
 | **Terminal user** | Browser render or DOM-text extraction; content complete without JS. |
 
 NPL conventions live **inside the tags** — attributes, `::` pairs,

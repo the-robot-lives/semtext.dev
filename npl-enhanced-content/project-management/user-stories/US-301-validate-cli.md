@@ -21,7 +21,7 @@ tags: [validation, cli, adoption]
 
 - **Given** a document with a vocabulary error (unknown element, bad `view-as`, malformed
   nesting)
-  **When** `semtext-validate doc.xhtml` runs
+  **When** `semtext-validate doc.html` runs
   **Then** each error reports file:line and exits non-zero.
 - **Given** a valid document
   **When** validation runs

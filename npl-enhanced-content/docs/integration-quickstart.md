@@ -10,7 +10,7 @@ documents (as opposed to serving them), see the
 
 ## The model in one paragraph
 
-A SemText document is a plain XHTML file. Three script tiers can drive it:
+A SemText document is a plain HTML file. Three script tiers can drive it:
 **none** (vocabulary CSS alone renders a readable document — this is the
 contract tier), the **fallback bundle** (vanilla JS, baseline
 interactivity), and the **Lit bundle** (interactive custom elements that
