@@ -1,3 +1,6 @@
+/* SemText — consolidated stylesheet (latest)
+   Assembled by scripts/build-latest.mjs (spec v0.6). 0.8.3 vocabulary base, default theme, v0.6 structural additions, and all five themes.
+   Do not hand-edit: change the sources and rebuild. */
 /* SemText — vocabulary base
    Theme-independent structure: layout, spacing, the component rules, and the
    hide/show gating. Reads --sem-* custom properties but
@@ -2086,3 +2089,301 @@ sem-terminal .sem-window-tab-new:focus-visible, sem-shell .sem-window-tab-new:fo
   sem-terminal .sem-window-tab-new, sem-shell .sem-window-tab-new { transition: none; }
 }
 /* ── end shell-v3-tabs-ui ── */
+
+/* SemText — default theme
+   v0.6: when `data-sem-theme` is ABSENT from <html>, these tokens apply —
+   the default theme is minimal-tech-light. Identical values to
+   themes/minimal-tech-light.css, scoped to html:not([data-sem-theme])
+   instead of [data-sem-theme="…"], so a two-tag document is fully styled.
+   The [data-color-mode="dark"] block and the prefers-color-scheme media
+   block mirror the theme file's. */
+
+html:not([data-sem-theme]) {
+  color-scheme: light;
+  --sem-bg: #fafafa; --sem-surface: #ffffff; --sem-fg: #1e293b;
+  --sem-muted: #64748b; --sem-border: #e2e8f0; --sem-accent: #2563eb;
+  --sem-accent-fg: #ffffff;
+  --sem-note-info: #2563eb; --sem-note-tip: #059669;
+  --sem-note-warning: #d97706; --sem-note-danger: #dc2626;
+  --sem-correct: #059669; --sem-wrong: #dc2626; --sem-occluded: #94a3b8;
+}
+html:not([data-sem-theme])[data-color-mode="dark"] {
+  color-scheme: dark;
+  --sem-bg: #0f172a; --sem-surface: #1e293b; --sem-fg: #e2e8f0;
+  --sem-muted: #94a3b8; --sem-border: #334155; --sem-accent: #60a5fa;
+  --sem-accent-fg: #0f172a;
+  --sem-note-info: #60a5fa; --sem-note-tip: #34d399;
+  --sem-note-warning: #fbbf24; --sem-note-danger: #f87171;
+  --sem-correct: #34d399; --sem-wrong: #f87171; --sem-occluded: #475569;
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-sem-theme]):not([data-color-mode="light"]) {
+    color-scheme: dark;
+    --sem-bg: #0f172a; --sem-surface: #1e293b; --sem-fg: #e2e8f0;
+    --sem-muted: #94a3b8; --sem-border: #334155; --sem-accent: #60a5fa;
+    --sem-accent-fg: #0f172a;
+    --sem-note-info: #60a5fa; --sem-note-tip: #34d399;
+    --sem-note-warning: #fbbf24; --sem-note-danger: #f87171;
+    --sem-correct: #34d399; --sem-wrong: #f87171; --sem-occluded: #475569;
+  }
+}
+
+/* SemText — v0.6 structural additions + presentation polish
+   Layered AFTER themes/_vocabulary.css in the consolidated
+   semtext/latest/semtext.css bundle (scripts/build-latest.mjs). Same
+   ground rules as the vocabulary: token-driven, no --sem-* declared
+   here, `:is(sem-x, .sem-x)` dual-form selectors, nothing hidden without
+   a tier marker. Covers: the v0.6 elements (sem-list, sem-section,
+   sem-break), the sem-highlight canonical tag, the sem-code flat inline
+   form, the default reading measure, and button polish (hover states +
+   focus-visible) across every chrome the vocabulary lays out. */
+
+/* ---- v0.6 elements ------------------------------------------------- */
+
+/* sem-list: markdown-style lines render as pre-wrapped text before the
+   extension converts them to a real list; after conversion the list is
+   ordinary ul/ol content. */
+:is(sem-list, .sem-list) { display: block; margin: 1rem 0; padding-left: 1.5rem; }
+:is(sem-list, .sem-list):not([data-sem-v06]) { white-space: pre-wrap; }
+:is(sem-list, .sem-list) ul, :is(sem-list, .sem-list) ol { margin: .25rem 0; padding-left: 1.5rem; }
+
+/* sem-section: block wrapper; divider between ADJACENT sections only. */
+:is(sem-section, .sem-section) { display: block; margin: 1.5rem 0; }
+:is(sem-section, .sem-section) + :is(sem-section, .sem-section) {
+  border-top: 1px solid var(--sem-border); padding-top: 1.5rem; }
+
+/* sem-break: the <hr> replacement — a rule in every tier, no script. */
+:is(sem-break, .sem-break) { display: block; border: 0; border-top: 1px solid var(--sem-border);
+  margin: 2rem 0; }
+
+/* ---- sem-highlight canonical tag (v0.6; sugar alias <highlight> keeps
+   the vocabulary rule) ----------------------------------------------- */
+:is(sem-highlight) { font-style: normal; background: color-mix(in srgb, var(--sem-accent) 18%, transparent);
+  border-radius: 4px; padding: 0 .2em; }
+
+/* ---- sem-code flat inline form (v0.6): the element's own text IS the
+   code; block listings carry a <pre> and keep the vocabulary styles. */
+:is(sem-code, .sem-code)[data-sem-v06="inline"] {
+  display: inline; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .875em; background: color-mix(in srgb, var(--sem-fg) 7%, transparent);
+  border: 1px solid var(--sem-border); border-radius: 4px; padding: .1em .35em;
+  white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ---- default reading measure (item 2: generous margins + measure) --- */
+body:has(> :is(sem-enhanced-document, .sem-enhanced-document)) { padding: 2rem 1.25rem 4rem; }
+:is(sem-enhanced-document, .sem-enhanced-document) {
+  max-width: var(--sem-measure, 44rem); margin-inline: auto; }
+
+/* ---- button polish: hover states + focus-visible rings on every
+   chrome button family the vocabulary lays out ----------------------- */
+.sem-facts-chrome button, .sem-quiz-options button, .sem-code-chrome button,
+.sem-md-chrome button, .sem-views-tabs button, .sem-reader-chrome button,
+.sem-source-chrome button, .sem-table-sort, .sem-table-filter {
+  transition: background-color .12s ease, border-color .12s ease, color .12s ease; }
+.sem-facts-chrome button:hover, .sem-code-chrome button:hover,
+.sem-md-chrome button:hover, .sem-reader-chrome button:hover,
+.sem-source-chrome button:hover {
+  background: color-mix(in srgb, var(--sem-accent) 10%, var(--sem-bg));
+  border-color: color-mix(in srgb, var(--sem-accent) 55%, var(--sem-border)); }
+.sem-views-tabs button:hover { color: var(--sem-accent); }
+.sem-table-sort:hover { color: var(--sem-accent); }
+.sem-table-sort:hover::after { opacity: 1; }
+.sem-quiz-options button:hover:not(.sem-answered):not(.sem-wrong-pick) {
+  border-color: color-mix(in srgb, var(--sem-accent) 55%, var(--sem-border)); }
+.sem-facts-chrome button:focus-visible, .sem-quiz-options button:focus-visible,
+.sem-code-chrome button:focus-visible, .sem-md-chrome button:focus-visible,
+.sem-views-tabs button:focus-visible, .sem-reader-chrome button:focus-visible,
+.sem-reader-chrome select:focus-visible, .sem-source-chrome button:focus-visible,
+.sem-table-sort:focus-visible, .sem-table-filter:focus-visible,
+:is(sem-reveal, .sem-reveal) summary:focus-visible {
+  outline: 2px solid var(--sem-accent); outline-offset: 2px; border-radius: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sem-facts-chrome button, .sem-quiz-options button, .sem-code-chrome button,
+  .sem-md-chrome button, .sem-views-tabs button, .sem-reader-chrome button,
+  .sem-source-chrome button, .sem-table-sort, .sem-table-filter { transition: none !important; }
+}
+
+/* newsprint serif body (theme-paired typography; tokens stay in the
+   theme file — this is the one structural nod to the print aesthetic) */
+[data-sem-theme="newsprint"] :is(sem-enhanced-document, .sem-enhanced-document),
+html[data-sem-theme="newsprint"] body {
+  font-family: Georgia, 'Times New Roman', 'Iowan Old Style', serif; }
+
+/* SemText — theme: minimal-tech-light
+   Token layer only. Structural/component rules live in themes/_vocabulary.css.
+   A new theme is a copy of this file with new --sem-* values — no selectors
+   beyond [data-sem-theme="<name>"], its dark-mode media block, and the
+   explicit [data-color-mode="dark"] block the sem-reader colour control
+   drives (R/W2). The media block yields to an explicit "light". */
+
+[data-sem-theme="minimal-tech-light"] {
+  color-scheme: light;
+  --sem-bg: #fafafa; --sem-surface: #ffffff; --sem-fg: #1e293b;
+  --sem-muted: #64748b; --sem-border: #e2e8f0; --sem-accent: #2563eb;
+  --sem-accent-fg: #ffffff;
+  --sem-note-info: #2563eb; --sem-note-tip: #059669;
+  --sem-note-warning: #d97706; --sem-note-danger: #dc2626;
+  --sem-correct: #059669; --sem-wrong: #dc2626; --sem-occluded: #94a3b8;
+}
+[data-sem-theme="minimal-tech-light"][data-color-mode="dark"] {
+  color-scheme: dark;
+  --sem-bg: #0f172a; --sem-surface: #1e293b; --sem-fg: #e2e8f0;
+  --sem-muted: #94a3b8; --sem-border: #334155; --sem-accent: #60a5fa;
+  --sem-accent-fg: #0f172a;
+  --sem-note-info: #60a5fa; --sem-note-tip: #34d399;
+  --sem-note-warning: #fbbf24; --sem-note-danger: #f87171;
+  --sem-correct: #34d399; --sem-wrong: #f87171; --sem-occluded: #475569;
+}
+@media (prefers-color-scheme: dark) {
+  [data-sem-theme="minimal-tech-light"]:not([data-color-mode="light"]) {
+    color-scheme: dark;
+    --sem-bg: #0f172a; --sem-surface: #1e293b; --sem-fg: #e2e8f0;
+    --sem-muted: #94a3b8; --sem-border: #334155; --sem-accent: #60a5fa;
+    --sem-accent-fg: #0f172a;
+    --sem-note-info: #60a5fa; --sem-note-tip: #34d399;
+    --sem-note-warning: #fbbf24; --sem-note-danger: #f87171;
+    --sem-correct: #34d399; --sem-wrong: #f87171; --sem-occluded: #475569;
+  }
+}
+
+/* SemText — theme: nocturne-console
+   Token layer only (pattern: minimal-tech-light). Dark-first console
+   aesthetic: near-black surfaces, phosphor-green accent, mono-leaning
+   feel comes from the page's own fonts — tokens only, no selectors
+   beyond the documented three blocks. */
+
+[data-sem-theme="nocturne-console"] {
+  color-scheme: dark;
+  --sem-bg: #0a0e14; --sem-surface: #11161f; --sem-fg: #d5dbe6;
+  --sem-muted: #7d8899; --sem-border: #1f2937; --sem-accent: #4ade80;
+  --sem-accent-fg: #0a0e14;
+  --sem-note-info: #38bdf8; --sem-note-tip: #4ade80;
+  --sem-note-warning: #facc15; --sem-note-danger: #f87171;
+  --sem-correct: #4ade80; --sem-wrong: #f87171; --sem-occluded: #334155;
+}
+[data-sem-theme="nocturne-console"][data-color-mode="light"] {
+  color-scheme: light;
+  --sem-bg: #f4f6f8; --sem-surface: #ffffff; --sem-fg: #1f2937;
+  --sem-muted: #6b7280; --sem-border: #e5e7eb; --sem-accent: #059669;
+  --sem-accent-fg: #ffffff;
+  --sem-note-info: #0284c7; --sem-note-tip: #059669;
+  --sem-note-warning: #d97706; --sem-note-danger: #dc2626;
+  --sem-correct: #059669; --sem-wrong: #dc2626; --sem-occluded: #9ca3af;
+}
+@media (prefers-color-scheme: light) {
+  [data-sem-theme="nocturne-console"]:not([data-color-mode="dark"]) {
+    color-scheme: light;
+    --sem-bg: #f4f6f8; --sem-surface: #ffffff; --sem-fg: #1f2937;
+    --sem-muted: #6b7280; --sem-border: #e5e7eb; --sem-accent: #059669;
+    --sem-accent-fg: #ffffff;
+    --sem-note-info: #0284c7; --sem-note-tip: #059669;
+    --sem-note-warning: #d97706; --sem-note-danger: #dc2626;
+    --sem-correct: #059669; --sem-wrong: #dc2626; --sem-occluded: #9ca3af;
+  }
+}
+
+/* SemText — theme: organic-warm
+   Token layer only (pattern: minimal-tech-light). Warm paper, earth
+   accents, soft borders — reading-room comfort over lab neutrality. */
+
+[data-sem-theme="organic-warm"] {
+  color-scheme: light;
+  --sem-bg: #faf6ef; --sem-surface: #fffdf8; --sem-fg: #3f3226;
+  --sem-muted: #8a7a68; --sem-border: #e7ddcd; --sem-accent: #b45309;
+  --sem-accent-fg: #fffdf8;
+  --sem-note-info: #0f766e; --sem-note-tip: #65a30d;
+  --sem-note-warning: #d97706; --sem-note-danger: #b91c1c;
+  --sem-correct: #65a30d; --sem-wrong: #b91c1c; --sem-occluded: #d6c7b2;
+}
+[data-sem-theme="organic-warm"][data-color-mode="dark"] {
+  color-scheme: dark;
+  --sem-bg: #211b14; --sem-surface: #2c241b; --sem-fg: #ece1d2;
+  --sem-muted: #a89880; --sem-border: #46392b; --sem-accent: #f59e0b;
+  --sem-accent-fg: #211b14;
+  --sem-note-info: #2dd4bf; --sem-note-tip: #a3e635;
+  --sem-note-warning: #fbbf24; --sem-note-danger: #f87171;
+  --sem-correct: #a3e635; --sem-wrong: #f87171; --sem-occluded: #52422f;
+}
+@media (prefers-color-scheme: dark) {
+  [data-sem-theme="organic-warm"]:not([data-color-mode="light"]) {
+    color-scheme: dark;
+    --sem-bg: #211b14; --sem-surface: #2c241b; --sem-fg: #ece1d2;
+    --sem-muted: #a89880; --sem-border: #46392b; --sem-accent: #f59e0b;
+    --sem-accent-fg: #211b14;
+    --sem-note-info: #2dd4bf; --sem-note-tip: #a3e635;
+    --sem-note-warning: #fbbf24; --sem-note-danger: #f87171;
+    --sem-correct: #a3e635; --sem-wrong: #f87171; --sem-occluded: #52422f;
+  }
+}
+
+/* SemText — theme: editorial-settings
+   Token layer only (pattern: minimal-tech-light). Magazine cool: ivory
+   ground, ink text, a restrained crimson accent, hairline borders —
+   long-form reading with typographic confidence. */
+
+[data-sem-theme="editorial-settings"] {
+  color-scheme: light;
+  --sem-bg: #fbfbf9; --sem-surface: #ffffff; --sem-fg: #18181b;
+  --sem-muted: #71717a; --sem-border: #e4e4e7; --sem-accent: #9f1239;
+  --sem-accent-fg: #ffffff;
+  --sem-note-info: #1d4ed8; --sem-note-tip: #047857;
+  --sem-note-warning: #b45309; --sem-note-danger: #9f1239;
+  --sem-correct: #047857; --sem-wrong: #9f1239; --sem-occluded: #a1a1aa;
+}
+[data-sem-theme="editorial-settings"][data-color-mode="dark"] {
+  color-scheme: dark;
+  --sem-bg: #131316; --sem-surface: #1c1c21; --sem-fg: #e7e7ea;
+  --sem-muted: #8e8e99; --sem-border: #2e2e36; --sem-accent: #fb7185;
+  --sem-accent-fg: #131316;
+  --sem-note-info: #93c5fd; --sem-note-tip: #6ee7b7;
+  --sem-note-warning: #fcd34d; --sem-note-danger: #fda4af;
+  --sem-correct: #6ee7b7; --sem-wrong: #fda4af; --sem-occluded: #3f3f46;
+}
+@media (prefers-color-scheme: dark) {
+  [data-sem-theme="editorial-settings"]:not([data-color-mode="light"]) {
+    color-scheme: dark;
+    --sem-bg: #131316; --sem-surface: #1c1c21; --sem-fg: #e7e7ea;
+    --sem-muted: #8e8e99; --sem-border: #2e2e36; --sem-accent: #fb7185;
+    --sem-accent-fg: #131316;
+    --sem-note-info: #93c5fd; --sem-note-tip: #6ee7b7;
+    --sem-note-warning: #fcd34d; --sem-note-danger: #fda4af;
+    --sem-correct: #6ee7b7; --sem-wrong: #fda4af; --sem-occluded: #3f3f46;
+  }
+}
+
+/* SemText — theme: newsprint
+   Token layer only (pattern: minimal-tech-light). New in v0.6: a
+   print-like paper aesthetic — newsprint grey-white, dense black ink,
+   one restrained red for corrections; pairs with the v0.6 serif body
+   rule in themes/_v06.css. */
+
+[data-sem-theme="newsprint"] {
+  color-scheme: light;
+  --sem-bg: #f4f2ed; --sem-surface: #faf9f5; --sem-fg: #141414;
+  --sem-muted: #5f5c56; --sem-border: #cfccc4; --sem-accent: #1a1a1a;
+  --sem-accent-fg: #faf9f5;
+  --sem-note-info: #1f2937; --sem-note-tip: #14532d;
+  --sem-note-warning: #7c2d12; --sem-note-danger: #991b1b;
+  --sem-correct: #14532d; --sem-wrong: #991b1b; --sem-occluded: #b8b4aa;
+}
+[data-sem-theme="newsprint"][data-color-mode="dark"] {
+  color-scheme: dark;
+  --sem-bg: #171614; --sem-surface: #201e1b; --sem-fg: #e8e5de;
+  --sem-muted: #9a958a; --sem-border: #38352f; --sem-accent: #e8e5de;
+  --sem-accent-fg: #171614;
+  --sem-note-info: #cbd5e1; --sem-note-tip: #bbf7d0;
+  --sem-note-warning: #fed7aa; --sem-note-danger: #fecaca;
+  --sem-correct: #bbf7d0; --sem-wrong: #fecaca; --sem-occluded: #44413a;
+}
+@media (prefers-color-scheme: dark) {
+  [data-sem-theme="newsprint"]:not([data-color-mode="light"]) {
+    color-scheme: dark;
+    --sem-bg: #171614; --sem-surface: #201e1b; --sem-fg: #e8e5de;
+    --sem-muted: #9a958a; --sem-border: #38352f; --sem-accent: #e8e5de;
+    --sem-accent-fg: #171614;
+    --sem-note-info: #cbd5e1; --sem-note-tip: #bbf7d0;
+    --sem-note-warning: #fed7aa; --sem-note-danger: #fecaca;
+    --sem-correct: #bbf7d0; --sem-wrong: #fecaca; --sem-occluded: #44413a;
+  }
+}
