@@ -43,8 +43,8 @@ defmodule SemtextWeb.Parity.EditorRouteTest do
     assert body =~ "id=\"editor-root\""
     assert body =~ "id=\"editor-status\""
     assert raw =~ "src=\"/js/editor-flags.js\""
-    assert raw =~ "src=\"/semtext/v0.7.1/semtext.js\""
-    assert raw =~ "src=\"/semtext/v0.7.1/semtext-editor.js\""
+    assert raw =~ "src=\"/semtext/v0.7.2/semtext.js\""
+    assert raw =~ "src=\"/semtext/v0.7.2/semtext-editor.js\""
     assert raw =~ "src=\"/js/editor-boot.js\""
 
     order =
@@ -67,8 +67,8 @@ defmodule SemtextWeb.Parity.EditorRouteTest do
   test "the editor static assets serve" do
     for path <- [
           "/js/editor-flags.js",
-          "/semtext/v0.7.1/semtext.js",
-          "/semtext/v0.7.1/semtext-editor.js",
+          "/semtext/v0.7.2/semtext.js",
+          "/semtext/v0.7.2/semtext-editor.js",
           "/js/editor-boot.js"
         ] do
       conn = get(build_conn(), path)
@@ -120,24 +120,19 @@ defmodule SemtextWeb.Parity.EditorRouteTest do
     end
   end
 
-  test "reference tag pages carry per-example Open-in-editor links" do
+  test "reference tag pages carry no Open-in-editor links (removed 2026-10-17 feedback)" do
     conn = get(build_conn(), "/reference/sem-note")
     assert conn.status == 200
     body = script_stripped(conn.resp_body)
 
-    # primary example link (SSR escapes & in hrefs)
-    assert body =~ "/editor?example=sem-note"
-
-    case Variants.for_tag("sem-note") do
-      [v | _] -> assert body =~ "example=sem-note&amp;variant=#{v.id}"
-      [] -> :ok
-    end
+    refute body =~ "/editor?example="
+    refute body =~ "Open in editor"
   end
 
-  test "showcase pages carry the Open-in-editor link" do
+  test "showcase pages carry no Open-in-editor link (removed 2026-10-17 feedback)" do
     conn = get(build_conn(), "/showcase/sem-shell")
     assert conn.status == 200
-    assert script_stripped(conn.resp_body) =~ "href=\"/editor\""
+    refute script_stripped(conn.resp_body) =~ "href=\"/editor\""
   end
 
   # -- helpers --

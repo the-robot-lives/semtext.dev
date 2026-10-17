@@ -197,7 +197,7 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
   @scope_qa """
   <sem-reveal summary="Why not Markdown?" collapsed>Markdown has nowhere to put the attributes that make a datum machine-readable — no way to mark a conclusion as distinct from a distractor, or a step as blocked. A converter that compiles Markdown into SemText is worth building; the canonical artifact stays XHTML, because that is what the browser, the terminal and the model all read.</sem-reveal>
   <sem-reveal summary="Does a language model really need this?" collapsed>A model can read any HTML. What it cannot do reliably is tell a conclusion from a distractor, or a caveat from a heading, when nothing in the markup says so. The claim here is narrow: the attributes remove that guesswork, and the extraction contract makes the result stable enough to cite.</sem-reveal>
-  <sem-reveal summary="Is anyone using it?" collapsed>Noizu Labs, Inc. and The Robot Lives use SemText internally — agent-facing docs and demo documents are authored in it. It is still a draft spec: no third-party deployments to point at and no benchmarks to quote.</sem-reveal>
+  <sem-reveal summary="Is anyone using it?" collapsed>Noizu Labs, Inc. and The Robot Lives use SemText internally — agent-facing docs and demo documents are authored in it. SemText is a published spec with a reference implementation; there are no third-party deployments to point at and no benchmarks to quote.</sem-reveal>
   """
 
   @extend_html """
@@ -412,7 +412,7 @@ defmodule SemtextWeb.Hologram.Pages.HomePage do
           <div class="mt-4 flex max-w-3xl flex-col gap-3" data-sem-theme="minimal-tech-light" data-color-mode="dark">
             {%raw}<sem-reveal summary="Why not Markdown?" collapsed>Markdown has nowhere to put the attributes that make a datum machine-readable — no way to mark a conclusion as distinct from a distractor, or a step as blocked. A converter that compiles Markdown into SemText is worth building; the canonical artifact stays XHTML, because that is what the browser, the terminal and the model all read.</sem-reveal>
     <sem-reveal summary="Does a language model really need this?" collapsed>A model can read any HTML. What it cannot do reliably is tell a conclusion from a distractor, or a caveat from a heading, when nothing in the markup says so. The claim here is narrow: the attributes remove that guesswork, and the extraction contract makes the result stable enough to cite.</sem-reveal>
-    <sem-reveal summary="Is anyone using it?" collapsed>Noizu Labs, Inc. and The Robot Lives use SemText internally — agent-facing docs and demo documents are authored in it. It is still a draft spec: no third-party deployments to point at and no benchmarks to quote.</sem-reveal>{/raw}
+    <sem-reveal summary="Is anyone using it?" collapsed>Noizu Labs, Inc. and The Robot Lives use SemText internally — agent-facing docs and demo documents are authored in it. SemText is a published spec with a reference implementation; there are no third-party deployments to point at and no benchmarks to quote.</sem-reveal>{/raw}
           </div>
           <div class="mt-14 flex flex-wrap items-center gap-3">
             <details class="showcase-menu">

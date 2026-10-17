@@ -723,8 +723,8 @@ label.g-pill.is-active {
 /* Whitespace lives ONLY inside the line text. The container is white-space:
    normal so Hologram's inter-element template whitespace (between .code-line
    blocks and between the gutter and text) cannot render as blank lines. */
-.code-linetext,
-.code-line-text {
+.code-line-text,
+.code-linetext {
   flex: 1;
   min-width: 0;
   white-space: pre-wrap;

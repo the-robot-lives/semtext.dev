@@ -341,7 +341,7 @@
 
     function choose(li) {
       var href = li && li.getAttribute("data-href");
-      if (href) { close(); input.value = ""; window.location.href = href; }
+      if (href && /^\/reference\/[a-z0-9-]+\/$/.test(href)) { close(); input.value = ""; window.location.assign(href); }
     }
 
     function render(q) {
