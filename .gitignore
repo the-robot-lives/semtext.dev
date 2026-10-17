@@ -7,6 +7,9 @@
 _build/
 deps/
 node_modules/
+web/scripts/snap/.next-snap/
+*.tsbuildinfo
+
 # showcase build output
 dist/
 coverage/
@@ -18,3 +21,6 @@ landing/.next/
 landing/out/
 # worktrees (also in .git/info/exclude)
 .claude/worktrees/
+.claude/mix-builds/
+.tmp/
+erl_crash.dump

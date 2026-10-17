@@ -1,0 +1,145 @@
+# sem-data-visualizer — UX design sheet prompt
+# Three display states of ONE container (buckets, query workspace, modal
+# viewer) shown as three example pages on a dark minimal-tech canvas.
+# Reference attachments are the judged renders from the private fixture
+# build (see reports/tag-sem-data-visualizer.md); the tag's own harness
+# captures are source-only until the bundle sync.
+
+schema: "0.4"
+id: sem-data-visualizer-ux-sheet
+type: image
+quality: high
+
+prompt:
+  text: |
+    A precise UX design sheet for the SemText vocabulary element
+    `sem-data-visualizer` — a container that wraps one or more named data
+    buckets and renders each as a native table — shown as THREE example
+    pages on a dark minimal-tech canvas (background #0f172a, card surface
+    #1e293b, hairline borders #334155, blue accent #60a5fa, muted label
+    #94a3b8, body text #e2e8f0).
+
+    PAGE 1 — BUCKETS: the container holds TWO buckets and no query. A
+    single right-aligned tools row sits above everything: a small pill
+    button "Expand" and, beside it, a small pill button "Copy link".
+    Below it, each bucket is its own bordered, rounded card holding a
+    native HTML table: a bold left-aligned caption above the header row
+    ("services", then "regions"), an all-small-caps muted header row, a
+    faint sort glyph after each column name, hairline row separators, the
+    last row's separator dropped. One bucket shows a pill button group
+    under its tools row ("core" and "all") where "all" is filled with the
+    blue accent and "core" is an outlined pill. Table content is plain
+    monospace numerals and words, fully legible.
+
+    PAGE 2 — QUERY WORKSPACE: one bucket table at the top, then the query
+    block beneath it: an all-small-caps muted label on its own line, an
+    editable monospace query field in a bordered rounded box reading
+    "SELECT * FROM services ORDER BY port DESC", a small "Run" pill button
+    with a muted "3 rows." status beside it, and the RESULTS table below —
+    the same table chrome, with its own all-small-caps header row and a
+    sort glyph per column, ordered by port descending (9090, 8443, 8080).
+
+    PAGE 3 — MODAL VIEWER: the same container opened full-page over a
+    dimmed backdrop: a large rounded panel centred in the viewport with a
+    "Close" pill at its top-left, the expand/copy-link tools row inside,
+    the bucket table live and readable beneath it, focus ring visible on
+    the Close pill. The backdrop is a flat translucent scrim, never a
+    blurred or coloured photograph.
+
+    Typography: clean humanist sans for labels and pills, monospace for
+    cell values and the query field, all-small-caps muted text for column
+    headers and the query label. Flat, engineered, restrained — a
+    documentation specimen of a data surface, not a dashboard
+    illustration. Generous but tight vertical rhythm (.5rem between
+    blocks), 12px radii, hairline borders throughout.
+
+    CRITICAL: the authored payload (the markdown pipe table, the CSV
+    lines, the YAML block an author typed into the document) is NEVER
+    visible once a table is rendered. The rendered table replaces it.
+  negative: |
+    no raw authored payload text — no pipe-delimited markdown rows, CSV
+    lines or YAML keys visible above, beside or beneath a rendered table;
+    no duplicate table shown twice; no occluded or overlapping text; no
+    solid colour block over words; no gradient glows; no decorative
+    photos, icons or illustration; no chart or graph; no browser chrome,
+    window furniture or device frame; no watermarks; no light-mode canvas;
+    no red error text unless a value is genuinely an error.
+  style: flat dark technical documentation specimen, minimal-tech design system
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-visualizer-fixture/sem-data-visualizer-multi-source-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-visualizer-fixture/sem-data-visualizer-query-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-visualizer-fixture/sem-data-visualizer-modal-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-visualizer-fixture/sem-data-visualizer-class-form-1280.png
+    role: reference
+
+output:
+  formats:
+    - format: png
+      filename: sem-data-visualizer-ux-sheet.png
+  dimensions:
+    width: 1536
+    height: 1024
+
+requirements:
+  modes:
+    - name: buckets
+      must_show:
+        - one right-aligned tools row above the tables — "Expand" and "Copy link" pills
+        - each bucket its own bordered rounded card with a bold caption above the header row
+        - all-small-caps muted column headers with a faint sort glyph after each name
+        - the view pill group under the tools row where the active view is a filled accent pill and the other an outlined pill
+        - hairline row separators, the last row's separator dropped
+      must_never:
+        - never show the authored markdown/CSV/YAML payload as text anywhere on the card
+        - never render the same bucket twice
+        - never occlude a header or a cell value
+    - name: query
+      must_show:
+        - the bucket table first, then the query block: all-small-caps label, monospace editable query field, "Run" pill, muted row-count status
+        - a results table beneath with its own header row and sort glyphs, sorted by port descending
+        - the query text legible and complete inside its field
+      must_never:
+        - never print the query statement as loose body text beside the chrome that already holds it
+        - never drop the row-count status
+        - never show the results unordered when the query states ORDER BY
+    - name: modal
+      must_show:
+        - a centred rounded panel over a flat dimmed scrim, "Close" pill at its top-left with a visible focus ring
+        - the tools row and the live bucket table readable inside the panel
+        - the page content behind the scrim visibly dimmed, never replaced
+      must_never:
+        - never blur the backdrop or fill it with imagery
+        - never let the panel exceed the viewport or clip its own content
+        - never hide the Close control or drop the focus ring
+
+eval:
+  pass_threshold: 0.7
+  criteria:
+    mode_fidelity:
+      weight: 0.3
+      description: Each page reads as its state — two captioned bucket cards, a query workspace with chrome plus results, a modal panel over a scrim.
+      fail_signals: [query page has no results table, modal page shows no scrim or no Close pill, buckets page shows a query field]
+    payload_absence:
+      weight: 0.3
+      description: No authored payload text (markdown pipes, CSV lines, YAML keys) appears once a table is rendered; each bucket appears once.
+      fail_signals: [pipe-delimited rows visible above a table, the same table rendered twice, CSV or YAML source lines next to a rendered table]
+    chrome_legibility:
+      weight: 0.2
+      description: Captions, column headers, pills and cell values legible with AA contrast on the dark canvas; sort glyphs visible but faint; row-count status present.
+      fail_signals: [muted text unreadable on the dark canvas, headers indistinguishable from cells, sort glyph missing]
+    restraint:
+      weight: 0.2
+      description: Flat documentation specimen — hairline borders, 12px radii, no ornament, no chart art, no browser chrome.
+      fail_signals: [gradient glows, decorative illustration, window furniture, a light-mode canvas]
+  reject_if:
+    - the authored markdown/CSV/YAML payload text is visible alongside a rendered table
+    - any table cell or caption is unreadable or occluded
+    - the modal page lacks a dimmed backdrop or a Close control
+    - a light-mode canvas is generated
+    - watermarks or browser chrome appear anywhere
+
+tags: [semtext, vocabulary, data, table, query, modal, dark, specimen]

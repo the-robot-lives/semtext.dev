@@ -1,0 +1,138 @@
+# npl-ref - reference-page UX direction for the three display states.
+# Authored by the tag nitpick lane, 2026-10-14. Not yet generated.
+schema: "0.4"
+id: npl-ref-reference-ux
+type: image
+quality: high
+prompt:
+  text: |
+    Design board for a reference-documentation page, dark theme (deep
+    navy-charcoal surfaces, near-white text, muted slate secondary text,
+    a single indigo-blue accent). The page documents a reflection element:
+    a post-hoc record a system writes after finishing a turn, split into
+    named sections - what held, what to change, how it was checked, the
+    measured result, and training follow-ups. The board shows FOUR stacked
+    example sections, one per display state, each with a small uppercase
+    caption above it. No marketing chrome, no navigation, no browser
+    window - four quiet document panels on a flat dark page.
+
+    Every panel is the same card: a faint surface fill, a hairline border,
+    a 12px radius, generous but regular padding. Section captions inside
+    the cards are small, uppercase, widely letter-spaced, muted. Body
+    sentences are a clean neutral sans at full brightness. Hairline rules
+    divide the sections. Everything reads as quiet instrumentation inside
+    a spec document - a record, never a scoreboard.
+
+    Section 1 - "FULL (LABELLED SECTIONS)": five captioned blocks in
+    order, captions exactly ASSESSMENT, IMPROVEMENTS, VALIDATION, EVAL,
+    FINE-TUNE. Under each caption one plain sentence at full brightness
+    ("the approach held; one gap in the eval loop", "add a regression
+    harness before the next run", "checked against three traces",
+    "quality 0.82 vs 0.71 baseline", "retrain on the two rejected
+    traces"). A hairline rule sits between consecutive blocks. Every one
+    of the five captions MUST be present and every sentence fully
+    legible - a merged paragraph with no captions is a failure.
+
+    Section 2 - "COMPACT (LEDGER LINES)": the same five entries collapsed
+    into five flat single lines with no section captions and no boxes.
+    Each line leads with one small glyph marker (a small balance-plate
+    glyph for Assessment, small sparkles for Improvements, a small check
+    mark for Validation, a small straightedge for Eval, a small target for
+    Fine-tune), then the section name in semibold, an em dash, and the
+    same sentence from section 1. Exactly five lines, evenly spaced -
+    four or six lines is a failure, and no line may wrap into a captioned
+    sub-block.
+
+    Section 3 - "CLASS-FORM SUBSET": identical card styling to section 1
+    but only three captioned blocks - ASSESSMENT, IMPROVEMENTS, EVAL -
+    each with its sentence and the same hairline dividers. The subset
+    renders as a complete, comfortable card: no empty placeholders where
+    the other two sections would be, no greyed ghost rows, no "n/a"
+    filler. It MUST read as intentionally three sections.
+
+    Section 4 - "SOURCE VS RENDER (SPLIT)": one wider panel split into
+    two halves. The left half shows the raw authored record as escaped
+    code text in a monospace font at reduced brightness: angle-bracket
+    lines naming the element and its five child sections. The right half
+    shows the rendered card from section 1. The two halves sit side by
+    side under one shared pill row reading SIDE BY SIDE, SOURCE, RENDER
+    with the first pill active. The code text is intentionally plain -
+    flat monospace lines, no syntax highlighting colours beyond one muted
+    tone.
+
+    Typography: small-caps muted captions; neutral sans body; monospace
+    for the source pane and the pill row. Hairline borders, small radii,
+    spacing tight and regular. The element is a record of a finished
+    turn - it never judges: no score badges, no progress meters, no
+    pass/fail stamps, no occlusion - text is never hidden, dimmed to
+    illegibility, blurred, or struck through anywhere on the board
+    (concealment belongs to other elements, never this one).
+  negative: |
+    Light theme; white background; glossy gradients; neon cyberpunk glow;
+    dashboard card grids; donut, pie, gauge, radar, sparkline or bar
+    charts; progress bars; star ratings; score badges; pass/fail or
+    verdict stamps; checkmark-vs-cross scoring; mascots; logos;
+    watermarks; navigation bars; browser chrome; blurred, blacked-out,
+    struck-through or illegible text; collapsed paragraphs with no
+    section captions; ghost or placeholder rows in the class-form subset;
+    raw class attributes or code syntax shown inside a rendered panel;
+    more or fewer than the named sections in the full state; modal
+    dialogs or toast popups; any imagery other than the four panels.
+  style: |
+    Flat minimal dark technical documentation, minimal-tech aesthetic,
+    ledger-first restraint, hairline rules, small-caps labelling,
+    WCAG AA contrast on every sentence including the muted captions.
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-ref/npl-ref-enhanced-full-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-ref/npl-ref-enhanced-compact-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-ref/npl-ref-enhanced-class-form-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-ref/npl-ref-primary-source-1280.png
+    role: reference
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+  formats:
+    - format: png
+      filename: npl-ref-reference-ux.png
+eval:
+  pass_threshold: 0.75
+  criteria:
+    state-coverage:
+      weight: 0.3
+      description: Exactly four captioned panels in order - full (five labelled sections), compact (five ledger lines), class-form subset (three labelled sections), source-vs-render split; each carries its uppercase caption.
+      fail_signals:
+        - "only one or two panels visible"
+        - "panels unlabelled or mislabelled"
+        - "full panel missing any of its five captions"
+    record-not-verdict:
+      weight: 0.25
+      description: Every sentence stays at full brightness and fully legible; the element never judges - no badges, meters, grades, stamps, or occlusion anywhere.
+      fail_signals:
+        - "any sentence dimmed, blurred, struck through or hidden"
+        - "score badge, grade stamp or pass/fail marker present"
+        - "progress meter or rating stars present"
+    section-anatomy:
+      weight: 0.25
+      description: Full and class-form panels use small-caps muted captions, hairline dividers, neutral sans body; compact panel is exactly five flat glyph-led lines with no captions or boxes; class-form has exactly three sections and no placeholder rows.
+      fail_signals:
+        - "compact lines wrapped into boxed or captioned sub-blocks"
+        - "class-form panel shows ghost or placeholder rows"
+        - "captions not small caps or missing letter spacing"
+    split-fidelity:
+      weight: 0.2
+      description: The split panel shows escaped monospace source on the left, the rendered card on the right, one shared pill row with SIDE BY SIDE active.
+      fail_signals:
+        - "code syntax highlighting colours on the source half"
+        - "pill row missing or wrong active pill"
+        - "rendered half showing raw markup"
+    theme-match:
+      weight: 0.15
+      description: Dark minimal-tech surfaces, hairline borders, mono/sans split, AA-legible text everywhere.
+      fail_signals:
+        - "light background anywhere"
+        - "neon glow or gradient gloss"
+        - "text failing contrast"

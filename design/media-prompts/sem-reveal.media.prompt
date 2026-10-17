@@ -1,0 +1,73 @@
+schema: '0.4'
+id: sem-reveal-ux-design
+type: image
+quality: high
+product_targets:
+- semtext.dev
+tags:
+- semtext
+- sem-reveal
+- ux-design
+- reference
+prompt:
+  text: "UX design sheet for the SemText `<sem-reveal>` element — the Q→A DISCLOSURE:\
+    \ a question in a small-caps disclosure bar whose answer expands beneath it,\
+    \ backed by native `<details>/<summary>`. FIVE stacked example pages, each\
+    \ inside a browser-chrome frame with a small mono uppercase caption, rendered\
+    \ in the minimal-tech theme on a dark slate canvas (bg #0f172a, surface\
+    \ #1e293b, fg #e2e8f0, hairline #334155 borders, 12px card radius). A reveal\
+    \ is one card: 1px hairline border, rounded 12px, and inside it a disclosure\
+    \ row — a small muted triangle marker, then the question in semibold — with\
+    \ the answer prose underneath when open.\n\nPage 1 — caption \"COLLAPSED\".\
+    \ One closed reveal card, question \"Why not localStorage?\", the row in\
+    \ semibold with a small right-pointing triangle before it, NO answer prose\
+    \ visible, NO second copy of the question anywhere on the card — the\
+    \ disclosure row is the only place the question appears.\n\nPage 2 — caption\
+    \ \"OPEN\". The same card expanded: triangle rotated downward, the question\
+    \ row unchanged, and the answer as ordinary readable prose below the row\
+    \ inside the same card (\"Tokens in localStorage are readable by any script\
+    \ on the page — keep tokens in httpOnly cookies or memory only.\"). Nothing\
+    \ overlaps; the card grows to fit.\n\nPage 3 — caption \"DERIVED SUMMARY\".\
+    \ A closed reveal whose question was never authored: the bar reads the\
+    \ opening words of the answer (\"Why derive the label at all? Because the\
+    \ summary a reader…\") cut at a word boundary, showing that the label is\
+    \ derived from the body text. The cut is mid-sentence by design; do not\
+    \ complete the sentence.\n\nPage 4 — caption \"CLASS FORM\". Two reveal\
+    \ cards side by side, identical in size and styling: left one labeled with a\
+    \ tiny mono chip \"<sem-reveal summary>\" above it, right one labeled\
+    \ \"<div class=sem-reveal data-summary>\". Both show the same closed question\
+    \ \"Why not localStorage?\" — the two spellings must look exactly alike.\n\n\
+    Page 5 — caption \"NO SCRIPT\". One reveal as it reads with JavaScript\
+    \ unavailable: NO triangle, NO disclosure bar, NO interactivity chrome — the\
+    \ question as a small-caps muted heading line, then the full answer as plain\
+    \ prose, all fully visible. The whole answer shows; nothing is hidden, and\
+    \ no control affordance is drawn.\n\nTypography: clean system sans\
+    \ (Inter-like), 16px body, 1.6 line height, generous margins, mono uppercase\
+    \ captions. The accent color appears only on the triangle markers and focus\
+    \ affordances; the question rows stay fg-colored. No icons, no emoji, no\
+    \ extra buttons.\n"
+  negative: 'the question rendered twice on one card (small-caps caption above the
+    disclosure bar AND again inside it); answer text visible on a closed card; answer
+    text occluded, blurred, struck through or drawn as a redaction bar; reveals drawn
+    as modals, tooltips, popovers, toast notifications, accordions with plus/minus
+    icons or speech bubbles; the no-script page showing a control affordance, triangle
+    or hidden content; the derived-summary page showing a completed sentence; neon
+    glow; drop shadows on text; light background; more or fewer than five example
+    pages; watermark; lorem ipsum in captions.
+
+    '
+  style: 'Flat UI spec sheet, minimal-tech aesthetic, restrained palette — hairline
+    #334155 borders, 12px card radius, generous negative space; the only color is
+    the small accent triangle and the focus affordance. Looks like a panel from a
+    design-system guide.
+
+    '
+attachments:
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-reveal/sem-reveal-primary-split-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-reveal/sem-reveal-primary-render-why-not-localstorage-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-reveal/sem-reveal-derived-summary-render-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-reveal/sem-reveal-class-form-split-1280.png
+  role: reference

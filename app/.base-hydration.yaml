@@ -1,0 +1,34 @@
+schema: "noizu.start_app.base_hydration.v1"
+start_app:
+  version: "0.1.0"
+  source:
+    template_path: "/Users/keithbrings/Work/Space/Noizu/Projects/hologram-start-app"
+    tarball_path: "/tmp/semtext-hydrate/scaffold-src/start-app.tar.gz (staging copy of hologram-start-app; original untouched)"
+    tarball_md5: "c3bb6fba8715f32165efb6f0d1190039"
+hydration:
+  tool: "init-proj-scaffold"
+  hydrated_at: "2026-10-14T00:11:57Z"
+  args:
+    project_dir: "semtext.dev"
+    slug: "semtext"
+    elixir_module: "Semtext"
+    target: "/Users/keithbrings/Work/Space/Noizu/Projects/semtext.dev/.claude/worktrees/epic-elixir-replatform/app"
+    helm_mode: "skip"
+  derived:
+    web_module: "SemtextWeb"
+    otp_app: "semtext"
+    otp_app_web: "semtext_web"
+    db_name: "semtext_dev"  # actual config values; PROJECT_DIR-derived semtext_dev_dev corrected
+    db_name_test: "semtext_test"
+    frontend_name: "semtext-frontend"
+    host_port: "8080"
+start_app_scaffold:
+  applied: false
+notes: >-
+  Hydrated from Projects/hologram-start-app via init-proj-scaffold --from a
+  staging copy (original scaffold checkout left untouched). CI workflows were
+  relocated by the tool to a staging .github and are hand-adapted into
+  .github/workflows/app-ci.yml + app-nightly.yml at the semtext.dev repo root
+  (existing Next.js ci.yml/nightly.yml left untouched). Helm chart renamed to
+  helm/semtext. GitHub-only login per design v2 D4 configured in runtime.exs
+  (see notes there).

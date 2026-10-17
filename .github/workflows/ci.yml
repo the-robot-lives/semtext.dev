@@ -4,9 +4,11 @@ name: CI
 # (spec, src, site, demo, themes — the ex npl-enhanced-content showcase).
 #
 # Release path (see monorepo docs/arch/deployment.md):
-#   push main -> build sha-<7> image -> CI seds the tag into
-#   helm/semtext/values.yaml and commits [skip ci] -> ArgoCD auto-syncs.
-# Nobody hand-edits chart tags and nobody runs helm-upgrade to ship.
+#   The legacy Next.js `web` image no longer deploys. The deployed Hologram app
+#   is built and bumped by app-ci.yml (app/helm/semtext, ArgoCD path). This
+#   workflow's bump-chart job was retired 2026-10-17: it edited the dead
+#   root helm/semtext chart (since deleted) and raced the real bump, leaving ArgoCD on a
+#   revision that did not name the new image.
 #
 # Component bundles are additionally published to the cdn.semtext.dev bucket
 # under an immutable /<version>/ prefix plus a mutable /latest/ pointer
@@ -31,6 +33,9 @@ env:
   IMAGE_REPO: semtext.dev/web
   CDN_BUCKET: cdn-semtext-dev
 
+permissions:
+  contents: read
+
 jobs:
   test-landing:
     # Next.js static export: typecheck + build (landing/).
@@ -50,7 +55,7 @@ jobs:
       - run: npm run build
 
   unit:
-    # vitest unit tier + coverage gate (threshold in vite.config.ts). The dockerfile spec reads dist/, so build first.
+    # vitest unit tier + coverage gate (threshold in vite.config.ts).
     runs-on: ubuntu-latest
     env:
       CYPRESS_INSTALL_BINARY: 0 # no browser needed here
@@ -62,7 +67,6 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
-      - run: npm run build
       - run: npm run test:unit:cover
       - uses: actions/upload-artifact@v4
         if: always()
@@ -161,38 +165,6 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}:sha-${{ steps.sha.outputs.short }}
           cache-from: type=gha,scope=web
           cache-to: type=gha,scope=web,mode=max
-
-  bump-chart:
-    # Commit the new tag into the chart; ArgoCD auto-syncs the rollout.
-    needs: build-push
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Bump image tag
-        run: |
-          set -euo pipefail
-          SHORT="${GITHUB_SHA::7}"
-          VALUES=helm/semtext/values.yaml
-          # A sed -E that matches nothing still exits 0. Assert the file exists
-          # before, and prove the substitution landed after, or the deploy is a
-          # green build that ships the previous image forever.
-          test -f "$VALUES"
-          sed -i -E "s|(image: ops\\.noizu\\.com/semtext\\.dev/web:).*|\\1sha-${SHORT}|" "$VALUES"
-          grep -q "image: ops\\.noizu\\.com/semtext\\.dev/web:sha-${SHORT}\$" "$VALUES" \
-            || { echo "::error::image tag substitution did not match in ${VALUES}"; grep -n 'image:' "$VALUES"; exit 1; }
-          grep -n 'image:' "$VALUES"
-      - name: Commit & push
-        run: |
-          set -euo pipefail
-          git config user.name "semtext-ci"
-          git config user.email "ci@noizu.com"
-          git add helm/semtext/values.yaml
-          git diff --cached --quiet && exit 0
-          git commit -m "ci: deploy sha-${GITHUB_SHA::7} [skip ci]"
-          git pull --rebase origin "${{ github.ref_name }}"
-          git push
 
   publish-cdn:
     # Publish the component bundles + themes to cdn.semtext.dev.

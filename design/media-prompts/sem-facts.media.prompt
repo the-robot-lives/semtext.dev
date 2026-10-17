@@ -1,0 +1,173 @@
+schema: "0.4"
+id: sem-facts-ux-design
+type: image
+quality: high
+product_targets:
+  - semtext.dev
+tags:
+  - semtext
+  - sem-facts
+  - ux-design
+  - reference
+
+prompt:
+  text: |
+    UX design sheet for the SemText `<sem-facts>` element — a collection of
+    fact/claim pairs whose `view-as` selects the recall interaction (list =
+    read, flashcards = self-test, quiz = scored recall). Show one example
+    reading page per mode, stacked vertically, rendered in the
+    minimal-tech-light theme on a dark slate canvas (bg #0f172a, surface
+    #1e293b, fg #e2e8f0, muted #94a3b8, accent #60a5fa). Each page sits in
+    a browser-chrome frame with a small mono uppercase caption. A fact is a
+    bordered card (12px radius, hairline #334155 border, 16px inner
+    padding): the statement in the normal foreground at 600 weight, the
+    conclusion below it in the muted color. Explicit wrong candidates
+    (`incorrect-statement` children) are NEVER drawn as card prose — they
+    only ever appear as quiz option buttons.
+
+    Page 1 — caption "LIST (default)". Three fact cards stacked with a
+    12px gap, all fully readable in document order, NO interactive chrome
+    anywhere on the page — no arrows, no meter, no option buttons. The
+    cards read: "JWTs rotate per session" → "Short-lived access tokens;
+    the refresh grant issues a new pair."; "Access tokens expire after 15
+    minutes" → "The client mints a new pair from the refresh grant; the
+    user never re-signs-in mid-session."; "Client secrets never reach the
+    browser" → "The confidential client holds the secret server-side; the
+    browser only ever sees tokens."
+
+    Page 2 — caption "FLASHCARDS". A deck: a chrome strip with a left
+    arrow button, a centered text meter reading "1/3", and a right arrow
+    button at the far edges. Below it exactly ONE card: the front,
+    statement only, reading "JWTs rotate per session" — the conclusion is
+    NOT visible. In the card's lower-right corner a small muted uppercase
+    hint reads "CLICK OR PRESS ENTER TO REVEAL". Beside/below, one inset of
+    the SAME card flipped: the conclusion revealed, "Short-lived access
+    tokens; the refresh grant issues a new pair.", with a 2px accent
+    (#60a5fa) focus outline drawn around the card to show keyboard focus.
+
+    Page 3 — caption "QUIZ". All three question cards stacked (quiz does
+    not hide non-current cards; the meter tracks position and score). Each
+    card: statement as the prompt, conclusion NOT shown in the card body,
+    and under it a stack of answer buttons (left-aligned text, 8px radius,
+    hairline border, equal width) mixing the wrong candidates and sibling
+    conclusions with the one true conclusion. The first card shows the
+    answered state: the correct button — "Short-lived access tokens; the
+    refresh grant issues a new pair." — with a soft green border (#86efac),
+    the wrong buttons muted, and the chrome meter reading "1/3 · score
+    1/1". The lower cards keep their buttons unselected.
+
+    Typography: clean system sans (Inter-like), 15–16px body, 1.5 line
+    height, generous margins. Restrained: one accent, one muted tone,
+    green reserved for the correct pick. No extra chrome beyond the
+    flashcards deck strip and the option buttons.
+  negative: >
+    a fact card drawn as a button or link; statement or conclusion tinted,
+    occluded, blurred or barred; the conclusion visible on a flashcard
+    front or inside a quiz card body; wrong candidates rendered as inline
+    prose in a card body instead of answer buttons; more than one card
+    visible on the flashcards page; an arrow strip on the quiz page;
+    chrome (arrows, meter) on the list page; neon glow; light background;
+    watermark; lorem ipsum.
+  style: >
+    Flat UI spec sheet, minimal-tech aesthetic, restrained single-accent
+    palette, crisp 12px card radius, hairline #334155 borders, generous
+    negative space. Looks like a panel from a design-system guide.
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-facts/sem-facts-list-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-facts/sem-facts-primary-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-facts/sem-facts-quiz-render-the-confidential-client-hold-1280.png
+    role: reference
+
+output:
+  dimensions:
+    width: 1280
+    height: 1280
+    aspect_ratio: "1:1"
+  formats:
+    - format: png
+      filename: sem-facts-ux-design.png
+
+requirements:
+  modes:
+    - id: list
+      label: "LIST (default)"
+      must_show:
+        - three bordered fact cards, each with its statement (600 weight)
+          and its conclusion (muted) fully readable
+        - no interactive chrome at all on the page
+      must_never:
+        - draw a fact card as a button or add arrows / meter / options
+        - occlude or tint the statement or conclusion
+        - render incorrect-statement content as card prose
+    - id: flashcards
+      label: "FLASHCARDS"
+      must_show:
+        - the deck strip — left arrow, centered "1/3" meter, right arrow
+        - exactly one card visible, front = statement only, with the
+          muted "CLICK OR PRESS ENTER TO REVEAL" hint
+        - an inset showing the flipped card with the conclusion revealed
+          and a 2px accent focus outline
+      must_never:
+        - show the conclusion on the card front
+        - show more than one card at once on this page
+        - render the statement as an option button
+    - id: quiz
+      label: "QUIZ"
+      must_show:
+        - all three question cards stacked, each with answer buttons
+        - the correct option of the answered card with a soft green
+          border and the meter reading "1/3 · score 1/1"
+        - wrong buttons muted after answering
+      must_never:
+        - show a conclusion in a card body outside the answer buttons
+        - render wrong candidates as inline card prose
+        - pre-select answers on the unanswered cards
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    fact-card-is-prose:
+      weight: 0.35
+      description: >
+        Every fact reads as content, not as a control: border + surface +
+        padding only; statement in normal foreground, conclusion muted.
+      fail_signals:
+        - button fills or outlines on a card body
+        - tinted, occluded or blurred statement or conclusion
+    modes-are-distinct:
+      weight: 0.35
+      description: >
+        List has no chrome; flashcards shows exactly one card plus a flip
+        inset; quiz stacks all questions with answer buttons and one
+        answered state.
+      fail_signals:
+        - arrows or meter on the list page
+        - the conclusion shown on a flashcard front or a quiz card body
+        - quiz cards hidden instead of stacked
+    deck-chrome:
+      weight: 0.2
+      description: >
+        The flashcards page carries the left arrow / meter / right arrow
+        strip with the meter reading "1/3"; the quiz page keeps only the
+        meter, reading "1/3 · score 1/1" over the stacked cards.
+      fail_signals:
+        - chrome present on the list page
+        - an arrow strip on the quiz page
+        - meter text missing or wrong
+    theme-fidelity:
+      weight: 0.1
+      description: >
+        Dark minimal-tech palette (#0f172a bg, #60a5fa accent, green
+        #86efac for the correct pick only), hairline borders, mono
+        uppercase captions, exactly three labeled pages.
+      fail_signals:
+        - light background or multiple accent hues
+        - more or fewer than three labeled pages
+  reject_if:
+    - the conclusion is visible on a flashcard front or a quiz card body
+    - wrong candidates appear as inline card prose instead of buttons
+    - a fact card is drawn as a clickable button across its whole area
+    - the list page carries any interactive chrome

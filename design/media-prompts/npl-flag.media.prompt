@@ -1,0 +1,173 @@
+# SemText npl-flag — one runtime flag row, six render states
+# Direction A "Slate Console" (house style shared with the other tag prompts).
+# npl-flag is the ONE interactive npl runtime element in the flags family:
+# the row itself is the apply control — a toggle button (role="button",
+# aria-pressed, focusable, Enter/Space or click). Its "display modes" are
+# the states its schema and vocabulary CSS promise: default, hover/press
+# affordance, invalid value, applied, in-container, JS-off. One example
+# panel per mode, one frame.
+#
+# MODE 1 — default flag row (canonical, dark):
+#   visible: one quiet rectangular row, thin slate hairline border, rounded
+#     corners, transparent (page-surface) fill; a muted monospace name label
+#     on the left ("calm_factor"), an " = " separator, then the value
+#     ("0.5") in the page foreground, tabular-numeric weight.
+#   must never: occlude the value, dim it under an overlay, or replace it
+#     with a chip — occlusion belongs to sem-spoiler/the quiz tier, never
+#     to npl-flag; render the name and value in different typefaces.
+# MODE 2 — hover / keyboard focus:
+#   visible: the same row with the hairline border tinted toward the accent
+#     (hover) or a 2px accent outline just outside the row (focus-visible);
+#     pointer cursor on hover; NOTHING moves — no scale, no slide, no glow
+#     bloom. The layout in mode 2 is pixel-identical to mode 1.
+#   must never: animate (the element is display-only motion-free); show a
+#     focus ring only on click (focus-visible is a keyboard affordance).
+# MODE 3 — invalid value (out-of-range or non-numeric):
+#   visible: the value span carries a soft amber tint behind it and a small
+#     "⚠ " glyph in amber BEFORE the value; the value text itself stays in
+#     the page foreground, fully readable — a warning, never an error.
+#   must never: red or danger styling, strikethrough, truncated or hidden
+#     value, an error dialog look, a thrown/exception presentation.
+# MODE 4 — applied state:
+#   visible: the row border tinted toward the correct green, and a static
+#     " ✓" glyph in the correct green AFTER the value; everything else
+#     identical to mode 1. The state reads as calmly completed, not as a
+#     success banner.
+#   must never: fill the row green, animate the check, confetti, or change
+#     the value text.
+# MODE 5 — inside the npl-flags container:
+#   visible: two flag rows stacked inside the preset-badged npl-flags card
+#     (that container's own chrome is the npl-flags lane's); each row keeps
+#     its mode-1 anatomy and stays individually click-to-apply.
+#   must never: merge the rows into one block; style the container here;
+#     let a row's border touch the card edge.
+# MODE 6 — JS-off (vocabulary-only, light theme):
+#   visible: the authored source rendered as ordinary light-theme prose in
+#     a plain light card — attributes are NOT rendered (name/value live in
+#     markup), so the row area is empty prose, no border box, no chrome.
+#   must never: show any flag row, badge, focus ring, or loading state in
+#     the JS-off panel.
+#
+# Reference snapshots (dark reference page, source views — content and copy
+# authority): .tmp/semtext-docs-overhaul/snaps/npl-flag/npl-flag-fullpage-1280.png
+# and npl-flag-ex7-source-1280.png. Per-example crops there are degraded by a
+# sticky-header capture artifact; the full-page shot is the good one.
+schema: '0.4'
+id: reference-npl-flag
+type: image
+quality: high
+service: gemini
+model: gemini-2.5-flash-image
+
+prompt:
+  text: |
+    Dark-mode UI mockup of six reference-page panels in a three-by-two grid,
+    wide 16:9, flat technical illustration (screenshot-like, not 3D),
+    illustrating one interactive runtime flag row and its six render states.
+    Dark slate navy background (#0F172A) with a barely visible thin grid and
+    a faint blue radial glow upper-left. Each panel is a dark slate card
+    (#1E293B) with a thin slate hairline border (#334155), rounded corners,
+    a deep soft shadow, and a small dim caption bar above it; panels are
+    separated by thin slate hairlines.
+
+    Every flag row, in every dark panel, has the same anatomy: a full-width
+    quiet rectangle with a 1px slate border and 8px rounded corners, transparent
+    fill; inside, left-aligned, a muted slate-blue monospace name label
+    (#94A3B8, e.g. "calm_factor"), then " = " in the same muted tone, then the
+    value (e.g. "0.5") in near-white (#E2E8F0), slightly heavier weight,
+    tabular figures. Generous padding; the row reads as a settings row, not a
+    button pill.
+
+    PANEL 1 (top-left, caption "default"): one flag row exactly as described,
+    at rest.
+    PANEL 2 (caption "hover + focus"): two stacked rows — the first with its
+    border tinted blue (#60A5FA mixed into the hairline) and a pointer cursor
+    nearby; the second identical but with a 2px blue outline offset just
+    outside the row. Nothing scaled or moved.
+    PANEL 3 (caption "invalid value"): the row as in panel 1, but behind the
+    value a soft amber tint (#FBBF24 at low opacity, rounded) and a small
+    amber "⚠ " glyph immediately before the value; the value text stays
+    near-white and fully readable.
+    PANEL 4 (caption "applied"): the row border tinted green (#34D399 mixed
+    into the hairline) and a small static green " ✓" immediately after the
+    value; value text unchanged, near-white.
+    PANEL 5 (caption "inside npl-flags"): a slate card containing a small
+    pill badge at top-left, then two flag rows as in panel 1 stacked with
+    small gaps, then one line of muted italic note text; the card is the
+    container, the rows stay separate rectangles.
+    PANEL 6 (caption "JS-off (light)"): a LIGHT panel — near-white card
+    (#FAFAFA) with a light hairline border and the authored flag markup as
+    plain grey prose lines, no row rectangles, no badge, no chrome; the only
+    light panel in the grid.
+
+    Typography: clean grotesque UI sans for captions and prose, monospace for
+    all flag names and values. Palette strictly slate navy + slate borders +
+    blue accent (#60A5FA) + amber warning (#FBBF24) + green correct (#34D399)
+    + near-white text; nothing else. Flat, crisp, high-DPI, no perspective.
+
+    No text other than the labelled names/values and caption words listed.
+  negative: text walls, watermark, logo, signature, photorealism, 3D bevels,
+    gradients heavier than the stated tints, drop shadows harsher than soft,
+    red error styling, strikethrough text, hidden or blurred value text,
+    confetti, motion blur, loading spinners, extra panels, light panels
+    except panel 6
+  style: flat technical UI illustration, minimal-tech dark documentation
+    aesthetic, screenshot-like fidelity, crisp hairline borders
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-flag/npl-flag-fullpage-1280.png
+    role: reference
+    description: live dark reference page for npl-flag — all authored variants,
+      source views; copy and variant order authority
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-flag/npl-flag-ex7-source-1280.png
+    role: reference
+    description: the in-container variant (npl-flags with two flags + note text),
+      source view
+
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 1536
+    height: 864
+    aspect_ratio: '16:9'
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    anatomy-consistency:
+      weight: 0.25
+      description: every dark panel repeats the exact row anatomy — muted mono
+        name, " = ", near-white value, hairline border row rectangle
+      fail_signals:
+        - a panel where the value is occluded, blurred, or replaced by a chip
+        - rows rendered as filled buttons or pills
+    state-legibility:
+      weight: 0.25
+      description: invalid reads as amber tint + glyph with readable text;
+        applied reads as green border + trailing check; neither reads as error
+      fail_signals:
+        - red/danger styling, strikethrough, or error dialog look
+        - animated or filled success banner
+    mode-coverage:
+      weight: 0.2
+      description: six panels present — default, hover+focus, invalid, applied,
+        in-container, JS-off light
+      fail_signals:
+        - missing or duplicated panel
+        - more than one light panel
+    motion-discipline:
+      weight: 0.15
+      description: nothing implies animation — no motion blur, scale, glow bloom
+      fail_signals:
+        - motion blur, scaling artifacts, bloom glows
+    palette-discipline:
+      weight: 0.15
+      description: slate navy + blue/amber/green accents only; panel 6 light
+      fail_signals:
+        - off-palette saturated colors
+        - extra light panels
+  reject_if:
+    - any panel occludes or hides the flag value text
+    - the invalid state uses red or renders as an error
+    - a row is missing its name or value

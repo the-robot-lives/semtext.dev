@@ -1,0 +1,515 @@
+/*
+ * reference.css — styles for the /reference section (index + element pages).
+ *
+ * Scoped port of the Next site's globals.css rules that the reference pages
+ * use (code windows, toks, nav, cards, tables, sem-md example) — every rule
+ * lives under .ref-docs so the section styles itself without coupling to the
+ * shell stylesheet (semtext-site.css). Palette values are the site's, retyped
+ * verbatim: when the shell consolidates these, the .ref-docs block below is
+ * the thing to delete.
+ *
+ * Hologram note: Hologram templates escape all text — classes carry meaning,
+ * text nodes are inert. The island bridge (semtext-island.js) flips
+ * figure.is-live to reveal the JS-only controls (view pills, copy/save),
+ * which stay display:none server-side so the zero-JS page hides them —
+ * the Next site's "pills appear only under JS" behaviour.
+ */
+
+.ref-docs {
+  /* site palette (globals.css :root) — scoped so the section is
+     self-contained until the CSS consolidation lands */
+  --bg: #0f172a;
+  --bg-lift: #111827;
+  --bg-panel: #1e293b;
+  --ink: #e2e8f0;
+  --mute: #94a3b8;
+  --faint: #8291a7;
+  --accent: #7c3aed;
+  --accent-soft: #a78bfa;
+  --accent-dim: #5b21b6;
+  --code-bg: #0b1220;
+  --code-border: #334155;
+  --code-gray: #94a3b8;
+  --tok-kw: #c4b5fd;
+  --tok-fn: #7dd3fc;
+  --tok-str: #86efac;
+  --tok-num: #fcd34d;
+  --tok-cmt: #64748b;
+  --tok-type: #fda4af;
+
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.ref-docs code,
+.ref-docs pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+}
+
+.ref-docs a {
+  color: var(--accent-soft);
+}
+
+.ref-docs a:hover {
+  color: var(--ink);
+}
+
+/* ————— eyebrow + headings ————— */
+
+.g-eyebrow {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-soft);
+}
+
+.ref-docs h1 {
+  font-size: 2.25rem;
+  line-height: 1.15;
+  margin: 0.5rem 0 0;
+  font-weight: 700;
+}
+
+.ref-docs h2 {
+  font-size: 1.35rem;
+  margin: 2.25rem 0 0.5rem;
+  font-weight: 650;
+}
+
+/* ————— docs sidebar nav (DocsShell group styling) ————— */
+
+.ref-docs .g-nav-title {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.ref-docs .g-nav-link {
+  display: flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0 0.6rem;
+  border-radius: 0.35rem;
+  font-size: 0.84rem;
+  color: var(--mute);
+  text-decoration: none;
+}
+
+.ref-docs .g-nav-link:hover {
+  color: var(--ink);
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.ref-docs .g-nav-link.is-active,
+.ref-docs .g-nav-link[aria-current="page"] {
+  color: var(--accent-soft);
+  background: rgba(124, 58, 237, 0.14);
+}
+
+/* ————— filter + tag cards (index) ————— */
+
+.ref-search {
+  width: 100%;
+  max-width: 22rem;
+  background: var(--bg-lift);
+  border: 1px solid var(--code-border);
+  border-radius: 0.5rem;
+  color: var(--ink);
+  padding: 0.55rem 0.8rem;
+  font-size: 0.9rem;
+}
+
+.ref-search:focus {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 1px;
+}
+
+.ref-card-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+  margin-top: 0.9rem;
+}
+
+@media (min-width: 640px) {
+  .ref-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ref-card {
+  display: block;
+  border: 1px solid var(--code-border);
+  border-radius: 0.65rem;
+  background: var(--bg-lift);
+  padding: 0.8rem 0.9rem;
+  text-decoration: none;
+}
+
+.ref-card:hover {
+  border-color: var(--accent-dim);
+}
+
+.ref-card .ref-card-name {
+  color: var(--accent-soft);
+  font-size: 0.85rem;
+}
+
+.ref-card .ref-card-summary {
+  display: block;
+  color: var(--mute);
+  font-size: 0.8rem;
+  margin-top: 0.35rem;
+  line-height: 1.45;
+}
+
+.ref-pill {
+  display: inline-block;
+  border: 1px solid var(--code-border);
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+  font-size: 0.66rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.ref-pill.is-sem {
+  color: var(--accent-soft);
+  border-color: rgba(124, 58, 237, 0.5);
+}
+
+/* ————— attributes + reference tables ————— */
+
+.ref-attrs {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+  margin-top: 0.6rem;
+}
+
+.ref-attrs th,
+.ref-attrs td {
+  border: 1px solid var(--code-border);
+  padding: 0.4rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.ref-attrs th {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.05em;
+  color: var(--code-gray);
+  font-weight: 500;
+}
+
+.ref-attrs code {
+  color: var(--tok-fn);
+  font-size: 0.8em;
+}
+
+.ref-required {
+  color: var(--tok-type);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ————— code windows (viewer + source panes) ————— */
+
+.code-window {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 0.75rem;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.code-chrome {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.9rem;
+  background: #0a101c;
+  border-bottom: 1px solid var(--code-border);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.72rem;
+  color: var(--code-gray);
+}
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #334155;
+  flex: none;
+}
+
+.dot.live {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.code-window pre {
+  margin: 0;
+  padding: 1rem 1.1rem 1.2rem;
+  overflow-x: auto;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.8rem;
+  line-height: 1.65;
+}
+
+.code-line-no {
+  flex-shrink: 0;
+  display: inline-block;
+  width: 2.5rem;
+  margin-right: 1rem;
+  text-align: right;
+  color: var(--faint);
+  user-select: none;
+}
+
+.tok-kw { color: var(--tok-kw); }
+.tok-fn { color: var(--tok-fn); }
+.tok-str { color: var(--tok-str); }
+.tok-num { color: var(--tok-num); }
+.tok-cmt { color: var(--tok-cmt); font-style: italic; }
+.tok-type { color: var(--tok-type); }
+.tok-plain { color: var(--ink); }
+.tok-punct { color: var(--code-gray); }
+
+/* ————— viewer chrome: panes, pills, actions ————— */
+
+.ref-view-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.ref-view-body.is-split {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Source/render pills: the panes stay mounted so the bridge's injected
+   render content survives view flips untouched — the modifier class alone
+   decides which column shows. */
+.ref-source-col,
+.ref-render-col {
+  min-width: 0;
+}
+
+.ref-view-body.is-source .ref-render-col { display: none; }
+
+.ref-view-body.is-render .ref-source-col { display: none; }
+
+@media (max-width: 860px) {
+  .ref-view-body.is-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ref-pane-tag {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding: 0.5rem 0.9rem 0;
+}
+
+/* the render pane: the island bridge injects the authored markup and boots
+   the vocabulary theme into it; [data-sem-theme] is the bridge's color-mode
+   sync hook */
+[data-sem-theme] {
+  padding: 0.25rem 0.9rem 0.9rem;
+  min-height: 2rem;
+}
+
+/* zero-JS / pre-boot placeholder text inside a render pane */
+.ref-render-placeholder {
+  color: var(--faint);
+  font-size: 0.78rem;
+  padding: 0.6rem 0;
+}
+
+/* non-renderable examples say so instead of rendering */
+[data-sem-render-note] {
+  border-top: 1px dashed var(--code-border);
+  margin-top: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  color: var(--faint);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+/* view pills + copy/save are JS-only controls: hidden until the bridge
+   flips .is-live on the figure after a successful boot */
+.ref-view-pills,
+.ref-actions {
+  display: none;
+}
+
+figure.code-window.is-live .ref-view-pills,
+figure.code-window.is-live .ref-actions {
+  display: flex;
+}
+
+.ref-view-pills {
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.ref-view-pill {
+  border: 1px solid var(--code-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mute);
+  font-size: 0.68rem;
+  padding: 0.1rem 0.55rem;
+  cursor: pointer;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+}
+
+.ref-view-pill[aria-pressed="true"] {
+  color: var(--accent-soft);
+  border-color: var(--accent-dim);
+  background: rgba(124, 58, 237, 0.16);
+}
+
+.ref-actions {
+  gap: 0.3rem;
+  margin-left: auto;
+}
+
+.ref-action {
+  border: 1px solid var(--code-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mute);
+  font-size: 0.68rem;
+  padding: 0.1rem 0.55rem;
+  cursor: pointer;
+}
+
+.ref-action:hover {
+  color: var(--ink);
+  border-color: var(--accent-dim);
+}
+
+/* ————— sem-md example (Render/Source + static table) ————— */
+
+.ref-md-example sem-md:not([data-sem-upgraded]) {
+  display: none;
+}
+
+.ref-md-example .ref-md-static {
+  display: block;
+}
+
+.ref-md-example:has(sem-md[data-sem-upgraded]) .ref-md-static {
+  display: none;
+}
+
+.ref-md-example table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.75rem 0;
+  font-size: 0.875rem;
+}
+
+.ref-md-example th,
+.ref-md-example td {
+  border: 1px solid var(--code-border);
+  padding: 0.4rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.ref-md-example th {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.05em;
+  color: var(--code-gray);
+  font-weight: 500;
+}
+
+.ref-md-static-label {
+  padding: 0.4rem 0;
+  font-size: 0.75rem;
+  color: var(--mute);
+}
+
+/* ————— misc page furniture ————— */
+
+.ref-muted {
+  color: var(--mute);
+}
+
+.ref-faint {
+  color: var(--faint);
+}
+
+.ref-note-box {
+  border: 1px solid var(--code-border);
+  border-radius: 0.65rem;
+  background: var(--bg-lift);
+  padding: 0.8rem 1rem;
+  color: var(--mute);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.ref-runtime-line {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.75rem;
+  color: var(--faint);
+  margin-top: 0.4rem;
+}
+
+/* ————— sem-md example: source view ————— */
+
+.ref-md-source-pre {
+  margin: 0;
+  padding: 1rem;
+  max-height: 24rem;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.ref-md-source-pre code {
+  font: inherit;
+}
+
+.ref-md-line {
+  display: block;
+  min-height: 1.18em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ref-md-ln {
+  display: inline-block;
+  width: 2.4em;
+  margin-right: 0.9em;
+  text-align: right;
+  color: var(--faint);
+  user-select: none;
+}

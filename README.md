@@ -37,8 +37,8 @@ This repo now holds BOTH halves of semtext.dev:
   and `web/demo` are now root-level `site/` and `demo/`.
 
 One image serves everything: landing at `/`, showcase under `/site/`,
-`/demo/`, `/spec/` (root `Dockerfile` + `nginx.conf`). `helm/semtext` is
-the production chart, imported unchanged from npl. CI builds
-`ops.noizu.com/semtext.dev/web:sha-*` and commits the chart tag bump;
+`/demo/`, `/spec/` (root `Dockerfile` + `nginx.conf`). The Hologram app's chart is `app/helm/semtext` (the legacy root `helm/semtext`
+Next.js chart was deleted 2026-10-17). `app-ci.yml` builds
+`ops.noizu.com/semtext.dev/app:sha-*` and commits the chart tag bump;
 ArgoCD auto-syncs (never helm-upgrade for release). The npl-enhanced-content
 repo remains the historical record; it is not deleted.
