@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Fragment, type ReactNode } from "react";
 import { DocsShell } from "@/components/docs-shell";
 import { ExampleViewer } from "@/components/example-viewer";
+import { ReferenceLinkCopy } from "@/components/reference-link-copy";
 import { SemMdExample } from "@/components/sem-md-example";
 import { REFERENCE_SEM_MD_RENDERED } from "@/components/sem-md-rendered";
 import type {
@@ -99,6 +100,9 @@ export default async function ReferenceElementPage({
 
   return (
     <DocsShell active={`ref-${t.name}`} groups={groups}>
+      {/* SEMTEX-010: rendered sem-reference back arrows copy their link
+          instead of navigating (the jump read as a refresh). */}
+      <ReferenceLinkCopy />
       <main id="main">
         <p className="g-eyebrow">
           Reference · {t.family === "sem" ? "SemText" : "NPL"}

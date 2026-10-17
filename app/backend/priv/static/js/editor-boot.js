@@ -172,6 +172,16 @@
     var lane = ed.querySelector(":scope > sem-editor-code");
     var pane = ed.querySelector(".sem-ed-pane-code");
     if (lane && pane && lane.parentElement !== pane) pane.appendChild(lane);
+    // The pane's slot hint stays forever under light DOM (no shadow root,
+    // so the slot never distributes). installBootCss() hides it with a
+    // head <style>, but the head is not durable — styles injected there
+    // can be wiped after mount while the runtime re-injects its own. Hide
+    // the hint on the element itself so it survives any head management.
+    if (pane) {
+      pane.querySelectorAll("p.sem-ed-empty").forEach(function (hint) {
+        if (hint.style.display !== "none") hint.style.display = "none";
+      });
+    }
   }
 
   // Invariant: #editor-root holds exactly ONE editor. Every re-attach
