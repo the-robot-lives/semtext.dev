@@ -1,10 +1,11 @@
 /**
  * SemText — fallback tier entry point.
  *
- * This module and everything it imports must stay free of Lit. It ships as
- * `dist/semtext-fallback.js`, a classic IIFE script that runs standalone in a
- * document that never loads the component bundle: the fallback tier is what
- * makes a portable `file://` document interactive with zero network.
+ * This module and everything it imports must stay free of Lit. Since 0.9.0 it
+ * ships folded into `dist/semtext.js` (the one runtime bundle) rather than as
+ * a standalone classic script — but the invariant stands: the handlers run
+ * standalone in documents that never upgrade a single component, and that is
+ * what makes a portable `file://` document interactive with zero network.
  *
  * TIER HANDOFF. Each handler marks what it wired with `data-sem-fallback`.
  * When the Lit bundle is also present, `SemElement.connectedCallback` claims
