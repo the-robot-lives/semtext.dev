@@ -50,7 +50,7 @@ document renderers, and any server component.
 The ROADMAP's non-negotiable invariants apply unchanged, and three of them
 shape this design hard enough to restate:
 
-1. **Canonical artifact = standalone HTML, IIFE classic scripts, no runtime
+1. **Canonical artifact = standalone XHTML, IIFE classic scripts, no runtime
    fetch, file:// double-click works.** Every v2 capability must fit the
    `semtext-js-shell.js` IIFE bundle — and since the 2026-10-14 decision they
    all do by construction: the canvas driver is compiled into the same classic

@@ -20,7 +20,7 @@ tags: [agent, extraction, cli]
 ## Acceptance Criteria
 
 - **Given** a valid document file
-  **When** `semtext extract doc.html` runs
+  **When** `semtext extract doc.xhtml` runs
   **Then** it emits the extraction record using the same code as the browser extract
   tier (one implementation, two hosts).
 - **Given** an invalid document
