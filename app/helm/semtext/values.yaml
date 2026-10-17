@@ -8,7 +8,7 @@ appDomain: proposals.semtext.dev
 cookieDomain: ""
 
 backend:
-  image: ops.noizu.com/semtext.dev/app:sha-b1630b2
+  image: ops.noizu.com/semtext.dev/app:sha-aac7e25
   port: 4000
   resources:
     requests:
