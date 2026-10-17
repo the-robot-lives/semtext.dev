@@ -8,9 +8,9 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseOnboardingPage do
 
   use Hologram.Page
 
-  alias SemtextWeb.Docs.Highlighter
+  alias Semtext.Reference.Tokenize
   alias SemtextWeb.Docs.NavGroups
-  alias SemtextWeb.Hologram.Components.Site.ExampleViewer
+  alias SemtextWeb.Hologram.Components.ExampleViewer
   alias SemtextWeb.Hologram.Components.Site.ShowcaseFooter
   alias SemtextWeb.Hologram.Components.Site.ShowcaseFrame
   alias SemtextWeb.Hologram.Layouts.SiteLayout
@@ -21,7 +21,12 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseOnboardingPage do
     page_title: "Onboarding — SemText showcase",
     description:
       "An onboarding checklist in SemText: a status-annotated procedure, a completion meter and the facts a new contributor keeps — the checklist reads, and tracks itself.",
-    canonical: "https://semtext.dev/showcase/onboarding/"
+    canonical: "https://semtext.dev/showcase/onboarding/",
+    # SEMTEX-013: the render pane boots through the island bridge (the one
+    # documented imperative-DOM seam), which reference_assets loads. Without
+    # it the pane hydrates markup only (site-chrome.js) and the flashcards
+    # never upgrade — the exact break this ticket reports.
+    reference_assets: true
 
   @example ~S"""
   <sem-enhanced-document>
@@ -38,12 +43,12 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseOnboardingPage do
     </sem-procedure>
 
     <h2>Facts worth keeping</h2>
-    <sem-facts view-as="flashcards" controls="shuffle">
-      <sem-fact id="ob-branch" kind="concept">
+    <sem-facts view-as="flashcards">
+      <sem-fact id="ob-branch">
         <statement>Where does feature work live?</statement>
         <conclusion>In a worktree under .claude/worktrees/, forked from develop.</conclusion>
       </sem-fact>
-      <sem-fact id="ob-main" kind="invariant">
+      <sem-fact id="ob-main">
         <statement>Who merges to main?</statement>
         <conclusion>CI only — the release path is automated.</conclusion>
         <incorrect-statement>The latest reviewer merges it by hand.</incorrect-statement>
@@ -52,18 +57,58 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseOnboardingPage do
   </sem-enhanced-document>
   """
 
+  # SEMTEX-013: the render pane's runtime spec — the same file set the Next
+  # page's BUNDLES dedupe produces (semtext-lazy.js plus the sem-stubs and
+  # sem-facts chunks; sem-progress/sem-procedure/sem-step ride sem-stubs,
+  # sem-facts/sem-fact add sem-facts). The island bridge auto-boots panes
+  # carrying data-sem-pane: html injects the authored markup, wire: true
+  # attaches the flip/quiz handlers, lazy defers to the loader. Spec fields
+  # mirror Semtext.Reference.Tags.viewer_spec/3 (kept literal here — the
+  # onboarding document is not a schema tag, so it has no tag record).
+  @viewer_spec_json Jason.encode!(%{
+    "renderable" => true,
+    "lazy" => true,
+    "classForm" => false,
+    "wire" => true,
+    "html" => @example,
+    "files" => [
+      %{"src" => "/semtext/semtext-lazy.js", "type" => "module"},
+      %{"src" => "/semtext/chunks/sem-stubs.js", "type" => "module"},
+      %{"src" => "/semtext/chunks/sem-facts.js", "type" => "module"}
+    ],
+    "themeCss" => [
+      "/semtext/themes/_vocabulary.css",
+      "/semtext/themes/minimal-tech-light.css"
+    ]
+  })
+
+  # Prebuilt clipboard/download snippets (parity with the reference viewer's
+  # Copy/Save chrome — built server-side so the client never needs Jason).
+  @copy_js "navigator.clipboard.writeText(" <> Jason.encode!(@example) <> ")"
+
+  @save_js "var b=new Blob([" <>
+             Jason.encode!(@example) <>
+             "],{type:\"text/html;charset=utf-8\"}),u=URL.createObjectURL(b),a=document.createElement(\"a\");" <>
+             "a.href=u;a.download=\"onboarding.md\";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u)"
+
   def init(_params, component, _server) do
     put_state(component,
       groups: NavGroups.groups(),
-      lines: Highlighter.numbered_lines(@example),
-      # raw source for ExampleViewer data-sem-html (template @example = state key)
-      example: @example
+      # The island viewer tokenizes per line (shape %{n, toks}), unlike the
+      # site viewer's numbered_lines — same scanner family, pane contract.
+      lines: Tokenize.html_lines(@example),
+      # raw source: template @example below is state, and the pane spec
+      # carries it for the island's markup injection.
+      example: @example,
+      spec_json: @viewer_spec_json,
+      copy_js: @copy_js,
+      save_js: @save_js
     )
   end
 
   def template do
     ~HOLO"""
-    <ShowcaseFrame slug="onboarding" title="Onboarding: a checklist that reads and tracks" groups={@groups} sections={[%{id: "example", label: "The document"}, %{id: "why", label: "Why this works"}]}>
+    <ShowcaseFrame slug="onboarding" title="Onboarding: a checklist that reads and tracks" groups={@groups} sections={[%{id: "example", label: "The document"}]}>
       <p class="mt-4 max-w-3xl text-base leading-7 text-ink-mute">
         Onboarding material decays fastest when it lives in three places:
         the checklist in a doc, the facts in a wiki, the quiz in a form. In
@@ -83,29 +128,20 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseOnboardingPage do
           <code class="font-mono">ob-main</code> joins the quiz options
           when the deck is switched to quiz view.
         </p>
-        <ExampleViewer cid="example-viewer" id="onboarding" label="onboarding example" filename="onboarding.md" caption="authored SemText" lines={@lines} renderable={true} raw={@example} />
-      </section>
-
-      <section id="why" class="mt-14 scroll-mt-24">
-        <h2 class="text-xl font-semibold tracking-tight text-ink">
-          Why this works
-        </h2>
-        <ul class="mt-4 flex max-w-3xl flex-col gap-2 text-sm leading-6 text-ink-mute" role="list">
-          <li>
-            <code class="font-mono">sem-step</code> status is canonical —
-            done / current / todo / blocked — and DOM order is the execution
-            order, so the checklist cannot silently disagree with itself.
-          </li>
-          <li>
-            <code class="font-mono">sem-progress</code> is one scalar
-            assertion: <code class="font-mono">value</code> clamps to
-            0..1 and the no-script tier renders the number, never a fake bar.
-          </li>
-          <li>
-            An <code class="font-mono">incorrect-statement</code> is never
-            extracted as a claim — it only ever plays the wrong answer.
-          </li>
-        </ul>
+        <ExampleViewer
+          cid="onboarding-viewer"
+          anchor="primary"
+          code={@example}
+          lines={@lines}
+          renderable={true}
+          render_note=""
+          spec_json={@spec_json}
+          aria_label="Authored onboarding example"
+          chrome_label="onboarding.md"
+          filename="onboarding.md"
+          copy_js={@copy_js}
+          save_js={@save_js}
+        />
       </section>
 
       <ShowcaseFooter>
