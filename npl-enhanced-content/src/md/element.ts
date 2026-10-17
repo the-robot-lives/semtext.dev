@@ -2,10 +2,10 @@
  * md/element — sem-md: chrome, rendered body, raw fence, toggle and copy.
  *
  * Spec: spec/schema/sem-md.md. Idempotent per element: chrome already
- * present means nothing is built again, which lets the Lit wrapper call
- * this after the bundle may already have run (or vice versa). The tier
- * marker is NOT set here — the bundle's document scan stamps
- * `data-sem-fallback`, the Lit wrapper stamps `data-sem-upgraded`.
+ * present means nothing is built again, which lets the Lit component call
+ * this after the bundle scan may already have run (or vice versa). The
+ * marker is NOT set here — the calling layer (bundle scan or component)
+ * stamps `data-sem-upgraded`.
  *
  * The element's text is consumed: after enhancement it holds exactly the
  * chrome, the rendered `.sem-md-body` and the `.sem-md-raw` fence whose
@@ -69,7 +69,12 @@ function build(el: Element, source: string, enhanceFence?: (fence: Element) => v
   const controls = (param(el, 'controls') || 'toggle,copy').split(/[,\s]+/).filter(Boolean);
   const label = param(el, 'label') || '';
   let raw = param(el, 'view-as') === 'raw';
-  el.textContent = '';
+  // Marker-preserving wipe: lit light-DOM part markers are runtime chrome —
+  // ejecting them makes the NEXT render throw ("ChildPart has no parentNode").
+  for (const n of Array.from(el.childNodes)) {
+    if (n.nodeType === Node.COMMENT_NODE) continue; // lit part markers
+    el.removeChild(n);
+  }
 
   const div = (cls: string): HTMLDivElement => {
     const d = document.createElement('div');
