@@ -41,39 +41,58 @@ migrate:
 database:
   host: app-timescaledb.apps.svc.cluster.local
   port: 5432
-  name: semtext
+  name: semtext_prod
 
+# Reference only: REDIS_URL arrives via the synced secret (platform-valkey
+# default user, db 6 — 0-5 are taken by sibling apps). This stanza feeds no
+# template; kept so operators can see the target at a glance.
 redis:
-  host: app-valkey.apps.svc.cluster.local
+  host: platform-valkey.platform.svc.cluster.local
   port: 6379
-  db: 7
+  db: 6
 
 fleetIngest:
   # Fleet dashboard ingest endpoint for the daily FleetPush push.
   url: "https://fleet.noizu.com/api/v1/ingest/metrics"
 
+# Synced by the chart-managed InfisicalSecret below from Infisical path
+# /apps/semtext (store keys are the env names: DATABASE_URL, SECRET_KEY_BASE,
+# SESSION_SIGNING_SALT, GUARDIAN_SECRET_KEY, REDIS_URL, SEMTEXT_DB_*).
 secrets:
-  name: semtext-app-secrets
+  name: semtext-secrets
+  infisical:
+    enabled: true
+    resyncInterval: 120
+    hostAPI: https://infisical.noizu.com/api
+    credentialsSecret: universal-auth-credentials
+    credentialsNamespace: infra
+    projectSlug: k8-infra
+    envSlug: prod
+    secretsPath: "/apps/semtext"
   keys:
     dbUser: SEMTEXT_DB_USER
     dbPassword: SEMTEXT_DB_PASSWORD
-    databaseUrl: SEMTEXT_DATABASE_URL
-    secretKeyBase: SEMTEXT_SECRET_KEY_BASE
-    guardianSecretKey: SEMTEXT_GUARDIAN_SECRET_KEY
-    redisUrl: SEMTEXT_REDIS_URL
+    databaseUrl: DATABASE_URL
+    secretKeyBase: SECRET_KEY_BASE
+    sessionSigningSalt: SESSION_SIGNING_SALT
+    guardianSecretKey: GUARDIAN_SECRET_KEY
+    redisUrl: REDIS_URL
     # Fleet dashboard (fleet.noizu.com) daily ingest bearer key. Optional
     # secretKeyRef in _helpers.tpl: until it lands in the synced secret the
     # pod boots without it and FleetPush no-ops (logs once).
     fleetIngestKey: SEMTEXT_FLEET_INGEST_KEY
-    sendgridApiKey: SEMTEXT_SENDGRID_API_KEY
-    oidcClientId: SEMTEXT_OIDC_CLIENT_ID
-    oidcClientSecret: SEMTEXT_OIDC_CLIENT_SECRET
+    # Not provisioned yet — empty disables the env (the {{- if gates in
+    # _helpers.tpl). Flip these on (and set the /apps/semtext store keys)
+    # when the user creates the OAuth App / GitHub App / Turnstile account.
+    sendgridApiKey: ""
+    oidcClientId: ""
+    oidcClientSecret: ""
     googleClientId: ""
     googleClientSecret: ""
     facebookClientId: ""
     facebookClientSecret: ""
-    githubClientId: SEMTEXT_GITHUB_CLIENT_ID
-    githubClientSecret: SEMTEXT_GITHUB_CLIENT_SECRET
+    githubClientId: ""
+    githubClientSecret: ""
     linkedinClientId: ""
     linkedinClientSecret: ""
     samlSpCert: ""
@@ -122,6 +141,10 @@ analytics:
     host: "https://us.i.posthog.com"
 
 ingress:
+  # Extra hosts routed identically to `domain` (TLS included). www was
+  # served by the pre-replatform static chart — parity requires it.
+  extraHosts:
+    - www.semtext.dev
   enabled: true
   className: nginx
   annotations:
@@ -140,9 +163,9 @@ tls:
     credentialsNamespace: infra
     projectSlug: k8-infra
     envSlug: prod
-    secretsPath: "/apps/tls/therobotlives"
-    crtKey: THEROBOTLIVES_TLS_CRT
-    keyKey: THEROBOTLIVES_TLS_KEY
+    secretsPath: "/apps/tls/semtext"
+    crtKey: SEMTEXT_TLS_CRT
+    keyKey: SEMTEXT_TLS_KEY
 
 # OpenTelemetry → SigNoz wiring (conventions: trl-infra docs/observability/
 # OTEL-CONVENTIONS.md). enabled=false ships NO OTEL_* env vars at all, so the

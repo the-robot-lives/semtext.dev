@@ -71,6 +71,11 @@ app.kubernetes.io/instance: {{ .Release.Name }}
     secretKeyRef:
       name: {{ .Values.secrets.name }}
       key: {{ .Values.secrets.keys.secretKeyBase }}
+- name: SESSION_SIGNING_SALT
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.secrets.name }}
+      key: {{ .Values.secrets.keys.sessionSigningSalt }}
 - name: GUARDIAN_SECRET_KEY
   valueFrom:
     secretKeyRef:
@@ -246,4 +251,73 @@ app.kubernetes.io/instance: {{ .Release.Name }}
       name: {{ .Values.secrets.name }}
       key: {{ .Values.secrets.keys.awsSecretAccessKey | default "AWS_SECRET_ACCESS_KEY" }}
 {{- end }}
+{{- end }}
+
+{{- define "hologram-start-app.sitePaths" -}}
+{{- $d := . }}
+- path: /auth/verify
+  pathType: Exact
+  backend:
+    service:
+      name: {{ $d.svc }}
+      port:
+        number: {{ $d.fe }}
+- path: /auth/verify-email
+  pathType: Exact
+  backend:
+    service:
+      name: {{ $d.svc }}
+      port:
+        number: {{ $d.fe }}
+- path: /auth/sso-callback
+  pathType: Exact
+  backend:
+    service:
+      name: {{ $d.svc }}
+      port:
+        number: {{ $d.fe }}
+# Hologram page under /auth/*: must not fall to the /auth prefix rule
+# (Phoenix /auth/:provider) when frontend and backend ports differ.
+- path: /auth/invite-required
+  pathType: Exact
+  backend:
+    service:
+      name: {{ $d.svc }}
+      port:
+        number: {{ $d.fe }}
+- path: /api
+  pathType: Prefix
+  backend:
+    service:
+      name: {{ $d.svc }}
+      port:
+        number: {{ $d.be }}
+- path: /health
+  pathType: Exact
+  backend:
+    service:
+      name: {{ $d.svc }}
+      port:
+        number: {{ $d.be }}
+- path: /auth
+  pathType: Prefix
+  backend:
+    service:
+      name: {{ $d.svc }}
+      port:
+        number: {{ $d.be }}
+- path: /sso
+  pathType: Prefix
+  backend:
+    service:
+      name: {{ $d.svc }}
+      port:
+        number: {{ $d.be }}
+- path: /
+  pathType: Prefix
+  backend:
+    service:
+      name: {{ $d.svc }}
+      port:
+        number: {{ $d.fe }}
 {{- end }}
