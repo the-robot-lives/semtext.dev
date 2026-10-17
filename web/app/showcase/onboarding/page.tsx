@@ -4,6 +4,22 @@ import {
   ShowcaseFooter,
   ShowcaseFrame,
 } from "@/components/showcase-page";
+import { bundlesFor } from "@/data/reference-tags";
+
+/*
+ * The shipped bundle files this example's tags render through (sem-progress,
+ * sem-procedure/sem-step and sem-facts all ride semtext-lazy.js — deduped by
+ * file+chunk so the viewer loads the lazy loader once and both chunks).
+ * Without them the render pane never wires a runtime: the flashcards stay
+ * un-upgraded markup (SEMTEX-013).
+ */
+const BUNDLES = [
+  ...new Map(
+    ["sem-progress", "sem-procedure", "sem-step", "sem-facts", "sem-fact"]
+      .flatMap((t) => bundlesFor(t)?.bundles ?? [])
+      .map((b) => [`${b.file}:${b.chunk ?? ""}`, b] as const),
+  ).values(),
+];
 
 export const metadata: Metadata = {
   title: "Onboarding — SemText showcase",
@@ -32,12 +48,12 @@ const EXAMPLE = `<sem-enhanced-document>
   </sem-procedure>
 
   <h2>Facts worth keeping</h2>
-  <sem-facts view-as="flashcards" controls="shuffle">
-    <sem-fact id="ob-branch" kind="concept">
+  <sem-facts view-as="flashcards">
+    <sem-fact id="ob-branch">
       <statement>Where does feature work live?</statement>
       <conclusion>In a worktree under .claude/worktrees/, forked from develop.</conclusion>
     </sem-fact>
-    <sem-fact id="ob-main" kind="invariant">
+    <sem-fact id="ob-main">
       <statement>Who merges to main?</statement>
       <conclusion>CI only — the release path is automated.</conclusion>
       <incorrect-statement>The latest reviewer merges it by hand.</incorrect-statement>
@@ -60,10 +76,7 @@ export default function OnboardingShowcasePage() {
           from.
         </>
       }
-      sections={[
-        { id: "example", label: "The document" },
-        { id: "why", label: "Why this works" },
-      ]}
+      sections={[{ id: "example", label: "The document" }]}
     >
       <section id="example" className="mt-10 scroll-mt-24">
         <h2 className="text-xl font-semibold tracking-tight text-ink">
@@ -75,29 +88,12 @@ export default function OnboardingShowcasePage() {
           <code className="font-mono">ob-main</code> joins the quiz options
           when the deck is switched to quiz view.
         </p>
-        <ExampleViewer name="onboarding" code={EXAMPLE} renderable={true} />
-      </section>
-
-      <section id="why" className="mt-14 scroll-mt-24">
-        <h2 className="text-xl font-semibold tracking-tight text-ink">
-          Why this works
-        </h2>
-        <ul className="mt-4 flex max-w-3xl flex-col gap-2 text-sm leading-6 text-ink-mute" role="list">
-          <li>
-            <code className="font-mono">sem-step</code> status is canonical —
-            done / current / todo / blocked — and DOM order is the execution
-            order, so the checklist cannot silently disagree with itself.
-          </li>
-          <li>
-            <code className="font-mono">sem-progress</code> is one scalar
-            assertion: <code className="font-mono">value</code> clamps to
-            0..1 and the no-script tier renders the number, never a fake bar.
-          </li>
-          <li>
-            An <code className="font-mono">incorrect-statement</code> is never
-            extracted as a claim — it only ever plays the wrong answer.
-          </li>
-        </ul>
+        <ExampleViewer
+          name="onboarding"
+          code={EXAMPLE}
+          renderable={true}
+          bundles={BUNDLES}
+        />
       </section>
 
       <ShowcaseFooter>
