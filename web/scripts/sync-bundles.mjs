@@ -150,6 +150,7 @@ function copyRuntimeSet(srcBase, dstBase, label) {
     'npl-manifest.json',
     'semtext-js-shell.js',
     'semtext-js-shell-manifest.json',
+    'semtext-editor.js',
   ]) {
     copyFile(join(srcBase, f), join(dstBase, f), `${label}/${f}`);
   }
