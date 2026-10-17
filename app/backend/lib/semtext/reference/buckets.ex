@@ -111,12 +111,16 @@ defmodule Semtext.Reference.Buckets do
         ]
       ),
       Norm.bucket_def("definitions", "Definitions & citations",
-        description: "Closed key/value assertions and the numbered works the prose cites.",
+        description: "Closed key/value assertions, the numbered works the prose cites, and the self-describing vocabulary cards (tag/attribute/API definitions).",
         names: [
           "sem-properties",
           "sem-property",
           "sem-references",
-          "sem-reference"
+          "sem-reference",
+          "sem-tag-def",
+          "sem-tag-attr",
+          "sem-api-call",
+          "sem-api-param"
         ]
       )
       ]

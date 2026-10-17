@@ -5,11 +5,10 @@ Contract per conventions.md v0.6. BDD source of truth for
 
 ## Scope semantics
 
-A source listing with provenance. The element exists because plain
-`<pre><code>` cannot carry a filename, a language, or a set of emphasised
-lines that a machine can read back, and because copy / wrap are reading
-affordances that need JS. The listing itself is **verbatim**: whitespace
-inside `<code>` is content, never normalised.
+A source listing with provenance: a filename, a language, emphasised
+lines a machine can read back, and copy / wrap controls plain
+`<pre><code>` cannot carry. The listing itself is **verbatim**:
+whitespace is content, never normalised.
 
 ## Authoring form
 
