@@ -1,15 +1,19 @@
 # Schema — `sem-code`
 
-Contract per conventions.md v0.5. BDD source of truth for
+Contract per conventions.md v0.6. BDD source of truth for
 `test/e2e/sem-code.cy.js`. Changes here precede spec changes precede code.
 
 ## Scope semantics
 
-A source listing with provenance. The element exists because plain
+A source listing with provenance — and, in flat form, the canonical
+**inline code** element (v0.6). The element exists because plain
 `<pre><code>` cannot carry a filename, a language, or a set of emphasised
-lines that a machine can read back, and because copy / wrap are reading
-affordances that need JS. The listing itself is **verbatim**: whitespace
-inside `<code>` is content, never normalised.
+lines that a machine can read back, because copy / wrap are reading
+affordances that need JS, and because inline code deserves the same
+one-tag vocabulary treatment as every other inline element (raw `<code>`
+still parses everywhere; new authoring prefers `sem-code`). The listing
+itself is **verbatim**: whitespace inside `<code>` is content, never
+normalised.
 
 ## Authoring form
 
@@ -27,9 +31,22 @@ Class-form alias (conventions Appendix A): `div.sem-code[data-lang][data-filenam
 with the same `<pre><code>` child. Parameters are read as `data-<name>`
 first, then bare `<name>`.
 
-- Child: **exactly one `<pre>`**, conventionally wrapping one `<code>`. The
-  listing is the `<code>`'s text (the `<pre>`'s when no `<code>` is
-  authored).
+- **Block form:** exactly one `<pre>`, conventionally wrapping one
+  `<code>`. The listing is the `<code>`'s text (the `<pre>`'s when no
+  `<code>` is authored).
+- **Inline flat form (v0.6, preferred inline form):** no `<pre>` child —
+  the element's own text is the code:
+  `<sem-code>npm run validate</sem-code>`.
+  - Flat element, **single line**, no `filename` / `lang` / `mark` /
+    `controls`: renders as inline code wherever phrasing content flows
+    (the v0.6 structural stylesheet styles it as an inline code chip;
+    nothing is wrapped or hoisted).
+  - Flat element with `filename`, `lang`, `mark` or `controls`, or
+    multi-line text: treated as a **block listing** — the extension layer
+    wraps the text in `<pre><code>` (preserving it byte-for-byte) and the
+    reading chrome attaches exactly as in block form.
+  - Raw `<code>` (in or out of `sem-code`) still parses — compat; new
+    authoring does not use it (conventions §3.1).
 - `lang` (optional): language token, rendered as a badge.
 - `filename` (optional): provenance label.
 - `mark` (optional): emphasised lines, 1-based, comma list of numbers
@@ -100,9 +117,10 @@ None.
   - `lang` / `filename`: attribute strings, `""` when absent.
   - `marks`: the parsed, expanded, ascending line numbers.
   - `source`: the listing **verbatim** — the `<code>` text content with
-    its whitespace intact. This is a recorded exception to the "text is
-    normalised" rule (like `sem-progress`'s derived text): a listing whose
-    indentation was collapsed would be a different program.
+    its whitespace intact (the element's own text in flat form). This is
+    a recorded exception to the "text is normalised" rule (like
+    `sem-progress`'s derived text): a listing whose indentation was
+    collapsed would be a different program.
 - `text` = the normalised single-line form of the source (whitespace runs
   collapsed), so consumers that only read `text` still get the content.
 - The annotated-text renderer emits `source` as an indented block under

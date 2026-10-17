@@ -37,7 +37,7 @@
  *                                                   (or dist/semtext.js for
  *                                                   "bundle") — never
  *                                                   hardcode a size in copy.
- *   <!-- sem:inline spec-version -->                "v0.5" — the draft spec
+ *   <!-- sem:inline spec-version -->                "v0.6" — the draft spec
  *                                                   revision, from package.json
  *                                                   `specVersion`. Demo titles
  *                                                   and copy self-label from
