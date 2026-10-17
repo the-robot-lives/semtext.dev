@@ -5,7 +5,6 @@
  * and this package ships five independent classic scripts:
  *
  *   dist/semtext.js           Lit custom elements          (global SemText)
- *   dist/semtext-fallback.js  vanilla fallback tier        (global SemTextFallback)
  *   dist/semtext-reading.js   prose-reading behaviours     (global SemTextReading)
  *   dist/semtext-extract.js   record extraction            (global SemTextExtract)
  *   dist/semtext-md.js        sem-md Markdown renderer     (global SemTextMd)
@@ -35,7 +34,6 @@ const targets = [
   // handler selects both authoring forms (`:is(sem-x, .sem-x)`), the
   // bare→data-* attribute mirror, the tag-form note body wrap. Recorded in
   // ROADMAP "Tag-form canonical decisions".
-  { name: 'semtext-fallback.js', entry: 'src/fallback/index.ts', global: 'SemTextFallback', budgetKb: 14, required: true },
   { name: 'semtext-reading.js',  entry: 'src/reading/index.ts',  global: 'SemTextReading',  budgetKb: 19.5, required: true },
   { name: 'semtext-extract.js',  entry: 'src/extract/index.ts',  global: 'SemTextExtract',  budgetKb: 12, required: false },
   { name: 'semtext-md.js',       entry: 'src/md/index.ts',       global: 'SemTextMd',       budgetKb: 8.5,  required: true },

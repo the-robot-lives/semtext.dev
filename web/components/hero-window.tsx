@@ -51,10 +51,16 @@ const RENDERED_HTML = `<sem-note variant="warning">
 
 declare global {
   interface Window {
-    // The bundle's enhance(root) accepts a Document or any element subtree
-    // (it only calls root.querySelectorAll — see semtext-fallback.js K()).
-    SemTextFallback?: { enhance: (root: Document | HTMLElement) => void };
-    __semJsOff?: boolean;
+    // The one bundle's scoped passes accept a Document or any element
+    // subtree (each only calls root.querySelectorAll). Auto-wiring runs on
+    // DOMContentLoaded for markup present at parse time; panes injected
+    // later (this component's dangerouslySetInnerHTML) get the explicit
+    // scoped calls below.
+    SemText?: {
+      enhanceCore: (root: Document | HTMLElement) => void;
+      enhanceReading?: (root: Document | HTMLElement) => void;
+      enhanceMdDocument?: (root: Document | HTMLElement) => void;
+    };
   }
 }
 
@@ -93,15 +99,12 @@ export function HeroWindow() {
           link.href = href;
           document.head.appendChild(link);
         }
-        if (!window.SemTextFallback) {
-          // Keep the bundle from auto-wiring the document on injection;
-          // wiring is explicit below.
-          window.__semJsOff = true;
+        if (!window.SemText) {
           await new Promise<void>((resolve, reject) => {
             const script = document.createElement("script");
-            script.src = semtextAsset("semtext-fallback.js");
+            script.src = semtextAsset("semtext.js");
             script.onload = () => resolve();
-            script.onerror = () => reject(new Error("semtext-fallback.js failed to load"));
+            script.onerror = () => reject(new Error("semtext.js failed to load"));
             document.head.appendChild(script);
           });
         }
@@ -114,13 +117,17 @@ export function HeroWindow() {
       // an unpredictable point around the DOMContentLoaded document pass
       // (discarding any wiring on it), so after wiring we re-check the
       // pane's own marker on a short schedule: each re-check is a no-op
-      // once the deck carries data-sem-fallback, and any toggle back to
+      // once the deck carries data-sem-upgraded, and any toggle back to
       // Render re-wires a wiped pane.
       const wirePane = () => {
         const pane = paneRef.current;
         const deck = pane?.querySelector("sem-facts");
-        if (pane && deck && !deck.hasAttribute("data-sem-fallback")) {
-          window.SemTextFallback?.enhance(pane);
+        if (pane && deck && !deck.hasAttribute("data-sem-upgraded")) {
+          const SemText = window.SemText;
+          if (!SemText) return;
+          SemText.enhanceCore(pane);
+          SemText.enhanceMdDocument?.(pane);
+          SemText.enhanceReading?.(pane);
         }
       };
       wirePane();

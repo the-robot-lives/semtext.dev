@@ -38,5 +38,6 @@
   "sem-views": "chunks/sem-stubs.js",
   "sem-table": "chunks/sem-table.js",
   "sem-tag-def": "chunks/sem-tag-def.js",
+  "sem-tldr": "chunks/sem-tldr.js",
   "sem-upload-drop": "chunks/sem-upload-drop.js"
 }

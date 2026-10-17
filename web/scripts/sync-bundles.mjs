@@ -33,9 +33,9 @@
  * Idempotent: a file is copied only when its sha256 differs from the
  * destination. Chunk dirs are mirrored: hash-named files the incoming dirs
  * no longer carry are deleted as stale; anything not hash-named is reported
- * and left alone. `semtext-fallback.js` is retired upstream — the build no
- * longer emits it, so the site's frozen legacy copy is carried INTO a new
- * version directory when needed and otherwise preserved.
+ * and left alone. The retired `semtext-fallback.js` is gone as of runtime
+ * 0.9.0: old version directories keep their published copies, but no new
+ * snapshot (and no refreshed mirror) carries it.
  *
  * After the copies it re-runs scripts/build-bundle-map.mjs so
  * data/bundles.json (shipped/cssOnly/aliasRuntime) always describes exactly
@@ -141,7 +141,6 @@ function mirrorDir(srcDir, dstDir, label) {
 function copyRuntimeSet(srcBase, dstBase, label) {
   for (const f of [
     'semtext.js',
-    'semtext-fallback.js', // retired upstream — copied only when the build still emits it
     'semtext.css',
     'semtext-lazy.js',
     'semtext-manifest.json',
@@ -275,14 +274,6 @@ const vDir = join(pub, `v${version}`);
 if (!dry && index.versions.includes(version)) rmSync(vDir, { recursive: true, force: true });
 copyRuntimeSet(srcBase, vDir, `semtext/v${version}`);
 
-// Frozen legacy fallback: upstream no longer emits semtext-fallback.js, but
-// the site ships a frozen copy the alias still serves (hero window, demo
-// fixtures). Carry it into the new snapshot so the pinned URLs resolve.
-const frozenFallback = join(pub, 'semtext-fallback.js');
-if (!existsSync(join(srcBase, 'semtext-fallback.js')) && existsSync(frozenFallback)) {
-  copyFile(frozenFallback, join(vDir, 'semtext-fallback.js'), `semtext/v${version}/semtext-fallback.js (frozen site copy)`);
-}
-
 // ------------------------------------------------------ 2. stable / latest --
 
 /** Publish `srcDir` as the named mirror (stable/ or latest/): exact
@@ -337,9 +328,6 @@ if (!index.stable) {
 }
 if (aliasSrcVersion === version) {
   copyRuntimeSet(srcBase, pub, 'semtext');
-  if (!existsSync(join(srcBase, 'semtext-fallback.js')) && existsSync(frozenFallback)) {
-    copyFile(frozenFallback, join(pub, 'semtext-fallback.js'), 'semtext/semtext-fallback.js (frozen site copy)');
-  }
 } else {
   copyRuntimeSet(join(pub, `v${aliasSrcVersion}`), pub, 'semtext');
 }

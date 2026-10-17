@@ -29,15 +29,15 @@
  *     figure `aria-label="The sem-md example: rendered and authored"`;
  *   - the view pills are `.code-chrome button[aria-pressed]` —
  *     Side by side (the page default) / Source / Render;
- *   - a wired render carries `[data-sem-fallback]` or
- *     `[data-sem-upgraded]` inside the pane.
+ *   - a wired render carries the `[data-sem-upgraded]` marker inside
+ *     the pane.
  * Shots are named `<tag>-<exampleId>-<view>-<width>.png` (view: split |
  * source | render | state). Figures matching none of the shapes above are
  * still captured: default state, then one shot per aria-pressed pill.
  *
  * Known limitation: mode controls inside a Lit shadow root (upgraded
- * sem-md via the lazy chunk) are not pierced — the fallback tier used by
- * the Render panes is vanilla DOM, so its controls ARE captured.
+ * sem-md via the lazy chunk) are not pierced — vanilla-DOM controls in
+ * Render panes ARE captured.
  */
 
 type SnapEnv = { tag: string; base: string; dist: string; out: string };
@@ -49,7 +49,7 @@ const WIDTHS: Array<{ w: number; h: number }> = [
   { w: 390, h: 844 },
 ];
 
-const RENDER_MARKER = "[data-sem-fallback], [data-sem-upgraded]";
+const RENDER_MARKER = "[data-sem-upgraded]";
 const PILL_SEL = ".code-chrome button[aria-pressed]";
 const PANE_CONTROLS =
   'button, summary, [role="tab"], [role="button"], input[type="radio"], input[type="checkbox"]';
@@ -290,12 +290,11 @@ function discover(doc: Document): Example[] {
  * Soft wait for the Render pane to be wired. Never fails the run.
  *
  * Success signals, whichever lands first:
- *   - the bundle's tier markers ([data-sem-fallback] / [data-sem-upgraded])
- *     inside the pane — set by most fallback handlers;
- *   - window.SemTextFallback defined — some handlers (e.g. the quiz
- *     details' highlight occlusion) set no marker at all, so once the
- *     bundle is up we sit out ExampleViewer's re-wire schedule
- *     (boot + 150/500/1200 ms) and trust it.
+ *   - the `[data-sem-upgraded]` marker inside the pane — set by the
+ *     enhance pass on the panes it upgrades;
+ *   - window.SemText defined — some upgraded subtrees set no marker of
+ *     their own, so once the bundle is up we sit out ExampleViewer's
+ *     re-wire schedule (boot + 150/500/1200 ms) and trust it.
  * On timeout a note is recorded and the shot is taken as-is (an
  * unenhanced pane is itself a review finding).
  */
@@ -309,8 +308,8 @@ function settleRender(figSel: string, paneSel: string, ms = 8000): void {
             const fig = win.document.querySelector(figSel);
             const pane = fig && fig.querySelector(paneSel);
             if (pane && pane.querySelector(RENDER_MARKER)) return resolve("marker");
-            const w = win as unknown as { SemTextFallback?: unknown };
-            if (w.SemTextFallback && Date.now() - t0 > 1600) return resolve("loaded");
+            const w = win as unknown as { SemText?: unknown };
+            if (w.SemText && Date.now() - t0 > 1600) return resolve("loaded");
             if (Date.now() - t0 > ms) return resolve("timeout");
             win.setTimeout(tick, 200);
           };
