@@ -7,7 +7,7 @@
  *                       html[data-sem-theme="<slug>"]; default = tokens on
  *                       html:not([data-sem-theme]))
  *   <out>/semtext.js    the vendored runtime (app/backend/priv/static/
- *                       semtext/v0.8.3/semtext.js, COPIED VERBATIM — never
+ *                       semtext/v0.9.0/semtext.js, COPIED VERBATIM — never
  *                       edited) + runtime/semtext-v06.js (this repo's
  *                       extension layer)
  *   <out>/themes/*.css  the per-theme token files (for pinned documents)
@@ -21,7 +21,7 @@
  * app/backend/priv/static/semtext/latest/. The rest of each latest/
  * directory (chunks, lazy, manifests — the sync-bundles.mjs output) is
  * left untouched; re-running sync-bundles.mjs overwrites semtext.css /
- * semtext.js with the plain 0.8.3 sync, so re-run this script after any
+ * semtext.js with the plain 0.9.0 sync, so re-run this script after any
  * such sync.
  *
  * Usage: node scripts/build-latest.mjs
@@ -33,7 +33,7 @@ import { dirname, resolve } from 'node:path';
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '..');
 
-const VENDORED = resolve(repo, 'app/backend/priv/static/semtext/v0.8.3/semtext.js');
+const VENDORED = resolve(repo, 'app/backend/priv/static/semtext/v0.9.0/semtext.js');
 const VERSION_SOURCE = resolve(repo, 'web/public/semtext/VERSION.md');
 const OUTS = [
   resolve(repo, 'web/public/semtext/latest'),
@@ -41,7 +41,7 @@ const OUTS = [
 ];
 
 // [source path, name under <out>/themes/]. The vocabulary base is the
-// synced 0.8.3 vocabulary so the layer tracks future sync-bundles
+// synced 0.9.0 vocabulary so the layer tracks future sync-bundles
 // refreshes; every other part is this repo's v0.6 layer.
 const CSS_PARTS = [
   ['web/public/semtext/themes/_vocabulary.css', '_vocabulary.css'],

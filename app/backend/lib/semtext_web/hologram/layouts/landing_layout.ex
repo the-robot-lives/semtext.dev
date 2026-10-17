@@ -84,10 +84,7 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
         <link rel="stylesheet" href="/semtext/themes/minimal-tech-light.css" />
         <script src="/js/keep-location.js"></script>
         <Hologram.UI.Runtime />
-        <script>
-          window.__semJsOff = true;
-        </script>
-        <script defer="defer" src="/semtext/semtext-fallback.js"></script>
+        <script defer="defer" src="/semtext/semtext.js"></script>
         <script defer="defer" src={@bootstrap_js}></script>
       </head>
       <body class="docs-bg min-h-screen antialiased">

@@ -338,8 +338,8 @@ function ElementBody({ tag: t }: { tag: TagRecord }) {
 /*
  * Shipped-runtime provenance, derived from the built artefacts in
  * public/semtext/ (data/bundles.json — see scripts/build-bundle-map.mjs).
- * States which shipped JS file provides the element, when the fallback
- * enhancement tier also covers it, or honestly that nothing shipped does.
+ * States which shipped JS file provides the element, or honestly that
+ * nothing shipped does.
  */
 function RuntimeLine({ tag: t }: { tag: TagRecord }) {
   const b = bundlesFor(t.name);
@@ -390,22 +390,6 @@ function RuntimeLine({ tag: t }: { tag: TagRecord }) {
       );
     } else if (files[0]) {
       parts.push(<span key="file">{code(files[0].file)}</span>);
-    }
-    if (files.some((f) => f.file === "semtext-fallback.js")) {
-      // The fallback tier IS the listed bundle on fallback-only tags —
-      // say it once ("semtext-fallback.js enhancement tier"), not the
-      // filename twice.
-      const alreadyListed = !chunk && files[0]?.file === "semtext-fallback.js";
-      parts.push(
-        <span key="fallback">
-          {alreadyListed ? null : (
-            <>
-              {code("semtext-fallback.js")}{" "}
-            </>
-          )}
-          enhancement tier
-        </span>,
-      );
     }
     body = (
       <>

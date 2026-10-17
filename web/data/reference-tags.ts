@@ -31,7 +31,7 @@ const INDEX = elementsIndex as ElementsIndex;
 /*
  * Shipped-runtime provenance per tag, generated from the built artefacts in
  * public/semtext/ by scripts/build-bundle-map.mjs (which file provides the
- * tag: the lazy loader and its chunk, the fallback bundle, or nothing).
+ * tag: semtext.js, the lazy loader and its chunk, or nothing).
  * Regenerate that JSON whenever public/semtext/ is re-synced.
  */
 export interface BundleEntry {

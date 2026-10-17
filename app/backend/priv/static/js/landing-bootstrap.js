@@ -32,11 +32,11 @@
  *     pausing on hover, focus and hidden tabs, and never starts for
  *     prefers-reduced-motion readers.
  *
- *  6. Fallback enhancement — the layout loads /semtext/semtext-fallback.js
- *     deferred with window.__semJsOff set, so the bundle does not auto-wire
- *     on load; here we enhance the whole document exactly once, and
- *     re-enhance the hero's rendered pane on demand (it is injected markup,
- *     invisible to the original pass).
+ *  6. SemText enhancement — the layout loads /semtext/semtext.js deferred
+ *     (the one bundle since runtime 0.9.0); its DOMContentLoaded pass
+ *     enhances the document, and here we re-enhance the hero's rendered
+ *     pane on demand (it is injected markup, invisible to the original
+ *     pass).
  *
  *  7. Clipboard / download helpers — the code viewer and theme generator
  *     actions call these via Hologram.JS exec.
@@ -416,32 +416,22 @@
     });
   }
 
-  // -- 6. fallback enhancement ----------------------------------------------
-
-  function enhanceDocumentOnce() {
-    if (
-      window.SemTextFallback &&
-      !document.documentElement.hasAttribute("data-sem-fallback")
-    ) {
-      window.SemTextFallback.enhance(document);
-    }
-  }
+  // -- 6. SemText enhancement ------------------------------------------------
 
   function enhanceHeroPane() {
     var pane = document.getElementById("hero-render-pane");
     if (!pane) return;
-    if (window.SemTextFallback) {
-      window.SemTextFallback.enhance(pane);
+    var st = window.SemText;
+    if (st && typeof st.enhanceCore === "function") {
+      st.enhanceCore(pane);
     }
     // Injected pane markup: re-check on the bundle's late arrival the way
     // the Next page's timed re-check did.
     [150, 500, 1200].forEach(function (ms) {
       window.setTimeout(function () {
-        if (
-          window.SemTextFallback &&
-          !pane.hasAttribute("data-sem-fallback")
-        ) {
-          window.SemTextFallback.enhance(pane);
+        var st2 = window.SemText;
+        if (st2 && typeof st2.enhanceCore === "function" && !pane.querySelector("[data-sem-upgraded]")) {
+          st2.enhanceCore(pane);
         }
       }, ms);
     });
@@ -544,11 +534,9 @@
     scheduleViewRuntimes();
     wireDialog();
 
-    // The deferred fallback bundle may land after this script; wire the
-    // one-shot document enhancement to whichever happens last.
-    enhanceDocumentOnce();
-    document.addEventListener("DOMContentLoaded", enhanceDocumentOnce);
-    window.addEventListener("load", enhanceDocumentOnce);
+    // The one bundle's DOMContentLoaded pass handles document wiring on its
+    // own (the layout loads it deferred); the hero pane's injected markup
+    // is re-wired on demand via SemtextLanding.enhanceHeroPane().
   });
 
   window.SemtextLanding = {

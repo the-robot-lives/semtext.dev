@@ -19,8 +19,7 @@ import { semtextAsset } from "@/lib/semtext-asset";
  *
  * The chunk arrives through the semtext-lazy loader scoped to THIS example
  * only: the page sets window.__semLazyOff before injecting
- * semtext-lazy.js (the counterpart of the full bundle's __semJsOff), so no
- * document-wide scan runs, and `SemTextLazy.hydrate(pane)` fetches exactly
+ * semtext-lazy.js, so no document-wide scan runs, and `SemTextLazy.hydrate(pane)` fetches exactly
  * one chunk — chunks/sem-md.js — instead of upgrading the page's other
  * sem-* markup. A failed chunk load changes nothing: the static table is
  * already the finished render.

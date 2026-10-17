@@ -17,10 +17,9 @@
   p  { margin: .6rem 0; }
 </style>
 
-<!-- Fallback core (duplicate-key diagnostic, deep links, print) and the
-     reading bundle (sem-code chrome, reference previews, glossary). Both
-     are vanilla IIFEs; sources in src/fallback/** and src/reading/**. -->
-<!-- sem:inline fallback -->
+<!-- The reading bundle (sem-code chrome, reference previews, glossary) —
+     a vanilla IIFE; source in src/reading/**. The document reads as plain
+     prose without it. -->
 <!-- sem:inline reading -->
 <!-- sem:inline md -->
 </head>
@@ -203,7 +202,7 @@
   </div>
 
   <h2>Disclosures</h2>
-  <!-- Class form on both pages: the reveal and views fallbacks (core) drive
+  <!-- Class form on both pages: the reveal and views handlers drive
        `.sem-reveal` / `.sem-views` only. Headings inside them are reached
        from the outline through the deep-link resolver. -->
   <div class="sem-reveal" id="rv-keys" data-summary="Key rotation detail" collapsed>
