@@ -33,4 +33,10 @@ defmodule SemtextWeb.FooterTest do
       refute css =~ "token-rail", f
     end
   end
+
+  test "home FAQ no longer calls SemText a draft spec", %{conn: conn} do
+    body = html_response(get(conn, "/"), 200)
+    refute String.downcase(body) =~ "draft spec"
+    assert body =~ "SemText is a published spec with a reference implementation"
+  end
 end
