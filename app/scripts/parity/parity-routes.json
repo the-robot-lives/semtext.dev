@@ -116,6 +116,15 @@
       "selectors": []
     },
     {
+      "path": "/themes/showcase/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "Theme showcase — SemText",
+      "h1": "Theme showcase",
+      "keyText": [],
+      "selectors": []
+    },
+    {
       "path": "/showcase/agent/",
       "kind": "page",
       "owner": "port-docs",

@@ -1,6 +1,6 @@
 # Schema — extraction (DOM → records → annotated text)
 
-Contract per conventions.md v0.5 §8 ("Machine-readability contract"). BDD
+Contract per conventions.md v0.6 §8 ("Machine-readability contract"). BDD
 source of truth for `test/e2e/extraction.cy.js`. Reference
 implementation: `src/extract/records.ts`. Changes here precede spec changes
 precede code.
@@ -80,7 +80,12 @@ interface SemRecord {
    `sem-md`. Inline
    citations and glossary term anchors are plain `<a>` and mint nothing;
    `sem-reader` is chrome and mints nothing (rule 7); `sem-source` is a
-   transparent wrapper and mints nothing (rule 8).
+   transparent wrapper and mints nothing (rule 8). The v0.6 authoring
+   elements likewise mint nothing as elements: `sem-list` renders its
+   markdown lines as ordinary `<ul>/<ol>/<li>` content, `sem-section` is
+   a transparent scope, and `sem-break` is empty by contract — a
+   `kind`/`tags`-carrying `sem-list` or `sem-section` still mints a plain
+   record via the minting test (§4), exactly like any other plain HTML.
 2. **Parts are not records.** `.sem-statement`, `.sem-conclusion`,
    `.sem-distractor`, `.sem-highlight`, `.sem-note-body`, and the
    `.sem-agent-*` children are fields of their owning record, never entries
