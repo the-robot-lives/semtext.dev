@@ -188,14 +188,17 @@ defmodule Semtext.Reference.Tags do
   @doc """
   Module-vs-classic script type, ported from the Next loadScript rule: lazy
   loaders and everything under a chunks directory are module builds; IIFE
-  bundles (full bundles, shell, fallback tier) are classic.
+  bundles (full bundles, shell) are classic. Retired 0.9.0 artifacts - the
+  standalone fallback tier was folded into the one bundle - type as `nil`.
   """
-  @spec script_type(String.t()) :: String.t()
-  def script_type(file) do
-    chunked? = file =~ ~r{(^|/)[a-z-]*chunks/}
+  @spec script_type(String.t()) :: String.t() | nil
+  @retired_bundles MapSet.new(["semtext-fallback.js"])
 
-    if String.ends_with?(file, "-lazy.js") or chunked?,
-      do: "module",
-      else: "classic"
+  def script_type(file) do
+    cond do
+      MapSet.member?(@retired_bundles, file) -> nil
+      String.ends_with?(file, "-lazy.js") or file =~ ~r{(^|/)[a-z-]*chunks/} -> "module"
+      true -> "classic"
+    end
   end
 end

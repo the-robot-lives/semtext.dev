@@ -185,7 +185,7 @@ describe('sem-source', () => {
         el.id = 's-nosnap';
         el.innerHTML = '<p>late</p>';
         win.document.querySelector('.sem-enhanced-document').appendChild(el);
-        win.SemTextReading.enhanceSourceElement(el);
+        win.SemText.enhanceSourceElement(el);
       });
       cy.get('@warn').should('have.been.calledWithMatch', /sem-source: no snapshot/);
       cy.get('#s-nosnap [data-act="source"]').click();
