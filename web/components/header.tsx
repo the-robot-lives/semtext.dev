@@ -26,6 +26,12 @@ export function Header() {
             See it work
           </a>
           <a
+            href="/editor/"
+            className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex"
+          >
+            Editor
+          </a>
+          <a
             href="/reference/"
             className="hidden min-h-11 items-center font-mono text-ink-mute hover:text-ink sm:inline-flex"
           >
