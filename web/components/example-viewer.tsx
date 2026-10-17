@@ -20,52 +20,42 @@ import { semtextAsset } from "@/lib/semtext-asset";
  *
  * The render runtime is data-driven: the page passes the shipped bundle
  * files data/bundles.json lists for this tag, and Render lazily loads
- * exactly those (the lazy loader and its chunk, the npl full bundle once
- * it ships, the fallback enhancement tier). A tag no shipped bundle
+ * exactly those (semtext.js — the one bundle since runtime 0.9.0 — the
+ * lazy loader and its chunk, the npl bundle). A tag no shipped bundle
  * provides renders as a muted note instead — and flips to a live render
  * automatically once the bundle sync lands and the map is regenerated.
  *
- * Runtime loading is pane-scoped: the page-wide boot switches
- * (window.__semJsOff for the full bundles and the fallback bundle,
- * window.__semLazyOff for the lazy loaders) keep every bundle from
- * auto-wiring the DOCUMENT on injection — a document pass would enhance
- * every hidden example pane at once (and mutate panes React is still
- * hydrating). Wiring is explicit per pane: the lazy tier is driven
- * through window.SemTextLazy.hydrate(root), the fallback tier through
- * window.SemTextFallback's per-pane handlers. Hydration can still reset
- * the pane around boot (the hazard the hero window documents), so wiring
- * is re-checked on a short schedule; each re-check is a no-op once the
- * pane's elements carry the bundle's tier markers.
+ * Runtime loading is lazy and marker-gated: the __semLazyOff switch keeps
+ * the lazy loaders from auto-wiring the DOCUMENT on injection; semtext.js
+ * (the one bundle, no kill switch since the runtime's one-bundle refactor)
+ * is only ever loaded from this post-hydration click path, so its
+ * document pass cannot race React hydration. Wiring is explicit per pane:
+ * the lazy tier through window.SemTextLazy.hydrate(root), the full bundle
+ * through window.SemText.enhanceCore(root). Hydration can still reset the
+ * pane around boot (the hazard the hero window documents), so wiring is
+ * re-checked on a short schedule; each re-check is a no-op once the
+ * pane's elements carry the data-sem-upgraded markers.
  */
 
 /*
- * The fallback bundle's pane-scoped surface. window.SemTextFallback is
- * declared elsewhere with the bare enhance() shape, so read it through a
- * local view of the full export set instead of re-augmenting the global.
+ * The one bundle's scoped surface. window.SemText is declared elsewhere
+ * (hero window) with the enhance pass shapes, so read it through a local
+ * view instead of re-augmenting the global.
  */
 type EnhanceFn = (root: Document | HTMLElement) => void;
-interface FallbackBundle {
-  enhance: EnhanceFn;
-  enhanceSource?: EnhanceFn;
-  enhanceAttrs?: EnhanceFn;
-  enhanceFacts?: EnhanceFn;
-  enhanceDetails?: EnhanceFn;
-  enhanceNote?: EnhanceFn;
-  enhanceProperties?: EnhanceFn;
-  enhanceViews?: EnhanceFn;
-  enhanceReveal?: EnhanceFn;
-  enhanceProgress?: EnhanceFn;
-  enhanceAudience?: EnhanceFn;
+interface SemBundle {
+  enhanceCore: EnhanceFn;
+  enhanceMdDocument?: EnhanceFn;
+  enhanceReading?: EnhanceFn;
 }
 
 interface LazyBundle {
   hydrate?: (root: Document | HTMLElement) => void;
 }
 
-function fallbackBundle(): FallbackBundle | null {
-  const fb = (window as unknown as { SemTextFallback?: FallbackBundle })
-    .SemTextFallback;
-  return fb && typeof fb.enhance === "function" ? fb : null;
+function semBundle(): SemBundle | null {
+  const b = (window as unknown as { SemText?: SemBundle }).SemText;
+  return b && typeof b.enhanceCore === "function" ? b : null;
 }
 
 function lazyBundle(): LazyBundle | null {
@@ -83,9 +73,12 @@ const THEME_CSS = [
  * once per page on the first pane that needs them: the vocabulary
  * stylesheets, then every bundle file in map order (lazy loader, full
  * bundle, fallback tier). The page-wide boot switches go in before the
- * first script so nothing auto-wires the document; pane wiring is
- * explicit below instead. Files already injected earlier on this page are
- * not re-fetched (the switches would be redundant anyway).
+ * first script so the lazy loader never auto-wires the document (the
+ * full bundle has no kill switch since the one-bundle refactor — loading
+ * it document-wires once, which is why it is only ever loaded from this
+ * post-hydration click path, and marker idempotence makes the explicit
+ * pane wiring below a no-op afterwards). Files already injected earlier
+ * on this page are not re-fetched.
  */
 let booted = false;
 const loadedScripts = new Set<string>();
@@ -124,13 +117,12 @@ async function bootElementRuntime(files: string[]): Promise<void> {
     document.head.appendChild(link);
   }
   const w = window as unknown as {
-    __semJsOff?: boolean;
     __semLazyOff?: boolean;
   };
   if (!loadedScripts.size) {
-    // No bundle has booted yet: pin the page-wide opt-outs before the
-    // first script lands so none of the tiers auto-wire the document.
-    w.__semJsOff = true;
+    // No bundle has booted yet: pin the lazy opt-out before the first
+    // script lands so the lazy loader never auto-wires the document.
+    // (semtext.js has no kill switch — see the header note.)
     w.__semLazyOff = true;
   }
   if (!booted) booted = true;
@@ -140,66 +132,17 @@ async function bootElementRuntime(files: string[]): Promise<void> {
 }
 
 /*
- * The fallback bundle's handler chain, minus the two document-scoped
- * passes: enhanceAudience always re-collects sem-audiences profiles across
- * the WHOLE document (two example panes here carry the same profile ids,
- * so each call would log duplicate-id warnings), and enhanceTarget no-ops
- * for non-document roots anyway. Falls back to enhance() if the bundle
- * ever stops exporting the split.
+ * Pane wiring: the one bundle's core pass (the vanilla handler chain —
+ * source snapshot, attrs, decks, reveals, progress, audience, deep links)
+ * over the pane scope. Idempotent via the data-sem-upgraded markers, so
+ * re-checks after hydration resets are no-ops once wired.
  */
-const PANE_HANDLERS = [
-  "enhanceSource",
-  "enhanceAttrs",
-  "enhanceFacts",
-  "enhanceDetails",
-  "enhanceNote",
-  "enhanceProperties",
-  "enhanceViews",
-  "enhanceReveal",
-  "enhanceProgress",
-  // Pane-safe since the runtime split the audiences lane shipped (the
-  // handler scopes its profile collection to the given root now), so the
-  // render pane stops showing the all-visible state after the sync.
-  "enhanceAudience",
-] as const;
-
-/*
- * Which loaded bundle the pane wires with. The legacy fallback tier and
- * the full bundle export the same per-pane handler surface, so either
- * drives the chain; class-form panes prefer the full bundle first (its
- * reading tier covers `.sem-<tag>` hosts, which the tag-shaped lazy scan
- * never matches). Tier markers make the handlers idempotent, so a pane
- * re-checked against a different surface later is still safe.
- */
-function handlerBundle(classForm: boolean): FallbackBundle | null {
-  const w = window as unknown as Record<string, FallbackBundle | undefined>;
-  const order = classForm
-    ? ["SemText", "SemTextFallback"]
-    : ["SemTextFallback", "SemText"];
-  for (const g of order) {
-    const b = w[g];
-    if (b && typeof b.enhance === "function") return b;
-  }
-  return null;
-}
-
-function wirePane(pane: HTMLDivElement | null, classForm = false) {
-  const fb = handlerBundle(classForm);
-  if (!pane || !fb) return;
-  if (pane.querySelector("[data-sem-fallback], [data-sem-upgraded]")) return;
-  if (PANE_HANDLERS.every((h) => typeof fb[h] === "function")) {
-    for (const h of PANE_HANDLERS) fb[h]!(pane);
-  } else {
-    // A surface missing part of the chain still gets the handlers it has —
-    // only when it exports none of them do we fall back to the whole-pane
-    // enhance() (which runs the document-shaped passes last).
-    const present = PANE_HANDLERS.filter((h) => typeof fb[h] === "function");
-    if (present.length) {
-      for (const h of present) fb[h]!(pane);
-    } else {
-      fb.enhance(pane);
-    }
-  }
+function wirePane(pane: HTMLDivElement | null) {
+  if (!pane) return;
+  if (pane.querySelector("[data-sem-upgraded]")) return;
+  const b = semBundle();
+  if (!b) return;
+  b.enhanceCore(pane);
 }
 
 function hydratePane(pane: HTMLDivElement | null) {
@@ -323,7 +266,7 @@ export function ExampleViewer({
         const wire = () => {
           const p = paneRef.current;
           if (lazyCovered) hydratePane(p);
-          wirePane(p, classForm);
+          wirePane(p);
           return p;
         };
         wire();
@@ -340,7 +283,7 @@ export function ExampleViewer({
             if (
               p &&
               (i === checks.length - 1 ||
-                p.querySelector("[data-sem-fallback], [data-sem-upgraded]"))
+                p.querySelector("[data-sem-upgraded]"))
             ) {
               release(p);
             }

@@ -15,7 +15,7 @@
  * <highlight>'s plain+quiz whole, in spec order. The mechanism ships empty — no
  * invented content.
  *
- * `renderable: false` pins a variant to Source-only when the fallback tier
+ * `renderable: false` pins a variant to Source-only when no shipped runtime
  * does not render that shape; omitted, it inherits the tag family's
  * default. Markdown-authored variants are out of scope here — the sem-md
  * Render path is per-block and only the primary sem-md example carries a
@@ -31,7 +31,7 @@ export interface ExampleVariant {
   note?: string;
   /** The authored example (SemText/HTML, source view + optional Render). */
   code: string;
-  /** Pin to Source-only when the fallback tier does not render this shape. */
+  /** Pin to Source-only when no shipped runtime renders this shape. */
   renderable?: boolean;
 }
 
@@ -52,7 +52,7 @@ export const EXAMPLE_VARIANTS: Record<string, ExampleVariant[]> = {
     {
       id: "mixed-spec",
       label: "variant: authoring error — mixed positive and negated terms",
-      note: '"operator, !reader" mixes `!` with plain terms: warned once, and the positive terms decide — the negated one is ignored. So with the fallback running this note is hidden when no profile is active (a positive term never matches without one) and shown as `operator` — never as `reader`, because the `!reader` plays no part. As rendered here the note shows: this pane has no audience gating, the same all-visible state as JS-off. Unknown tokens fail a spec open instead — see the next variant.',
+      note: '"operator, !reader" mixes `!` with plain terms: warned once, and the positive terms decide — the negated one is ignored. So with the bundle running this note is hidden when no profile is active (a positive term never matches without one) and shown as `operator` — never as `reader`, because the `!reader` plays no part. As rendered here the note shows: this pane has no audience gating, the same all-visible state as JS-off. Unknown tokens fail a spec open instead — see the next variant.',
       code: '<sem-audiences>\n  <sem-profile id="reader" label="Reader"></sem-profile>\n  <sem-profile id="operator" label="Operator" implies="reader"></sem-profile>\n</sem-audiences>\n\n<sem-note audience="operator, !reader">Warned spec: the positive terms decide, the negated one is ignored.</sem-note>',
     },
     {
@@ -72,7 +72,7 @@ export const EXAMPLE_VARIANTS: Record<string, ExampleVariant[]> = {
     {
       id: "implies-closure",
       label: "variant: implies closure",
-      note: "`implies` is how one profile subsumes another: an operator sees reader content, and a profile implying operator sees it too — the closure is transitive. The strip does not draw the edges; gating demonstrates them. With the fallback running and no active profile this note hides; as operator it shows (operator implies reader); as reader it hides. As rendered here — this pane carries no audience gating, the same all-visible state as JS-off — it shows.",
+      note: "`implies` is how one profile subsumes another: an operator sees reader content, and a profile implying operator sees it too — the closure is transitive. The strip does not draw the edges; gating demonstrates them. With the bundle running and no active profile this note hides; as operator it shows (operator implies reader); as reader it hides. As rendered here — this pane carries no audience gating, the same all-visible state as JS-off — it shows.",
       code: '<sem-audiences>\n  <sem-profile id="reader" label="Reader"></sem-profile>\n  <sem-profile id="operator" label="Operator" implies="reader"></sem-profile>\n</sem-audiences>\n\n<sem-note audience="reader">Planning context every working profile sees through the closure.</sem-note>',
     },
     {
@@ -399,7 +399,7 @@ export const EXAMPLE_VARIANTS: Record<string, ExampleVariant[]> = {
     {
       id: "bars",
       label: 'variant: variant="bars"',
-      note: "The compact form — rows only, no state or triggered lines. Renderable: the element upgrades from the npl runtime, not the fallback tier.",
+      note: "The compact form — rows only, no state or triggered lines. Renderable: the element upgrades from the npl runtime, not the semtext bundle.",
       renderable: true,
       code: '<npl-hormones variant="bars">\n  <panel>\n    <h name="Momentum"     symbol="MTM" value="6"   delta="+2" trigger="Tests passed first try"></h>\n    <h name="Tension"      symbol="TNS" value="3"   delta="0"  trigger="Complexity"></h>\n    <h name="Restlessness" symbol="RST" value="8.5" delta="-1" trigger="Strategy failed"></h>\n  </panel>\n</npl-hormones>',
     },
@@ -832,7 +832,7 @@ export const EXAMPLE_VARIANTS: Record<string, ExampleVariant[]> = {
     {
       id: "compact-sugar",
       label: "variant: compact `term :: value` sugar",
-      note: "The conventions §3 pair sugar is legal in the property text; `key` stays canonical and wins when both are present. The fallback does not parse `::`, so the value column shows the property text verbatim until a parser ships — which is why the sugar author also writes `key`: sugar without it renders an empty key column.",
+      note: "The conventions §3 pair sugar is legal in the property text; `key` stays canonical and wins when both are present. The runtime does not parse `::`, so the value column shows the property text verbatim until a parser ships — which is why the sugar author also writes `key`: sugar without it renders an empty key column.",
       code: '<sem-properties kind="config">\n  <sem-property key="token ttl" role="definition" aria-label="token ttl">token ttl :: 15m</sem-property>\n  <sem-property key="refresh rotation" role="definition" aria-label="refresh rotation">refresh rotation :: per use</sem-property>\n</sem-properties>',
     },
     {
@@ -846,7 +846,7 @@ export const EXAMPLE_VARIANTS: Record<string, ExampleVariant[]> = {
     {
       id: "sugar-keyless",
       label: "variant: compact `::` sugar without `key`",
-      note: "`<sem-property>storage :: httpOnly cookie</sem-property>` is legal authoring, and the fallback does not parse `::` — the text renders verbatim in the value column and no term is drawn. Sugar authors therefore also write `key` (conventions §3); the second row shows that pair, where the `key` attribute is the term and wins.",
+      note: "`<sem-property>storage :: httpOnly cookie</sem-property>` is legal authoring, and the runtime does not parse `::` — the text renders verbatim in the value column and no term is drawn. Sugar authors therefore also write `key` (conventions §3); the second row shows that pair, where the `key` attribute is the term and wins.",
       code: '<sem-properties kind="config">\n  <sem-property>storage :: httpOnly cookie</sem-property>\n  <sem-property key="token ttl" role="definition" aria-label="token ttl">ttl :: 15m</sem-property>\n</sem-properties>',
     },
     {
@@ -950,7 +950,7 @@ export const EXAMPLE_VARIANTS: Record<string, ExampleVariant[]> = {
     {
       id: "default-open",
       label: "variant: starts open",
-      note: "No `collapsed` authored: the reveal starts open — the answer shows, the summary bar reads as its heading. State is the native `<details>` attribute the fallback tier presets; there is no script-maintained open flag to drift.",
+      note: "No `collapsed` authored: the reveal starts open — the answer shows, the summary bar reads as its heading. State is the native `<details>` attribute the runtime presets; there is no script-maintained open flag to drift.",
       code: '<sem-reveal summary="What wraps the reveal itself?">\n  A native &lt;details&gt;/&lt;summary&gt; pair, preset open. Click and keyboard toggling belong to the platform — no script-maintained state, so nothing to drift.\n</sem-reveal>',
     },
     {

@@ -10,7 +10,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.HeroWindow do
   (the bootstrap dispatches `on_hydrated`); the static page stays zero-JS
   clean, exactly as in the Next.js site. The rendered pane's markup is
   always present (hidden until Render); the imperative bundle wiring
-  (theme links + semtext-fallback enhance, pane-scoped, with timed
+  (theme links + semtext.js enhanceCore, pane-scoped, with timed
   re-checks) lives in `/js/landing-bootstrap.js` and is called from the
   client action via Hologram.JS (no-op during SSR).
   """
