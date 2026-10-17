@@ -1,0 +1,6 @@
+cli view — plain text out, one command per reader:
+
+    render-card demos/render-demo.card
+    semtext --render demo/auth-notes.sem.html
+    render-card demos/render-subsection.card
+    render-card demos/render-toc.card

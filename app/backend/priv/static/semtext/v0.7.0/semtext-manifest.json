@@ -1,0 +1,21 @@
+{
+  "sem-artifact-card": "chunks/sem-artifact-card.js",
+  "sem-browser": "chunks/sem-browser.js",
+  "sem-chat": "chunks/sem-chat.js",
+  "sem-code": "chunks/sem-code.js",
+  "sem-data-visualizer": "chunks/sem-data-visualizer.js",
+  "sem-details": "chunks/sem-details.js",
+  "sem-facts": "chunks/sem-facts.js",
+  "sem-md": "chunks/sem-md.js",
+  "sem-media-gallery": "chunks/sem-media-gallery.js",
+  "sem-note": "chunks/sem-note.js",
+  "sem-properties": "chunks/sem-properties.js",
+  "sem-provider-picker": "chunks/sem-provider-picker.js",
+  "sem-quota-meter": "chunks/sem-quota-meter.js",
+  "sem-reader": "chunks/sem-reader.js",
+  "sem-references": "chunks/sem-references.js",
+  "sem-review-canvas": "chunks/sem-review-canvas.js",
+  "sem-source": "chunks/sem-source.js",
+  "sem-table": "chunks/sem-table.js",
+  "sem-upload-drop": "chunks/sem-upload-drop.js"
+}

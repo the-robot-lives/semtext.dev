@@ -1,0 +1,70 @@
+schema: '0.4'
+id: sem-references-ux-design
+type: image
+quality: high
+product_targets:
+- semtext.dev
+tags:
+- semtext
+- sem-references
+- ux-design
+- reference
+prompt:
+  text: "UX design sheet for the SemText `<sem-references>` element — the numbered\nlist of works a document cites: plain-anchor citations in the prose that\nnumber themselves, gain hover/focus previews, backlinks and external links\nwhen JS runs, and stay a numbered, deep-linkable list when it does not. FOUR\nstacked example pages, each inside a browser-chrome frame with a small mono\nuppercase caption, minimal-tech theme on a dark slate canvas (bg #0f172a,\nsurface #1e293b, fg #e2e8f0, muted #94a3b8, hairline #334155 borders, 12px\ncard radius, accent blue #60a5fa). Every entry shows a muted number and a\ncolon-free hanging layout; every reference body is ordinary dark-fg prose,\nfully legible.\n\nPage 1 — caption \"KINDS\". Three reference lists stacked, same five-entry\nbibliography content in each so the shape differences are the only\nvariable:\n- \"DEFAULT\": no kind — entries at comfortable spacing, numbers 1.–5. in\n  muted #94a3b8 hanging left of the text.\n- \"BIBLIOGRAPHY\": `kind=\"bibliography\"` — deeper hanging indent, each\n  continuation line aligned past the number column, like a printed works\n  list.\n- \"FOOTNOTES\": `kind=\"footnotes\"` — visibly compact: tighter margins,\n  smaller padding, the same numbering, reads as a dense note block tied to\n  nearby prose.\nThe three kinds must be distinguishable at a glance from spacing alone; the\nnumbers, typography and colors stay identical across them.\n\nPage 2 — caption \"CITATION CHROME\". One prose paragraph (\"Rotate refresh\ntokens per use [1].\") where \"[1]\" is an accent-blue anchor with a dotted\nunderline, and one open preview popover directly under it: a surface card\n(#1e293b, 1px #334155 border, 10px radius, soft shadow, ~24rem wide)\ncontaining the referenced entry's text verbatim — NO duplicate numbering,\nNO extra chrome inside the popover. Below, the reference list itself:\nentry 1 carries a small accent \"↗\" external-link glyph and one accent \"↩\"\nper citation; entry 2 (no external target, uncited) carries neither. The\nprose sentence stays fully readable with the popover open; the popover must\nnever overlap its own anchor's text.\n\nPage 3 — caption \"DEEP LINK\". A page scrolled mid-way with a slim sticky\nreading bar at top; one reference entry highlighted as the target of a\ncitation jump — 12% accent background tint and a soft accent ring — sitting\nfully BELOW the bar, never tucked underneath it. The citing anchor \"[2]\"\nfurther up the page shows the same dotted-underline style, giving the eye\nthe answer to \"what pointed here?\".\n\nPage 4 — caption \"CLASS FORM\". The identical bibliography list from page 1\nrendered from plain `div`s with `data-*` parameters (no custom tags): the\nsame numbers, the same hanging indent, the same `:target`-capable styling.\nIt must be indistinguishable from the element form at reading distance;\nlabel the page with a small mono hint \"div.sem-references[data-kind]\".\n\nTypography: clean system sans (Inter-like), 16px body, 1.6 line height,\n0.875rem list type, generous margins, mono uppercase captions. Numbers are\nplain text glyphs, not badges. No icons other than the ↗ / ↩ glyphs, no\nemoji, no buttons.\n"
+  negative: 'occluded, blurred or truncated reference text; a popover that covers the citing
+    anchor or the sentence it previews; the preview drawn as a browser tooltip, speech
+    bubble, modal dialog or toast; numbers drawn as pill badges, chips or circled
+    icons; the three kinds rendered with identical spacing; footnotes larger or looser
+    than the default list; citation anchors underlined with a solid heavy underline
+    or boxed as buttons; redaction bars or lorem ipsum in reference bodies; light
+    background; more or fewer than four example pages; watermark.
+
+    '
+  style: 'Flat UI spec sheet, minimal-tech aesthetic, restrained palette where the only
+    color is the accent blue on citations, glyphs and the target tint; crisp 12px card
+    radius, hairline #334155 borders, generous negative space. Looks like a panel from
+    a design-system guide.
+
+    '
+attachments:
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-references/sem-references-primary-render-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-references/sem-references-footnotes-split-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-references/sem-references-default-kind-render-1280.png
+  role: reference
+- path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-references/sem-references-fullpage-1280.png
+  role: reference
+eval:
+  pass_threshold: 0.75
+  criteria:
+    kinds-distinct:
+      weight: 0.3
+      description: Default, bibliography and footnotes lists are recognizably different
+        in spacing/indent while sharing numbering, type and palette.
+      fail_signals:
+      - the three lists look identical
+      - footnotes list is looser than the default
+    citation-chrome-correct:
+      weight: 0.3
+      description: Dotted-underline anchor, popover under (not over) the anchor, ↗/↩
+        glyphs only on entries that have an external target / citations.
+      fail_signals:
+      - popover overlapping the anchor text
+      - chrome glyphs on the uncited no-href entry
+      - popover drawn as tooltip/speech-bubble/modal
+    deep-link-readable:
+      weight: 0.2
+      description: Targeted entry tinted and ringed, fully visible below the sticky bar.
+      fail_signals:
+      - highlighted entry partially hidden under the bar
+    class-form-parity:
+      weight: 0.2
+      description: Class-form page is indistinguishable from the element form at reading
+        distance.
+      fail_signals:
+      - class-form page missing numbering or styled differently
+  reject_if:
+  - any reference body text occluded, blurred or truncated
+  - fewer than four example pages
+  - watermark or lorem ipsum present

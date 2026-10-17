@@ -17,10 +17,9 @@
   p  { margin: .6rem 0; }
 </style>
 
-<!-- All three scripts on one page: the fallback core, the reading bundle
-     and the Lit bundle. Elements the Lit bundle upgraded are skipped by the
-     reading bundle's scan; the wrapper enhances them itself. -->
-<!-- sem:inline fallback -->
+<!-- The reading bundle and the Lit bundle on one page. Elements the Lit
+     bundle upgraded are skipped by the reading bundle's scan; the wrapper
+     enhances them itself. -->
 <!-- sem:inline reading -->
 <!-- sem:inline md -->
 <!-- Lit 3 bundle: thin wrappers that claim the upgrade marker and call the
@@ -168,7 +167,7 @@
   <h2>References</h2>
   <sem-references id="refs" kind="bibliography" role="list">
     <sem-reference id="r-rfc" role="listitem" href="https://www.rfc-editor.org/rfc/rfc6749" cite="RFC 6749">The OAuth 2.0 Authorization Framework, §10.4.</sem-reference>
-    <sem-reference id="r-note" role="listitem">A footnote with no external target: rotation is a policy, not a protocol feature.</sem-reference>
+    <sem-reference id="r-note" role="listitem" cite="notes/rotation-policy.md">A footnote with no external target: rotation is a policy, not a protocol feature.</sem-reference>
   </sem-references>
 
   <h2>Config</h2>
@@ -216,7 +215,7 @@
   </sem-table>
 
   <h2>Disclosures</h2>
-  <!-- Class form on both pages: the reveal and views fallbacks (core) drive
+  <!-- Class form on both pages: the reveal and views handlers drive
        `.sem-reveal` / `.sem-views` only. Headings inside them are reached
        from the outline through the deep-link resolver. -->
   <div class="sem-reveal" id="rv-keys" data-summary="Key rotation detail" collapsed>

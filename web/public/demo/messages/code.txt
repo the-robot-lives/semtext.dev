@@ -1,0 +1,5 @@
+code view — the pager over the deck file:
+
+    bat demo/example-deck.sem.html
+
+Up/Down line · PgUp/PgDn page · / find · n/N next/prev · q quit

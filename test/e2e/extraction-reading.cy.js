@@ -168,7 +168,7 @@ describe('extraction — reading elements', () => {
           href: 'https://www.rfc-editor.org/rfc/rfc6749', cite: 'RFC 6749', ordinal: 1
         });
         expect(refs[0].text).to.equal('The OAuth 2.0 Authorization Framework, §10.4.');
-        expect(refs[1].fields).to.deep.equal({ href: '', cite: '', ordinal: 2 });
+        expect(refs[1].fields).to.deep.equal({ href: '', cite: 'notes/rotation-policy.md', ordinal: 2 });
         const container = records[refs[0].parent];
         expect(container.type).to.equal('sem-references');
         expect(container.kind).to.equal('bibliography');

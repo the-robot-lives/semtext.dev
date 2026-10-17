@@ -17,6 +17,9 @@ concurrency:
   group: nightly-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   full-suite:
     runs-on: ubuntu-latest

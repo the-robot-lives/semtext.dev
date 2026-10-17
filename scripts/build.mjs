@@ -1,17 +1,22 @@
 /**
- * scripts/build.mjs — five artifacts, one command.
+ * scripts/build.mjs — four artifacts, one command.
  *
  * `vite build` with `build.lib.formats: ['iife']` supports exactly one entry,
- * and this package ships five independent classic scripts:
+ * and this package ships four independent classic scripts:
  *
- *   dist/semtext.js           Lit custom elements          (global SemText)
- *   dist/semtext-fallback.js  vanilla fallback tier        (global SemTextFallback)
+ *   dist/semtext.js           the ONE runtime bundle (global SemText): Lit 3
+ *                             components + the vanilla core, prose-reading and
+ *                             sem-md behaviours folded in (0.9.0 one-bundle
+ *                             contract — the standalone fallback tier is
+ *                             retired)
  *   dist/semtext-reading.js   prose-reading behaviours     (global SemTextReading)
  *   dist/semtext-extract.js   record extraction            (global SemTextExtract)
  *   dist/semtext-md.js        sem-md Markdown renderer     (global SemTextMd)
  *
- * They are separate on purpose. The fallback tier must run in a document that
- * never loads Lit, so it cannot share a bundle with it.
+ * The three companions still ship standalone for documents that want the
+ * reading/extraction/markdown layer without the Lit upgrade (file:// readers,
+ * agent pipelines); each is idempotent on DOM state, so a page may inline the
+ * one bundle, a companion, or both.
  *
  * Each target declares a size budget; the build prints measured size against
  * it and fails only if `--strict-budget` is passed, so a budget overrun is
@@ -30,12 +35,11 @@ const strict = process.argv.includes('--strict-budget');
 
 /** budgetKb is measured against the minified (not gzipped) artifact. */
 const targets = [
-  { name: 'semtext.js',          entry: 'src/index.ts',          global: 'SemText',         budgetKb: 56, required: true },
+  { name: 'semtext.js',          entry: 'src/index.ts',          global: 'SemText',         budgetKb: 72, required: true },
   // 13 → 14 KB (2026-09-22, tag form canonical, measured 13.0): every core
   // handler selects both authoring forms (`:is(sem-x, .sem-x)`), the
   // bare→data-* attribute mirror, the tag-form note body wrap. Recorded in
   // ROADMAP "Tag-form canonical decisions".
-  { name: 'semtext-fallback.js', entry: 'src/fallback/index.ts', global: 'SemTextFallback', budgetKb: 14, required: true },
   { name: 'semtext-reading.js',  entry: 'src/reading/index.ts',  global: 'SemTextReading',  budgetKb: 19.5, required: true },
   { name: 'semtext-extract.js',  entry: 'src/extract/index.ts',  global: 'SemTextExtract',  budgetKb: 12, required: false },
   { name: 'semtext-md.js',       entry: 'src/md/index.ts',       global: 'SemTextMd',       budgetKb: 8.5,  required: true },

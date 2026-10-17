@@ -12,15 +12,14 @@
  *   <name>.html        everything inlined — opens from file:// with no network
  *   <name>.nojs.html   the same page with every <script> element removed
  *
- * The `.nojs.html` variant is the genuine JS-off artifact. The older
- * `window.__semJsOff` kill switch only proves the handler no-ops; it leaves
- * the script in the page, so it can never show that the CSS alone degrades
- * readably. Stripping the elements is the real test.
+ * The `.nojs.html` variant is the genuine JS-off artifact: a kill switch
+ * would only prove the handler no-ops while leaving the script in the page,
+ * so it could never show that the CSS alone degrades readably. Stripping
+ * the elements is the real test.
  *
  * Markers (HTML comments, so a source page stays valid HTML on its own):
  *
  *   <!-- sem:inline bundle -->                     dist/semtext.js
- *   <!-- sem:inline fallback -->                   dist/semtext-fallback.js
  *   <!-- sem:inline reading -->                    dist/semtext-reading.js
  *   <!-- sem:inline extract -->                    dist/semtext-extract.js
  *   <!-- sem:inline md -->                         dist/semtext-md.js
@@ -37,7 +36,7 @@
  *                                                   (or dist/semtext.js for
  *                                                   "bundle") — never
  *                                                   hardcode a size in copy.
- *   <!-- sem:inline spec-version -->                "v0.5" — the draft spec
+ *   <!-- sem:inline spec-version -->                "v0.6" — the draft spec
  *                                                   revision, from package.json
  *                                                   `specVersion`. Demo titles
  *                                                   and copy self-label from
@@ -104,8 +103,6 @@ function expand(kind, arg) {
   switch (kind) {
     case 'bundle':
       return `<script>\n${readOrDie(resolve(root, 'dist/semtext.js'), 'bundle')}\n</script>`;
-    case 'fallback':
-      return `<script id="sem-fallback">\n${readOrDie(resolve(root, 'dist/semtext-fallback.js'), 'fallback')}\n</script>`;
     case 'reading':
       return `<script id="sem-reading">\n${readOrDie(resolve(root, 'dist/semtext-reading.js'), 'reading')}\n</script>`;
     case 'extract':
@@ -143,7 +140,6 @@ function expand(kind, arg) {
  *  copy should measure against instead of hardcoding a number. */
 const SIZE_SOURCES = {
   bundle: 'dist/semtext.js',
-  fallback: 'dist/semtext-fallback.js',
   reading: 'dist/semtext-reading.js',
   extract: 'dist/semtext-extract.js',
   md: 'dist/semtext-md.js',

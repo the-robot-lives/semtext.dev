@@ -23,20 +23,20 @@
 
 <!-- GA_MEASUREMENT_ID_SNIPPET -->
 
-<title>SemText — one HTML file, in place of Markdown</title>
-<meta name="description" content="SemText: one HTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components.">
+<title>SemText — one XHTML file, in place of Markdown</title>
+<meta name="description" content="SemText: one XHTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components.">
 <link rel="canonical" href="https://semtext.dev/">
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://semtext.dev/">
 <meta property="og:site_name" content="SemText">
-<meta property="og:title" content="SemText — one HTML file, in place of Markdown">
-<meta property="og:description" content="SemText: one HTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components.">
+<meta property="og:title" content="SemText — one XHTML file, in place of Markdown">
+<meta property="og:description" content="SemText: one XHTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components.">
 <meta property="og:image" content="https://semtext.dev/og.png">
-<meta property="og:image:alt" content="SemText — one HTML file, in place of Markdown">
+<meta property="og:image:alt" content="SemText — one XHTML file, in place of Markdown">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="SemText — one HTML file, in place of Markdown">
-<meta name="twitter:description" content="SemText: one HTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components.">
+<meta name="twitter:title" content="SemText — one XHTML file, in place of Markdown">
+<meta name="twitter:description" content="SemText: one XHTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components.">
 <meta name="twitter:image" content="https://semtext.dev/og.png">
 
 <!-- Inline SVG favicon. A data URI rather than a file: this page must render
@@ -393,9 +393,9 @@ section { padding-block: var(--pg-space) 0; }
 
   <!-- Hero ------------------------------------------------------------- -->
   <div class="pg-hero pg-col"><div class="pg-narrow">
-    <h1>One HTML file, in place of Markdown.</h1>
+    <h1>One XHTML file, in place of Markdown.</h1>
     <p class="pg-lede">
-      SemText is a semantic text format: a single HTML file that a language
+      SemText is a semantic text format: a single XHTML file that a language
       model reads and writes the way it reads and writes Markdown today. The
       difference is what the text can say. A fact, a step, a caveat, an
       incorrect statement, a term and its definition are each written as what they
@@ -437,7 +437,7 @@ section { padding-block: var(--pg-space) 0; }
         to mark a conclusion as distinct from a decoy, a step as blocked, or a
         term as defined, so rich content ends up as a page for people plus a
         separate structured copy for tooling, and the two drift. SemText keeps
-        one file. It stays HTML, so a browser already knows how to display
+        one file. It stays XHTML, so a browser already knows how to display
         it and web components can enhance it in place, and it stays text, so
         a model can read and write it directly with no conversion step in
         either direction.
@@ -458,7 +458,7 @@ section { padding-block: var(--pg-space) 0; }
         </div>
         <div class="sem-view" data-name="Model" role="tabpanel" aria-label="Model">
           <p>
-            The same file read as HTML. Attributes qualify every datum:
+            The same file read as XHTML. Attributes qualify every datum:
             <code>data-kind</code> says what a thing is,
             <code>data-status</code> says where it stands,
             <code>.sem-conclusion</code> and <code>.incorrect-statement</code>
@@ -972,7 +972,7 @@ section { padding-block: var(--pg-space) 0; }
         machine-readable — no way to mark a conclusion as distinct from a
         decoy, or a step as blocked. An authoring aid that compiles Markdown
         into SemText is a reasonable thing to build, but the canonical artifact
-        stays HTML, because that is the artifact all three readers consume.
+        stays XHTML, because that is the artifact all three readers consume.
       </div>
 
       <div class="sem-reveal" id="q-why-model" data-summary="Does a language model really need this?" collapsed>

@@ -1,6 +1,6 @@
 # arch/vocabulary — element vocabulary model
 
-SemText v0.5 is a vocabulary of HTML custom elements (`<sem-note>`,
+SemText v0.5 is a vocabulary of XHTML custom elements (`<sem-note>`,
 `<sem-facts>`, `<sem-step>`, … — 16 per-element schemas under `spec/schema/`).
 **Tag form is canonical**; the v0.4 class-on-plain-element spelling is
 retained as a compatibility alias (conventions.md Appendix A). Documents may

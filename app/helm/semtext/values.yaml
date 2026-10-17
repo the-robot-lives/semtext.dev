@@ -1,0 +1,225 @@
+replicas: 1
+domain: semtext.dev
+appDomain: proposals.semtext.dev
+# appDomain is the proposals host (design v2 §3.1): both hosts dispatch into
+# the same backend via SemtextWeb.Plugs.HostDispatch. Cookies stay HOST-ONLY
+# (no Domain= attribute) per design §3.1 — a parent-zone cookie would leak to
+# every sibling subdomain including the future play. sandbox origin.
+cookieDomain: ""
+
+backend:
+  image: ops.noizu.com/semtext.dev/app:sha-ce8d86c
+  port: 4000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Frontend is served by the Phoenix+Hologram backend (no separate Next.js
+# container/image). The `frontend` stanza below exists only because
+# service.yaml/ingress.yaml unconditionally reference `.Values.frontend.port`
+# for a second named Service port -- it points at the same single backend
+# process/port, not a second container. No `image` key: nothing in this
+# chart's templates consumes `.Values.frontend.image`.
+frontend:
+  port: 4000
+
+migrate:
+  enabled: true
+  command: ["bin/semtext", "eval", "Semtext.Release.migrate()"]
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+database:
+  host: app-timescaledb.apps.svc.cluster.local
+  port: 5432
+  name: semtext_prod
+
+# Reference only: REDIS_URL arrives via the synced secret (platform-valkey
+# default user, db 6 — 0-5 are taken by sibling apps). This stanza feeds no
+# template; kept so operators can see the target at a glance.
+redis:
+  host: platform-valkey.platform.svc.cluster.local
+  port: 6379
+  db: 6
+
+fleetIngest:
+  # Fleet dashboard ingest endpoint for the daily FleetPush push.
+  url: "https://fleet.noizu.com/api/v1/ingest/metrics"
+
+# Synced by the chart-managed InfisicalSecret below from Infisical path
+# /apps/semtext (store keys are the env names: DATABASE_URL, SECRET_KEY_BASE,
+# SESSION_SIGNING_SALT, GUARDIAN_SECRET_KEY, REDIS_URL, SEMTEXT_DB_*).
+secrets:
+  name: semtext-secrets
+  infisical:
+    enabled: true
+    resyncInterval: 120
+    hostAPI: https://infisical.noizu.com/api
+    credentialsSecret: universal-auth-credentials
+    credentialsNamespace: infra
+    projectSlug: k8-infra
+    envSlug: prod
+    secretsPath: "/apps/semtext"
+  keys:
+    dbUser: SEMTEXT_DB_USER
+    dbPassword: SEMTEXT_DB_PASSWORD
+    databaseUrl: DATABASE_URL
+    secretKeyBase: SECRET_KEY_BASE
+    sessionSigningSalt: SESSION_SIGNING_SALT
+    guardianSecretKey: GUARDIAN_SECRET_KEY
+    redisUrl: REDIS_URL
+    # Fleet dashboard (fleet.noizu.com) daily ingest bearer key. Optional
+    # secretKeyRef in _helpers.tpl: until it lands in the synced secret the
+    # pod boots without it and FleetPush no-ops (logs once).
+    fleetIngestKey: SEMTEXT_FLEET_INGEST_KEY
+    # Not provisioned yet — empty disables the env (the {{- if gates in
+    # _helpers.tpl). Flip these on (and set the /apps/semtext store keys)
+    # when the user creates the OAuth App / GitHub App / Turnstile account.
+    sendgridApiKey: ""
+    oidcClientId: ""
+    oidcClientSecret: ""
+    googleClientId: ""
+    googleClientSecret: ""
+    facebookClientId: ""
+    facebookClientSecret: ""
+    githubClientId: ""
+    githubClientSecret: ""
+    linkedinClientId: ""
+    linkedinClientSecret: ""
+    samlSpCert: ""
+    samlSpKey: ""
+
+mail:
+  fromName: ""
+  fromAddress: ""
+
+sso:
+  requireInvite: false
+  # SSO availability by email domain. Format:
+  # "example.com=oidc;corp.example=google,oidc"
+  domains: ""
+  # Domains whose SSO registrations are approved immediately. All other SSO
+  # registrations remain pending unless an invite activates them. Format:
+  # "example.com;corp.example" or "*" for every SSO-enabled domain.
+  autoApproveDomains: "*"
+  oidc:
+    # Default OIDC issuer for portfolio services (Authentik at auth.derobot.is)
+    # Example: https://auth.derobot.is/application/o/{app-slug}/
+    issuer: ""
+  saml:
+    # Samly 1.4 expects raw metadata XML or a local metadata file path; it does
+    # not fetch metadata URLs at runtime.
+    idpMetadata: ""
+    idpMetadataFile: ""
+    # Deprecated. Kept for existing values files that used this as a file path.
+    idpMetadataUrl: ""
+    spEntityId: ""
+
+extraEnv: []
+
+configMap:
+  enabled: false
+  data: {}
+
+imagePullSecrets:
+  - name: ops-registry-secret
+
+analytics:
+  ga:
+    measurementId: ""
+  posthog:
+    key: ""
+    host: "https://us.i.posthog.com"
+
+ingress:
+  # Extra hosts routed identically to `domain` (TLS included). www was
+  # served by the pre-replatform static chart — parity requires it.
+  extraHosts:
+    - www.semtext.dev
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+  cloudflareOnly: true
+
+tls:
+  enabled: true
+  secretName: semtext-dev-tls
+  infisical:
+    enabled: true
+    resyncInterval: 300
+    hostAPI: https://infisical.noizu.com/api
+    credentialsSecret: universal-auth-credentials
+    credentialsNamespace: infra
+    projectSlug: k8-infra
+    envSlug: prod
+    secretsPath: "/apps/tls/semtext"
+    crtKey: SEMTEXT_TLS_CRT
+    keyKey: SEMTEXT_TLS_KEY
+
+# OpenTelemetry → SigNoz wiring (conventions: trl-infra docs/observability/
+# OTEL-CONVENTIONS.md). enabled=false ships NO OTEL_* env vars at all, so the
+# runtime no-ops (SDK disabled, zero connection attempts).
+otel:
+  enabled: true
+  # The fleet site key — MUST equal the site's entry in the fleet repo's
+  # app/priv/sites.yml (generated from docs/site-fleet/REGISTRY.md); SigNoz
+  # deep-links key off it exactly (https://apm.noizu.com/services/<key>).
+  # "semtext" is this scaffold's template placeholder.
+  fleetSiteKey: "semtext"
+  collectorEndpoint: "http://signoz-otel-collector.infra.svc:4318"
+  protocol: "http/protobuf"
+  sampler: "parentbased_traceidratio"
+  samplerArg: "1.0"
+  serviceNamespace: "portfolio"
+  # deployment.environment: prod | stage | dev per conventions; empty falls
+  # back to the release namespace.
+  deploymentEnvironment: ""
+  # service.version: deployed image sha/tag; empty falls back to the tag part
+  # of backend.image.
+  serviceVersion: ""
+
+storage:
+  enabled: false
+  bucket: ""
+  region: "us-east-1"
+  endpoint: ""
+  scheme: "https://"
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+sandbox:
+  enabled: false
+  image: ops.noizu.com/semtext/sandbox:latest
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  persistence:
+    enabled: false
+    size: 5Gi
+    storageClass: ""
+  service:
+    type: ClusterIP
