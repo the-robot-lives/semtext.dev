@@ -103,8 +103,14 @@ defmodule SemtextWeb.PortDocsPagesTest do
         conn = get(conn, "/showcase/#{unquote(slug)}")
         assert conn.status == 200
         body = html_response(conn, 200)
-        # the ExampleViewer section marker this page's viewer renders
-        assert body =~ ~s(id="example-#{unquote(slug)}")
+        # the section marker the page renders. ExampleViewer pages use
+        # id="example-<slug>"; the onboarding island page (#153) owns its
+        # section directly with the plain id="example" anchor.
+        if unquote(slug) == "onboarding" do
+          assert body =~ ~s(id="example")
+        else
+          assert body =~ ~s(id="example-#{unquote(slug)}")
+        end
         assert body =~ "https://semtext.dev/showcase/#{unquote(slug)}/"
       end
     end
