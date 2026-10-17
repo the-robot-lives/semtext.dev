@@ -33,6 +33,9 @@
  *   ?src=<path-or-url>             → same-origin path or an http(s) URL,
  *                                    fetched as text; VFS keys arrive
  *                                    with the sem-shell integration
+ *   ?view=1                        read-only: the shell renders with its
+ *                                    edit verbs disabled (example sharing
+ *                                    without an edit invite)
  *   (no params)                    → a small built-in starter document
  *
  * This file is site-side and survives bundle syncs; it only ever talks to
@@ -229,12 +232,12 @@
         var name = doc.tag + (doc.variant ? "-" + doc.variant : "") + ".html";
         boot(doc.themeCss, function (editorApi) {
           openSource(editorApi, doc.source, name);
+          var label =
+            "the " + doc.tag + " example" + (doc.variant ? " (variant: " + doc.label + ")" : "");
           status(
-            "Opened the " +
-              doc.tag +
-              " example" +
-              (doc.variant ? " (variant: " + doc.label + ")" : "") +
-              ". Double-click a block to edit it."
+            window.__semEditorReadonly
+              ? "Read-only view — " + label + "."
+              : "Opened " + label + ". Double-click a block to edit it."
           );
         });
       })
@@ -276,6 +279,12 @@
       return;
     }
     var params = new URLSearchParams(QUERY);
+    // Read-only view (?view=1): set BEFORE openDocument so the shell wires
+    // without its edit verbs (Lit captures pre-upgrade property sets).
+    if (params.get("view") === "1") {
+      ed.readonly = true;
+      window.__semEditorReadonly = true;
+    }
     var example = params.get("example");
     var src = params.get("src");
     if (example) {
@@ -285,7 +294,10 @@
     } else {
       boot([], function (editorApi) {
         openSource(editorApi, STARTER, STARTER_NAME);
-        status("Scratch document ready — double-click to edit, or open an example with ?example=<tag>.");
+        status(
+          (window.__semEditorReadonly ? "Read-only view — " : "Scratch document ready — ") +
+            "double-click to edit, or open an example with ?example=<tag>."
+        );
       });
     }
   }
