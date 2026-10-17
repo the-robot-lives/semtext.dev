@@ -1,4 +1,11 @@
 
+/* The three directives are REQUIRED for the documented regen (see
+ * tailwind.config.js): without them the CLI emits only the custom css
+ * below and every template utility drops out of the compiled sheet. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --bg: #0f172a;
   --bg-lift: #111827;
