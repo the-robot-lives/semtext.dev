@@ -70,7 +70,7 @@ defmodule SemtextWeb.Docs.SearchIndex do
       %{
         command: "semtext filter doc.sem.html --type sem-fact",
         summary:
-          "Select records — matching blocks as normalised XHTML; filter by type, attr, text, id, kind, tag, audience or selector.",
+          "Select records — matching blocks as normalised HTML; filter by type, attr, text, id, kind, tag, audience or selector.",
         href: "/docs/#cli-commands"
       },
       %{

@@ -26,7 +26,7 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
 
   # Content-hashed stylesheet URLs (cache busting; see SemtextWeb.AssetVersion).
   prop :landing_css, :string, default: SemtextWeb.AssetVersion.url("css/landing.css")
-  prop :page_title, :string, default: "SemText — one XHTML file, in place of Markdown"
+  prop :page_title, :string, default: "SemText — one HTML file, in place of Markdown"
 
   # Content-hashed bootstrap URL (cache busting; compile-time prop default).
   prop :bootstrap_js, :string, default: SemtextWeb.AssetVersion.url("js/landing-bootstrap.js")
@@ -41,13 +41,13 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
         <title>{@page_title}</title>
         <meta
           name="description"
-          content="SemText: one XHTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components. Part of The Robot Lives portfolio."
+          content="SemText: one HTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components. Part of The Robot Lives portfolio."
         />
         <meta name="application-name" content="semtext" />
         <meta name="author" content="The Robot Lives" />
         <meta
           name="keywords"
-          content="semtext, XHTML, Markdown replacement, AI prompts, structured documents, web components, Lit, The Robot Lives"
+          content="semtext, HTML, Markdown replacement, AI prompts, structured documents, web components, Lit, The Robot Lives"
         />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://semtext.dev/" />
@@ -55,10 +55,10 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
         <meta property="og:site_name" content="semtext" />
         <meta property="og:locale" content="en_US" />
         <meta property="og:url" content="https://semtext.dev/" />
-        <meta property="og:title" content="SemText — one XHTML file, in place of Markdown" />
+        <meta property="og:title" content="SemText — one HTML file, in place of Markdown" />
         <meta
           property="og:description"
-          content="SemText: one XHTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components. Part of The Robot Lives portfolio."
+          content="SemText: one HTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components. Part of The Robot Lives portfolio."
         />
         <meta
           property="og:image"
@@ -66,12 +66,12 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
         />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="675" />
-        <meta property="og:image:alt" content="SemText — one XHTML file, in place of Markdown." />
+        <meta property="og:image:alt" content="SemText — one HTML file, in place of Markdown." />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="SemText — one XHTML file, in place of Markdown" />
+        <meta name="twitter:title" content="SemText — one HTML file, in place of Markdown" />
         <meta
           name="twitter:description"
-          content="SemText: one XHTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components. Part of The Robot Lives portfolio."
+          content="SemText: one HTML file that models read and write instead of Markdown. Readable as text as-is; opened in a browser, the same markup becomes working web components. Part of The Robot Lives portfolio."
         />
         <meta name="twitter:image" content="https://semtext.dev/og.jpg" />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />

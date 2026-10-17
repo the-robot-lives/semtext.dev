@@ -24,9 +24,9 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
   alias SemtextWeb.Hologram.Components.Site.Header
 
   @site_url "https://semtext.dev"
-  @default_title "SemText — one XHTML file, in place of Markdown"
+  @default_title "SemText — one HTML file, in place of Markdown"
   @default_description """
-  SemText: one XHTML file that models read and write instead of Markdown. \
+  SemText: one HTML file that models read and write instead of Markdown. \
   Readable as text as-is; opened in a browser, the same markup becomes \
   working web components. Part of The Robot Lives portfolio.\
   """

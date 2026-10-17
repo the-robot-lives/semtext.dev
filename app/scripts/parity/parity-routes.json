@@ -27,8 +27,8 @@
       "path": "/",
       "kind": "page",
       "owner": "port-landing",
-      "title": "SemText — one XHTML file, in place of Markdown",
-      "h1": "One XHTML file",
+      "title": "SemText — one HTML file, in place of Markdown",
+      "h1": "One HTML file",
       "keyText": ["What it is not", "Documents that do more than read"],
       "selectors": ["figure.code-window", "section#scope", "section#addons"]
     },

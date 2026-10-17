@@ -137,7 +137,7 @@ export function HeroWindow() {
         <span className="dot live" aria-hidden="true" />
         <span className="dot" aria-hidden="true" />
         <span className="dot" aria-hidden="true" />
-        <span>auth-notes.xhtml · what the model reads</span>
+        <span>auth-notes.html · what the model reads</span>
         {/* Rendered only after hydration: with no JS the controls are not
             in the DOM at all, so the static page stays zero-JS clean. */}
         {js && (

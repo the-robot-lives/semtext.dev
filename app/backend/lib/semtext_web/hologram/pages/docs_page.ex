@@ -148,12 +148,12 @@ defmodule SemtextWeb.Hologram.Pages.DocsPage do
           Documentation
         </h1>
         <p class="mt-4 max-w-3xl text-base leading-7 text-ink-mute">
-          A SemText document is one XHTML file. Ship it with
+          A SemText document is one HTML file. Ship it with
           <code class="font-mono">semtext.css</code> and a small script —
           plus an optional theme — and the same file a model reads becomes
           working web components — no build step, no framework, nothing
           compiled. SemText ships as a CLI and as component bundles. Author
-          documents as plain XHTML, then read them in the browser, the
+          documents as plain HTML, then read them in the browser, the
           terminal, or render them for distribution to agents. Want to try
           one right now?{" "}
           <a
@@ -175,7 +175,7 @@ defmodule SemtextWeb.Hologram.Pages.DocsPage do
           </p>
 
           <p class="mt-3 max-w-3xl leading-relaxed text-ink-mute">
-            Author your document as XHTML using the SemText vocabulary — any
+            Author your document as HTML using the SemText vocabulary — any
             tool that writes HTML can write it. Then load
             <code class="font-mono">semtext.css</code> and
             <code class="font-mono">semtext.js</code>, plus an optional
@@ -240,7 +240,7 @@ defmodule SemtextWeb.Hologram.Pages.DocsPage do
             semtext filter — select records
           </h3>
           <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-mute">
-            Prints matching blocks as normalised XHTML. Filter by record type
+            Prints matching blocks as normalised HTML. Filter by record type
             (<code class="font-mono">--type</code>), attribute
             (<code class="font-mono">--attr</code>), text
             (<code class="font-mono">--text</code>), id, kind, tag, audience

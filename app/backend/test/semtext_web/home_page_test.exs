@@ -11,7 +11,7 @@ defmodule SemtextWeb.HomePageTest do
     assert conn.status == 200
 
     body = html_response(conn, 200)
-    assert body =~ "One XHTML file"
+    assert body =~ "One HTML file"
     assert body =~ "in place of Markdown"
   end
 
@@ -21,7 +21,7 @@ defmodule SemtextWeb.HomePageTest do
       |> get("/")
       |> html_response(200)
 
-    assert body =~ "SemText — one XHTML file, in place of Markdown"
+    assert body =~ "SemText — one HTML file, in place of Markdown"
     assert body =~ "og:title"
     assert body =~ "canonical"
   end
@@ -44,7 +44,7 @@ defmodule SemtextWeb.HomePageTest do
       |> html_response(200)
 
     assert body =~ "A SemText document fragment"
-    assert body =~ "auth-notes.xhtml"
+    assert body =~ "auth-notes.html"
     # The Source/Render pills are hydration-gated chrome.
     refute body =~ "aria-pressed"
   end

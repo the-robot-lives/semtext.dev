@@ -68,7 +68,7 @@ defmodule SemtextWeb.Hologram.Pages.EditorPage do
           Editor
         </h1>
         <p class="mt-4 max-w-3xl text-base leading-7 text-ink-mute">
-          One XHTML file, editable in place. Open any element&apos;s{" "}
+          One HTML file, editable in place. Open any element&apos;s{" "}
           <a
             class="underline decoration-white/30 underline-offset-2 hover:decoration-white/70"
             href="/reference/"
