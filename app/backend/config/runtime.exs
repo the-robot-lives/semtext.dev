@@ -302,6 +302,23 @@ if config_env() == :prod do
     url: System.get_env("FLEET_INGEST_URL", "https://fleet.noizu.com/api/v1/ingest/metrics"),
     key: System.get_env("FLEET_INGEST_KEY")
 
+  # Read-only live-fetch proxy upstreams (vocabulary epic Phase 5 —
+  # Semtext.LiveProxy). dc → Infisical → chart env, same secret path as
+  # FLEET_INGEST_KEY:
+  #   services.semtext.agent_kit_api_url  → AGENT_KIT_API_URL  (agent-kit base, no trailing slash)
+  #   services.semtext.agent_kit_api_key  → AGENT_KIT_API_KEY  (raw MCP API key; brokered to a
+  #     short-lived JWT per request via the service's POST /api/mcp/token bootstrap)
+  # Unset/blank AGENT_KIT_* ⇒ the agent-kit proxy routes answer 503
+  # not_configured (fail-soft; the embed stays cached). ANNOTATE_API_URL has
+  # the public service default the widget CSP already pins.
+  config :semtext, Semtext.LiveProxy.AgentKit,
+    base_url: System.get_env("AGENT_KIT_API_URL"),
+    api_key: System.get_env("AGENT_KIT_API_KEY")
+
+  config :semtext, Semtext.LiveProxy.Annotate,
+    base_url:
+      System.get_env("ANNOTATE_API_URL") || "https://annotate-srv.therobotlives.com/api/v1"
+
   # GitHub App sync (design v1 §6): proposal Discussion creation + webhook
   # ingestion. Distinct secret set from the OAuth login app above — never
   # merged (design v2 §4). dc → Infisical → chart env:

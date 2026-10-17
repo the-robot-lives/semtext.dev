@@ -33,10 +33,10 @@
   h2 { @apply text-lg font-semibold mt-8 mb-2; }
 </style>
 
-<!-- The reading bundle below is the only script this page injects; the
-     document reads as plain prose without it. -->
-<!-- Reading bundle: sem-source chrome + fence (and the sem-code it renders). -->
-<!-- sem:inline reading -->
+<!-- The one bundle below is the only script this page injects: it carries the
+     vanilla handlers, the prose-reading behaviours and the Markdown renderer
+     (0.9.0 one-bundle contract). The document reads as plain prose without it. -->
+<!-- sem:inline bundle -->
 </head>
 
 <body>
@@ -209,7 +209,7 @@
        survive the section dedent, and a raw-text child holding the escape
        sequence. Plain HTML only: mints nothing. -->
   <div class="sem-source" id="s-fidelity" data-label="Fidelity fixtures">
-    <p id="s-fid-text">The marker text data-sem-upgraded="" is prose here, not an attribute.</p>
+    <p id="s-fid-text">The marker text data-sem-fallback="" is prose here, not an attribute.</p>
     <pre id="s-fid-pre"><code>top
       keep six
   keep two</code></pre>

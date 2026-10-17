@@ -50,6 +50,11 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
   # /reference pages (port-reference lane): section CSS + the island bridge
   # (auto-boots the example render panes; runs the index filter).
   prop :reference_assets, :boolean, default: false
+  # /themes/showcase loads the consolidated latest bundle (scripts/
+  # build-latest.mjs output): 0.8.3 vocabulary base, v0.6 structural
+  # additions and all five themes in one stylesheet, plus its runtime —
+  # the same injection-last ordering the Next island used on mount.
+  prop :latest_assets, :boolean, default: false
   # /editor (Instrument lane): the editor fills the viewport below the
   # header, so the footer is dropped (app tools chrome, not a content page).
   prop :hide_footer, :boolean, default: false
@@ -91,6 +96,10 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
         {%if @reference_assets}
           <link rel="stylesheet" href={@reference_css} />
           <script defer src={@island_js}></script>
+        {/if}
+        {%if @latest_assets}
+          <link rel="stylesheet" href="/semtext/latest/semtext.css" />
+          <script defer src="/semtext/latest/semtext.js"></script>
         {/if}
         <script defer src="/js/site-chrome.js"></script>
         <script src="/js/keep-location.js"></script>

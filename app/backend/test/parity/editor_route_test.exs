@@ -48,8 +48,8 @@ defmodule SemtextWeb.Parity.EditorRouteTest do
     # Site-local boot scripts carry AssetVersion content hashes (?v=hex);
     # the /semtext/ snapshot bundles are version-pinned paths — no hash.
     assert raw =~ ~r|src="/js/editor-flags\.js(\?v=[0-9a-f]+)?"|
-    assert raw =~ "src=\"/semtext/v0.8.3/semtext.js\""
-    assert raw =~ "src=\"/semtext/v0.8.3/semtext-editor.js\""
+    assert raw =~ "src=\"/semtext/v0.9.0/semtext.js\""
+    assert raw =~ "src=\"/semtext/v0.9.0/semtext-editor.js\""
     assert raw =~ ~r|src="/js/editor-boot\.js(\?v=[0-9a-f]+)?"|
 
     order =
@@ -73,8 +73,8 @@ defmodule SemtextWeb.Parity.EditorRouteTest do
   test "the editor static assets serve" do
     for path <- [
           "/js/editor-flags.js",
-          "/semtext/v0.8.3/semtext.js",
-          "/semtext/v0.8.3/semtext-editor.js",
+          "/semtext/v0.9.0/semtext.js",
+          "/semtext/v0.9.0/semtext-editor.js",
           "/js/editor-boot.js"
         ] do
       conn = get(build_conn(), path)
