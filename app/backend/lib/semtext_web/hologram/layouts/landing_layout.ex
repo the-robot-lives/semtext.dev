@@ -18,11 +18,14 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
   """
   use Hologram.Component
 
+
   alias SemtextWeb.Hologram.Components.AnnotateWidget
   alias SemtextWeb.Hologram.Components.Site.Footer
 
   alias SemtextWeb.Hologram.Components.Landing.HeaderMenu
 
+  # Content-hashed stylesheet URLs (cache busting; see SemtextWeb.AssetVersion).
+  prop :landing_css, :string, default: SemtextWeb.AssetVersion.url("css/landing.css")
   prop :page_title, :string, default: "SemText — one XHTML file, in place of Markdown"
 
   def template do
@@ -73,7 +76,7 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#0f172a" />
-        <link rel="stylesheet" href="/css/landing.css" />
+        <link rel="stylesheet" href={@landing_css} />
         <link rel="stylesheet" href="/semtext/themes/_vocabulary.css" />
         <link rel="stylesheet" href="/semtext/themes/minimal-tech-light.css" />
         <script src="/js/keep-location.js"></script>
