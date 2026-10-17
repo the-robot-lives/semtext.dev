@@ -285,9 +285,25 @@ defmodule SemtextWeb.ProposalsPagesTest do
 
   # ── /extend wizard ───────────────────────────────────────────────────────
 
-  test "extend page shows the GitHub login link for anonymous visitors", %{conn: conn} do
+  test "extend page shows the disabled sign-in state when GitHub login is unconfigured", %{conn: conn} do
+    # config.exs pins :github_enabled false and test.exs deletes the GitHub
+    # client env (CI parity) — anonymous visitors must see the disabled
+    # state, never a dead /auth/github link.
     body = conn |> get("/extend") |> html_response(200)
-    assert body =~ "Sign in with GitHub"
+    assert body =~ "Sign in coming soon"
+    refute body =~ ~s(href="/auth/github")
+  end
+
+  test "extend page shows the GitHub login link when GitHub login is configured", %{conn: conn} do
+    Application.put_env(:semtext, :github_enabled, true)
+
+    try do
+      body = conn |> get("/extend") |> html_response(200)
+      assert body =~ "Sign in with GitHub"
+      assert body =~ ~s(href="/auth/github")
+    after
+      Application.put_env(:semtext, :github_enabled, false)
+    end
   end
 
   test "extend page shows the same-origin submit button when signed in", %{conn: conn} do

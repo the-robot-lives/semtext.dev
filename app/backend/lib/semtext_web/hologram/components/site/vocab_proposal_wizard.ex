@@ -42,6 +42,10 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabProposalWizard do
       # Same-origin submit (P1): identity + a mount-time idempotency key
       # that survives retries within the session.
       signed_in: Auth.current_user(server) != nil,
+      # Server-computed (Application env is not client-transpilable): with
+      # GITHUB_CLIENT_ID unset the submit gate renders the disabled
+      # "Sign in coming soon" state instead of a dead /auth/github link.
+      github_enabled: Application.get_env(:semtext, :github_enabled, false),
       idempotency_key: Ecto.UUID.generate(),
       submitting: false,
       problem: %{}
@@ -348,13 +352,23 @@ defmodule SemtextWeb.Hologram.Components.Site.VocabProposalWizard do
                 Submit proposal
               </button>
             {%else}
-              <a
-                href="/auth/github"
-                class="inline-flex min-h-11 items-center bg-violet px-5 py-2 text-sm font-semibold text-white hover:brightness-110"
-                data-cy="wizard-login"
-              >
-                Sign in with GitHub to submit
-              </a>
+              {%if @github_enabled}
+                <a
+                  href="/auth/github"
+                  class="inline-flex min-h-11 items-center bg-violet px-5 py-2 text-sm font-semibold text-white hover:brightness-110"
+                  data-cy="wizard-login"
+                >
+                  Sign in with GitHub to submit
+                </a>
+              {%else}
+                <span
+                  class="inline-flex min-h-11 items-center bg-violet/50 px-5 py-2 text-sm font-semibold text-white/80"
+                  data-cy="wizard-login-disabled"
+                  aria-disabled="true"
+                >
+                  Sign in coming soon
+                </span>
+              {/if}
             {/if}
             <a
               href="https://github.com/noizu-labs-ml/npl-enhanced-content/issues/new"
