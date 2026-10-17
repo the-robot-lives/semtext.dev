@@ -21,10 +21,10 @@ defmodule SemtextWeb.Hologram.Pages.EditorPage do
   spec repo's own web/demo/editor.html does — driving them through the
   island bridge's appended script tags races Hologram hydration):
   /js/editor-flags.js pins the page boot switches first (nothing
-  auto-wires), the VERSION-PINNED /semtext/v0.7.2/semtext.js registers
+  auto-wires), the VERSION-PINNED /semtext/v0.8.3/semtext.js registers
   the core vocabulary the canvas renders (immutable snapshot — same
   pinned base the static site's editor served; cache-stable across
-  bundle syncs), and the REAL /semtext/v0.7.2/semtext-editor.js (§9.2
+  bundle syncs), and the REAL /semtext/v0.8.3/semtext-editor.js (§9.2
   surface: SemTextEditor.createDocument/tryParse + openDocument,
   Visual/Code/Split modes reflected as data-mode). /js/editor-boot.js
   fetches the document and opens it.
@@ -45,7 +45,7 @@ defmodule SemtextWeb.Hologram.Pages.EditorPage do
   # init/3 (server-only) computes the content-hashed URLs for the two
   # site-owned scripts: Plug.Static's heuristic caching serves stale
   # copies of edited files, so the tags must carry the ?v= hash. The
-  # /semtext/v0.7.2/ bundles are version-pinned paths — no hash needed.
+  # /semtext/v0.8.3/ bundles are version-pinned paths — no hash needed.
   # Plain strings only — no document markup in state (payload-leak rule).
   # The template also authors the editor's chrome prerequisites from the
   # spec repo's web/demo/editor.html: the semtext.css link (toolbar and
@@ -98,10 +98,10 @@ defmodule SemtextWeb.Hologram.Pages.EditorPage do
           </div>
         </section>
       </main>
-      <link rel="stylesheet" href="/semtext/v0.7.2/semtext.css" />
+      <link rel="stylesheet" href="/semtext/v0.8.3/semtext.css" />
       <script defer src={@flags_js}></script>
-      <script defer src="/semtext/v0.7.2/semtext.js"></script>
-      <script defer src="/semtext/v0.7.2/semtext-editor.js"></script>
+      <script defer src="/semtext/v0.8.3/semtext.js"></script>
+      <script defer src="/semtext/v0.8.3/semtext-editor.js"></script>
       <script defer src={@boot_js}></script>
     </div>
     """
