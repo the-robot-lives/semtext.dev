@@ -176,7 +176,7 @@ const ARTIFACTS: Array<[string, React.ReactNode]> = [
 const QUESTIONS: Array<[string, string]> = [
   [
     "Why not Markdown?",
-    "Markdown has nowhere to put the attributes that make a datum machine-readable — no way to mark a conclusion as distinct from a decoy, or a step as blocked. An authoring aid that compiles Markdown into SemText is a reasonable thing to build, but the canonical artifact stays XHTML, because that is the artifact all three readers consume.",
+    "Markdown has nowhere to put the attributes that make a datum machine-readable — no way to mark a conclusion as distinct from a decoy, or a step as blocked. An authoring aid that compiles Markdown into SemText is a reasonable thing to build, but the canonical artifact stays HTML, because that is the artifact all three readers consume.",
   ],
   [
     "Does a language model really need this?",
@@ -219,15 +219,15 @@ export default function Home() {
         <div className="mx-auto grid max-w-docs gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.18fr)] lg:py-16">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.22em] text-violet-soft">
-              semantic text · one XHTML file
+              semantic text · one HTML file
             </p>
             <h1 className="mt-3 text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl">
-              One XHTML file,
+              One HTML file,
               <br />
               in place of Markdown.
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-ink-mute sm:text-lg">
-              SemText is a semantic text format: a single XHTML file that a
+              SemText is a semantic text format: a single HTML file that a
               language model reads and writes the way it reads and writes
               Markdown today. The difference is what the text can say. A fact,
               a step, a caveat, a distractor, a term and its definition are
@@ -289,7 +289,7 @@ export default function Home() {
               <span className="dot live" aria-hidden="true" />
               <span className="dot" aria-hidden="true" />
               <span className="dot" aria-hidden="true" />
-              <span>auth-notes.xhtml · what the model reads</span>
+              <span>auth-notes.html · what the model reads</span>
             </div>
             <pre>
               <code>
@@ -340,7 +340,7 @@ export default function Home() {
                 place to mark a conclusion as distinct from a decoy, a step as
                 blocked, or a term as defined, so rich content ends up as a
                 page for people plus a separate structured copy for tooling,
-                and the two drift. SemText keeps one file. It stays XHTML, so a
+                and the two drift. SemText keeps one file. It stays HTML, so a
                 browser already knows how to display it and web components can
                 enhance it in place, and it stays text, so a model can read and
                 write it directly with no conversion step in either direction.
@@ -408,7 +408,7 @@ export default function Home() {
             <article id="panel-model" className="panel">
               <p className="sig mb-3">view: the model</p>
               <p className="max-w-2xl leading-relaxed text-ink-mute">
-                The same file read as XHTML. Attributes qualify every datum:{" "}
+                The same file read as HTML. Attributes qualify every datum:{" "}
                 <code className="font-mono text-violet-soft">data-kind</code>{" "}
                 says what a thing is,{" "}
                 <code className="font-mono text-violet-soft">data-status</code>{" "}
