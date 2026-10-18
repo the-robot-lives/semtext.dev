@@ -332,3 +332,62 @@ devSlot:
     # path (own auth-free ingress) reaches the outpost pod.
     authUrl: "http://semtext-live-dev-live-dev-outpost.apps.svc.cluster.local:9000/outpost.goauthentik.io/auth/nginx"
     authSignin: "https://dev.semtext.dev/outpost.goauthentik.io/start?rd=$scheme://$host$escaped_request_uri"
+
+# ---------------------------------------------------------------------------
+# Stage manual dev lane (stage.<domain>) — docs/runbooks/stage-dev-lane.md.
+# Every block below defaults OFF so the prod render is byte-identical (CI's
+# helm template diff guard). The lane values file (values-stage.yaml) turns
+# them on; deployed BY HAND, never via ArgoCD.
+#
+# The lane runs DEV-MODE LIVE CODE: a thin toolchain image built by hand from
+# the `work` branch (docker/dev/Dockerfile.app — no mix/npm at build time; the
+# arm64 host cannot emulate the BEAM), code volume synced from the branch by a
+# git-poller, shared over Samba, with a run-claude sidecar in zellij. Shares
+# the app's PRODUCTION database by design (own-name InfisicalSecret syncing
+# the same /apps/semtext section).
+devCode:
+  # Gates the code PVC (<fullname>-code, Longhorn RWO — never RWX: the nodes
+  # lack mount.nfs), the dev command/volumeMount override on the backend
+  # container (runs /app/entrypoint-dev.sh FROM the volume) and Recreate
+  # rollout strategy (RWO + RollingUpdate deadlocks).
+  enabled: false
+  size: 10Gi
+  storageClass: longhorn
+  accessMode: ReadWriteOnce
+
+gitPoller:
+  # Sidecar cloning `branch` into /code on first boot, then fetch+reset every
+  # intervalSeconds. /code/.no-pull freezes pulls (local-edit lock). Token
+  # from secret key GITHUB_TOKEN (stage-local secret, ops PAT), sent as an
+  # http.extraheader — never in a URL.
+  enabled: false
+  image: alpine/git:v2.45.2
+  repo: https://github.com/the-robot-lives/semtext.dev.git
+  branch: work
+  intervalSeconds: 60
+  secretName: ""
+
+samba:
+  # SMB sidecar sharing /code (ClusterIP svc <fullname>-samba:445; port-forward
+  # to mount). Username must be dash-FREE (stagecode) — the image entrypoint
+  # unsets ACCOUNT_<user> by name and dashes are illegal in POSIX var names.
+  # Creds from secret keys SAMBA_USER/SAMBA_PASS (stage-local secret).
+  enabled: false
+  image: ghcr.io/servercontainers/samba:latest
+  secretName: ""
+
+runClaude:
+  # run-claude sidecar (zellij) in the live code tree at /code. Image is the
+  # GENERIC toolchain build (agent-kit-work/runenv — debian+node22+claude CLI+
+  # run-claude+go-litellm+zellij, ZERO key material baked); zai keys arrive at
+  # runtime via the secret mount (whole run-claude .secrets file, key
+  # `secrets`). tty+stdin are set by the template (zellij exits without a tty).
+  enabled: false
+  image: ops.noizu.com/agent-kit-work/runenv:v1
+  secretName: ""
+
+# probeTuning — intentionally NOT defaulted here. deployment.yaml renders its
+# hardcoded prod probe budgets UNLESS this key is set (an if/else split, so
+# adding default-padded keys could not sneak new lines into the prod render).
+# values-stage.yaml supplies the full dev budgets (40-min liveness grace for
+# the first cold bootstrap).

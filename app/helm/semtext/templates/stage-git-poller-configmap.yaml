@@ -1,0 +1,53 @@
+{{- if and ((.Values.devCode).enabled) ((.Values.gitPoller).enabled) }}
+# git-poller loop script — keeps /code synced to the `work` branch (stage
+# manual lane ONLY; gitPoller.enabled defaults to false). GIT_TOKEN is
+# injected from the stage-local secret (key GITHUB_TOKEN) and is sent as an
+# http.extraheader so the credential NEVER appears in clone/fetch URLs or
+# error output. Presence of /code/.no-pull freezes pulls (local-edit lock for
+# hand-debugging the volume).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "hologram-start-app.fullname" . }}-git-poller-script
+  labels:
+    {{- include "hologram-start-app.labels" . | nindent 4 }}
+data:
+  poll.sh: |-
+    #!/bin/sh
+    set -u
+    REPO="${GIT_REPO:-https://github.com/the-robot-lives/semtext.dev.git}"
+    BRANCH="${GIT_BRANCH:-work}"
+    INTERVAL="${GIT_INTERVAL:-60}"
+    git config --global safe.directory '*' 2>/dev/null || true
+    while true; do
+      # Token rides an http.extraheader on EVERY network op (clone AND fetch)
+      # so it never appears in the stored remote URL or error output.
+      AUTH=$(printf 'x-access-token:%s' "${GIT_TOKEN}" | base64 | tr -d '\n')
+      if [ ! -d /code/.git ]; then
+        if [ -f /code/.no-pull ]; then
+          echo "git-poller: /code/.no-pull present and no .git, refusing to touch /code"
+        else
+          if [ -d /code ] && [ -n "$(ls -A /code 2>/dev/null)" ]; then
+            echo "git-poller: clearing stale /code before clone"
+            find /code -mindepth 1 -maxdepth 1 -exec rm -rf {} \;
+          fi
+          echo "git-poller: cloning ${BRANCH} into /code"
+          if git -c "http.extraheader=AUTHORIZATION: basic ${AUTH}" clone --depth 1 -b "${BRANCH}" "${REPO}" /code; then
+            echo "git-poller: clone ok"
+          else
+            echo "git-poller: clone FAILED (will retry)"
+            rm -rf /code/.git 2>/dev/null || true
+          fi
+        fi
+      elif [ -f /code/.no-pull ]; then
+        echo "git-poller: /code/.no-pull present, skipping pull"
+      else
+        if git -C /code -c "http.extraheader=AUTHORIZATION: basic ${AUTH}" fetch origin "${BRANCH}" && git -C /code reset --hard "origin/${BRANCH}"; then
+          echo "git-poller: synced origin/${BRANCH} @ $(git -C /code rev-parse --short HEAD 2>/dev/null || echo '?')"
+        else
+          echo "git-poller: fetch/reset FAILED"
+        fi
+      fi
+      sleep "${INTERVAL}"
+    done
+{{- end }}

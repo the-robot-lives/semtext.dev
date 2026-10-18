@@ -1,0 +1,21 @@
+{{- if ((.Values.devCode).enabled) }}
+# Dev-code live volume — stage manual lane ONLY (docs/runbooks/stage-dev-lane.md;
+# devCode.enabled defaults to false, so the prod render is unchanged).
+# ReadWriteOnce, not RWX: every consumer (backend, git-poller, samba) lives in
+# the SAME pod, and this cluster's Longhorn nodes cannot mount the RWX/NFS
+# export (mount.nfs missing on the node — FailedMount exit 127, observed on
+# stage.agentonomi.com 2026-10-18).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "hologram-start-app.fullname" . }}-code
+  labels:
+    {{- include "hologram-start-app.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.devCode.accessMode | default "ReadWriteOnce" }}
+  storageClassName: {{ .Values.devCode.storageClass | default "longhorn" }}
+  resources:
+    requests:
+      storage: {{ .Values.devCode.size | default "10Gi" }}
+{{- end }}

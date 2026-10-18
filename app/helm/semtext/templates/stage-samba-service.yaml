@@ -1,0 +1,20 @@
+{{- if and ((.Values.devCode).enabled) ((.Values.samba).enabled) }}
+# Samba share of the dev-code volume — ClusterIP, reached via kubectl
+# port-forward (mount instructions in values-stage.yaml samba comments).
+# Stage manual lane ONLY (samba.enabled defaults to false).
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "hologram-start-app.fullname" . }}-samba
+  labels:
+    {{- include "hologram-start-app.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: smb
+      port: 445
+      targetPort: smb
+      protocol: TCP
+  selector:
+    {{- include "hologram-start-app.selectorLabels" . | nindent 4 }}
+{{- end }}

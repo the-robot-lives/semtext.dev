@@ -7,6 +7,16 @@ metadata:
     {{- include "hologram-start-app.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicas }}
+  {{- if ((.Values.devCode).enabled) }}
+  # devCode stage lane (docs/runbooks/stage-dev-lane.md): the code PVC is
+  # ReadWriteOnce, so a RollingUpdate deadlocks (new pod stays Pending waiting
+  # for the volume the old pod holds; old pod never terminates because the new
+  # one is never Ready). Recreate trades a brief outage — irrelevant on a
+  # single-replica dev lane — for rollouts that actually complete. Prod keeps
+  # the default.
+  strategy:
+    type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       {{- include "hologram-start-app.selectorLabels" . | nindent 6 }}
@@ -18,6 +28,33 @@ spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if ((.Values.devCode).enabled) }}
+      # devCode live-code mode — stage manual lane ONLY (docs/runbooks/
+      # stage-dev-lane.md; devCode.enabled defaults to false so the prod render
+      # is unchanged). The dev image carries NO compiled state (the arm64 build
+      # host cannot run the BEAM under amd64 emulation), so the app container
+      # itself bootstraps hex/deps/compile into the volume on first boot —
+      # natively on the amd64 nodes. Probe budgets in values-stage ride that
+      # out; later boots are warm (state persists on the code PVC).
+      volumes:
+        - name: code
+          persistentVolumeClaim:
+            claimName: {{ include "hologram-start-app.fullname" . }}-code
+        {{- if ((.Values.gitPoller).enabled) }}
+        - name: git-poller-script
+          configMap:
+            name: {{ include "hologram-start-app.fullname" . }}-git-poller-script
+            defaultMode: 0755
+        {{- end }}
+        {{- if ((.Values.runClaude).enabled) }}
+        - name: runclaude-secrets
+          secret:
+            secretName: {{ .Values.runClaude.secretName | required "runClaude.secretName must name the secret carrying the run-claude .secrets file" }}
+            items:
+              - key: secrets
+                path: .secrets
+        {{- end }}
       {{- end }}
       containers:
       - name: backend
@@ -52,6 +89,37 @@ spec:
         {{- end }}
         resources:
           {{- toYaml .Values.backend.resources | nindent 10 }}
+        {{- if ((.Values.devCode).enabled) }}
+        # devCode: run FROM the live volume. entrypoint-dev.sh waits for the
+        # git-poller clone at /code/app/backend, bootstraps (hex, deps.get,
+        # compile) and execs the dev server — it defeats the release env
+        # (MIX_ENV/HOLOGRAM_ENV=prod, PHX_SERVER=true above) itself, no chart
+        # env edits needed.
+        command: ["/bin/sh", "/app/entrypoint-dev.sh"]
+        volumeMounts:
+          - name: code
+            mountPath: /code
+        {{- end }}
+        {{- if .Values.probeTuning }}
+        # Dev-tuned probe budgets (values-stage): the first cold boot (clone
+        # wait + deps.get + Hologram compile) far exceeds prod budgets. This
+        # branch renders ONLY when probeTuning is set, so the prod render
+        # below is byte-identical to the pre-lane chart.
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.backend.port }}
+          initialDelaySeconds: {{ .Values.probeTuning.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probeTuning.liveness.periodSeconds }}
+          failureThreshold: {{ .Values.probeTuning.liveness.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.backend.port }}
+          initialDelaySeconds: {{ .Values.probeTuning.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probeTuning.readiness.periodSeconds }}
+          failureThreshold: {{ .Values.probeTuning.readiness.failureThreshold }}
+        {{- else }}
         livenessProbe:
           httpGet:
             path: /health
@@ -64,5 +132,96 @@ spec:
             port: {{ .Values.backend.port }}
           initialDelaySeconds: 5
           periodSeconds: 10
+        {{- end }}
+      {{- if and ((.Values.devCode).enabled) ((.Values.gitPoller).enabled) }}
+      - name: git-poller
+        # Keeps /code synced to the `work` branch (stage manual lane ONLY).
+        # The token travels as an http.extraheader — never in a URL.
+        image: {{ .Values.gitPoller.image | default "alpine/git:latest" }}
+        env:
+          - name: GIT_REPO
+            value: {{ .Values.gitPoller.repo | default "https://github.com/the-robot-lives/semtext.dev.git" | quote }}
+          - name: GIT_BRANCH
+            value: {{ .Values.gitPoller.branch | default "work" | quote }}
+          - name: GIT_INTERVAL
+            value: {{ .Values.gitPoller.intervalSeconds | default 60 | quote }}
+          - name: GIT_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.gitPoller.secretName | required "gitPoller.secretName must name the secret holding GITHUB_TOKEN" }}
+                key: GITHUB_TOKEN
+        command: ["/bin/sh", "-c"]
+        args: ["exec /scripts/poll.sh"]
+        volumeMounts:
+          - name: git-poller-script
+            mountPath: /scripts
+            readOnly: true
+          - name: code
+            mountPath: /code
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+      {{- end }}
+      {{- if and ((.Values.devCode).enabled) ((.Values.samba).enabled) }}
+      - name: samba
+        # SMB share of /code — ClusterIP svc, reached via kubectl port-forward
+        # (mount instructions in values-stage.yaml). Stage manual lane ONLY.
+        # Username is dash-FREE (`stagecode`): the samba image's entrypoint
+        # does `unset ACCOUNT_<user>` by name and dashes are illegal in POSIX
+        # var names (bad variable name -> CrashLoop, observed 2026-10-18).
+        image: {{ .Values.samba.image | default "ghcr.io/servercontainers/samba:latest" }}
+        ports:
+          - name: smb
+            containerPort: 445
+            protocol: TCP
+        env:
+          - name: SAMBA_NAME
+            value: {{ include "hologram-start-app.fullname" . }}
+          - name: ACCOUNT_stagecode
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.samba.secretName | required "samba.secretName must name the secret holding SAMBA_PASS" }}
+                key: SAMBA_PASS
+          - name: SAMBA_VOLUME_CONFIG_code
+            value: "[code]; path = /code; read only = no; browseable = yes; guest ok = no; valid users = stagecode"
+        volumeMounts:
+          - name: code
+            mountPath: /code
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+      {{- end }}
+      {{- if and ((.Values.devCode).enabled) ((.Values.runClaude).enabled) }}
+      - name: runclaude
+        # Interactive run-claude environment in the live code tree (stage
+        # manual lane ONLY). zellij is the image ENTRYPOINT and exits without
+        # a tty — tty+stdin are REQUIRED or this container CrashLoops.
+        # Attach with: kubectl -n apps attach -it <pod> -c runclaude
+        image: {{ .Values.runClaude.image | default "ops.noizu.com/agent-kit-work/runenv:v1" }}
+        workingDir: /code
+        tty: true
+        stdin: true
+        volumeMounts:
+          - name: code
+            mountPath: /code
+          - name: runclaude-secrets
+            mountPath: /root/.config/run-claude
+            readOnly: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: "2"
+            memory: 2Gi
+      {{- end }}
       restartPolicy: Always
 {{- end }}
