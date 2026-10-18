@@ -21,12 +21,16 @@ defmodule Semtext.Reference.ReferenceDataTest do
 
   describe "inventory" do
     test "counts match the generated half + supplement" do
-      assert length(Elements.all()) == 54
+      # v0.7 vocabulary (absorbed from upstream npl-enhanced-content @ 6ebbb00):
+      # 108 generated elements (54 v0.6 + 54 new incl. semext-*/agent-kit-* families).
+      assert length(Elements.all()) == 108
       assert length(Glossary.all()) == 7
-      assert length(Tags.sem_tags()) == 41
+      assert length(Tags.sem_tags()) == 64
       assert length(Tags.npl_tags()) == 20
-      assert length(Tags.all_tags()) == 61
-      assert Elements.declared_count() == 54
+      assert length(Tags.all_tags()) == 115
+      assert Elements.declared_count() == 108
+      # supplement decomposition: all_tags = generated (108) + glossary (7)
+      assert length(Tags.all_tags()) == length(Elements.all()) + length(Glossary.all())
     end
 
     test "all_tags is sorted by name" do
@@ -77,9 +81,9 @@ defmodule Semtext.Reference.ReferenceDataTest do
   end
 
   describe "buckets" do
-    test "seven buckets cover every SemText tag exactly once" do
+    test "eight buckets cover every SemText tag exactly once" do
       buckets = Buckets.buckets()
-      assert length(buckets) == 7
+      assert length(buckets) == 8
 
       covered =
         buckets |> Enum.flat_map(& &1.tags) |> Enum.map(& &1.name) |> Enum.uniq()
@@ -187,8 +191,8 @@ defmodule Semtext.Reference.ReferenceDataTest do
       assert hd(titles) == "Guides"
       assert "Reference" in titles
       assert "NPL elements" in titles
-      # 2 fixed + 7 buckets + 1 family
-      assert length(groups) == 10
+      # 2 fixed + 8 buckets + 1 family
+      assert length(groups) == 11
     end
 
     test "every nav item carries its filter payload and a real href" do
