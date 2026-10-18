@@ -96,6 +96,15 @@ extraEnv:
     value: "stage.semtext.dev"
   - name: REDIS_KEY_PREFIX
     value: "semtext-stage:"
+  # dev.exs (MIX_ENV=dev) reads DB_PASS — NOT DB_PASSWORD, which is the only
+  # DB name the chart injects. Without this the dev lane falls back to the
+  # literal "semtext_dev" and Postgres rejects it (28P01, observed 2026-10-18).
+  # Same secret key DB_PASSWORD uses, so it stays in lockstep with prod.
+  - name: DB_PASS
+    valueFrom:
+      secretKeyRef:
+        name: semtext-stage-secrets
+        key: SEMTEXT_DB_PASSWORD
 
 # Stage traces distinguishable in SigNoz; service.version falls back to the
 # image tag (work-<sha>).
