@@ -38,7 +38,7 @@ umask 077
 install -m 600 "$KEY_FILE" "$KEY_COPY"   # mounted secret keys are 0644; ssh demands 600
 # dc get strips trailing newlines from the stored PEM; ssh needs the final
 # line terminated or it fails with "error in libcrypto" - append one if gone.
-[ -n "$(tail -c1 "$KEY_COPY")" ] || printf '\n' >> "$KEY_COPY"
+[ "$(tail -c1 "$KEY_COPY" | od -An -c | tr -d ' \n')" = '\n' ] || printf '\n' >> "$KEY_COPY"
 export GIT_SSH_COMMAND="ssh -i $KEY_COPY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
 
 if [ ! -d "$REPO_DIR/.git" ]; then
