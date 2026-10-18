@@ -56,9 +56,12 @@ backend:
       cpu: "2"
       memory: 4Gi
 
-# Port alias for service.yaml/ingress.yaml (same single backend process).
+# Legacy second Service port (chart scaffold). service.yaml emits backend.port
+# AND frontend.port as separate entries — both at 4000 = duplicate-key install
+# failure. Only backend:4000 is real on this lane (single backend process);
+# park the frontend port on a distinct number so the Service is valid.
 frontend:
-  port: 4000
+  port: 5173
 
 # Migrate Job OFF on the lane (runbook: Liquibase owns schema; the entrypoint
 # never auto-migrates; audits/applys are explicit operator actions).
@@ -95,6 +98,10 @@ otel:
 ingress:
   enabled: true
   className: nginx
+  # Stage-only: MUST be empty. Chart default claims www.semtext.dev
+  # ("pre-replatform parity"), which collides with the LIVE prod ingress —
+  # nginx admission denies duplicate host+path across ingresses.
+  extraHosts: []
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     # Stage-only: Hologram's live-reload WebSocket + long dev requests need
