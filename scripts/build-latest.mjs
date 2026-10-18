@@ -33,7 +33,7 @@ import { dirname, resolve } from 'node:path';
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '..');
 
-const VENDORED = resolve(repo, 'app/backend/priv/static/semtext/v0.9.1/semtext.js');
+const VENDORED = resolve(repo, 'app/backend/priv/static/semtext/v0.9.3/semtext.js');
 const VERSION_SOURCE = resolve(repo, 'web/public/semtext/VERSION.md');
 const OUTS = [
   resolve(repo, 'web/public/semtext/latest'),

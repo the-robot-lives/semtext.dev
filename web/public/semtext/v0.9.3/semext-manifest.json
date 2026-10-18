@@ -1,0 +1,11 @@
+{
+  "semext-annotate": "semext-chunks/semext-annotate.js",
+  "semext-docptr": "semext-chunks/semext-docptr.js",
+  "semext-media-prompt": "semext-chunks/semext-media-prompt.js",
+  "semext-sig-logs": "semext-chunks/semext-sig-logs.js",
+  "semext-sig-metrics": "semext-chunks/semext-sig-metrics.js",
+  "semext-sig-synthetic-monitor": "semext-chunks/semext-sig-synthetic-monitor.js",
+  "semext-sig-traces": "semext-chunks/semext-sig-traces.js",
+  "semext-styleguide-theme": "semext-chunks/semext-styleguide-theme.js",
+  "semext-styleguide-themes": "semext-chunks/semext-styleguide-themes.js"
+}

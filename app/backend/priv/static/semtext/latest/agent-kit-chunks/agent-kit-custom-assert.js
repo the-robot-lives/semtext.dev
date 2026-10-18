@@ -1,0 +1,2 @@
+import{C as a,a as r,b as i,c as s,d as n}from"./shared-CxbF3Zck.js";class o extends a{static{this.properties={...r}}updated(t){super.updated(t),this.afterParse("akit-assert-chrome",()=>{i(this,"agent-kit-assert-chrome",()=>{const e=this.querySelectorAll("agent-kit-assert-expr").length;return s`<span class="agent-kit-assert-chip" data-assert-count=${String(e)}>
+          Custom asserts · ${e}</span>`})})}renderChrome(t){return s``}}n("agent-kit-custom-assert",o);

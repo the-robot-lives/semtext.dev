@@ -13,7 +13,13 @@ defmodule SemtextWeb.DocsDataTest do
 
   describe "SearchIndex" do
     test "groups match the Next search buckets" do
-      assert SearchIndex.groups() == ["SemText elements", "NPL elements", "CLI commands"]
+      assert SearchIndex.groups() == [
+               "SemText elements",
+               "SemText extensions",
+               "Agent Kit elements",
+               "NPL elements",
+               "CLI commands"
+             ]
     end
 
     test "entries are complete and well-formed" do
