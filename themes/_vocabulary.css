@@ -31,7 +31,7 @@ body { margin: 0; background: var(--sem-bg); color: var(--sem-fg); }
 sem-enhanced-document, sem-agent, sem-audiences, sem-note, sem-facts, sem-fact,
 sem-details, sem-detail, sem-procedure, sem-step, sem-properties, sem-property,
 sem-views, sem-view, sem-reveal, sem-progress,
-sem-chronology, sem-event, sem-code, sem-references, sem-reference, sem-reader, sem-table, sem-source, sem-md,
+sem-chronology, sem-event, sem-code, sem-references, sem-reference, sem-reader, sem-table, sem-thought, sem-source, sem-md,
 sem-agent > :is(name, bio, instructions), sem-fact > :is(statement, conclusion, sem-distractor) { display: block; }
 /* The audience fallback hides with the native attribute; keep it winning
    over the block rule above for element forms. */
@@ -89,6 +89,40 @@ sem-agent > :is(name, bio, instructions), sem-fact > :is(statement, conclusion, 
     margin: 0 var(--sem-margin-offset, 0) 1rem 1.5rem;
     font-size: .875rem; }
 }
+
+/* thought — typed thought bubble (spec/schema/sem-thought.md). Display-only:
+   the tail is pure CSS, behavior none (a collapsible thought is sem-reveal
+   territory). Type styling reads --sem-thought-<type> with an accent
+   fallback, so an un-themed document shows one uniform accent bubble per
+   type instead of broken boxes; the theme file declares the values. No hide
+   rule here: the element hides nothing, so D12 has nothing to gate. */
+:is(sem-thought, .sem-thought) { position: relative; margin: 1rem 0 1.25rem;
+  padding: .75rem 1rem; border-radius: 12px;
+  background: var(--sem-thought-bg, var(--sem-surface));
+  border: 1px solid var(--sem-thought-border, var(--sem-border));
+  border-left: 4px solid var(--sem-thought-current, var(--sem-accent)); }
+/* per-type accent: one custom property, consumed by the border rule above */
+:is(sem-thought, .sem-thought):is([data-type="observation"], [type="observation"]) { --sem-thought-current: var(--sem-thought-observation, var(--sem-accent)); }
+:is(sem-thought, .sem-thought):is([data-type="reflection"], [type="reflection"])   { --sem-thought-current: var(--sem-thought-reflection, var(--sem-accent)); }
+:is(sem-thought, .sem-thought):is([data-type="assumption"], [type="assumption"])   { --sem-thought-current: var(--sem-thought-assumption, var(--sem-accent)); }
+:is(sem-thought, .sem-thought):is([data-type="mind-read"], [type="mind-read"])     { --sem-thought-current: var(--sem-thought-mind-read, var(--sem-accent)); }
+:is(sem-thought, .sem-thought):is([data-type="tangent"], [type="tangent"])         { --sem-thought-current: var(--sem-thought-tangent, var(--sem-accent)); }
+:is(sem-thought, .sem-thought):is([data-type="concern"], [type="concern"])         { --sem-thought-current: var(--sem-thought-concern, var(--sem-accent)); }
+/* degraded unknown type (class set by the Lit upgrade): muted, not styled
+   as a valid type — the label still names what was authored */
+:is(sem-thought, .sem-thought).sem-thought-unknown { --sem-thought-current: var(--sem-border); }
+/* type label, both spellings from one pair of rules (D10, sem-note pattern) */
+:is(sem-thought, .sem-thought)[type]:not([data-type])::before { content: attr(type) " · "; }
+:is(sem-thought, .sem-thought):is([data-type], [type])::before { content: attr(data-type) " · ";
+  font-size: .75rem; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--sem-muted); display: block; }
+/* CSS-only tail: a trailing dot (::after) with a smaller shadow sibling —
+   no SVG asset, no extra element. Sits in the element's own margin. */
+:is(sem-thought, .sem-thought)::after { content: ""; position: absolute;
+  left: 2.4rem; bottom: -1rem; width: .7rem; height: .7rem; border-radius: 50%;
+  background: var(--sem-thought-bg, var(--sem-surface));
+  border: 1px solid var(--sem-thought-border, var(--sem-border));
+  box-shadow: -1.1rem .55rem 0 -.24rem color-mix(in srgb, var(--sem-thought-border, var(--sem-border)) 60%, var(--sem-thought-bg, var(--sem-surface))); }
 
 /* facts */
 :is(sem-facts, .sem-facts) { margin: 1.5rem 0; }
@@ -474,6 +508,219 @@ th[aria-sort="descending"] .sem-table-sort::after { content: "↓"; opacity: 1; 
   :is(sem-reveal, .sem-reveal) summary { list-style: none; }
   .sem-occluded { color: inherit !important; background: none !important; }
   :is(sem-fact, .sem-fact), :is(sem-step, .sem-step), :is(sem-note, .sem-note), :is(sem-detail, .sem-detail),
-  :is(sem-property, .sem-property), :is(sem-event, .sem-event), :is(sem-reference, .sem-reference) { break-inside: avoid; page-break-inside: avoid; }
+  :is(sem-property, .sem-property), :is(sem-event, .sem-event), :is(sem-reference, .sem-reference), :is(sem-thought, .sem-thought) { break-inside: avoid; page-break-inside: avoid; }
   .sem-target { outline: none; }
 }
+
+/* ── sem-workflow / sem-site-tree / sem-file-tree ──
+   Interactive containers (spec/schema/sem-workflow.md, sem-site-tree.md,
+   sem-file-tree.md). Family A part 2: the authored DOM is the record —
+   every label/badge here is ::before/::after attr() chrome or gated
+   generated-class styling; nothing JS-on hides or rewrites authored
+   content without the container's [data-sem-upgraded] marker (D12).
+   Transplanted verbatim from the v0.7 vocabulary (npl-enhanced-content/
+   themes/_vocabulary.css), which carried these rules since the workflow/
+   tree schemas landed; this standalone copy shipped stale without them,
+   leaving the spec page's live trees 0x0 with JS off. */
+
+/* container blocks */
+:is(sem-workflow, .sem-workflow),
+:is(sem-site-tree, .sem-site-tree),
+:is(sem-file-tree, .sem-file-tree) { display: block; margin: 1rem 0; }
+:is(node, .sem-node) { display: block; }
+
+/* -- workflow: JS-off ordered list (own counter scope, so procedure and
+      workflow sequences never share a number) -------------------------- */
+:is(sem-workflow, .sem-workflow) { counter-reset: sem-wf-step; }
+:is(sem-workflow, .sem-workflow) :is(sem-step, .sem-step)::before {
+  counter-increment: sem-wf-step;
+  content: counter(sem-wf-step);
+}
+/* check badge rides the ordinal pseudo (the ordinal pseudo is otherwise
+   unused for steps that carry no check) */
+:is(sem-workflow, .sem-workflow) :is(sem-step, .sem-step):is([check], [data-check])::before {
+  content: counter(sem-wf-step) " ▸ " attr(check);
+}
+:is(sem-workflow, .sem-workflow) :is(sem-step, .sem-step)[data-check]:not([check])::before {
+  content: counter(sem-wf-step) " ▸ " attr(data-check);
+}
+/* gate badge takes the status glyph's slot (::after) — a gated step
+   shows the gate, the status stays on the attribute (machine-readable) */
+:is(sem-workflow, .sem-workflow) :is(sem-step, .sem-step):is([gate], [data-gate])::after {
+  content: " ⛨ " attr(gate);
+  color: var(--sem-muted);
+  font-size: .8rem;
+}
+:is(sem-workflow, .sem-workflow) :is(sem-step, .sem-step)[data-gate]:not([gate])::after {
+  content: " ⛨ " attr(data-gate);
+  color: var(--sem-muted);
+  font-size: .8rem;
+}
+
+/* -- workflow: JS-on if-no branch (generated chrome; gated) ------------- */
+:is(sem-workflow, .sem-workflow)[data-sem-upgraded] .sem-step-branch-toggle {
+  display: inline-block;
+  margin-left: .4rem;
+  padding: 0 .3rem;
+  font: inherit;
+  font-size: .75rem;
+  color: var(--sem-muted);
+  background: none;
+  border: 1px solid var(--sem-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+:is(sem-workflow, .sem-workflow)[data-sem-upgraded] .sem-step-branch-toggle::before {
+  content: "if-no ";
+  font-style: italic;
+}
+:is(sem-workflow, .sem-workflow)[data-sem-upgraded] .sem-step-branch-toggle[aria-expanded="true"] {
+  color: var(--sem-fg);
+  border-color: var(--sem-accent);
+}
+:is(sem-workflow, .sem-workflow)[data-sem-upgraded] .sem-step-branch {
+  display: block;
+  margin: .35rem 0 0;
+  padding: .35rem .6rem;
+  border-left: 2px dashed var(--sem-accent);
+  color: var(--sem-muted);
+  font-size: .85rem;
+}
+:is(sem-workflow, .sem-workflow)[data-sem-upgraded] .sem-step-branch-label {
+  display: block;
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+/* -- trees: JS-off static structure (guides + counters + attr labels) --- */
+:is(sem-site-tree, .sem-site-tree),
+:is(sem-file-tree, .sem-file-tree) { counter-reset: sem-tree-node; }
+:is(sem-site-tree, .sem-site-tree) :is(node, .sem-node),
+:is(sem-file-tree, .sem-file-tree) :is(node, .sem-node) {
+  counter-increment: sem-tree-node;
+  margin: .15rem 0 .15rem .35rem;
+  padding: .1rem 0 .1rem .9rem;
+  border-left: 1px solid var(--sem-border);
+}
+/* the label is ::before chrome (counter + label/path); shown JS-off only —
+   JS-on the engine renders label buttons/spans instead */
+:is(sem-site-tree, .sem-site-tree):not([data-sem-upgraded]) :is(node, .sem-node)::before,
+:is(sem-file-tree, .sem-file-tree):not([data-sem-upgraded]) :is(node, .sem-node)::before {
+  content: counter(sem-tree-node) ". " attr(label);
+  color: var(--sem-fg);
+}
+:is(sem-site-tree, .sem-site-tree):not([data-sem-upgraded]) :is(node, .sem-node)[data-label]:not([label])::before,
+:is(sem-file-tree, .sem-file-tree):not([data-sem-upgraded]) :is(node, .sem-node)[data-label]:not([label])::before {
+  content: counter(sem-tree-node) ". " attr(data-label);
+}
+:is(sem-site-tree, .sem-site-tree):not([data-sem-upgraded]) :is(node, .sem-node):not([label]):not([data-label])[path]::before,
+:is(sem-file-tree, .sem-file-tree):not([data-sem-upgraded]) :is(node, .sem-node):not([label]):not([data-label])[path]::before {
+  content: counter(sem-tree-node) ". " attr(path);
+}
+:is(sem-site-tree, .sem-site-tree):not([data-sem-upgraded]) :is(node, .sem-node):not([label]):not([data-label])[data-path]:not([path])::before,
+:is(sem-file-tree, .sem-file-tree):not([data-sem-upgraded]) :is(node, .sem-node):not([label]):not([data-label])[data-path]:not([path])::before {
+  content: counter(sem-tree-node) ". " attr(data-path);
+}
+/* text form: the authored pre IS the record; verbatim, nothing fabricated */
+:is(sem-file-tree, .sem-file-tree) > pre { margin: .25rem 0; }
+
+/* -- trees: JS-on chrome (collapse / filter / find; all gated) ---------- */
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] :is(node, .sem-node)[collapsed] > :is(node, .sem-node),
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] :is(node, .sem-node)[collapsed] > :is(node, .sem-node) { display: none; }
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] .sem-file-tree-view .sem-tree-view-row[data-branch-hidden],
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] .sem-file-tree-view .sem-tree-view-row[data-branch-hidden] { display: none; }
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] > pre,
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] > pre { display: none; }
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] [data-filter-hidden],
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] [data-filter-hidden] { display: none; }
+
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] .sem-tree-chrome,
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] .sem-tree-chrome {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  align-items: center;
+  margin: 0 0 .4rem;
+}
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] .sem-tree-filter,
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] .sem-tree-find,
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] .sem-tree-filter,
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] .sem-tree-find {
+  font: inherit;
+  font-size: .8rem;
+  color: var(--sem-fg);
+  background: var(--sem-surface);
+  border: 1px solid var(--sem-border);
+  border-radius: 6px;
+  padding: .15rem .45rem;
+  min-width: 8rem;
+}
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] .sem-tree-toggle,
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] .sem-tree-toggle {
+  display: inline-block;
+  margin: 0;
+  padding: 0 .15rem;
+  font: inherit;
+  color: var(--sem-fg);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] .sem-tree-toggle::before,
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] .sem-tree-toggle::before {
+  content: "▾ ";
+  color: var(--sem-muted);
+}
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] .sem-tree-toggle[aria-expanded="false"]::before,
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] .sem-tree-toggle[aria-expanded="false"]::before {
+  content: "▸ ";
+}
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] .sem-tree-label,
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] .sem-tree-label {
+  color: var(--sem-fg);
+}
+/* kind glyph on generated rows (text form); structured kinds ride the
+   same selector via the authored node */
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] .sem-tree-toggle::after,
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] .sem-tree-toggle::after {
+  content: "";
+  color: var(--sem-muted);
+}
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] :is(node, .sem-node)[data-kind="file"] .sem-tree-label::after,
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] .sem-tree-view-row[data-kind="file"] .sem-tree-label::after {
+  content: " ·file";
+  color: var(--sem-muted);
+  font-size: .75rem;
+}
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] :is(node, .sem-node)[data-kind="dir"] .sem-tree-label::after,
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] .sem-tree-view-row[data-kind="dir"] .sem-tree-label::after {
+  content: " ·dir";
+  color: var(--sem-muted);
+  font-size: .75rem;
+}
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] .sem-tree-count,
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] .sem-tree-count {
+  font-size: .75rem;
+  color: var(--sem-muted);
+  white-space: nowrap;
+}
+/* find marks */
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] [data-match],
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] [data-match] {
+  outline: 2px dotted var(--sem-accent);
+  outline-offset: 1px;
+}
+:is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] [data-match-current],
+:is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] [data-match-current] {
+  background: var(--sem-accent);
+  color: var(--sem-bg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(sem-workflow, .sem-workflow)[data-sem-upgraded] .sem-step-branch,
+  :is(sem-site-tree, .sem-site-tree)[data-sem-upgraded] .sem-file-tree-view,
+  :is(sem-file-tree, .sem-file-tree)[data-sem-upgraded] .sem-file-tree-view { transition: none; }
+}
+/* ── end sem-workflow / sem-site-tree / sem-file-tree ── */
