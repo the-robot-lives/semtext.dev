@@ -54,16 +54,15 @@ defmodule Semtext.Reference.Buckets do
           "sem-reader",
           "sem-audiences",
           "sem-profile",
-          "sem-site-tree",
-          "sem-file-tree",
           "agent"
         ]
       ),
       Norm.bucket_def("prose", "Prose & code",
-        description: "Content blocks beyond plain HTML — Markdown bodies, callouts and source listings with provenance.",
+        description: "Content blocks beyond plain HTML — Markdown bodies, callouts, skim blocks and source listings with provenance.",
         names: [
           "sem-md",
           "sem-note",
+          "sem-tldr",
           "sem-code",
           "sem-browser"
         ]
@@ -93,9 +92,11 @@ defmodule Semtext.Reference.Buckets do
         ]
       ),
       Norm.bucket_def("data", "Data & tables",
-        description: "Authored tables and the data-visualizer's named buckets, joins and editable queries.",
+        description: "Authored tables, site/file trees, and the data-visualizer's named buckets, joins and editable queries.",
         names: [
           "sem-table",
+          "sem-site-tree",
+          "sem-file-tree",
           "sem-data-visualizer",
           "sem-data-source",
           "sem-data-join",
@@ -103,14 +104,38 @@ defmodule Semtext.Reference.Buckets do
         ]
       ),
       Norm.bucket_def("sequence", "Sequences & progress",
-        description: "Ordered, status-annotated content — timelines, procedures and completion meters.",
+        description: "Ordered, status-annotated content — timelines, procedures, verified workflows and completion meters.",
         names: [
           "sem-chronology",
           "sem-event",
           "sem-procedure",
+          "sem-workflow",
           "sem-step",
-          "sem-progress",
-          "sem-workflow"
+          "sem-progress"
+        ]
+      ),
+      Norm.bucket_def("knowledge", "Knowledge & documents",
+        description: "Whole-document containers for a named genre — how-tos, runbooks, KBs, FAQs, changelogs, guard-rails, plans, requirements, rubrics, evals, philosophies, summaries, threat models and mockups — each a self-describing wrapper with its own metadata and sections.",
+        names: [
+          "sem-howto",
+          "sem-kb",
+          "sem-runbook",
+          "sem-faqs",
+          "sem-faq",
+          "sem-tsgs",
+          "sem-tsg",
+          "sem-changelogs",
+          "sem-changelog",
+          "sem-guard-rails",
+          "sem-guard-rail",
+          "sem-plan",
+          "sem-requirement",
+          "sem-rubric",
+          "sem-eval",
+          "sem-philosophy",
+          "sem-summary",
+          "sem-threat-model",
+          "sem-mockup"
         ]
       ),
       Norm.bucket_def("definitions", "Definitions & citations",
@@ -124,31 +149,6 @@ defmodule Semtext.Reference.Buckets do
           "sem-tag-attr",
           "sem-api-call",
           "sem-api-param"
-        ]
-      ),
-      Norm.bucket_def("knowledge", "Knowledge & guides",
-        description: "Standalone knowledge artifacts — knowledge bases, FAQs, howtos, runbooks, troubleshooting guides, plans, requirements, changelogs, assessments and guard rails — the document containers the vocabulary epic absorbed from upstream.",
-        names: [
-          "sem-kb",
-          "sem-faqs",
-          "sem-faq",
-          "sem-howto",
-          "sem-runbook",
-          "sem-tsgs",
-          "sem-tsg",
-          "sem-philosophy",
-          "sem-plan",
-          "sem-requirement",
-          "sem-changelogs",
-          "sem-changelog",
-          "sem-tldr",
-          "sem-summary",
-          "sem-eval",
-          "sem-rubric",
-          "sem-threat-model",
-          "sem-mockup",
-          "sem-guard-rails",
-          "sem-guard-rail"
         ]
       )
       ]

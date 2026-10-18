@@ -49,7 +49,7 @@ defmodule SemtextWeb.Docs.SearchIndex do
 
   @doc "Sidebar order of the result groups."
   @spec groups() :: [group()]
-  def groups, do: ["SemText elements", "NPL elements", "CLI commands"]
+  def groups, do: ["SemText elements", "SemText extensions", "Agent Kit elements", "NPL elements", "CLI commands"]
 
   @doc "The CLI commands (mirrors the docs page's CLI reference section)."
   @spec cli_commands() :: [%{command: String.t(), summary: String.t(), href: String.t()}]
@@ -133,9 +133,7 @@ defmodule SemtextWeb.Docs.SearchIndex do
   description and the ordered tag names per bucket. INTERIM data — see the
   moduledoc.
   """
-  @spec buckets() :: [
-          %{id: String.t(), label: String.t(), description: String.t(), tags: [String.t()]}
-        ]
+  @spec buckets() :: [%{id: String.t(), label: String.t(), description: String.t(), tags: [String.t()]}]
   def buckets do
     Enum.map(@raw["buckets"], fn b ->
       %{id: b["id"], label: b["label"], description: b["description"], tags: b["tags"]}
@@ -197,15 +195,15 @@ defmodule SemtextWeb.Docs.SearchIndex do
     tag_entries ++ cli_entries
   end
 
-  defp family_note("sem"), do: "semtext tag element"
-  defp family_note("semext"), do: "semext embed tag element"
-  defp family_note("agent-kit"), do: "agent-kit card tag element"
-  defp family_note(_), do: "npl prompt tag element"
-
   defp family_group("sem"), do: "SemText elements"
-  defp family_group("npl"), do: "NPL elements"
-  defp family_group("semext"), do: "SemExt elements"
-  defp family_group("agent-kit"), do: "Agent-kit elements"
+  defp family_group("semext"), do: "SemText extensions"
+  defp family_group("agent-kit"), do: "Agent Kit elements"
+  defp family_group(_), do: "NPL elements"
+
+  defp family_note("sem"), do: "semtext tag element"
+  defp family_note("semext"), do: "semtext extension embed element"
+  defp family_note("agent-kit"), do: "agent kit element"
+  defp family_note(_), do: "npl prompt tag element"
 
   @doc "Case-insensitive substring search over the index, in group order."
   @spec search(String.t()) :: [entry()]
