@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-10-18 (claude-mods: semtext Claude Code mod)
+- claude-mods/semtext — Claude Code mod: detects SemText sem-* docs, inline annotation + outline pane + validation (#183)
+
 ## 2026-10-18 (Phase 7 vocabulary on the reference: runtime 0.9.3 vendored, 54 new elements, 4 families)
 - vendored runtime **0.9.3** (the first family-complete snapshot — `semext.js/-lazy/-manifest` + `agent-kit.js/-lazy/-manifest` and their chunk dirs now ride `stamp-version.mjs` and the CDN payload upstream, npl-enhanced-content#73): `web/public/semtext/v0.9.3/` snapshot, stable/latest mirrors, versions.json 0.9.3, VERSION.md provenance, bundles.json regen; `/editor` repinned v0.9.1 → v0.9.3
 - the reference inventory jumps 54 → **115 tags** (108 schema-backed from the 0.9.3 elements.json + the 7-tag glossary): 23 new `sem-*` knowledge/doc containers (howto, kb, runbook, faq(s), changelog(s), tsg(s), guard-rail(s), plan, requirement, rubric, eval, philosophy, summary, threat-model, mockup, tldr, workflow, site-tree, file-tree), 9 `semext-*` service-backed embeds, 22 `agent-kit-*` work-item cards
