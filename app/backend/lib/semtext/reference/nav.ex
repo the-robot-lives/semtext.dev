@@ -1,9 +1,10 @@
 defmodule Semtext.Reference.Nav do
   @moduledoc """
   The reference sidebar's nav inventory (mechanical port of the `groups`
-  builder both Next reference pages share): Guides, Reference, the seven
-  job buckets, and the NPL family — every element link carrying the
-  `data-ref` string the index filter narrows against.
+  builder both Next reference pages share): Guides, Reference, the job
+  buckets, and the display families (SemText extensions, Agent Kit, NPL) —
+  every element link carrying the `data-ref` string the index filter
+  narrows against.
 
   Shape (consumed by `Site.DocsShell`): `[%{title: ..., items: [%{key,
   label, href, data_ref}]}]`. Server-only: computed in page init and passed
@@ -31,6 +32,8 @@ defmodule Semtext.Reference.Nav do
         ]
       },
       Enum.map(Buckets.buckets(), &bucket_group/1),
+      family_group("SemText extensions", Tags.semext_tags()),
+      family_group("Agent Kit elements", Tags.agent_kit_tags()),
       family_group("NPL elements", Tags.npl_tags())
     ]
     |> List.flatten()

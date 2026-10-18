@@ -150,11 +150,22 @@ function copyRuntimeSet(srcBase, dstBase, label) {
     'semtext-js-shell.js',
     'semtext-js-shell-manifest.json',
     'semtext-editor.js',
+    // Extension families (runtime 0.9.3+): bundle + lazy loader + manifest
+    // travel together with their chunk dirs below — a versioned URL must
+    // serve the whole import graph.
+    'semext.js',
+    'semext-lazy.js',
+    'semext-manifest.json',
+    'agent-kit.js',
+    'agent-kit-lazy.js',
+    'agent-kit-manifest.json',
   ]) {
     copyFile(join(srcBase, f), join(dstBase, f), `${label}/${f}`);
   }
   mirrorDir(join(srcBase, 'chunks'), join(dstBase, 'chunks'), `${label}/chunks`);
   mirrorDir(join(srcBase, 'npl-chunks'), join(dstBase, 'npl-chunks'), `${label}/npl-chunks`);
+  mirrorDir(join(srcBase, 'semext-chunks'), join(dstBase, 'semext-chunks'), `${label}/semext-chunks`);
+  mirrorDir(join(srcBase, 'agent-kit-chunks'), join(dstBase, 'agent-kit-chunks'), `${label}/agent-kit-chunks`);
   mirrorDir(join(srcBase, 'themes'), join(dstBase, 'themes'), `${label}/themes`);
 
   // Site-facing theme names, INSIDE every published tree: the layout and

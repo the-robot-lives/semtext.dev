@@ -1,0 +1,2 @@
+import{C as c,a as r,b as i,c as a,d as n}from"./shared-CxbF3Zck.js";class s extends c{static{this.properties={...r}}updated(e){super.updated(e),this.afterParse("akit-acceptance-chrome",()=>{i(this,"agent-kit-acceptance-chrome",()=>{const t=this.querySelectorAll("agent-kit-criterion").length;return a`<span class="agent-kit-acceptance-chip" data-criteria-count=${String(t)}>
+          Acceptance criteria · ${t}</span>`})})}renderChrome(e){return a``}}n("agent-kit-acceptance-criteria",s);

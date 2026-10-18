@@ -21,16 +21,14 @@ defmodule Semtext.Reference.ReferenceDataTest do
 
   describe "inventory" do
     test "counts match the generated half + supplement" do
-      # v0.7 vocabulary (absorbed from upstream npl-enhanced-content @ 6ebbb00):
-      # 108 generated elements (54 v0.6 + 54 new incl. semext-*/agent-kit-* families).
       assert length(Elements.all()) == 108
       assert length(Glossary.all()) == 7
       assert length(Tags.sem_tags()) == 64
       assert length(Tags.npl_tags()) == 20
+      assert length(Tags.semext_tags()) == 9
+      assert length(Tags.agent_kit_tags()) == 22
       assert length(Tags.all_tags()) == 115
       assert Elements.declared_count() == 108
-      # supplement decomposition: all_tags = generated (108) + glossary (7)
-      assert length(Tags.all_tags()) == length(Elements.all()) + length(Glossary.all())
     end
 
     test "all_tags is sorted by name" do
@@ -191,8 +189,10 @@ defmodule Semtext.Reference.ReferenceDataTest do
       assert hd(titles) == "Guides"
       assert "Reference" in titles
       assert "NPL elements" in titles
-      # 2 fixed + 8 buckets + 1 family
-      assert length(groups) == 11
+      assert "SemText extensions" in titles
+      assert "Agent Kit elements" in titles
+      # 2 fixed + 8 buckets + 3 families
+      assert length(groups) == 13
     end
 
     test "every nav item carries its filter payload and a real href" do

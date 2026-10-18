@@ -2,8 +2,9 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
   @moduledoc """
   /reference — the section index (port of the Next site's
   `app/reference/page.tsx`): a short intro, the filter box, and a card per
-  element grouped by the job the element does (the seven buckets) plus the
-  NPL family. Every card links to the element's own page.
+  element grouped by the job the element does (the buckets) plus the
+  display families — SemText extensions, Agent Kit and NPL. Every card
+  links to the element's own page.
 
   The filter is the Next page's vanilla script, moved into the island
   bridge (`/js/semtext-island.js` initRefFilter): it narrows the already
@@ -22,20 +23,26 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
   route "/reference"
 
   layout SiteLayout,
-    page_title: "Reference — every SemText and NPL tag",
-    description: "Generated reference for every SemText (sem-*) and NPL (npl-) tag: options, children and an authored example, one page per element, built from the spec's schema files.",
+    page_title: "Reference — every SemText tag",
+    description: "Generated reference for every SemText (sem-*), SemText extension (semext-*), Agent Kit (agent-kit-*) and NPL (npl-) tag: options, children and an authored example, one page per element, built from the spec's schema files.",
     canonical: "https://semtext.dev/reference/",
     reference_assets: true
 
   @npl_blurb "The npl-* components — display renders of NPL prompt blocks (agent introspection, critique, reasoning)."
+  @semext_blurb "The semext-* embeds — service-backed views (SigNoz signals, media prompts, doc pointers, styleguide themes) rendered where a plain tag cannot reach."
+  @agent_kit_blurb "The agent-kit-* cards — the work-item vocabulary (tickets, epics, personas, test cases) rendered from Agent Kit records."
 
   def init(_params, component, _server) do
     put_state(component,
       groups: Nav.groups(),
-      total: length(Tags.sem_tags()) + length(Tags.npl_tags()),
+      total: length(Tags.all_tags()),
       buckets: index_buckets(),
       npl_blurb: @npl_blurb,
-      npl_tags: index_tags(Tags.npl_tags())
+      npl_tags: index_tags(Tags.npl_tags()),
+      semext_blurb: @semext_blurb,
+      semext_tags: index_tags(Tags.semext_tags()),
+      agent_kit_blurb: @agent_kit_blurb,
+      agent_kit_tags: index_tags(Tags.agent_kit_tags())
     )
   end
 
@@ -62,7 +69,7 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
       %{
         name: t.name,
         family: t.family,
-        family_label: if(t.family == :sem, do: "SemText", else: "NPL"),
+        family_label: Tags.family_label(t.family),
         summary: t.summary,
         gap_note: gap_note,
         href: Tags.tag_href(t.name),
@@ -81,7 +88,8 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
           Tag reference
         </h1>
         <p class="mt-4 max-w-3xl text-base leading-7 text-ink-mute">
-          The {@total} SemText and NPL tags, grouped by the job the element
+          The {@total} tags across the SemText vocabulary, its extension
+          families and NPL, grouped by the job the element
           does. Each card opens the element's page — its options, children
           and an authored example — and a field its source does not state
           is marked there. To write with them right away,{" "}
@@ -125,6 +133,30 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
             </div>
           </section>
         {/for}
+
+        <section aria-labelledby="family-semext-h" class="mt-14">
+          <h2 id="family-semext-h" class="text-2xl font-semibold tracking-tight text-ink">
+            SemText extensions
+          </h2>
+          <p class="mt-3 max-w-3xl leading-relaxed text-ink-mute">{@semext_blurb}</p>
+          <div class="ref-card-grid mt-6">
+            {%for card <- @semext_tags}
+              <TagCard card={card} />
+            {/for}
+          </div>
+        </section>
+
+        <section aria-labelledby="family-agent-kit-h" class="mt-14">
+          <h2 id="family-agent-kit-h" class="text-2xl font-semibold tracking-tight text-ink">
+            Agent Kit elements
+          </h2>
+          <p class="mt-3 max-w-3xl leading-relaxed text-ink-mute">{@agent_kit_blurb}</p>
+          <div class="ref-card-grid mt-6">
+            {%for card <- @agent_kit_tags}
+              <TagCard card={card} />
+            {/for}
+          </div>
+        </section>
 
         <section aria-labelledby="family-npl-h" class="mt-14">
           <h2 id="family-npl-h" class="text-2xl font-semibold tracking-tight text-ink">
