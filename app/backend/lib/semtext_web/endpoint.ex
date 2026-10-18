@@ -23,6 +23,10 @@ defmodule SemtextWeb.Endpoint do
     only: ~w(themes css hologram favicon.ico robots.txt semtext js demo spec dataviz data icon.svg apple-touch-icon.png manifest.webmanifest icons)
 
   if code_reloading? do
+    # LiveReloader (dev only): injects the live-reload iframe so browsers
+    # refresh when files change — the live dev slot (dev.semtext.dev) counts
+    # on it. Inert in prod: code_reloader is false there.
+    plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
     plug Phoenix.Ecto.CheckRepoStatus, otp_app: :semtext
   end

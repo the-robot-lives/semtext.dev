@@ -244,6 +244,222 @@
     "sem-api-param": [
       "One parameter row inside a sem-api-call: name, where it lives, type and description.",
       "The child of sem-api-call. The in attribute says where the parameter lives (query, body, header, or response for a returned field); required marks the ones the caller must send."
+    ],
+    "agent-kit-acceptance-criteria": [
+      "A list of given/when/then acceptance criteria, laid out as a checklist.",
+      "You write each criterion's given, when, and then parts, and the card renders them with a count in its header. Readers see the agreement on what done means; nothing is fetched behind their back."
+    ],
+    "agent-kit-agent-persona": [
+      "An identity card for an AI agent: name, role, and short bio.",
+      "You write the persona's name, role, bio, and extra details inside the card. The page shows them as a tidy profile. A sibling card kind exists for human users."
+    ],
+    "agent-kit-artifact": [
+      "A card that shows one work product — markdown, JSON, code, or a diff.",
+      "Pick the artifact's type and put its content inside the card; the content is the record. The card frames it with a header and keeps it readable, with the language highlighted where supported."
+    ],
+    "agent-kit-asset": [
+      "A card for one media file with a caption you write yourself.",
+      "Point src at the asset and set its mime type; your caption sits under it. The card adds the frame; the file and caption are the record."
+    ],
+    "agent-kit-board": [
+      "A kanban-style board: columns of ticket references you arrange yourself.",
+      "You define the columns and place ticket references inside them. The board lays the columns out side by side. It stays plain markup a machine can read back."
+    ],
+    "agent-kit-bug": [
+      "A bug-report card from the agent-kit ticket family.",
+      "One of six ticket cards (bug, epic, issue, task, sub-task, user story). You write the title, state, labels, and description inside; the card shows them with ticket chrome. What you author is the record — no live lookup."
+    ],
+    "agent-kit-chatroom": [
+      "A chat transcript card: the messages you write inside are the record.",
+      "Give the room a name and add message children; the card renders the conversation with speaker chrome. Nothing is fetched at view time."
+    ],
+    "agent-kit-cucumber": [
+      "A card that shows a Cucumber feature file exactly as written.",
+      "Put the spec source inside; the card displays it as written, framed with a script-card header. Reading the source is the point — the card does not run it."
+    ],
+    "agent-kit-custom-assert": [
+      "A checklist of expressions with the result each one should produce.",
+      "You write each expression and its expected outcome; the card lays the pairs out as a structured list. It reads like a test plan a person can check by eye."
+    ],
+    "agent-kit-cypress": [
+      "A card that shows a Cypress spec file exactly as written.",
+      "Set file when the spec lives in a known place, or put the source inside; the card displays it as written with script-card chrome. It never executes anything."
+    ],
+    "agent-kit-epic": [
+      "An epic card — a big piece of work that groups smaller tickets.",
+      "Part of the six ticket cards (bug, epic, issue, task, sub-task, user story). Title, state, labels, and description are authored inside; the card renders them with ticket chrome."
+    ],
+    "agent-kit-issue": [
+      "An issue card from the agent-kit ticket family.",
+      "Part of the six ticket cards (bug, epic, issue, task, sub-task, user story). You author the ticket's parts inside; the card shows title, state, and labels in a standard layout."
+    ],
+    "agent-kit-organization": [
+      "A compact card describing one organization.",
+      "You author the name and description inside; the card frames them as a reference entry. Ids and kinds stay machine-readable."
+    ],
+    "agent-kit-project": [
+      "A compact card describing one project.",
+      "Name and description are authored inside; the card renders them as a reference entry next to its kind and id."
+    ],
+    "agent-kit-review": [
+      "A code-review card: comments and a verdict you write yourself.",
+      "Add comment children and set the verdict — approve, request changes, comment, or pending. The card shows the verdict as a badge with the comments beneath."
+    ],
+    "agent-kit-sub-task": [
+      "A sub-task card — one step of a larger ticket.",
+      "Part of the six ticket cards (bug, epic, issue, task, sub-task, user story). You author the parts inside; the card renders them with the same ticket chrome as its siblings."
+    ],
+    "agent-kit-task": [
+      "A task card from the agent-kit ticket family.",
+      "Part of the six ticket cards (bug, epic, issue, task, sub-task, user story). Title, state, labels, and description are authored inside; the card lays them out in a standard ticket view."
+    ],
+    "agent-kit-test-case": [
+      "A test-case card: numbered steps and the result each should produce.",
+      "You write the steps and the expected outcome inside; the card lists them with a header chip. It documents intent — it does not run anything."
+    ],
+    "agent-kit-test-suite": [
+      "A test-suite card showing one row per branch and how it fares.",
+      "You author a row per branch inside; the card renders them as a status table under a suite header. The rows are the record."
+    ],
+    "agent-kit-ticket-ref": [
+      "A short inline pointer to a ticket elsewhere on the page.",
+      "Give it a key (and optionally org and project); the card renders a compact reference that links the reader to the ticket's card. Part of the ticket family."
+    ],
+    "agent-kit-user-persona": [
+      "An identity card for a human user: name, role, and short bio.",
+      "You write the persona's name, role, bio, and an optional avatar inside. The card shows them as a tidy profile; a sibling card kind exists for AI agents."
+    ],
+    "agent-kit-user-story": [
+      "A user-story card — who wants a feature and why.",
+      "Part of the six ticket cards (bug, epic, issue, task, sub-task, user story). You author the story's parts inside; the card renders them with the shared ticket layout."
+    ],
+    "sem-changelog": [
+      "One entry in a changelog: what changed and when.",
+      "Use it inside a changelogs collection. The date and a short summary are the record; entries stay readable as plain text."
+    ],
+    "sem-changelogs": [
+      "A changelog collection: dated entries of what changed.",
+      "Each entry carries a date and a short description of the change. Readers skim the history in order; machines read the same fields back."
+    ],
+    "sem-eval": [
+      "An evaluation spec: the inputs, expected outputs, and criteria in one place.",
+      "Author the parts as sections or prose inside the container. A status attribute marks whether the evaluation is a draft, approved, or implemented."
+    ],
+    "sem-faq": [
+      "One question-and-answer entry in a FAQ collection.",
+      "Pair a question with its answer inside. The collection renders each pair consistently; the words you wrote stay the record."
+    ],
+    "sem-faqs": [
+      "A collection of questions and answers.",
+      "Wrap your FAQ entries in it and the page lays them out consistently. The questions and answers are ordinary readable text with JavaScript off."
+    ],
+    "sem-file-tree": [
+      "A file listing drawn from an indented tree you type as text.",
+      "Paste a tree using box-drawing characters or plain indentation; the card renders it as a tidy listing. You can also author real nested nodes instead of text."
+    ],
+    "sem-guard-rail": [
+      "One guard-rail entry: a rule that warns or blocks.",
+      "Use it inside a guard-rails collection. Each entry states the rule and how strong it is — a note, a warning, or a hard stop."
+    ],
+    "sem-guard-rails": [
+      "A collection of guard rails: the rules a reader or agent must respect.",
+      "Each entry carries a severity — info, warn, or block — and an optional scope. Readers see the limits up front; machines read the same severity back."
+    ],
+    "sem-howto": [
+      "A how-to guide: a named container of steps or prose.",
+      "Give it a name and write the guide inside with the elements you already have. The container adds a labeled frame; your words stay the record."
+    ],
+    "sem-kb": [
+      "A knowledge-base article; what you write inside is the article.",
+      "The container adds a titled frame and nothing else — sections, lists, and prose inside are yours to author. It renders as plain readable text with JavaScript off."
+    ],
+    "sem-mockup": [
+      "A design mockup container: text or HTML shown as a picture of a UI.",
+      "Pick text or html mode and put the mockup inside. The card frames it as a draft visual, clearly not a live interface."
+    ],
+    "sem-philosophy": [
+      "A principles document: the beliefs a project works by.",
+      "Write the principles as prose or sections inside; the container adds a labeled frame and nothing more."
+    ],
+    "sem-plan": [
+      "A plan container: the approach and its reasoning in one place.",
+      "Write the plan as sections or prose inside. A status attribute tracks where the plan stands, and the container adds a labeled frame."
+    ],
+    "sem-requirement": [
+      "One requirement, stated plainly and classified.",
+      "Mark it functional, non-functional, or a constraint; a status and priority travel with it. The container keeps the statement readable while the classification stays machine-readable."
+    ],
+    "sem-rubric": [
+      "A scoring rubric: criteria and levels laid out as a grid.",
+      "Author the grid as a plain table or row prose inside; the container does not force a shape. A max-score attribute records the top of the scale."
+    ],
+    "sem-runbook": [
+      "An operational runbook: what to check before, what to do, and what to read next.",
+      "Author preconditions, procedure, and references with the elements you already have; the container adds chrome and a label. An audience attribute says who it is for."
+    ],
+    "sem-site-tree": [
+      "A site or file tree authored as real nested nodes.",
+      "Each node carries a path with an optional label and kind; the card draws the hierarchy. Prefer this over typing a text tree when you want structure a machine can read back."
+    ],
+    "sem-summary": [
+      "A short summary block set at the top of longer content.",
+      "Put the gist inside; the container frames it as a summary readers can skim before the full text."
+    ],
+    "sem-threat-model": [
+      "A threat model: the assets, threats, and mitigations in one container.",
+      "Author them as sections or list-style prose inside; the container adds chrome and a label. A scope attribute says what the model covers."
+    ],
+    "sem-tldr": [
+      "A too-long-didn't-read block: the whole point in a few lines.",
+      "Whatever you put inside is the whole record — the reader skims it or skips it. The container keeps it visually separate from the body."
+    ],
+    "sem-tsg": [
+      "One entry in a troubleshooting guide: symptom, cause, fix.",
+      "Use it inside a troubleshooting collection. The entry stays ordinary structured text a reader can scan."
+    ],
+    "sem-tsgs": [
+      "A collection of troubleshooting guides.",
+      "Wrap your entries in it and the page lays them out consistently. Each entry pairs a problem with its resolution in plain text."
+    ],
+    "sem-workflow": [
+      "An ordered workflow whose steps carry checks and failure paths.",
+      "Author sem-step children in order; a step can say how to verify it and what to do when the check fails. Durations travel with steps where you know them."
+    ],
+    "semext-annotate": [
+      "Visitor comment threads attached to a page, served by a backend.",
+      "The comment threads come from a comment service rather than the page itself. When the service is unreachable the card settles into a clear empty state instead of pretending."
+    ],
+    "semext-docptr": [
+      "A card that renders one documentation pointer from a cached snapshot.",
+      "Give it the pointer's marker or id; the card shows the file and snippet it points at. It is a static embed — refresh happens in a separate lane, never while a reader waits."
+    ],
+    "semext-media-prompt": [
+      "An authored media-generation prompt with a place for its output.",
+      "You write the prompt and set the model and aspect; the output area fills from the cache when a result exists. The prompt text stays the record."
+    ],
+    "semext-sig-logs": [
+      "A snapshot of log lines from the observability stack, with a link to the live view.",
+      "The card shows the cached lines for its query and time range; a header link opens the same query live. Without a snapshot it shows a clear empty state."
+    ],
+    "semext-sig-metrics": [
+      "A snapshot of metrics charts from the observability stack, with a link to the live view.",
+      "The card embeds the cached metric panels for its query and range; the header links out to the same view live. It stays a picture of the moment it cached."
+    ],
+    "semext-sig-synthetic-monitor": [
+      "A card describing one synthetic monitor and linking to its live results.",
+      "Name the monitor and environment; the card shows the definition and links to current runs. It is a definition card plus link — results live in the observability tool."
+    ],
+    "semext-sig-traces": [
+      "A snapshot of recent traces from the observability stack, with a link to the live view.",
+      "The card lists the cached traces for its query and range and links to the same list live. The snapshot is clearly framed — it never pretends to be real time."
+    ],
+    "semext-styleguide-theme": [
+      "One theme's token cards: swatches and type samples from a cached snapshot.",
+      "Point it at a theme and the card shows its colors and type as swatch cards. Static embed — the snapshot refreshes elsewhere, not on the reader's screen."
+    ],
+    "semext-styleguide-themes": [
+      "All of a snapshot's themes at once, one token card per theme.",
+      "The plural form collects every theme's cards in one place; use the singular card when you want a single theme."
     ]
   }
 }

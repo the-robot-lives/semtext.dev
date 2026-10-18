@@ -116,7 +116,13 @@ const targets = [
     // in ROADMAP "Size budgets".
     // 126 → 144 KB (2026-10-14, user decision): docs-overhaul content landed
     // at 132.3 raw. Recorded in ROADMAP "Size budgets".
-    budgetKb: 144,
+    // 144 → 145.0 KB (2026-10-18, family A containers: 19 tags, +1.2 KB,
+    // measured 144.3) then → 152 KB (2026-10-18, interactive containers:
+    // sem-workflow / sem-site-tree / sem-file-tree + the shared tree engine
+    // joined the single bundle per the no-CSS-only-tags registration
+    // contract — 150.1 on that base, 151.5 after the family A merge).
+    // Recorded in ROADMAP "Size budgets".
+    budgetKb: 152,
     required: true,
   },
   {
@@ -129,6 +135,39 @@ const targets = [
     // 48 → 52 KB (2026-10-14, docs-overhaul landing; spec r4-1 budget
     // note — ROADMAP "Size budgets" carries the history).
     budgetKb: 52,
+    required: true,
+  },
+  {
+    // The semext-* namespace, whole, for semext documents that skip chunk
+    // loading. Same relationship to core as npl.js: src/index.ts imports
+    // nothing from src/lit/semext/, and the semext barrel is src/semext.ts's
+    // only input. Introduced empty (2026-10-18, epic.semext-components
+    // walking skeleton) and measured for real with family B
+    // (feat/semext-embeds): nine service-backed embeds over the
+    // cached-embed base — see ROADMAP "Size budgets".
+    name: 'semext.js',
+    entry: 'src/semext.ts',
+    global: 'SemTextExt',
+    budgetKb: 48,
+    required: true,
+  },
+  {
+    // The agent-kit-* namespace, whole, for agent-kit documents that skip
+    // chunk loading. Same relationship to core as npl.js: src/index.ts
+    // imports nothing from src/lit/agent-kit/, and the agent-kit barrel is
+    // src/agent-kit.ts's only input. Introduced empty (2026-10-18,
+    // epic.semext-components walking skeleton): report-only until a real
+    // component lands — then record it in ROADMAP "Size budgets" and drop
+    // the report-only flag. (Done 2026-10-18, PR #63: the 22-tag family-C
+    // set landed at 39.9 raw and the budget is enforced; it matched semext's
+    // 48 KB rather than exceeding it.)
+    name: 'agent-kit.js',
+    entry: 'src/agent-kit.ts',
+    global: 'AgentKit',
+    // 64 (report-only walking-skeleton placeholder) → 48 (2026-10-18,
+    // PR #63): measured 39.9 raw / 12.5 gzipped for the 22-tag family-C
+    // set; matches the semext embed-lane budget. Enforced for real.
+    budgetKb: 48,
     required: true,
   },
   {
@@ -406,6 +445,33 @@ const LAZY_TARGETS = [
     fullBundle: 'npl.js',
     tags: 'npl-*',
   },
+  {
+    id: 'semext-lazy',
+    entry: 'src/lazy/semext.ts',
+    litDir: resolve(root, 'src/lit/semext'),
+    fileFilter: (f) => f.startsWith('semext-') && f.endsWith('.ts'),
+    // anchored: doc-comment bullets also spell `defineSemext('semext-x', ...)` — only real top-level calls register
+    registerRe: /^\s*defineSemext\(\s*'([a-z][a-z0-9-]*)'/gm,
+    virtualId: 'virtual:semext-manifest',
+    chunkDir: 'semext-chunks',
+    budgetKb: 8,
+    fullBundle: 'semext.js',
+    tags: 'semext-*',
+  },
+  {
+    id: 'agent-kit-lazy',
+    entry: 'src/lazy/agent-kit.ts',
+    litDir: resolve(root, 'src/lit/agent-kit'),
+    fileFilter: (f) => f.startsWith('agent-kit-') && f.endsWith('.ts'),
+    // anchored: doc-comment bullets also spell `defineAkit('agent-kit-x', ...)` — only real top-level calls register
+    registerRe: /^\s*defineAkit\(\s*'([a-z][a-z0-9-]*)'/gm,
+    virtualId: 'virtual:agent-kit-manifest',
+    chunkDir: 'agent-kit-chunks',
+    // 8 (placeholder) → 6 (2026-10-18, PR #63): measured 4.6 raw / 1.9 gzipped.
+    budgetKb: 6,
+    fullBundle: 'agent-kit.js',
+    tags: 'agent-kit-*',
+  },
 ];
 
 for (const lazy of LAZY_TARGETS) {
@@ -433,7 +499,7 @@ for (const lazy of LAZY_TARGETS) {
     }
   }
 
-  if (Object.keys(lazyManifest).length === 0) {
+  if (Object.keys(lazyManifest).length === 0 && !lazy.allowEmpty) {
     console.error(`✗ ${lazy.id} build: no register calls found in ${lazy.litDir}`);
     process.exit(1);
   }
@@ -505,9 +571,10 @@ for (const lazy of LAZY_TARGETS) {
   const budget = lazy.budgetKb * 1024;
   if (bytes > budget) overBudget = true;
   results.push({ name: `${lazy.id}.js`, bytes, gzip, budget, over: bytes > budget, ok: bytes <= budget, reportOnly: false });
-  const shared = readdirSync(resolve(distDir, lazy.chunkDir)).filter(
-    (f) => !Object.values(lazyManifest).includes(`${lazy.chunkDir}/${f}`),
-  );
+  const chunkDirPath = resolve(distDir, lazy.chunkDir);
+  const shared = existsSync(chunkDirPath)
+    ? readdirSync(chunkDirPath).filter((f) => !Object.values(lazyManifest).includes(`${lazy.chunkDir}/${f}`))
+    : [];
   console.log(
     `  ${lazy.id}: ${Object.keys(lazyManifest).length} component chunks ` +
       `+ ${shared.length} shared chunk(s), manifest inlined`,

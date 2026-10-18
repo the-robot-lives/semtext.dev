@@ -203,13 +203,13 @@ export const EXAMPLE_VARIANTS: Record<string, ExampleVariant[]> = {
     {
       id: "flashcards",
       label: "view-as=\"flashcards\" — one fact at a time, the flip reveals its conclusion",
-      note: "The same pair as a self-test card. Only the current `<sem-fact>` shows: front is the statement, back is the conclusion, revealed by a click (the flip). Prev/next walk the deck and wrap; the meter reports position only, e.g. `2/2`. Not part of the fact's stored data — `view-as` is display-only, and every fact extracts the same pair.",
+      note: "The same pair as a self-test card. Only the current `<sem-fact>` shows: front is the statement, back is the conclusion, revealed by a click (the flip). The meter is an index — one numbered chip per card, the current one highlighted, answered chips tinted by their ✓ Got it / ✗ Wrong verdict; prev/next walk the deck and a chip jumps straight to its card. When every card carries a verdict the deck ends on a total (\"You got X of N\") with a Restart control. Not part of the fact's stored data — `view-as` is display-only, and every fact extracts the same pair.",
       code: "<sem-facts id=\"oauth-facts\" view-as=\"flashcards\">\n  <sem-fact id=\"f-device\">\n    <statement>OAuth device flow targets input-constrained devices</statement>\n    <conclusion>TVs, consoles and CLIs poll the token endpoint with a device code.</conclusion>\n  </sem-fact>\n  <sem-fact id=\"f-pkce\">\n    <statement>PKCE binds the authorization code to the client</statement>\n    <conclusion>The code exchange proves possession of the verifier, so a stolen code is inert.</conclusion>\n  </sem-fact>\n</sem-facts>",
     },
     {
       id: "quiz",
       label: "view-as=\"quiz\" — the fact as a scored question, conclusion as the answer",
-      note: "Quiz turns each fact into one answerable question: the statement is the prompt, the `<conclusion>` is the correct option, and the `<incorrect-statement>` children are the decoys. One pick per question; the meter then reports position and score, e.g. `1/1 · score 1/1`. With no `<incorrect-statement>`, sibling conclusions fill the decoy slots.",
+      note: "Quiz turns each fact into one answerable question: the statement is the prompt, the `<conclusion>` is the correct option, and the `<incorrect-statement>` children are the decoys — options render on thin-bordered buttons in a seeded shuffled order. A wrong pick marks that button (✗, spent) and the question stays open: the reader keeps picking until the correct option lands (✓), which scores `1/1 · score 1/1` in the meter and auto-advances after a 500 ms beat. With no `<incorrect-statement>`, sibling conclusions fill the decoy slots.",
       code: "<sem-facts id=\"quiz-facts\" view-as=\"quiz\">\n  <sem-fact id=\"f-header\">\n    <statement>The OIDC token travels in which header?</statement>\n    <conclusion>Authorization</conclusion>\n    <incorrect-statement>Cookie</incorrect-statement>\n    <incorrect-statement>X-Auth-Token</incorrect-statement>\n  </sem-fact>\n</sem-facts>",
     },
   ],

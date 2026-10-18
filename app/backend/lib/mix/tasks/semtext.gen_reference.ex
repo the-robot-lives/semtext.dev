@@ -26,15 +26,22 @@ defmodule Mix.Tasks.Semtext.GenReference do
 
   @impl Mix.Task
   def run(args) do
-    web =
-      case OptionParser.parse!(args, strict: [web: :string]) do
-        {opts, [], []} -> opts[:web]
-        _ -> raise_usage()
-      end
+    # OptionParser.parse!/2 returns {opts, invalid} on Elixir 1.20+ and
+    # {opts, args, invalid} before it. Dispatching on the tuple shape
+    # draws a "will never match" warning from the gradual type checker
+    # on whichever toolchain sees the other shape, so index from the
+    # END instead: the last element is always `invalid`, and whatever
+    # sits between opts and it is positional args.
+    parsed = OptionParser.parse!(args, strict: [web: :string])
+    [opts | rest] = Tuple.to_list(parsed)
+    positional = tl(rest)
+    invalid = List.last(rest)
+    web = if positional == [] and invalid == [], do: opts[:web]
 
     web || raise_usage()
 
-    script = Path.expand("../../../scripts/gen-reference.mjs", __DIR__)
+    # lib/mix/tasks -> app/backend -> app: the script lives at app/scripts/.
+    script = Path.expand("../../../../scripts/gen-reference.mjs", __DIR__)
     Mix.shell().info("==> Running #{script} --web #{web}")
 
     case Mix.shell().cmd("node #{script} --web #{web}", quiet: false) do

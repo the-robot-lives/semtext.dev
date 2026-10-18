@@ -1,0 +1,18 @@
+{{- if .Values.devSlot.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "hologram-start-app.fullname" . }}-live-dev
+  labels:
+    {{- include "hologram-start-app.labels" . | nindent 4 }}
+    semtext.dev/slot: live-dev
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "hologram-start-app.selectorLabels" . | nindent 4 }}
+    semtext.dev/slot: live-dev
+  ports:
+  - name: http
+    port: 80
+    targetPort: {{ .Values.backend.port }}
+{{- end }}

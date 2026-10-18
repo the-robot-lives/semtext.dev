@@ -7,15 +7,9 @@
       "code": "<sem-audiences>\n  <sem-profile id=\"reader\" label=\"Reader\"></sem-profile>\n  <sem-profile id=\"operator\" label=\"Operator\" implies=\"reader\"></sem-profile>\n</sem-audiences>\n\n<sem-note audience=\"operator\">Operators: the token endpoint answers behind the MinIO port-forward — start it before the migration step.</sem-note>\n<sem-note audience=\"!operator\">Everyone except operators: ask an operator to run the migration for you.</sem-note>\n<p data-audience=\"reader, operator\">Shared planning notes for both working profiles.</p>"
     },
     {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "The class spelling of the declaration block (conventions Appendix A): `div.sem-audiences` › `div.sem-profile[id][data-label][data-implies]` — parameters read as `data-*` first, then bare. Both spellings render the same muted chip strip.",
-      "code": "<div class=\"sem-audiences\">\n  <div class=\"sem-profile\" id=\"reader\" data-label=\"Reader\"></div>\n  <div class=\"sem-profile\" id=\"operator\" data-label=\"Operator\" data-implies=\"reader\"></div>\n</div>"
-    },
-    {
       "id": "mixed-spec",
       "label": "variant: authoring error — mixed positive and negated terms",
-      "note": "\"operator, !reader\" mixes `!` with plain terms: warned once, and the positive terms decide — the negated one is ignored. So with the fallback running this note is hidden when no profile is active (a positive term never matches without one) and shown as `operator` — never as `reader`, because the `!reader` plays no part. As rendered here the note shows: this pane has no audience gating, the same all-visible state as JS-off. Unknown tokens fail a spec open instead — see the next variant.",
+      "note": "\"operator, !reader\" mixes `!` with plain terms: warned once, and the positive terms decide — the negated one is ignored. So with the bundle running this note is hidden when no profile is active (a positive term never matches without one) and shown as `operator` — never as `reader`, because the `!reader` plays no part. As rendered here the note shows: this pane has no audience gating, the same all-visible state as JS-off. Unknown tokens fail a spec open instead — see the next variant.",
       "code": "<sem-audiences>\n  <sem-profile id=\"reader\" label=\"Reader\"></sem-profile>\n  <sem-profile id=\"operator\" label=\"Operator\" implies=\"reader\"></sem-profile>\n</sem-audiences>\n\n<sem-note audience=\"operator, !reader\">Warned spec: the positive terms decide, the negated one is ignored.</sem-note>"
     },
     {
@@ -35,14 +29,8 @@
     {
       "id": "implies-closure",
       "label": "variant: implies closure",
-      "note": "`implies` is how one profile subsumes another: an operator sees reader content, and a profile implying operator sees it too — the closure is transitive. The strip does not draw the edges; gating demonstrates them. With the fallback running and no active profile this note hides; as operator it shows (operator implies reader); as reader it hides. As rendered here — this pane carries no audience gating, the same all-visible state as JS-off — it shows.",
+      "note": "`implies` is how one profile subsumes another: an operator sees reader content, and a profile implying operator sees it too — the closure is transitive. The strip does not draw the edges; gating demonstrates them. With the bundle running and no active profile this note hides; as operator it shows (operator implies reader); as reader it hides. As rendered here — this pane carries no audience gating, the same all-visible state as JS-off — it shows.",
       "code": "<sem-audiences>\n  <sem-profile id=\"reader\" label=\"Reader\"></sem-profile>\n  <sem-profile id=\"operator\" label=\"Operator\" implies=\"reader\"></sem-profile>\n</sem-audiences>\n\n<sem-note audience=\"reader\">Planning context every working profile sees through the closure.</sem-note>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "The class spelling of the declaration unit (conventions Appendix A): `div.sem-profile[id][data-label][data-implies]` — parameters read as `data-*` first, then bare. It renders the same chip inside the same strip as the element spelling.",
-      "code": "<div class=\"sem-audiences\">\n  <div class=\"sem-profile\" id=\"reader\" data-label=\"Reader\"></div>\n  <div class=\"sem-profile\" id=\"operator\" data-label=\"Operator\" data-implies=\"reader\"></div>\n</div>"
     }
   ],
   "sem-code": [
@@ -63,12 +51,6 @@
       "label": "variant: wrap from the start",
       "note": "The `wrap` attribute starts the listing soft-wrapped and the Wrap control renders pressed (`aria-pressed=\"true\"`). Toggling it off removes the attribute and restores horizontal scroll — `wrap` is presentation, never content.",
       "code": "<sem-code lang=\"json\" filename=\"config.json\" wrap controls=\"copy,wrap\">{ \"retry\": { \"attempts\": 5, \"backoffMs\": 250, \"jitter\": true }, \"endpoint\": \"https://api.example.com/v1/rotate\" }</sem-code>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class-form alias",
-      "note": "The alias spelling (conventions Appendix A): `div.sem-code` reads the same parameters as `data-*` first, then bare. It renders one chrome and the marked line identically to the element form — both forms are one runtime. The explicit `<pre><code>` child remains supported alongside the flat form.",
-      "code": "<div class=\"sem-code\" data-lang=\"py\" data-filename=\"rotate.py\" data-mark=\"2\" data-controls=\"copy,wrap\">\n<pre><code>def rotate(pair):\n    return mint(pair.refresh)</code></pre>\n</div>"
     },
     {
       "id": "author-markup",
@@ -125,12 +107,6 @@
       "label": "variant: data-view=\"core\" (named view on first paint)",
       "note": "Same payload as the primary, defaulting to the `core` view instead of `all`: only the Token and Max uses columns paint, and every column stays in the DOM with the native `hidden` on excluded cells. Two declared views render the `aria-pressed` button group above the table — pressing All reveals the rest.",
       "code": "<sem-data-visualizer>\n  <sem-data-source data-name=\"Token lifetimes\" data-views=\"core=token,max-uses; all=*\" data-view=\"core\">\n    | Token | Max uses | Lifetime | Rotates | Since      |\n    | :---- | -------: | :------- | :------ | :--------- |\n    | access | 200     | 15 min   | true    | 2026-01-05 |\n    | id     | 1000    | 1 hour   | false   | 2026-02-14 |\n  </sem-data-source>\n</sem-data-visualizer>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class-form alias",
-      "note": "The alias spelling (conventions Appendix A): `div.sem-data-visualizer` wrapping `div.sem-data-source` reads the same parameters (`data-*` first, then bare). Every selector is `:is(tag, .tag)`, so both spellings render the identical bordered table box.",
-      "code": "<div class=\"sem-data-visualizer\">\n  <div class=\"sem-data-source\" data-name=\"Token lifetimes\" data-format=\"csv\">\n    token,rotate\n    access,true\n    id,false\n  </div>\n</div>"
     },
     {
       "id": "source-file-load",
@@ -190,13 +166,13 @@
     {
       "id": "flashcards",
       "label": "view-as=\"flashcards\" — one fact at a time, the flip reveals its conclusion",
-      "note": "The same pair as a self-test card. Only the current `<sem-fact>` shows: front is the statement, back is the conclusion, revealed by a click (the flip). Prev/next walk the deck and wrap; the meter reports position only, e.g. `2/2`. Not part of the fact's stored data — `view-as` is display-only, and every fact extracts the same pair.",
+      "note": "The same pair as a self-test card. Only the current `<sem-fact>` shows: front is the statement, back is the conclusion, revealed by a click (the flip). The meter is an index — one numbered chip per card, the current one highlighted, answered chips tinted by their ✓ Got it / ✗ Wrong verdict; prev/next walk the deck and a chip jumps straight to its card. When every card carries a verdict the deck ends on a total (\"You got X of N\") with a Restart control. Not part of the fact's stored data — `view-as` is display-only, and every fact extracts the same pair.",
       "code": "<sem-facts id=\"oauth-facts\" view-as=\"flashcards\">\n  <sem-fact id=\"f-device\">\n    <statement>OAuth device flow targets input-constrained devices</statement>\n    <conclusion>TVs, consoles and CLIs poll the token endpoint with a device code.</conclusion>\n  </sem-fact>\n  <sem-fact id=\"f-pkce\">\n    <statement>PKCE binds the authorization code to the client</statement>\n    <conclusion>The code exchange proves possession of the verifier, so a stolen code is inert.</conclusion>\n  </sem-fact>\n</sem-facts>"
     },
     {
       "id": "quiz",
       "label": "view-as=\"quiz\" — the fact as a scored question, conclusion as the answer",
-      "note": "Quiz turns each fact into one answerable question: the statement is the prompt, the `<conclusion>` is the correct option, and the `<incorrect-statement>` children are the decoys. One pick per question; the meter then reports position and score, e.g. `1/1 · score 1/1`. With no `<incorrect-statement>`, sibling conclusions fill the decoy slots.",
+      "note": "Quiz turns each fact into one answerable question: the statement is the prompt, the `<conclusion>` is the correct option, and the `<incorrect-statement>` children are the decoys — options render on thin-bordered buttons in a seeded shuffled order. A wrong pick marks that button (✗, spent) and the question stays open: the reader keeps picking until the correct option lands (✓), which scores `1/1 · score 1/1` in the meter and auto-advances after a 500 ms beat. With no `<incorrect-statement>`, sibling conclusions fill the decoy slots.",
       "code": "<sem-facts id=\"quiz-facts\" view-as=\"quiz\">\n  <sem-fact id=\"f-header\">\n    <statement>The OIDC token travels in which header?</statement>\n    <conclusion>Authorization</conclusion>\n    <incorrect-statement>Cookie</incorrect-statement>\n    <incorrect-statement>X-Auth-Token</incorrect-statement>\n  </sem-fact>\n</sem-facts>"
     }
   ],
@@ -212,12 +188,6 @@
       "label": "view-as=\"quiz\" — each highlight occluded, revealed per item",
       "note": "The same prose under `view-as=\"quiz\"`: every `<highlight>` becomes a keyboard-reachable occluded chip (`role=\"button\"`, `aria-label=\"reveal\"`) — click or Enter/Space reveals that one target and leaves its siblings occluded. Prose identical to plain; the attribute is display-only.",
       "code": "<sem-details id=\"oidc-details\" view-as=\"quiz\">\n  <sem-detail>\n    The OIDC token travels in the\n    <highlight>Authorization</highlight> header.\n  </sem-detail>\n</sem-details>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class-form alias",
-      "note": "The class spelling of the container (conventions Appendix A): `div.sem-details[data-view-as=\"quiz\"]` › `div.sem-detail` › `span.sem-highlight`. Parameters read as `data-*`; the same occlusion and per-item reveal apply.",
-      "code": "<div class=\"sem-details\" data-view-as=\"quiz\">\n  <div class=\"sem-detail\">\n    The OIDC token travels in the\n    <span class=\"sem-highlight\">Authorization</span> header.\n  </div>\n</div>"
     }
   ],
   "npl-agent": [
@@ -362,7 +332,7 @@
     {
       "id": "bars",
       "label": "variant: variant=\"bars\"",
-      "note": "The compact form — rows only, no state or triggered lines. Renderable: the element upgrades from the npl runtime, not the fallback tier.",
+      "note": "The compact form — rows only, no state or triggered lines. Renderable: the element upgrades from the npl runtime, not the semtext bundle.",
       "renderable": true,
       "code": "<npl-hormones variant=\"bars\">\n  <panel>\n    <h name=\"Momentum\"     symbol=\"MTM\" value=\"6\"   delta=\"+2\" trigger=\"Tests passed first try\"></h>\n    <h name=\"Tension\"      symbol=\"TNS\" value=\"3\"   delta=\"0\"  trigger=\"Complexity\"></h>\n    <h name=\"Restlessness\" symbol=\"RST\" value=\"8.5\" delta=\"-1\" trigger=\"Strategy failed\"></h>\n  </panel>\n</npl-hormones>"
     },
@@ -388,13 +358,6 @@
       "note": "One emoji line per section; the authored sections are hidden from the render (kept in the source). The glanceable form for a finished turn.",
       "renderable": true,
       "code": "<npl-ref variant=\"compact\">\n  <assessment>the approach held; one gap in the eval loop</assessment>\n  <improvements>add a regression harness before the next run</improvements>\n  <validation>checked against three traces</validation>\n  <eval>quality 0.82 vs 0.71 baseline</eval>\n  <fine-tune>retrain on the two rejected traces</fine-tune>\n</npl-ref>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class-form sections",
-      "note": "Sections authored as `.npl-<name>` classes on plain elements — same dual-form contract as the tag spelling; the upgrade labels both identically.",
-      "renderable": true,
-      "code": "<npl-ref>\n  <div class=\"npl-assessment\">held up under review; the eval loop skipped two failure paths</div>\n  <div class=\"npl-improvements\">add the failure-path fixtures to the regression harness</div>\n  <div class=\"npl-eval\">quality 0.82 vs 0.71 baseline</div>\n</npl-ref>"
     }
   ],
   "npl-rubric": [
@@ -409,12 +372,6 @@
       "label": "variant: excluded criteria",
       "note": "A criterion whose weight or score is missing or non-numeric is marked, kept visible, and left out of the average — its empty cell reads as an em dash and a flag sits beside its name.",
       "code": "<npl-rubric title=\"Triage\">\n  <npl-criterion name=\"Impact\" weight=\"2\" score=\"4\"></npl-criterion>\n  <npl-criterion name=\"Confidence\" score=\"5\"></npl-criterion>\n  <npl-criterion name=\"Urgency\" weight=\"high\" score=\"3\"></npl-criterion>\n  <npl-criterion name=\"Cost\" weight=\"1\"></npl-criterion>\n</npl-rubric>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class-form (data-title)",
-      "note": "The dual-form spelling: an authored data-title names the caption, and a criterion or the overall-score element may be authored as a block container with its .npl- class alias and data-* parameters.",
-      "code": "<npl-rubric data-title=\"Class-form rubric\">\n  <div class=\"npl-criterion\" data-name=\"Correctness\" data-weight=\"3\" data-score=\"4\"></div>\n  <div class=\"npl-criterion\" data-name=\"Clarity\" data-weight=\"1\" data-score=\"5\"></div>\n  <div class=\"npl-overall-score\" data-value=\"4.25\"></div>\n</npl-rubric>"
     },
     {
       "id": "overall-only",
@@ -483,12 +440,6 @@
       "label": "variant: unknown type",
       "note": "An unknown value is never fatal: no header renders, `npl-section-warning` lands on the host, the body reads as plain prose, and one author-facing console warning names the value.",
       "code": "<npl-section type=\"mnemonic\">\n  Content renders plain — the unknown value affects only chrome and the console warning.\n</npl-section>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class-form (data-type)",
-      "note": "The dual-form spelling: `.npl-section` plus `data-type` resolves like the element form, and `data-type` wins when both spellings are authored.",
-      "code": "<div class=\"npl-section\" data-type=\"logic\">\n  The class-form spelling resolves identically to the element form.\n</div>"
     }
   ],
   "npl-thought": [
@@ -509,12 +460,6 @@
       "label": "variant: no type — a nested sub-container",
       "note": "A child with no `type` is a sub-container: nothing is applied to it and its own children survive — grouping is expressed by nesting, not by a type.",
       "code": "<npl-thought>\n  <npl-thought type=\"concern\">Two regions report stale reads.</npl-thought>\n  <npl-thought>\n    <npl-thought type=\"observation\">us-east-1 read lag 40 ms.</npl-thought>\n    <npl-thought type=\"observation\">eu-west-1 read lag 12 ms.</npl-thought>\n  </npl-thought>\n</npl-thought>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class-form (data-type)",
-      "note": "The dual-form spelling: `.npl-thought` plus `data-type` resolves like the element form, and `data-type` wins when both spellings are authored.",
-      "code": "<div class=\"npl-thought\">\n  <div class=\"npl-thought\" data-type=\"affirmation\">Rebuild in place — the migration is additive and reversible.</div>\n</div>"
     }
   ],
   "sem-chronology": [
@@ -529,12 +474,6 @@
       "label": "variant: bare when/until — no <time>",
       "note": "With no `<time>` authored the CSS renders `when` — plus ` – until` for a period — as the date label via `attr()`; `view-as` omitted means the default `timeline`.",
       "code": "<sem-chronology kind=\"roadmap\" role=\"list\">\n  <sem-event role=\"listitem\" when=\"2026-Q1\" until=\"2026-Q2\" status=\"done\">Lit vocabulary consolidated.</sem-event>\n  <sem-event role=\"listitem\" when=\"2026-Q3\" status=\"current\">Docs-overhaul waves.</sem-event>\n  <sem-event role=\"listitem\" when=\"2026-Q4\">Theme pipeline.</sem-event>\n</sem-chronology>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form (div.sem-chronology)",
-      "note": "Conventions Appendix A: the same contract authored as `div.sem-*` classes with `data-*` parameters — the CSS keys on both spellings and renders identically. The third event deliberately mixes `data-when` with a bare `until`: the period must still read as one range.",
-      "code": "<div class=\"sem-chronology\" data-kind=\"incident-log\" data-view-as=\"timeline\" role=\"list\">\n  <div class=\"sem-event\" role=\"listitem\" data-when=\"2026-08-14T09:12Z\" data-status=\"blocked\"><time datetime=\"2026-08-14T09:12Z\">14 Aug 09:12</time> Queue drain stalls on the shard rebalance.</div>\n  <div class=\"sem-event\" role=\"listitem\" data-when=\"2026-08-14T11:40Z\" data-status=\"done\"><time datetime=\"2026-08-14T11:40Z\">14 Aug 11:40</time> Rebalance clears; the backlog drains.</div>\n  <div class=\"sem-event\" role=\"listitem\" data-when=\"2026-08-15\" until=\"2026-08-16\" data-status=\"todo\">Post-incident review window.</div>\n</div>"
     }
   ],
   "sem-event": [
@@ -550,13 +489,6 @@
       "label": "variant: where the date label comes from",
       "note": "First event: no `<time>` — CSS renders `when` verbatim. Second: a `when`/`until` period with no `<time>` — CSS joins them with an en dash. Third: both authored — the reader sees the `<time>` text, the attribute stays machine-facing.",
       "code": "<sem-chronology kind=\"release-log\" role=\"list\">\n  <sem-event role=\"listitem\" when=\"2026-05-19\" status=\"done\">Quiz-occlusion reveal ships.</sem-event>\n  <sem-event role=\"listitem\" when=\"2026-Q3\" until=\"2026-Q4\">Docs-overhaul waves.</sem-event>\n  <sem-event role=\"listitem\" when=\"2026-11\" status=\"todo\"><time datetime=\"2026-11\">Nov 2026</time> Theme marketplace.</sem-event>\n</sem-chronology>",
-      "renderable": true
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form (div.sem-event)",
-      "note": "Conventions Appendix A: the same contract authored as `div.sem-event` with `data-*` parameters — the CSS keys on both spellings. The second event mixes `data-when` with a bare `until` and carries no `<time>`: the period must still read as one range.",
-      "code": "<div class=\"sem-chronology\" data-kind=\"incident-log\" role=\"list\">\n  <div class=\"sem-event\" role=\"listitem\" data-when=\"2026-08-14T09:12Z\" data-status=\"blocked\"><time datetime=\"2026-08-14T09:12Z\">14 Aug 09:12</time> Queue drain stalls on the shard rebalance.</div>\n  <div class=\"sem-event\" role=\"listitem\" data-when=\"2026-08-15\" until=\"2026-08-16\" data-status=\"todo\">Post-incident review window.</div>\n</div>",
       "renderable": true
     }
   ],
@@ -598,12 +530,6 @@
       "label": "variant: authoring error — a bucket that does not resolve",
       "note": "A query naming a bucket the visualizer does not declare renders an inline `role=alert` naming the miss; the authored statement is preserved. The same alert appears for an unknown column, a syntax error or a mutating statement.",
       "code": "<sem-data-visualizer id=\"dv-services\">\n  <sem-data-source data-name=\"services\" data-format=\"table\">\n    | name | port |\n    | :--- | ---: |\n    | api  | 8443 |\n  </sem-data-source>\n  <sem-data-query>SELECT name FROM hosts</sem-data-query>\n</sem-data-visualizer>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form (div.sem-data-query)",
-      "note": "Conventions Appendix A: the declaration authored as `div.sem-*` classes with the query as the element's text. The container and source are spelled in class form too; the chrome keys on both spellings.",
-      "code": "<div class=\"sem-data-visualizer\" id=\"dv-services\">\n  <div class=\"sem-data-source\" data-name=\"services\" data-format=\"table\">\n    | name | port |\n    | :--- | ---: |\n    | api  | 8443 |\n    | web  | 8080 |\n  </div>\n  <div class=\"sem-data-query\">SELECT name, port FROM services ORDER BY port</div>\n</div>"
     }
   ],
   "sem-data-join": [
@@ -612,13 +538,6 @@
       "label": "variant: the bare declaration",
       "note": "The element itself, outside a working visualizer. It renders nothing in any tier — a declaration with nothing to read; the joined bucket surfaces only through a sem-data-query results table.",
       "code": "<sem-data-join name=\"user-orders\" left=\"Users\" right=\"Orders\" on=\"user-id\">\n</sem-data-join>",
-      "renderable": false
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "The class spelling (conventions Appendix A) inside its working visualizer: parameters read as data-* first, then bare. Like every join it stays invisible — the query renders the result.",
-      "code": "<sem-data-visualizer id=\"dv-class-join\">\n  <sem-data-source data-name=\"Users\">| user-id | name |\n|---|---|\n| u1 | Ada |\n| u2 | Bao |</sem-data-source>\n  <sem-data-source data-name=\"Orders\">| order | user-id | total |\n|---|---|---|\n| o-101 | u2 | 120 |\n| o-102 | u1 | 80 |</sem-data-source>\n  <div class=\"sem-data-join\" data-name=\"user-orders\" data-left=\"Users\" data-right=\"Orders\" data-on=\"user-id\"></div>\n  <sem-data-query>SELECT name, total FROM user-orders</sem-data-query>\n</sem-data-visualizer>",
       "renderable": false
     },
     {
@@ -679,12 +598,6 @@
       "code": "<sem-data-visualizer id=\"dv-modal\">\n  <sem-data-source data-name=\"Fleet\" data-format=\"table\" data-views=\"all=*; operators=name, replicas\" data-view=\"all\">\n    | name    | region | port | replicas |\n    | :------ | :----- | ---: | -------: |\n    | auth    | eu     | 8080 |        3 |\n    | billing | us     | 8443 |        2 |\n    | pages   | ap     | 3000 |        2 |\n    | search  | eu     | 9200 |        5 |\n  </sem-data-source>\n</sem-data-visualizer>"
     },
     {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "Conventions Appendix A: the container and its declarations authored as `div.sem-*` classes. Every container selector reads `:is(sem-data-visualizer, .sem-data-visualizer)`, so both spellings wire the same children, tools row and modal.",
-      "code": "<div class=\"sem-data-visualizer\" id=\"dv-orders\">\n  <div class=\"sem-data-source\" data-name=\"users\" data-format=\"table\">\n    | user-id | name  |\n    | :------ | :---- |\n    | 1       | alice |\n  </div>\n  <div class=\"sem-data-source\" data-name=\"orders\" data-format=\"table\">\n    | user-id | total |\n    | :------ | ----: |\n    | 1       |   120 |\n  </div>\n  <div class=\"sem-data-query\">SELECT * FROM users</div>\n</div>"
-    },
-    {
       "id": "inline-plus-source",
       "label": "variant: authoring error — inline payload with source=",
       "note": "An inline body and a `source` attribute together are contradictory declarations. The source renders a `role=alert` naming both and keeps its place in the container; the pair is never silently resolved to one or the other.",
@@ -709,12 +622,6 @@
       "label": "view-as=\"quiz\" — scored recall",
       "note": "The same three facts under `view-as=\"quiz\"`: every question renders with prev/next chrome, and each conclusion stays hidden until you pick it. `.sem-quiz-options` is generated — buttons shuffled from a seed derived from the container id (stable across reloads), one option per candidate: the fact's explicit `incorrect-statement` children plus sibling conclusions up to three, and the conclusion itself marked `data-correct`. One answer per question; the meter then reads `N/M · score C/A`, a correct pick marks green, and a miss marks both the wrong pick and the correct option — a miss teaches.",
       "code": "<sem-facts id=\"auth-facts\" view-as=\"quiz\">\n  <sem-fact id=\"f-rotate\">\n    <statement>JWTs rotate per session</statement>\n    <conclusion>Short-lived access tokens; the refresh\n      grant issues a new pair.</conclusion>\n    <incorrect-statement>Store tokens in localStorage.</incorrect-statement>\n  </sem-fact>\n  <sem-fact id=\"f-expiry\">\n    <statement>Access tokens expire after 15 minutes</statement>\n    <conclusion>The client mints a new pair from the refresh\n      grant; the user never re-signs-in mid-session.</conclusion>\n    <incorrect-statement>The user must sign in again every 15\n      minutes.</incorrect-statement>\n  </sem-fact>\n  <sem-fact id=\"f-secret\">\n    <statement>Client secrets never reach the browser</statement>\n    <conclusion>The confidential client holds the secret\n      server-side; the browser only ever sees tokens.</conclusion>\n    <incorrect-statement>Embed the client secret in the SPA\n      bundle.</incorrect-statement>\n  </sem-fact>\n</sem-facts>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class-form alias",
-      "note": "The alias spelling (conventions Appendix A): `div.sem-facts[data-view-as]` › `div.sem-fact` › `.sem-statement`, `.sem-conclusion`, `.incorrect-statement`. Every vocabulary selector reads `:is(sem-facts, .sem-facts)` and twins, so the deck wires and renders identically under both forms.",
-      "code": "<div class=\"sem-facts\" id=\"rotate-facts\" data-view-as=\"flashcards\">\n  <div class=\"sem-fact\" id=\"r-grant\">\n    <div class=\"sem-statement\">A refresh grant returns a new token pair</div>\n    <div class=\"sem-conclusion\">The old access token stays valid until it expires; the pair simply replaces it.</div>\n  </div>\n  <div class=\"sem-fact\" id=\"r-rotate\">\n    <div class=\"sem-statement\">Refresh tokens rotate on use</div>\n    <div class=\"sem-conclusion\">A presented refresh token is spent; the response carries its replacement.</div>\n  </div>\n</div>"
     }
   ],
   "sem-note": [
@@ -749,24 +656,10 @@
       "code": "<sem-audiences>\n  <sem-profile id=\"reader\" label=\"Reader\"></sem-profile>\n  <sem-profile id=\"operator\" label=\"Operator\" implies=\"reader\"></sem-profile>\n</sem-audiences>\n\n<sem-note audience=\"operator\">Operators: start the MinIO port-forward before the migration apply.</sem-note>\n<sem-note audience=\"!operator\">Everyone else: ask an operator to run the migration for you.</sem-note>"
     },
     {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "The alias spelling (conventions Appendix A): `div.sem-note[data-variant]` › `div.sem-note-body`, same `collapsed` attribute. Same accents from the same rules; the collapsed hide-rule gates on the upgrade marker, so JS-off the body stays readable and no teaser is generated.",
-      "code": "<div class=\"sem-note\" data-variant=\"warning\">\n  <div class=\"sem-note-body\">The alias form renders from theme CSS alone; JS-off it is a plain, readable callout.</div>\n</div>"
-    },
-    {
       "id": "hint-reveal-notation",
       "label": "variant: [hint | reveal] authoring",
       "note": "The agent-instruction notation (conventions.md §3), first defined on this element's schema. v1 renders it as plain body text — the schema defers the parse until a handler ships it; agent readers still see the instruction in the source view.",
       "code": "<sem-note variant=\"info\">[hint | reveal] Check the ArgoCD sync status before assuming the deploy regressed.</sem-note>"
-    }
-  ],
-  "sem-procedure": [
-    {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "The class spelling (conventions Appendix A): `div.sem-procedure[data-kind]` › `div.sem-step[data-status]`. Zero-JS either way — the same vocabulary selectors match both spellings, and the third step (no status attribute at all) still reads as `todo`.",
-      "code": "<div class=\"sem-procedure\" data-kind=\"runbook\" role=\"list\">\n  <div class=\"sem-step\" role=\"listitem\" data-status=\"done\">provision Infisical path</div>\n  <div class=\"sem-step\" role=\"listitem\" data-status=\"current\">port-forward MinIO</div>\n  <div class=\"sem-step\" role=\"listitem\">run migrations</div>\n  <div class=\"sem-step\" role=\"listitem\" data-status=\"blocked\">cut release — waiting on CI</div>\n</div>"
     }
   ],
   "sem-step": [
@@ -775,13 +668,6 @@
       "label": "variant: every status, one runbook",
       "note": "One step per `status` — `done` ✓, `current` →, `blocked` ⛔, `todo` ○ (dashed rail) — plus the fourth step carrying no attribute at all: the schema default IS `todo`, and it renders exactly like the explicit spelling. A blocked step mutes its text; every step stays fully readable — the glyphs annotate, never redact. Status sugar inside step text (conventions §3) is display-only: `status` is canonical and is what extraction reads.",
       "code": "<sem-procedure kind=\"runbook\" role=\"list\">\n  <sem-step role=\"listitem\" status=\"done\">snapshot the secret store</sem-step>\n  <sem-step role=\"listitem\" status=\"current\">drain the old replicas</sem-step>\n  <sem-step role=\"listitem\" status=\"todo\">rotate the signing key</sem-step>\n  <sem-step role=\"listitem\">flip traffic to the new pool</sem-step>\n  <sem-step role=\"listitem\" status=\"blocked\">retire the legacy endpoint — waiting on the client release</sem-step>\n</sem-procedure>",
-      "renderable": true
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "The step spelling (conventions Appendix A): `div.sem-procedure[data-kind]` › `div.sem-step[data-status]` — parameters read as `data-*` first, then bare. The same status vocabulary matches both spellings; here the unstarted step is spelled `data-status=\"todo\"`, and omitting the attribute renders identically.",
-      "code": "<div class=\"sem-procedure\" data-kind=\"recipe\" role=\"list\">\n  <div class=\"sem-step\" role=\"listitem\" data-status=\"done\">toast the spices</div>\n  <div class=\"sem-step\" role=\"listitem\" data-status=\"current\">bloom in ghee</div>\n  <div class=\"sem-step\" role=\"listitem\" data-status=\"todo\">simmer 20 minutes</div>\n</div>",
       "renderable": true
     }
   ],
@@ -795,21 +681,15 @@
     {
       "id": "compact-sugar",
       "label": "variant: compact `term :: value` sugar",
-      "note": "The conventions §3 pair sugar is legal in the property text; `key` stays canonical and wins when both are present. The fallback does not parse `::`, so the value column shows the property text verbatim until a parser ships — which is why the sugar author also writes `key`: sugar without it renders an empty key column.",
+      "note": "The conventions §3 pair sugar is legal in the property text; `key` stays canonical and wins when both are present. The runtime does not parse `::`, so the value column shows the property text verbatim until a parser ships — which is why the sugar author also writes `key`: sugar without it renders an empty key column.",
       "code": "<sem-properties kind=\"config\">\n  <sem-property key=\"token ttl\" role=\"definition\" aria-label=\"token ttl\">token ttl :: 15m</sem-property>\n  <sem-property key=\"refresh rotation\" role=\"definition\" aria-label=\"refresh rotation\">refresh rotation :: per use</sem-property>\n</sem-properties>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class-form alias",
-      "note": "The class spelling (conventions Appendix A): `div.sem-properties[data-kind][data-view-as]` › `div.sem-property[data-key]`, value as the element text. One selector matches both spellings (`:is(sem-properties, .sem-properties)` and twins), so the grid, the small-caps key column and the glossary view behave identically; the duplicate-key diagnostic reads `data-key` on the alias.",
-      "code": "<div class=\"sem-properties\" data-kind=\"config\">\n  <div class=\"sem-property\" data-key=\"token ttl\" role=\"definition\" aria-label=\"token ttl\">15m</div>\n  <div class=\"sem-property\" data-key=\"refresh rotation\" role=\"definition\" aria-label=\"refresh rotation\">per use</div>\n  <div class=\"sem-property\" data-key=\"storage\" role=\"definition\" aria-label=\"storage\">httpOnly cookie</div>\n</div>"
     }
   ],
   "sem-property": [
     {
       "id": "sugar-keyless",
       "label": "variant: compact `::` sugar without `key`",
-      "note": "`<sem-property>storage :: httpOnly cookie</sem-property>` is legal authoring, and the fallback does not parse `::` — the text renders verbatim in the value column and no term is drawn. Sugar authors therefore also write `key` (conventions §3); the second row shows that pair, where the `key` attribute is the term and wins.",
+      "note": "`<sem-property>storage :: httpOnly cookie</sem-property>` is legal authoring, and the runtime does not parse `::` — the text renders verbatim in the value column and no term is drawn. Sugar authors therefore also write `key` (conventions §3); the second row shows that pair, where the `key` attribute is the term and wins.",
       "code": "<sem-properties kind=\"config\">\n  <sem-property>storage :: httpOnly cookie</sem-property>\n  <sem-property key=\"token ttl\" role=\"definition\" aria-label=\"token ttl\">ttl :: 15m</sem-property>\n</sem-properties>"
     },
     {
@@ -823,12 +703,6 @@
       "label": "variant: glossary term with prose anchor",
       "note": "Inside `view-as=\"glossary\"` a property is a term: it stacks definition under term and its `id` is a plain-anchor target. With the reading bundle live the prose link gains a hover/focus preview of the pair (`Esc` closes; the anchor still navigates); with no script the block stays a definition list and the link highlights the property via `:target` — nothing hidden either way.",
       "code": "<p>Both issuer settings are defined in the glossary: see <a href=\"#g-pkce\">PKCE</a> and <a href=\"#g-confidential\">confidential client</a>.</p>\n\n<sem-properties kind=\"spec\" view-as=\"glossary\">\n  <sem-property id=\"g-pkce\" key=\"PKCE\" role=\"definition\" aria-label=\"PKCE\">Proof Key for Code Exchange — binds the authorization code to the verifier that minted it.</sem-property>\n  <sem-property id=\"g-confidential\" key=\"confidential client\" role=\"definition\" aria-label=\"confidential client\">A client able to hold its secret server-side; the browser never sees it.</sem-property>\n</sem-properties>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "The child alias spelling (conventions Appendix A): `div.sem-property[data-key]` inside `div.sem-properties[data-kind][data-view-as]`, value as the element text. One selector matches both spellings (`:is(sem-property, .sem-property)` and twins), so the grid, the small-caps key column and the `:target` highlight behave identically.",
-      "code": "<div class=\"sem-properties\" data-kind=\"config\">\n  <div class=\"sem-property\" data-key=\"token ttl\" role=\"definition\" aria-label=\"token ttl\">15m</div>\n  <div class=\"sem-property\" data-key=\"refresh rotation\" role=\"definition\" aria-label=\"refresh rotation\">per use</div>\n</div>"
     }
   ],
   "sem-reference": [
@@ -843,12 +717,6 @@
       "label": "variant: two anchors citing one reference — previews and backlinks",
       "note": "The reading bundle at work: every citing anchor gains a hover and focus preview popover of the entry (`Esc` closes it, the anchor still navigates, `aria-describedby` points at the popover while it is open), and the entry appends one labelled backlink per citing anchor plus the external `↗` link its `href` asks for. Two anchors citing one `id` is the case backlinks exist for. JS-off the same markup is a paragraph and a numbered list: anchors navigate and the `:target` entry highlights — nothing more.",
       "code": "<p>Refresh tokens rotate per use<a href=\"#pr-rfc\">[1]</a>, and each rotation retires the presented grant<a href=\"#pr-rfc\">[1]</a>.</p>\n\n<sem-references id=\"pr\" kind=\"bibliography\" role=\"list\">\n  <sem-reference id=\"pr-rfc\" role=\"listitem\" href=\"https://www.rfc-editor.org/rfc/rfc9700\" cite=\"RFC 9700\">\n    OAuth 2.0 Security Best Current Practice, §4.14 — refresh token rotation.\n  </sem-reference>\n</sem-references>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "The class spelling (conventions Appendix A): `div.sem-references[data-kind]` › `div.sem-reference[id][data-href][data-cite]` — parameters read as `data-*` first, then bare. One selector pair (`:is(sem-references, .sem-references)` and its twins) matches both spellings, so numbering, the `:target` highlight and print URLs behave identically in every tier. Preview and backlink wiring rides the element form on this site — the lazy bundle scans tags, not class aliases, so a class-form container upgrades only under the full `semtext.js` bundle, which the site does not ship; the render pane shows the CSS tier.",
-      "code": "<p>Refresh grants rotate per use<a href=\"#cf-rfc\">[1]</a>.</p>\n\n<div class=\"sem-references\" data-kind=\"bibliography\" id=\"cf\" role=\"list\">\n  <div class=\"sem-reference\" id=\"cf-rfc\" role=\"listitem\" data-href=\"https://www.rfc-editor.org/rfc/rfc9700\" data-cite=\"RFC 9700\">\n    OAuth 2.0 Security Best Current Practice, §4.14 — refresh token rotation.\n  </div>\n</div>"
     }
   ],
   "sem-progress": [
@@ -857,12 +725,6 @@
       "label": "variant: default label",
       "note": "No `label` authored: the caption names itself — `progress :: 42%`. The runtime default applies in every tier; JS-off the CSS `attr()` caption reads the same default. ARIA is unchanged: `role=\"meter\"` with `aria-valuenow` = the authored value.",
       "code": "<sem-progress value=\"0.42\" role=\"meter\" aria-valuemin=\"0\" aria-valuemax=\"1\" aria-valuenow=\"0.42\"></sem-progress>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "The class spelling (conventions Appendix A): `div.sem-progress[data-value][data-label]` — parameters read as `data-*` first, then bare. One selector matches both spellings (`:is(sem-progress, .sem-progress)`), so the meter wires and renders identically; `role=\"meter\"` keeps the AT contract on the alias too.",
-      "code": "<div class=\"sem-progress\" data-value=\"0.62\" data-label=\"coverage\" role=\"meter\" aria-valuemin=\"0\" aria-valuemax=\"1\" aria-valuenow=\"0.62\"></div>"
     },
     {
       "id": "clamp",
@@ -901,19 +763,13 @@
       "label": "variant: audience control",
       "note": "The audience select renders only when the document declares profiles: it lists every `sem-profile` (label, else id) under a leading `Everyone`, and the choice writes the shareable `sem-audience` hash parameter — the audience handler applies it on `hashchange`; the reader never hides anything itself. No declared profiles, no control.",
       "code": "<sem-audiences>\n  <sem-profile id=\"reader\" label=\"Reader\"></sem-profile>\n  <sem-profile id=\"operator\" label=\"Operator\" implies=\"reader\"></sem-profile>\n</sem-audiences>\n\n<sem-reader controls=\"outline,audience\"></sem-reader>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "The class spelling (conventions Appendix A): `div.sem-reader[data-controls][data-outline-depth]` — parameters read as `data-*` first, then bare. The same vocabulary block styles both spellings, and the bundle enhances either form identically.",
-      "code": "<div class=\"sem-reader\" data-controls=\"outline,progress\" data-outline-depth=\"2\"></div>"
     }
   ],
   "sem-reveal": [
     {
       "id": "default-open",
       "label": "variant: starts open",
-      "note": "No `collapsed` authored: the reveal starts open — the answer shows, the summary bar reads as its heading. State is the native `<details>` attribute the fallback tier presets; there is no script-maintained open flag to drift.",
+      "note": "No `collapsed` authored: the reveal starts open — the answer shows, the summary bar reads as its heading. State is the native `<details>` attribute the runtime presets; there is no script-maintained open flag to drift.",
       "code": "<sem-reveal summary=\"What wraps the reveal itself?\">\n  A native &lt;details&gt;/&lt;summary&gt; pair, preset open. Click and keyboard toggling belong to the platform — no script-maintained state, so nothing to drift.\n</sem-reveal>"
     },
     {
@@ -921,12 +777,6 @@
       "label": "variant: derived summary",
       "note": "No `summary` attribute: `src/shared/summary.ts` derives the closed-state label from the leading body text (max 60 chars, cut at the last word boundary) — the summary a reader sees is the summary a machine extracts, one shared rule. JS-off with no `summary` there is no caption at all: plain prose, nothing hidden.",
       "code": "<sem-reveal collapsed>\n  Why derive the label at all? Because the summary a reader sees is the summary a machine extracts.\n</sem-reveal>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "Conventions Appendix A: `div.sem-reveal[data-summary]`, same `collapsed` attribute — parameters read as `data-*` first, then bare. One selector matches both spellings (`:is(sem-reveal, .sem-reveal)`), so the `<details>` wrapper, the JS-off small-caps caption and the print rules behave identically.",
-      "code": "<div class=\"sem-reveal\" data-summary=\"Why not localStorage?\" collapsed>\n  Tokens in localStorage are readable by any script on the page; keep tokens in httpOnly cookies or in memory only.\n</div>"
     }
   ],
   "sem-references": [
@@ -941,12 +791,6 @@
       "label": "variant: kind=\"footnotes\" — compact list",
       "note": "The compact display for notes tied to nearby prose: tighter margins than the default, unlike the hanging-indent bibliography. Authored citation text is never renumbered — `[a]` and `[b]` stay as written; only the entries themselves carry the CSS counter. Rendered panes also append backlinks (`↩`) to any entry the prose cites; JS-off the list still numbers and `:target` still highlights.",
       "code": "<p>Migrations run before the swap<a href=\"#r-fn-1\">[a]</a>; the drain window is 90 seconds<a href=\"#r-fn-2\">[b]</a>.</p>\n\n<sem-references id=\"refs-notes\" kind=\"footnotes\" role=\"list\">\n  <sem-reference id=\"r-fn-1\" role=\"listitem\">Schema first, image second — the Liquibase changeset lands in the same release train.</sem-reference>\n  <sem-reference id=\"r-fn-2\" role=\"listitem\">Readiness gate holds at 90 s; the zero-ready window is expected under a Recreate rollout.</sem-reference>\n</sem-references>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form (div.sem-references)",
-      "note": "Conventions Appendix A: `div.sem-references[data-kind]` › `div.sem-reference[id][data-href][data-cite]` — parameters read as `data-*` first, then bare. Numbering and the `:target` highlight are CSS and key on both spellings, so the alias renders identically in every tier. The script chrome (previews, backlinks, external link) is a different story: the shipped `semtext-lazy.js` scan is tag-shaped by contract, so alias-form documents wire only under the full `semtext.js` bundle — this pane keeps the honest script-off state (numbered, highlighted, no chrome). `role=\"list\"`/`role=\"listitem\"` keep the list contract on the alias either way.",
-      "code": "<p>The class alias carries the same contract<a href=\"#r-c1\">[RFC&nbsp;6749]</a>.</p>\n\n<div class=\"sem-references\" data-kind=\"bibliography\" id=\"refs-class\" role=\"list\">\n  <div class=\"sem-reference\" id=\"r-c1\" role=\"listitem\" data-href=\"https://www.rfc-editor.org/rfc/rfc6749\" data-cite=\"RFC 6749\">\n    The OAuth 2.0 Authorization Framework, §10.4.\n  </div>\n</div>"
     }
   ],
   "sem-view": [
@@ -967,12 +811,6 @@
       "label": "variant: any content inside a view",
       "note": "A view is a container, not a paragraph: any content is legal inside it, including other SemText elements. This one carries a `sem-note`, which enhances (collapse toggle and all) whether or not its parent view is the active one — the pane keeps the whole family alive so a switch is instant and content-preserving.",
       "code": "<sem-views id=\"runbook\">\n  <sem-view name=\"Plan\">\n    <p>Rotate the pair, then verify a live session before closing the ticket.</p>\n    <sem-note variant=\"warning\">Dry-run first: the rotation is not reversible past the first use.</sem-note>\n  </sem-view>\n  <sem-view name=\"Checklist\">\n    <p>Dry run · Rotate · Verify · Close the ticket.</p>\n  </sem-view>\n</sem-views>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "The class spelling (conventions Appendix A): `div.sem-views[id]` › `div.sem-view[data-name][data-active]` — the parameters read as `data-*` first, then bare. One selector pair (`:is(sem-views, .sem-views)` and its view twin) matches both spellings, so the tab bar, deep links and the no-script stacked fallback behave identically; the authored `active` pre-selects the second view in every tier.",
-      "code": "<div class=\"sem-views\" id=\"cf-deploy\">\n  <div class=\"sem-view\" data-name=\"Staging\">Preview the change against the staging cluster.</div>\n  <div class=\"sem-view\" data-name=\"Production\" data-active>Two approvals before this view is ever active.</div>\n</div>"
     }
   ],
   "sem-source": [
@@ -981,12 +819,6 @@
       "label": "variant: authored view-as=\"source\" — the section opens in source mode",
       "note": "An authored `view-as=\"source\"` (either spelling) builds the fence at enhance time and starts in source mode; the rendered children stay one click away and the fence is built once, then only shown and hidden. JS-off the children render as ordinary flow — the hide rule is gated on the upgrade marker, so nothing authored-visible is ever hidden without scripts.",
       "code": "<sem-source id=\"s-source-initial\" label=\"Authored source first\" view-as=\"source\">\n  <h3>Facts — flashcards</h3>\n  <sem-facts id=\"s-source-deck\" view-as=\"list\">\n    <sem-fact id=\"s-source-f1\">\n      <statement>The fence text comes from a snapshot of the children</statement>\n      <conclusion>Nodes are cloned before any enhancement runs — never serialised and re-parsed.</conclusion>\n    </sem-fact>\n  </sem-facts>\n</sem-source>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "The class spelling of the wrapper (conventions Appendix A): `div.sem-source[data-label][data-view-as]` with the same children — parameters read as `data-*` first, then bare. Content, extraction and the scripts-off render are identical in both spellings; the chrome comes from the reading tier, so a page served with the element bundle alone renders this class form as plain content (the reference render below) — the toggle needs the reading tier or the element spelling, and the children may be element-form or class-form.",
-      "code": "<div class=\"sem-source\" id=\"s-source-cf\" data-label=\"Class spelling\">\n  <h3>Facts — flashcards</h3>\n  <sem-facts id=\"s-source-cf-deck\" view-as=\"list\">\n    <sem-fact id=\"s-source-cf-f1\">\n      <statement>The wrapper is transparent to extraction</statement>\n      <conclusion>A document records the same facts with and without it.</conclusion>\n    </sem-fact>\n  </sem-facts>\n</div>"
     },
     {
       "id": "no-label",
@@ -1033,12 +865,6 @@
       "code": "<sem-table id=\"t-releases\" controls=\"sort\">\n  <table>\n    <caption>Release train</caption>\n    <thead><tr><th scope=\"col\">Release</th><th scope=\"col\">Shipped</th></tr></thead>\n    <tbody>\n      <tr><td>v2.9</td><td data-value=\"2026-01-12\">12 Jan 2026</td></tr>\n      <tr><td>v2.10</td><td data-value=\"2026-03-02\">2 Mar 2026</td></tr>\n      <tr><td>v3.0</td><td data-value=\"2026-02-20\">20 Feb 2026</td></tr>\n    </tbody>\n  </table>\n</sem-table>"
     },
     {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "The class spelling (conventions Appendix A): `div.sem-table[data-kind][data-controls][data-sticky]` around the same `<table>` — parameters read as `data-*` first, then bare, and `td[data-value]` is `data-*` in both forms. Same chrome, same sort, same filter as the element spelling.",
-      "code": "<div class=\"sem-table\" id=\"t-quotas-cf\" data-controls=\"sort,filter\" data-sticky>\n  <table>\n    <caption>Quotas per workspace</caption>\n    <thead><tr><th scope=\"col\">Quota</th><th scope=\"col\">Limit</th></tr></thead>\n    <tbody>\n      <tr><td>seats</td><td data-value=\"25\">25</td></tr>\n      <tr><td>tables</td><td data-value=\"100\">100</td></tr>\n      <tr><td>api calls / min</td><td data-value=\"6000\">6,000</td></tr>\n    </tbody>\n  </table>\n</div>"
-    },
-    {
       "id": "no-thead",
       "label": "variant: no thead — the plain-table floor",
       "note": "A table without a thead has no header row to sort by: no sort buttons are wired, the chrome stays empty and hides itself, and what remains is the authored table exactly as written. This is the element's floor — it degrades to plain HTML, never to a broken control.",
@@ -1063,12 +889,6 @@
       "label": "variant: any content inside a view",
       "note": "A view is a container, not a paragraph: any content is legal inside it, including other SemText elements. This one carries a `sem-note`, which enhances (collapse toggle and all) whether or not its parent view is the active one — the pane keeps the whole family alive so a switch is instant and content-preserving.",
       "code": "<sem-views id=\"runbook\">\n  <sem-view name=\"Plan\">\n    <p>Rotate the pair, then verify a live session before closing the ticket.</p>\n    <sem-note variant=\"warning\">Dry-run first: the rotation is not reversible past the first use.</sem-note>\n  </sem-view>\n  <sem-view name=\"Checklist\">\n    <p>Dry run · Rotate · Verify · Close the ticket.</p>\n  </sem-view>\n</sem-views>"
-    },
-    {
-      "id": "class-form",
-      "label": "variant: class form",
-      "note": "The class spelling (conventions Appendix A): `div.sem-views[id]` › `div.sem-view[data-name][data-active]` — the parameters read as `data-*` first, then bare. One selector pair (`:is(sem-views, .sem-views)` and its view twin) matches both spellings, so the tab bar, deep links and the no-script stacked fallback behave identically; the authored `active` pre-selects the second view in every tier.",
-      "code": "<div class=\"sem-views\" id=\"cf-deploy\">\n  <div class=\"sem-view\" data-name=\"Staging\">Preview the change against the staging cluster.</div>\n  <div class=\"sem-view\" data-name=\"Production\" data-active>Two approvals before this view is ever active.</div>\n</div>"
     }
   ]
 }
