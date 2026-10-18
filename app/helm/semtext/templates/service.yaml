@@ -12,10 +12,12 @@ spec:
     port: {{ .Values.backend.port }}
     targetPort: {{ .Values.backend.port }}
     protocol: TCP
+  {{- if not ((.Values.devCode).enabled) }}
   - name: frontend
     port: {{ .Values.frontend.port }}
     targetPort: {{ .Values.frontend.port }}
     protocol: TCP
+  {{- end }}
   selector:
     {{- include "hologram-start-app.selectorLabels" . | nindent 4 }}
 {{- end }}

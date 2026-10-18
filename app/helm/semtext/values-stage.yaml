@@ -63,12 +63,13 @@ backend:
       cpu: "2"
       memory: 4Gi
 
-# Legacy second Service port (chart scaffold). service.yaml emits backend.port
-# AND frontend.port as separate entries — both at 4000 = duplicate-key install
-# failure. Only backend:4000 is real on this lane (single backend process);
-# park the frontend port on a distinct number so the Service is valid.
+# MUST stay 4000 (= backend.port): the sitePaths helper wires the ingress
+# root "/" and /auth/verify etc. to frontend.port — the scaffold assumes
+# fe==be (true on prod). The duplicate-Service-port problem this caused is
+# solved in service.yaml instead: the frontend entry is gated off when the
+# dev lane (devCode.enabled) is on, so the Service renders one port here.
 frontend:
-  port: 5173
+  port: 4000
 
 # Migrate Job OFF on the lane (runbook: Liquibase owns schema; the entrypoint
 # never auto-migrates; audits/applys are explicit operator actions).
