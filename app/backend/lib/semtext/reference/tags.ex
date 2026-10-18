@@ -68,6 +68,8 @@ defmodule Semtext.Reference.Tags do
 
   @sem_tags Enum.filter(@all_tags, &(&1.family == :sem))
   @npl_tags Enum.filter(@all_tags, &(&1.family == :npl))
+  @semext_tags Enum.filter(@all_tags, &(&1.family == :semext))
+  @agent_kit_tags Enum.filter(@all_tags, &(&1.family == :"agent-kit"))
 
   @doc "Spec version the generated half of the inventory was built from."
   def spec_version, do: @spec_version
@@ -87,6 +89,25 @@ defmodule Semtext.Reference.Tags do
   @doc "NPL family elements (`npl-*` display renders of NPL prompt blocks)."
   @spec npl_tags() :: [tag()]
   def npl_tags, do: @npl_tags
+
+  @doc "SemText extension family (`semext-*` service-backed embeds)."
+  @spec semext_tags() :: [tag()]
+  def semext_tags, do: @semext_tags
+
+  @doc "Agent Kit family (`agent-kit-*` work-item cards)."
+  @spec agent_kit_tags() :: [tag()]
+  def agent_kit_tags, do: @agent_kit_tags
+
+  @doc "Display name for an element family (shared by every reference surface)."
+  @spec family_label(atom()) :: String.t()
+  def family_label(:sem), do: "SemText"
+  def family_label(:npl), do: "NPL"
+  def family_label(:semext), do: "SemText Extensions"
+  def family_label(:"agent-kit"), do: "Agent Kit"
+
+  @doc "Pill label for an element page: the family plus the word element."
+  @spec family_pill(atom()) :: String.t()
+  def family_pill(family), do: family_label(family) <> " element"
 
   @doc "Which shipped JS file(s) provide a tag, or nil if the map predates it."
   @spec bundles_for(String.t()) :: map() | nil

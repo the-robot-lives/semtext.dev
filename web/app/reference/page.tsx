@@ -11,9 +11,9 @@ import {
 import { REFERENCE_BUCKETS } from "@/data/reference-buckets";
 
 export const metadata: Metadata = {
-  title: "Reference — every SemText and NPL tag",
+  title: "Reference — every SemText tag",
   description:
-    "Generated reference for every SemText (sem-*) and NPL (npl-) tag: options, children and an authored example, one page per element, built from the spec's schema files.",
+    "Generated reference for every SemText (sem-*), SemText extension (semext-*), Agent Kit (agent-kit-*) and NPL (npl-) tag: options, children and an authored example, one page per element, built from the spec's schema files.",
   alternates: { canonical: "https://semtext.dev/reference/" },
 };
 

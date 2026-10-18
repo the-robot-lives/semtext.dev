@@ -1,6 +1,6 @@
 defmodule SemtextWeb.Hologram.Pages.ReferenceAllTagsPage do
   @moduledoc """
-  /reference/all — every SemText and NPL element in one table (thread
+  /reference/all — every element in one table (thread
   858cc161): tag, family, description. The descriptions are the same
   plain-language copy the index cards and element pages show
   (priv/data/description-overrides.json, applied in Semtext.Reference.Tags).
@@ -22,7 +22,7 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceAllTagsPage do
   layout SiteLayout,
     page_title: "All tags — SemText reference",
     description:
-      "Every SemText and NPL element in one table: the tag, its family, and a plain-language description.",
+      "Every SemText, extension, Agent Kit and NPL element in one table: the tag, its family, and a plain-language description.",
     canonical: "https://semtext.dev/reference/all/",
     reference_assets: true
 
@@ -53,7 +53,8 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceAllTagsPage do
           Every tag, one table
         </h1>
         <p class="mt-4 max-w-3xl text-base leading-7 text-ink-mute">
-          All {@total} SemText and NPL elements — the tag, the family it
+          All {@total} elements across the SemText vocabulary, its
+          extension families and NPL — the tag, the family it
           belongs to, and what it does in one sentence each. The
           <a
             class="text-violet-soft underline decoration-white/30 underline-offset-4 hover:decoration-white/70"
@@ -86,7 +87,7 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceAllTagsPage do
                   <td>
                     <a class="ref-all-tag" href={row.href}><code class="font-mono">{row.name}</code></a>
                   </td>
-                  <td class="ref-all-family">{if row.family == :sem do "SemText" else "NPL" end}</td>
+                  <td class="ref-all-family">{Tags.family_label(row.family)}</td>
                   <td class="ref-all-desc">{row.description}</td>
                 </tr>
               {/for}

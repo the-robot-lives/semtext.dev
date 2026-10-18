@@ -79,8 +79,8 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
       # static page_title — matching the Next export's "<tag> — SemText
       # reference" (SSR escapes the angle brackets for us).
       page_title: "<#{t}> — SemText reference",
-      family_label: if(tag.family == :sem, do: "SemText", else: "NPL"),
-      family_pill: if(tag.family == :sem, do: "SemText element", else: "NPL element"),
+      family_label: Tags.family_label(tag.family),
+      family_pill: Tags.family_pill(tag.family),
       bucket_label: bucket_label(t) || "",
       summary: tag.summary,
       gap_note: gap_note,
