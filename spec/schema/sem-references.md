@@ -6,66 +6,44 @@ precede code.
 
 ## Scope semantics
 
-A numbered list of works or notes the prose cites. Each `sem-reference`
-is one citable entry carrying a `cite` locator; **inline citations are
-plain anchors** (`<a href="#refs-rfc-6749">`) and mint nothing. The
-element exists because a reference needs a field a `<li>` cannot carry
-(`cite`) and because backlinks and hover previews are reading
-affordances that need JS.
+A numbered list of works or notes the prose cites. Each `sem-reference` is
+one citable entry with an `id`; **inline citations are plain anchors**
+(`<a href="#r1">`) and mint nothing. The element exists because a
+reference needs fields a `<li>` cannot carry (`href`, `cite`) and because
+backlinks and hover previews are reading affordances that need JS.
 
 ## Authoring form
 
 ```html
-<p>Rotate refresh tokens per use<a href="#refs-rfc-6749">[1]</a>.</p>
+<p>Rotate refresh tokens per use<a href="#r-rfc">[1]</a>.</p>
 
-<sem-references id="refs" kind="bibliography">
-  <sem-reference cite="https://www.rfc-editor.org/rfc/rfc6749">
+<sem-references id="refs" kind="bibliography" role="list">
+  <sem-reference id="r-rfc" role="listitem"
+       href="https://www.rfc-editor.org/rfc/rfc6749" cite="RFC 6749">
     The OAuth 2.0 Authorization Framework, §10.4.
   </sem-reference>
-  <sem-reference cite="RFC 6749">A short-label note; same slug rule.</sem-reference>
+  <sem-reference id="r-note" role="listitem">
+    A footnote with no external target.
+  </sem-reference>
 </sem-references>
 ```
 
-Class-form alias (conventions Appendix A): `div.sem-references[data-kind]` › `div.sem-reference[data-cite]`.
+Class-form alias (conventions Appendix A): `div.sem-references[data-kind]` › `div.sem-reference[id][data-href][data-cite]`.
 Parameters are read as `data-<name>` first, then bare `<name>`.
 
 - `kind`: `footnotes` | `bibliography` (free token; these two get
   distinct styling). Optional.
-- `sem-reference`:
-  - `cite` (**required**, v0.6): the locator — a path or URL. This is
-    the canonical authoring form; the element exists to carry it.
-  - `href` (optional): accepted as a compat alias of `cite` for
-    pre-v0.6 documents; when both are present `cite` wins for the
-    auto-id and the external link uses whichever is a URL. Not authored
-    in new documents.
-  - `id` (optional, **not authored** in new documents): the citation
-    target. The AUTO-ID rule materializes it at runtime (below), so an
-    author never makes one up.
-  - Text = the reference's description.
+- `sem-reference`: the citable entry; its text is the reference's
+  description.
+- `id` (required; on each `sem-reference`): the citation target — the
+  global `id`.
+- `href` (optional; on each `sem-reference`): external location
+  (`data-href` in the class form).
+- `cite` (optional; on each `sem-reference`): short citation label
+  (`RFC 6749`).
 - Inline citation: any `<a href="#<reference-id>">` outside the references
   container. Its text is the author's (`[1]`, `¹`, a name) — the vocabulary
-  does not renumber authored citation text. An author citing an
-  auto-id'd reference composes the anchor from the AUTO-ID rule below.
-
-### AUTO-ID rule (v0.6, normative)
-
-For a `sem-reference` with `cite` and no authored `id`, the runtime (and
-any consumer applying the same pure function) materializes:
-
-```
-id = <block-id> + "-" + slug(cite)
-```
-
-- `<block-id>` is the parent `sem-references` block's `id`, defaulting
-  to `refs` when the block has none.
-- `slug(cite)`: lowercase the string, then replace every run of
-  non-alphanumeric characters with a single `-`, then strip leading and
-  trailing `-`. `Projects/github-tools/docs/gh-wait.md` (under block
-  `refs`) → `refs-projects-github-tools-docs-gh-wait-md`.
-  `RFC 6749` → `refs-rfc-6749`.
-- An authored `id` always wins; the runtime never overwrites one.
-- The function is pure, so a machine consumer can compose citation
-  anchors from `cite` without running the document.
+  does not renumber authored citation text.
 
 ## Rendered form
 
@@ -77,7 +55,9 @@ id = <block-id> + "-" + slug(cite)
 - `kind="bibliography"` uses a hanging indent; `kind="footnotes"` a
   compact list.
 
-### Fallback (reading bundle)
+### Enhanced (reading handler, `src/reading/references.ts`; the Lit
+component `SemReferences` claims `data-sem-upgraded` at connect and runs
+the same function once its `sem-reference` children exist)
 
 - Every citing anchor gets the runtime class `.sem-references-ref` and a
   hover / focus **preview popover** (`src/shared/popover.ts`) showing the
@@ -85,20 +65,15 @@ id = <block-id> + "-" + slug(cite)
 - Every cited reference gets `.sem-references-backlinks` appended: one
   `<a>` per citing anchor, `aria-label="Back to citation N"`, pointing at
   that anchor (which is given an id when it has none).
-- A reference with a URL locator (`cite` or `href`, whichever is a URL)
-  gets `.sem-references-link`, an external link to it, appended.
-- The container carries `data-sem-fallback` once wired.
-
-### Upgraded (Lit `SemReferences`)
-
-- Thin wrapper: claims `data-sem-upgraded`, clears `data-sem-fallback`,
-  then calls the bundle's enhance function once its `sem-reference`
-  children exist. Idempotent per anchor and per reference.
+- A reference with `data-href` gets `.sem-references-link`, an external
+  link to it, appended.
+- The container carries `data-sem-upgraded` once wired (idempotent per
+  anchor and per reference).
 
 ### JS-off
 
 - Numbered list, `:target` highlight, no backlinks, no popover.
-- Print: each reference with a URL locator shows `(url)` after its text —
+- Print: each reference with an `href` shows `(href)` after its text —
   inside the references block only, never at the citation.
 
 ## Events
@@ -107,9 +82,7 @@ None.
 
 ## A11y contract
 
-- List presentation comes from the element's box; `role="list"` /
-  `role="listitem"` may be authored but are **optional** (v0.6 — same
-  rule as `sem-procedure`).
+- `role="list"` / `role="listitem"` authored in markup.
 - Backlinks carry `aria-label="Back to citation N"`.
 - The preview is `role="tooltip"`; while shown, the citing anchor carries
   `aria-describedby` pointing at it; `Esc` dismisses; it opens on focus as

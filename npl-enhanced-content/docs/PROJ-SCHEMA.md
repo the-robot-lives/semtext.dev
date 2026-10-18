@@ -49,6 +49,9 @@ write (`data-active`, `data-view-as` after a toggle, tier markers) is always
 | `<sem-reveal summary open>` | `div.sem-reveal[data-summary][open]` (hidden until the reader acts; `open` starts revealed — `collapsed` accepted, no-op; conventions §2) |
 | `<sem-tag-def tag name group children>` › `<sem-tag-attr name type required default allowed>` | `div.sem-tag-def[data-tag][data-name][data-group][data-children]` › `div.sem-tag-attr[data-name][data-type][data-required][data-default][data-allowed]` (reference card: native-table render, one structured record) |
 | `<sem-api-call name method endpoint status>` › `<sem-api-param name in type required default allowed>` | `div.sem-api-call[data-name][data-method][data-endpoint][data-status]` › `div.sem-api-param[data-name][data-in][data-type][data-required][data-default][data-allowed]` (`in` = query\|header\|body\|response) |
+| `<sem-workflow kind duration label>` › `<sem-step action description gate check if-no output status>` | `div.sem-workflow[data-kind][data-duration][data-label]` › `div.sem-step[data-action][…][data-status]` (`action` required in workflow context — validator childForm; JS-on `if-no` branch) |
+| `<sem-site-tree label mode>` › `<node path label kind collapsed>` | `div.sem-site-tree[data-label][data-mode]` › `div.sem-node[data-path][data-label][data-kind]`, nested (`path` required in tree context; JS-off a static nested list) |
+| `<sem-file-tree mode label>` › `<pre>` (text form) | `div.sem-file-tree[data-mode][data-label]`; the authored `<pre>` IS the record — JS-on view rows + collapse/filter/find share the sem-site-tree engine |
 | `<sem-progress value label>` | `div.sem-progress[data-value][data-label]` |
 | `<sem-audiences>` › `<sem-profile id label implies>`; `audience="…"` | `div.sem-audiences` › `div.sem-profile[id][data-label][data-implies]`; `data-audience` |
 
@@ -104,7 +107,7 @@ Change order: schema → spec → code.
 | `spec/conventions.md` | Authoring spec source of truth (v0.5 draft, tag form canonical) | Markdown, 10 sections + open questions + Appendix A (class-form alias) |
 | `spec/conventions.html` | The spec as a SemText document in the canonical tag form (dogfood) | Folder-form XHTML: linked theme + vocabulary CSS, shipped bundles by `src`, no inline CSS/JS |
 | `web/demo/reading-lit.html` | Reference tag-form document, both tiers | Single-file XHTML, `sem:inline` markers |
-| `web/demo/index.html` | Reference class-form alias document (v0.4 baseline) | Single-file XHTML: inlined vocabulary CSS + `sem-fallback` vanilla JS |
+| `web/demo/index.html` | Reference class-form alias document (v0.4 baseline) | Single-file XHTML: inlined vocabulary CSS + vanilla JS |
 
 ## 4. Config file schemas
 
@@ -113,7 +116,7 @@ Change order: schema → spec → code.
 | Field | Value |
 |-------|-------|
 | `type` | `module` |
-| `exports` | `./lit` → `dist/semtext.js`, `./fallback` → `dist/semtext-fallback.js`, `./reading` → `dist/semtext-reading.js`, `./extract` → `dist/semtext-extract.js`, `./md` → `dist/semtext-md.js`, `./themes/*` → `themes/*`. No `.` export — each artifact is a classic IIFE script that installs a global and exports nothing (D9). |
+| `exports` | `./lit` → `dist/semtext.js`, `./lazy` → `dist/semtext-lazy.js`, `./npl` → `dist/npl.js`, `./npl-lazy` → `dist/npl-lazy.js`, `./agent` → `dist/semtext-agent.js`, `./themes/*` → `themes/*`. No `.` export — each artifact is a classic IIFE script that installs a global and exports nothing (D9). The retired per-tier exports (`./fallback`, `./reading`, `./extract`, `./md`) are gone as of 0.9.0. |
 | `files` | `dist`, `themes` |
 | `dependencies` | `lit ^3.3.3` |
 | `devDependencies` | `cypress ^15`, `typescript ^5.6`, `vite ^6`, `vitest ^5`, `happy-dom ^20` |

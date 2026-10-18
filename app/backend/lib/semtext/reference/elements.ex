@@ -46,11 +46,13 @@ defmodule Semtext.Reference.Elements do
     end
 
     defp family("sem"), do: :sem
-  defp family("npl"), do: :npl
+    defp family("npl"), do: :npl
+    defp family("semext"), do: :semext
+    defp family("agent-kit"), do: :"agent-kit"
 
-  defp family(other), do: raise("unknown element family in elements.json: #{inspect(other)}")
+    defp family(other), do: raise("unknown element family in elements.json: #{inspect(other)}")
 
-  def normalize_attr(a) do
+    def normalize_attr(a) do
       %{
         name: a["name"],
         required: a["required"],

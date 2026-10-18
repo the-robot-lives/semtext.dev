@@ -54,6 +54,8 @@ defmodule Semtext.Reference.Buckets do
           "sem-reader",
           "sem-audiences",
           "sem-profile",
+          "sem-site-tree",
+          "sem-file-tree",
           "agent"
         ]
       ),
@@ -107,7 +109,8 @@ defmodule Semtext.Reference.Buckets do
           "sem-event",
           "sem-procedure",
           "sem-step",
-          "sem-progress"
+          "sem-progress",
+          "sem-workflow"
         ]
       ),
       Norm.bucket_def("definitions", "Definitions & citations",
@@ -121,6 +124,31 @@ defmodule Semtext.Reference.Buckets do
           "sem-tag-attr",
           "sem-api-call",
           "sem-api-param"
+        ]
+      ),
+      Norm.bucket_def("knowledge", "Knowledge & guides",
+        description: "Standalone knowledge artifacts — knowledge bases, FAQs, howtos, runbooks, troubleshooting guides, plans, requirements, changelogs, assessments and guard rails — the document containers the vocabulary epic absorbed from upstream.",
+        names: [
+          "sem-kb",
+          "sem-faqs",
+          "sem-faq",
+          "sem-howto",
+          "sem-runbook",
+          "sem-tsgs",
+          "sem-tsg",
+          "sem-philosophy",
+          "sem-plan",
+          "sem-requirement",
+          "sem-changelogs",
+          "sem-changelog",
+          "sem-tldr",
+          "sem-summary",
+          "sem-eval",
+          "sem-rubric",
+          "sem-threat-model",
+          "sem-mockup",
+          "sem-guard-rails",
+          "sem-guard-rail"
         ]
       )
       ]
