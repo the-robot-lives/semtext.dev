@@ -121,8 +121,12 @@ const targets = [
     // sem-workflow / sem-site-tree / sem-file-tree + the shared tree engine
     // joined the single bundle per the no-CSS-only-tags registration
     // contract — 150.1 on that base, 151.5 after the family A merge).
-    // Recorded in ROADMAP "Size budgets".
-    budgetKb: 152,
+    // 152 → 162 KB (2026-10-18, sem-bind: the live-data runtime joined
+    // the single bundle — parse/fetch/popup-login/poll plus the payload
+    // intake on sem-progress / sem-procedure / sem-plan / sem-runbook /
+    // sem-workflow; sem-progress + sem-procedure graduated from the
+    // claim stubs; measured 161.3). Recorded in ROADMAP "Size budgets".
+    budgetKb: 162,
     required: true,
   },
   {

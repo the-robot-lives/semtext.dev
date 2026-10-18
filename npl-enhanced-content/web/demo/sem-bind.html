@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en" data-sem-theme="minimal-tech-light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SemText · sem-bind — live data on sem-* elements</title>
+<!-- sem:inline theme minimal-tech-light -->
+<!-- sem:inline vocabulary -->
+<style>
+  .sem-enhanced-document { max-width: 46rem; margin: 0 auto; padding: 2.5rem 1rem; }
+  h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.01em; margin: 0 0 .5rem; }
+  h2 { font-size: 1.15rem; font-weight: 600; margin: 2.25rem 0 .5rem; }
+  p  { margin: .6rem 0; }
+  code { font-size: .9em; }
+</style>
+<!-- sem-bind demo: one pipeline, every source. JS-off the page reads as
+     prose + the authed record; JS-on the binds fetch, poll and hydrate.
+     Served from dist/demo/ (npm run build, then npm run serve). -->
+<!-- sem:inline bundle -->
+</head>
+
+<body>
+<div class="sem-enhanced-document">
+  <h1>sem-bind — live data on sem-* elements</h1>
+  <p>One hydration pipe for every source: a plain URL (static JSON, no
+  auth), an <code>agent-kit/…</code> shorthand (the agentonomi status
+  routes, bearer-token auth with popup login on 401), or a direct
+  <code>payload</code> property (no server at all — demos and tests).
+  Token lives in <code>localStorage["semtext.bind.token"]</code>, per
+  origin, never a cookie.</p>
+
+  <h2>Static JSON — percent progress</h2>
+  <p><code>./data/progress-percent.json</code> → <code>{percent, comment}</code>.
+  Progress binds poll (30s default); this one is tightened to 15s via
+  <code>sem-refresh="15"</code> so the refetch is visible in devtools.</p>
+  <sem-progress sem-bind="./data/progress-percent.json" sem-refresh="15"></sem-progress>
+  <pre>{ "percent": 42, "comment": "scouting repos" }</pre>
+
+  <h2>Static JSON — step / steps progress</h2>
+  <p>The fraction form: <code>{step: 3, steps: 7, comment}</code> renders
+  the same meter at step/steps with a <code>step 3 / 7</code> caption.</p>
+  <sem-progress sem-bind="./data/progress-steps.json"></sem-progress>
+  <pre>{ "step": 3, "steps": 7, "comment": "building KV table" }</pre>
+
+  <h2>Direct payload — no server</h2>
+  <p>The inline script below assigns <code>el.payload = {...}</code>;
+  with JavaScript off these two stay empty — payload intake is a JS-on
+  surface by definition.</p>
+  <sem-progress id="payload-percent"></sem-progress>
+  <sem-progress id="payload-steps"></sem-progress>
+  <script>
+    document.getElementById('payload-percent').payload = { percent: 68, comment: 'hydrate from a property — no fetch' };
+    document.getElementById('payload-steps').payload = { step: 5, steps: 8, comment: 'same pipe, direct intake' };
+  </script>
+
+  <h2>Plan + status dictionary</h2>
+  <p><code>./data/plan-status.json</code> carries a plan body and a
+  per-step dictionary — every catalog status plus a taken fork (single
+  object) and a walked sequence (array). The fetched definition REPLACES
+  the authored steps below once it lands; with JavaScript off the
+  authored record is what reads.</p>
+  <sem-procedure id="plan-bound" kind="runbook" sem-bind="./data/plan-status.json">
+    <sem-step id="s1" status="done">authored placeholder — replaced by the fetched plan</sem-step>
+    <sem-step id="s2">authored placeholder</sem-step>
+  </sem-procedure>
+
+  <h2>agent-kit shorthand + error states</h2>
+  <p><code>agent-kit/{org}/proj/{project}/progress/{id}</code> resolves to
+  <code>https://agentonomi.com/status/…</code>. Without a session this
+  renders the bind error state — which is the point: a bound element
+  never sits blank and silent. With a token stored (the popup login flow
+  stores it under <code>semtext.bind.token</code>) it hydrates and polls.</p>
+  <sem-progress sem-bind="agent-kit/demo-org/proj/semtext/progress/demo-1"></sem-progress>
+  <p>An unparseable bind value renders the error state too:</p>
+  <sem-progress sem-bind="not-a-bind"></sem-progress>
+
+  <h2>Auth flow</h2>
+  <p>On a 401 from any host the runtime opens
+  <code>https://agentonomi.com/embed/authorize?redirect_uri=…&amp;state=…</code>
+  in a popup; the embed posts
+  <code>{type: "semtext-bind-token", access_token, expires_in, state}</code>
+  back and closes. Popup blocked → full-page redirect; the token returns
+  in the <code>#access_token=…</code> fragment and is verified, stored and
+  stripped on the next load.</p>
+</div>
+</body>
+</html>
