@@ -74,7 +74,7 @@ guardrail discipline they document.
 
 | Artifact | Budget | Measured (2026-10-13) |
 |---|---|---|
-| `semtext.js` (one bundle) | **152 KB** (raised from 126 — user decision 2026-10-14; 144 → 145 after family A containers, 2026-10-18; 145 → 152 after the interactive containers joined the single bundle the same day) | 151.5 raw / 47.1 gzipped with both lanes merged — in budget |
+| `semtext.js` (one bundle) | **162 KB** (raised from 126 — user decision 2026-10-14; 144 → 145 after family A containers, 2026-10-18; 145 → 152 after the interactive containers joined the single bundle the same day; 152 → 162 after the sem-bind runtime, 2026-10-18) | 161.3 raw / 50.2 gzipped with sem-bind — in budget |
 | `npl.js` | **52 KB** | 49.0 raw / 15.3 gzipped (2026-10-14) |
 | `semtext-agent.js` | **24 KB** | 20.4 raw / 7.3 gzipped (2026-10-14) |
 | `semtext-js-shell.js` | **256 KB** | 126.5 raw / 43.4 gzipped (2026-10-14) |
@@ -149,6 +149,13 @@ every schema tag answers `customElements.get()` once the core loads), the same
 sem-browser wiring, measured on the family A base. Measured 150.1 raw / 46.6
 gzipped on that base; 151.5 raw / 47.1 gzipped once both lanes merged — inside
 the new line.
+
+Core bundle budget (2026-10-18) raised `semtext.js` 152 → 162 KB raw: the
+sem-bind live-data runtime (parse → fetch → hydrate, bearer-token storage,
+popup/redirect authorize flow, progress polling) joined the single bundle with
+the payload intake on five elements (sem-progress / sem-procedure graduated
+from the claim stubs; sem-plan / sem-runbook / sem-workflow rebased on
+`BindableElement`). Measured 161.3 raw / 50.2 gzipped — inside the new line.
 
 
 ## History (recorded decisions — preserved)

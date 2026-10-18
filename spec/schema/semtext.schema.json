@@ -355,6 +355,25 @@
         }
       }
     },
+    "sem-thought": {
+      "source": "spec/schema/sem-thought.md",
+      "record": false,
+      "attributes": {
+        "type": {
+          "type": "token",
+          "values": [
+            "observation",
+            "reflection",
+            "assumption",
+            "mind-read",
+            "tangent",
+            "concern"
+          ],
+          "severityOnUnknown": "warning",
+          "note": "unknown type degrades to plain text on upgrade (sem-thought.md); display-only, mints no record"
+        }
+      }
+    },
     "sem-tldr": {
       "source": "spec/schema/sem-tldr.md",
       "record": true,
