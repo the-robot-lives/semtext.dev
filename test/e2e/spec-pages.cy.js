@@ -165,10 +165,11 @@ PAGES.forEach((page) => {
     it('is shipped to dist/spec/ with rewritten asset paths and a themes copy', () => {
       cy.request(page.url).its('body').then((html) => {
         expect(html).not.to.contain('../dist/');
-        // one runtime (0.9.0): the single bundle ships deferred
-        expect(html).to.match(/<script[^>]*\bsrc="\.\.\/semtext\.js">/);
+        // v0.7 ships one deferred bundle (was four unbundled <script src> tags)
+        expect(html).to.match(/<script defer src="\.\.\/semtext\.js">/);
         expect(html).to.match(/<link rel="stylesheet" href="\.\.\/themes\/_vocabulary\.css">/);
         // escaped examples are text, not tags: the rewrite must not touch them
+        // (v0.7 dropped the /latest/ segment from the listing)
         expect(html).to.contain('href="semtext/semtext.css"');
       });
       cy.request('/themes/_vocabulary.css').its('status').should('eq', 200);
@@ -178,8 +179,9 @@ PAGES.forEach((page) => {
     it('every linked stylesheet and script resolves', () => {
       cy.request(page.url).its('body').then((html) => {
         const urls = assetUrls(html, page.url);
-        // one runtime (0.9.0): three stylesheets + the single deferred bundle
-        expect(urls.length, 'linked assets').to.be.greaterThanOrEqual(4);
+        // v0.7 consolidated the bundles: 3 stylesheets + the one deferred
+        // script = 4 linked assets; the guard trips if a rewrite strips any
+        expect(urls.length, 'linked assets').to.be.greaterThan(3);
         urls.forEach((u) => cy.request(u).its('status').should('eq', 200));
       });
     });
@@ -224,13 +226,11 @@ PAGES.forEach((page) => {
         cy.visit(page.nojs);
         cy.get('[data-sem-fallback], [data-sem-upgraded]').should('not.exist');
         cy.get('.sem-reader-chrome, .sem-source-chrome, .sem-source-fence, .sem-facts-chrome, .sem-views-tabs, .sem-code-chrome, .sem-table-chrome, .sem-occluded').should('not.exist');
+        // v0.7 renamed the fact child sem-distractor → incorrect-statement
         ['sem-note[collapsed]', 'sem-fact conclusion', 'incorrect-statement', 'sem-view', 'sem-reveal', 'highlight', 'sem-step', 'sem-property', 'sem-event', 'sem-code pre', 'sem-table table', 'sem-reference', '[audience]', 'sem-md']
           .forEach((sel) => cy.get(sel).should('have.length.greaterThan', 0).each(($el) => cy.wrap($el).should('be.visible')));
-        // the source wrapper is transparent: its rendered children are in flow.
-        // Structural wrappers with no authored text (e.g. a sem-site-tree of
-        // empty leaf nodes) render zero-size JS-off; the invariant covers text.
-        cy.get('sem-source > :not(.sem-source-chrome, .sem-source-fence, script)')
-          .each(($el) => { if ($el[0].textContent.trim()) cy.wrap($el).should('be.visible'); });
+        // the source wrapper is transparent: its rendered children are in flow
+        cy.get('sem-source > :not(.sem-source-chrome, .sem-source-fence, script)').each(($el) => cy.wrap($el).should('be.visible'));
         // no script mirrored anything: the bare spelling alone renders the JS-off captions
         cy.get('sem-view[name]:not([data-name])').should('have.length.greaterThan', 0);
         cy.get('sem-reveal[summary]:not([data-summary])').should('have.length.greaterThan', 0);
