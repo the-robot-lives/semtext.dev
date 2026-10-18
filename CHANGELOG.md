@@ -22,7 +22,6 @@
 - `test (e2e 1/3)` red on every run since 231630e7 (#146, vocabulary v0.7 spec-page regen): the spec's assertions still described the v0.6 artifact — the four-bundle script train (7 linked assets), a `defer`-less script tag, `semtext/latest/semtext.css` in the escaped listing and the `sem-distractor` element name. CI serves a fresh build and failed 3 tests deterministically; the local 14/14 greens were an artifact of a stale pre-#146 `dist/`, not runner speed — the slow-runner-timeout theory in the #182/#184 evidence comments is wrong.
 - repinned the four stale assertions to the v0.7 contract (one deferred bundle → 4 linked assets, `semtext/semtext.css` listing, `incorrect-statement`): spec-pages 13/14 green against a fresh build; shards 2/3 and `npm run build` green.
 - the 14th test now fails honestly where #146's red masked it: the live `sem-site-tree` demo renders 0x0 in the nojs artifact — v0.7's schema (`spec/schema/sem-site-tree.md`) specifies CSS-only JS-off rendering (`attr(label)` / `attr(path)` chrome) that `themes/_vocabulary.css` does not implement yet, and the schema's promised `sem-site-tree.cy.js` was never written. Product fix (vocabulary CSS / page demo) deferred to the follow-up pass; not papered over with a test exemption.
->>>>>>> origin/develop
 
 ## 2026-10-18 (claude-mods: semtext Claude Code mod)
 - claude-mods/semtext — Claude Code mod: detects SemText sem-* docs, inline annotation + outline pane + validation (#183)
