@@ -8,6 +8,7 @@ import { SemElement } from './base.js';
  * `payload` property) → JSON → element hydration. Two bind forms:
  *
  *   sem-bind="https://example.com/status.json"            plain fetch (no auth unless 401)
+ *   sem-bind="./data/x.json"                              same-origin relative path (against document.baseURI)
  *   sem-bind="agent-kit/{org}/proj/{project}/{kind}/{id}" → https://agentonomi.com/status/{org}/proj/{project}/{kind}/{id}
  *
  * Auth (agentonomi embed contract): the Guardian access token is stored
@@ -66,16 +67,22 @@ const AGENT_KIT_RE = /^agent-kit\/([^/\s]+)\/proj\/([^/\s]+)\/([^/\s]+)\/([^/\s]
 /**
  * Parse a `sem-bind` attribute value. Full https? URL → direct fetch;
  * `agent-kit/{org}/proj/{project}/{kind}/{id}` → the agentonomi status
- * route; anything else (empty, relative, other scheme, malformed
- * agent-kit path) → null (the host renders a bind error).
+ * route; anything else resolves against the document base (`base`
+ * overrides, for tests and non-browser callers) so a same-origin
+ * relative path — `./data/x.json`, `/api/plan.json` — is a legitimate
+ * direct-fetch bind when it resolves to http(s). Values that resolve
+ * elsewhere (other scheme, garbage) → null (the host renders a bind
+ * error). A botched `agent-kit/…` path stays null too: it should never
+ * silently become a bogus relative fetch of `page/agent-kit/…`.
  */
-export function parseBind(raw: string | null | undefined): BindRef | null {
+export function parseBind(raw: string | null | undefined, base?: string): BindRef | null {
   if (typeof raw !== 'string') return null;
   const value = raw.trim();
   if (!value) return null;
   if (/^https?:\/\//i.test(value)) return { kind: 'url', url: value };
-  const m = AGENT_KIT_RE.exec(value);
-  if (m) {
+  if (value.startsWith('agent-kit/')) {
+    const m = AGENT_KIT_RE.exec(value);
+    if (!m) return null;
     const [, org, project, resource, id] = m;
     return {
       kind: 'agent-kit',
@@ -85,6 +92,16 @@ export function parseBind(raw: string | null | undefined): BindRef | null {
       id,
       url: `${AGENTONOMI_ORIGIN}/status/${encodeURIComponent(org)}/proj/${encodeURIComponent(project)}/${encodeURIComponent(resource)}/${encodeURIComponent(id)}`,
     };
+  }
+  const baseUrl = base ?? (typeof document !== 'undefined' && document.baseURI ? document.baseURI : undefined);
+  if (!baseUrl) return null;
+  try {
+    const resolved = new URL(value, baseUrl);
+    if (resolved.protocol === 'https:' || resolved.protocol === 'http:') {
+      return { kind: 'url', url: resolved.href };
+    }
+  } catch {
+    /* not a URL against any base — fall through to null */
   }
   return null;
 }
@@ -456,11 +473,16 @@ function commentNode(text: string): HTMLElement {
  * Plan / run-book / workflow payload intake:
  *
  *   {plan: "<markup>", status: {"<step-key>": {status, comment, choice, …}}}
+ *   {definition: {steps: [...]}, status: {…}}   — the agentonomi
+ *     `{definition, status}` GET shape for a fully KV-defined record
  *
  * `plan` (optional) BECOMES the element body — authored children are
  * replaced, the fetched definition is the record now (a payload without
  * `plan` leaves authored children alone and only applies the dictionary,
- * so status-only updates never wipe a hand-authored procedure). The
+ * so status-only updates never wipe a hand-authored procedure). A
+ * definition OBJECT carrying a `steps` array (strings or
+ * `{id|key, label|title}`) generates the step list when the element has
+ * no authored children to annotate; authored children always win. The
  * status dictionary maps step keys (step `id` / `data-id` / `data-key`)
  * to a status class, a comment line, and a `choice` — a single object
  * renders as the one fork taken, an array as the walked sequence in
@@ -478,6 +500,10 @@ export function hydratePlan(el: HTMLElement, payload: Record<string, unknown>): 
     body.appendChild(sanitizeMarkup(payload.plan));
     el.appendChild(body);
   }
+  const definition = payload.definition;
+  if (definition != null && typeof definition === 'object' && !Array.isArray(definition)) {
+    generateDefinitionSteps(el, definition as Record<string, unknown>);
+  }
   if (payload.status != null) {
     if (typeof payload.status !== 'object' || Array.isArray(payload.status)) {
       renderBindState(el, 'error', 'status dictionary must be an object');
@@ -485,6 +511,57 @@ export function hydratePlan(el: HTMLElement, payload: Record<string, unknown>): 
     }
     applyStatusDictionary(el, payload.status as Record<string, unknown>);
   }
+}
+
+/**
+ * Fully-KV-defined plans: the definition is data, not markup. When the
+ * element carries no authored children to annotate, its `steps` array
+ * becomes a generated sem-step list — keyed by `id` / `key` (strings key
+ * by their own text) so the status dictionary annotates the generated
+ * record exactly like an authored one. Authored children always win: an
+ * element with content of its own is never overwritten by the fetched
+ * definition, and a definition without steps is a harmless pass-through.
+ */
+function generateDefinitionSteps(el: HTMLElement, definition: Record<string, unknown>): void {
+  if (!Array.isArray(definition.steps)) return;
+  if (hasAuthoredChildren(el)) return;
+  el.querySelectorAll('.sem-bind-definition').forEach((n) => n.remove()); // re-hydration replaces
+  const list = marked(document.createElement('div'));
+  list.className = 'sem-bind-definition';
+  definition.steps.forEach((step, index) => {
+    const { key, label } = stepKeyLabel(step, index);
+    const node = document.createElement('sem-step');
+    node.setAttribute('id', key);
+    node.textContent = label;
+    list.appendChild(node);
+  });
+  el.appendChild(list);
+}
+
+/** Authored content other than bind chrome — generated steps never clobber it. */
+function hasAuthoredChildren(el: HTMLElement): boolean {
+  return Array.from(el.children).some(
+    (child) => !child.classList.contains('sem-bind-state') && !child.hasAttribute(BIND_RENDER),
+  );
+}
+
+/** Step key + label from a definition-steps entry; never throws on odd shapes. */
+function stepKeyLabel(step: unknown, index: number): { key: string; label: string } {
+  if (typeof step === 'string') {
+    return { key: step, label: step };
+  }
+  if (step != null && typeof step === 'object') {
+    const s = step as Record<string, unknown>;
+    const isText = (v: unknown): v is string => typeof v === 'string' && v.trim() !== '';
+    const key = [s.id, s.key].find(isText);
+    const label = [s.label, s.title].find(isText);
+    if (key || label) {
+      const k = key ?? (label as string);
+      return { key: k, label: label ?? k };
+    }
+  }
+  const label = step != null && typeof step === 'object' ? JSON.stringify(step) : String(step);
+  return { key: `step-${index + 1}`, label };
 }
 
 /** Map a payload status onto the vocabulary's step status catalog. */

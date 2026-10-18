@@ -22,12 +22,17 @@
 <body>
 <div class="sem-enhanced-document">
   <h1>sem-bind — live data on sem-* elements</h1>
-  <p>One hydration pipe for every source: a plain URL (static JSON, no
-  auth), an <code>agent-kit/…</code> shorthand (the agentonomi status
+  <p>One hydration pipe for every source: a plain URL — a full
+  <code>https://…</code> address or a same-origin relative path like
+  <code>./data/…</code> resolved against this page (static JSON, no
+  auth) — an <code>agent-kit/…</code> shorthand (the agentonomi status
   routes, bearer-token auth with popup login on 401), or a direct
   <code>payload</code> property (no server at all — demos and tests).
   Token lives in <code>localStorage["semtext.bind.token"]</code>, per
   origin, never a cookie.</p>
+  <p>A bound element attaches once: later <code>sem-bind</code>
+  attribute changes are ignored by the attach guard — reload the page
+  to repoint a bind.</p>
 
   <h2>Static JSON — percent progress</h2>
   <p><code>./data/progress-percent.json</code> → <code>{percent, comment}</code>.
@@ -64,15 +69,41 @@
     <sem-step id="s2">authored placeholder</sem-step>
   </sem-procedure>
 
-  <h2>agent-kit shorthand + error states</h2>
-  <p><code>agent-kit/{org}/proj/{project}/progress/{id}</code> resolves to
-  <code>https://agentonomi.com/status/…</code>. Without a session this
-  renders the bind error state — which is the point: a bound element
-  never sits blank and silent. With a token stored (the popup login flow
-  stores it under <code>semtext.bind.token</code>) it hydrates and polls.</p>
+  <h2>Plan from a KV definition — the agentonomi {definition, status} shape</h2>
+  <p><code>./data/plan-definition.json</code> carries no <code>plan</code>
+  markup at all — just a <code>definition</code> object whose
+  <code>steps</code> array (strings or <code>{id|key, label|title}</code>)
+  plus the per-step <code>status</code> dictionary. This is exactly what
+  <code>GET /status/…/plan/{id}</code> returns from a fully KV-defined
+  record. The element below has no authored children, so hydration
+  generates the step list from the definition and the dictionary
+  annotates it like any authored record; authored children would win if
+  present. With JavaScript off this one stays empty — the definition
+  only exists in the fixture.</p>
+  <sem-plan sem-bind="./data/plan-definition.json"></sem-plan>
+  <pre>{ "definition": { "steps": [ {"id": "kv", "label": "…"}, … ] },
+  "status": { "kv": { "status": "complete", "comment": "…" }, … } }</pre>
+
+  <h2>agent-kit shorthand — a live record</h2>
+  <p><code>agent-kit/{org}/proj/{project}/{kind}/{id}</code> resolves to
+  <code>https://agentonomi.com/status/…</code>. This bind points at a
+  seeded demo row (<code>the-robot-lives/proj/infrastructure</code>,
+  progress <code>demo-1</code>): on 401 the login popup opens, and with a
+  token stored under <code>semtext.bind.token</code> it hydrates from
+  production and polls every 30s.</p>
+  <sem-progress sem-bind="agent-kit/the-robot-lives/proj/infrastructure/progress/demo-1"></sem-progress>
+
+  <h2>Deliberate error states</h2>
+  <p>This bind points at an org that does not exist. With no session it
+  renders the auth-pending line while the login flow runs; once a token
+  is stored the missing org answers 404 and the element settles into the
+  bind error state — on purpose:</p>
   <sem-progress sem-bind="agent-kit/demo-org/proj/semtext/progress/demo-1"></sem-progress>
-  <p>An unparseable bind value renders the error state too:</p>
-  <sem-progress sem-bind="not-a-bind"></sem-progress>
+  <p>A bind value that resolves to nothing — here a
+  <code>javascript:</code> URL, rejected by the scheme guard — renders
+  the unparseable-bind error without fetching:</p>
+  <sem-progress sem-bind="javascript:alert(1)"></sem-progress>
+  <p>A bound element never sits blank and silent.</p>
 
   <h2>Auth flow</h2>
   <p>On a 401 from any host the runtime opens

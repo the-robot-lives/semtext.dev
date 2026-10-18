@@ -126,7 +126,11 @@ const targets = [
     // intake on sem-progress / sem-procedure / sem-plan / sem-runbook /
     // sem-workflow; sem-progress + sem-procedure graduated from the
     // claim stubs; measured 161.3). Recorded in ROADMAP "Size budgets".
-    budgetKb: 162,
+    // 162 → 163 KB (2026-10-18, sem-bind demo-gap lane: relative-bind
+    // resolution against the document base and KV-definition step
+    // generation in hydratePlan; measured 162.4). Recorded in ROADMAP
+    // "Size budgets".
+    budgetKb: 163,
     required: true,
   },
   {

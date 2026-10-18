@@ -74,7 +74,7 @@ guardrail discipline they document.
 
 | Artifact | Budget | Measured (2026-10-13) |
 |---|---|---|
-| `semtext.js` (one bundle) | **162 KB** (raised from 126 — user decision 2026-10-14; 144 → 145 after family A containers, 2026-10-18; 145 → 152 after the interactive containers joined the single bundle the same day; 152 → 162 after the sem-bind runtime, 2026-10-18) | 161.3 raw / 50.2 gzipped with sem-bind — in budget |
+| `semtext.js` (one bundle) | **163 KB** (raised from 126 — user decision 2026-10-14; 144 → 145 after family A containers, 2026-10-18; 145 → 152 after the interactive containers joined the single bundle the same day; 152 → 162 after the sem-bind runtime, 2026-10-18; 162 → 163 after the sem-bind demo-gap lane — relative binds + KV-definition rendering — the same day) | 162.4 raw / 50.6 gzipped with sem-bind — in budget |
 | `npl.js` | **52 KB** | 49.0 raw / 15.3 gzipped (2026-10-14) |
 | `semtext-agent.js` | **24 KB** | 20.4 raw / 7.3 gzipped (2026-10-14) |
 | `semtext-js-shell.js` | **256 KB** | 126.5 raw / 43.4 gzipped (2026-10-14) |

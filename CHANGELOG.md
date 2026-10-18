@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-18 (sem-bind demo-gap lane: relative binds, seeded demo record, KV-defined plans render)
+- sem-bind runtime (`npl-enhanced-content/src/lit/bind.ts`): `parseBind` resolves same-origin relative binds against the document base (`./data/x.json`, `/api/plan.json` → direct fetch when the resolution is http(s); scheme-rejected values like `javascript:` stay unparseable, and a botched `agent-kit/…` path never falls through to a bogus relative fetch) — the demo's static `./data/…` binds hydrate for real now
+- `hydratePlan` renders fully KV-defined plans: an object `definition` carrying a `steps` array (strings or `{id|key, label|title}` entries) generates the keyed `sem-step` list on an element with no authored children, and the status dictionary annotates the generated record (status/comment/choice walk); authored children still win, string `plan` bodies unchanged, definitions without steps pass through harmlessly
+- demo `web/demo/sem-bind.html` + new fixture `data/plan-definition.json`: the live agent-kit bind points at the seeded `the-robot-lives/proj/infrastructure` demo row (progress `demo-1`); the nonexistent-org bind stays as the labeled 404 error-state demo; the unparseable example is now a scheme-rejected `javascript:` bind; attach-guard note (reload to repoint); new KV-definition section rendering the `{definition, status}` GET shape with no authored markup
+- unit tier 45 → 58 bind tests (parse resolution + guards, attach relative-fetch + botched-shorthand rejection, hydrate definition generation incl. shapeless entries and re-hydration); `npm run build` + full unit suite green; `semtext.js` budget ratcheted 162 → 163 KB (measured 162.4 raw / 50.6 gzip) per the ROADMAP "Size budgets" process
+
 ## 2026-10-18 (claude-mods: semtext Claude Code mod)
 - claude-mods/semtext — Claude Code mod: detects SemText sem-* docs, inline annotation + outline pane + validation (#183)
 
