@@ -39,7 +39,7 @@
     | Bucket | Elements | What it covers |
     | :-- | :-- | :-- |
     | **Document &amp; structure** | `sem-enhanced-document`, `sem-reader`, `sem-audiences` / `sem-profile`, `agent` | The root wrapper, reading chrome, audience declarations and document-level metadata that frame a SemText document |
-    | **Prose &amp; code** | `sem-md`, `sem-note`, `sem-code`, `sem-browser` | Content blocks beyond plain HTML -- Markdown bodies, callouts and source listings with provenance |
+    | **Prose &amp; code** | `sem-md`, `sem-note`, `sem-thought`, `sem-code`, `sem-browser` | Content blocks beyond plain HTML -- Markdown bodies, callouts, typed thought bubbles and source listings with provenance |
     | **Disclosure &amp; views** | `sem-details` / `sem-detail`, `highlight`, `sem-reveal`, `sem-source`, `sem-views` / `sem-view` | The same content under different reading interactions -- occluded detail, Q-A reveal, markup flip, perspective tabs |
     | **Facts &amp; recall** | `sem-facts` / `sem-fact`, `statement`, `conclusion`, `incorrect-statement`, `sem-question` / `sem-option` | Assertable statement/conclusion pairs -- the citable unit -- with the quiz candidates and distractors built on them |
     | **Data &amp; tables** | `sem-table`, `sem-data-visualizer`, `sem-data-source`, `sem-data-join`, `sem-data-query` | Authored tables and the data-visualizer's named buckets, joins and editable queries |
@@ -197,6 +197,17 @@
   &lt;nav aria-label="Contents"&gt;&hellip;optional, used verbatim&hellip;&lt;/nav&gt;
 &lt;/sem-reader&gt;</code></pre></sem-code>
   <p>One per document, first child of the wrapper. Reading bundle inserts <code>.sem-reader-chrome</code> (<code>role="region"</code>), generates the outline from <code>h2&hellip;h&lt;depth&gt;</code> when no nav is authored (<code>aria-current="location"</code> tracks the heading in view), and writes <code>data-sem-mode|type|font</code> and <code>data-color-mode</code> on <code>&lt;html&gt;</code> -- persisted via <code>localStorage</code>, fail-open. Audience writes the <code>sem-audience</code> hash parameter. No global key shortcuts. <strong>Mints nothing</strong>; extraction skips it whole (extraction &sect;3 rule 7). The <code>theme</code> control is R/W3. The live example is the bar at the top of this page.</p>
+
+  
+  <h4 id="e-thought">sem-thought -- typed thought bubble</h4>
+  <p>Display-only, mints nothing. <strong>Normative: <a href="#r-sem-thought">spec/schema/sem-thought.md</a>.</strong></p>
+  <sem-code id="c-thought" lang="html"><pre><code>&lt;sem-thought type="observation"&gt;The draft pulls one fact per section -- the outline says two.&lt;/sem-thought&gt;
+&lt;sem-thought type="mind-read"&gt;A skimming reader assumes rotation is automatic.&lt;/sem-thought&gt;</code></pre></sem-code>
+  <p><code>type="observation|reflection|assumption|mind-read|tangent|concern"</code>, optional -- no <code>type</code> is a plain bubble; an unknown <code>type</code> degrades to plain text (validator warning, not error). No collapsed state, no summary teaser, no events, no chrome: the body is the element's content; on upgrade the tier mirrors <code>type</code> to <code>data-type</code> and adds the class <code>sem-thought-&lt;type&gt;</code>. Light DOM, <code>role="note"</code>.</p>
+  <sem-source id="s-thought" label="Live: sem-thought">
+    <sem-thought id="x-thought" type="observation">The draft pulls one fact per section -- the outline says two.</sem-thought>
+    <sem-thought id="x-thought-mindread" type="mind-read">A skimming reader assumes rotation is automatic.</sem-thought>
+  </sem-source>
 
   
   <h4 id="e-audiences">sem-audiences / sem-profile -- reader profiles</h4>
@@ -699,6 +710,7 @@ themes/
     | `&lt;sem-enhanced-document&gt;` | `div.sem-enhanced-document` |
     | `&lt;agent&gt;` + name/bio/instructions | `div.sem-agent` &gt; `.sem-agent-name/-bio/-instructions` |
     | `&lt;sem-note variant="warning"&gt;` body | `div.sem-note[data-variant="warning"]` &gt; `.sem-note-body`; `collapsed` attr |
+    | `&lt;sem-thought type&gt;` body | `div.sem-thought[data-type]`; unknown `type` degrades to plain text |
     | `&lt;sem-audiences&gt;` / `&lt;sem-profile id label implies&gt;` | `div.sem-audiences` &gt; `div.sem-profile[id][data-label][data-implies]`; `audience="..."` - `data-audience` |
     | `&lt;sem-facts view-as="quiz"&gt;` | `div.sem-facts[data-view-as="quiz"]` |
     | `&lt;sem-fact&gt;` &gt; `&lt;statement&gt;` / `&lt;conclusion&gt;` | `div.sem-fact` &gt; `.sem-statement`, `.sem-conclusion` |
@@ -764,6 +776,7 @@ themes/
     <sem-reference id="r-conventions-md" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/conventions.md" cite="spec/conventions.md">The normative Markdown source of this page.</sem-reference>
     <sem-reference id="r-extraction" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/extraction.md" cite="spec/extraction.md">Extraction contract: record shape, emission rules, the central invariant, annotated plain text.</sem-reference>
     <sem-reference id="r-sem-note" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/schema/sem-note.md" cite="spec/schema/sem-note.md">Schema -- sem-note.</sem-reference>
+    <sem-reference id="r-sem-thought" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/schema/sem-thought.md" cite="spec/schema/sem-thought.md">Schema -- sem-thought.</sem-reference>
     <sem-reference id="r-sem-audiences" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/schema/sem-audiences.md" cite="spec/schema/sem-audiences.md">Schema -- sem-audiences / sem-profile.</sem-reference>
     <sem-reference id="r-sem-facts" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/schema/sem-facts.md" cite="spec/schema/sem-facts.md">Schema -- sem-facts / sem-fact.</sem-reference>
     <sem-reference id="r-sem-details" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/schema/sem-details.md" cite="spec/schema/sem-details.md">Schema -- sem-details / sem-detail.</sem-reference>
