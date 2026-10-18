@@ -1,0 +1,339 @@
+{
+  "$comment": [
+    "semtext.dev route parity manifest — the contract the parity harness runs",
+    "against (ExUnit layer app/backend/test/parity, Node driver app/scripts/parity/parity-check.mjs,",
+    "Cypress layer app/e2e). Every route the Next.js site (landing-preview web/) serves",
+    "at manifest-generation time, with the title/h1/key-text expectations the Hologram"
+  ],
+  "generatedAt": "2026-10-17",
+  "generatedFrom": "static export /Users/keithbrings/Work/Space/Noizu/Projects/semtext.dev/.claude/worktrees/feedback-r2-runtime/web/out (2026-10-17T19:34:59.358Z)",
+  "nextSite": {
+    "root": "/",
+    "trailingSlash": true,
+    "note": "Next.js static export uses trailing-slash URLs; the Hologram app serves extensionless paths. The harness normalizes: /docs/ == /docs."
+  },
+  "routes": [
+    {
+      "path": "/",
+      "kind": "page",
+      "owner": "port-landing",
+      "title": "SemText — one HTML file, in place of Markdown",
+      "h1": "One HTML file",
+      "keyText": [
+        "What it is not",
+        "Documents that do more than read"
+      ],
+      "selectors": [
+        "figure.code-window",
+        "section#scope",
+        "section#addons"
+      ]
+    },
+    {
+      "path": "/dataviz/",
+      "kind": "page",
+      "owner": "port-reference",
+      "title": "Data visualizer — SemText showcase",
+      "h1": "Data visualizer",
+      "keyText": [],
+      "selectors": [],
+      "note": "Assigned to port-reference by the coordinator (2026-10-14); ported in 5e46399."
+    },
+    {
+      "path": "/docs/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "Docs — SemText",
+      "h1": "Documentation",
+      "keyText": [
+        "CLI commands",
+        "semtext-validate",
+        "semtext format"
+      ],
+      "selectors": [
+        "section#cli-commands",
+        "section#showcase",
+        "nav[aria-label=\"Docs\"]"
+      ]
+    },
+    {
+      "path": "/elements/",
+      "kind": "soft-redirect",
+      "owner": "port-reference",
+      "title": "Redirecting to the tag reference — SemText",
+      "h1": "The elements moved",
+      "keyText": [
+        "/reference/"
+      ],
+      "selectors": [],
+      "redirectTarget": "/reference/",
+      "note": "Next serves a meta-refresh page (works from any static server; nginx 301s). Hologram parity: either a 3xx to /reference/ OR a 200 page carrying a meta refresh to /reference/. Ported by port-reference in 5e46399 (meta-refresh + manual link per the Next fallback)."
+    },
+    {
+      "path": "/extend/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "Extend — SemText",
+      "h1": "Extend the vocabulary",
+      "keyText": [],
+      "selectors": []
+    },
+    {
+      "path": "/integrations/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "Integrations — SemText",
+      "h1": "Documents that do more than read",
+      "keyText": [],
+      "selectors": []
+    },
+    {
+      "path": "/reference/",
+      "kind": "page",
+      "owner": "port-reference",
+      "title": "Reference — every SemText tag",
+      "h1": "Tag reference",
+      "keyText": [],
+      "selectors": [],
+      "note": "Index links every reference tag; the tag-page set below is generated from data/elements.json."
+    },
+    {
+      "path": "/showcase/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "Showcase — SemText",
+      "h1": "One format, real jobs",
+      "keyText": [],
+      "selectors": []
+    },
+    {
+      "path": "/themes/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "Themes — SemText",
+      "h1": "Themes",
+      "keyText": [],
+      "selectors": []
+    },
+    {
+      "path": "/themes/showcase/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "Theme showcase — SemText",
+      "h1": "Theme showcase",
+      "keyText": [],
+      "selectors": []
+    },
+    {
+      "path": "/showcase/agent/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "Agent — SemText showcase",
+      "h1": "An agent record, and what it may assert",
+      "keyText": [],
+      "selectors": []
+    },
+    {
+      "path": "/showcase/claude-md/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "CLAUDE.md — SemText showcase",
+      "h1": "CLAUDE.md, in one file for every reader",
+      "keyText": [],
+      "selectors": []
+    },
+    {
+      "path": "/showcase/command/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "Command — SemText showcase",
+      "h1": "A command spec, for the operator and the model",
+      "keyText": [],
+      "selectors": []
+    },
+    {
+      "path": "/showcase/data-viewer/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "Data viewer — SemText showcase",
+      "h1": "A data viewer with no viewer to build",
+      "keyText": [],
+      "selectors": []
+    },
+    {
+      "path": "/showcase/documentation/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "Documentation — SemText showcase",
+      "h1": "Documentation that keeps its provenance",
+      "keyText": [],
+      "selectors": []
+    },
+    {
+      "path": "/showcase/embedding/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "Embedding — SemText showcase",
+      "h1": "One source of truth, embedded where it is read",
+      "keyText": [],
+      "selectors": []
+    },
+    {
+      "path": "/showcase/onboarding/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "Onboarding — SemText showcase",
+      "h1": "Onboarding: a checklist that reads and tracks",
+      "keyText": [],
+      "selectors": []
+    },
+    {
+      "path": "/showcase/sem-shell/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "sem-shell — SemText showcase",
+      "h1": "sem-shell: the document, interactive",
+      "keyText": [],
+      "selectors": []
+    },
+    {
+      "path": "/showcase/skill/",
+      "kind": "page",
+      "owner": "port-docs",
+      "title": "Skill — SemText showcase",
+      "h1": "A skill file with its reference attached",
+      "keyText": [],
+      "selectors": []
+    },
+    {
+      "path": "/reference/<tag>/",
+      "kind": "template",
+      "owner": "port-reference",
+      "title": "<{tag}> — SemText reference",
+      "h1": "<{tag}>",
+      "keyText": [],
+      "selectors": [
+        "figure.code-window",
+        "#example-"
+      ],
+      "note": "One route per tag in referenceTags. The Hologram page must SSR every tag the Next site lists; a tag that 404s on Hologram is a per-tag GAP."
+    }
+  ],
+  "referenceTags": [
+    "agent-kit-acceptance-criteria",
+    "agent-kit-agent-persona",
+    "agent-kit-artifact",
+    "agent-kit-asset",
+    "agent-kit-board",
+    "agent-kit-bug",
+    "agent-kit-chatroom",
+    "agent-kit-cucumber",
+    "agent-kit-custom-assert",
+    "agent-kit-cypress",
+    "agent-kit-epic",
+    "agent-kit-issue",
+    "agent-kit-organization",
+    "agent-kit-project",
+    "agent-kit-review",
+    "agent-kit-sub-task",
+    "agent-kit-task",
+    "agent-kit-test-case",
+    "agent-kit-test-suite",
+    "agent-kit-ticket-ref",
+    "agent-kit-user-persona",
+    "agent-kit-user-story",
+    "highlight",
+    "npl-agent",
+    "npl-artifact",
+    "npl-cot",
+    "npl-critique",
+    "npl-declaration",
+    "npl-directive",
+    "npl-example",
+    "npl-flag",
+    "npl-flags",
+    "npl-hormones",
+    "npl-intent",
+    "npl-mindread",
+    "npl-mode",
+    "npl-mood",
+    "npl-poa",
+    "npl-ref",
+    "npl-rubric",
+    "npl-section",
+    "npl-thought",
+    "npl-vos",
+    "sem-api-call",
+    "sem-api-param",
+    "sem-audiences",
+    "sem-browser",
+    "sem-changelog",
+    "sem-changelogs",
+    "sem-chronology",
+    "sem-code",
+    "sem-data-join",
+    "sem-data-query",
+    "sem-data-source",
+    "sem-data-visualizer",
+    "sem-detail",
+    "sem-details",
+    "sem-eval",
+    "sem-event",
+    "sem-fact",
+    "sem-facts",
+    "sem-faq",
+    "sem-faqs",
+    "sem-file-tree",
+    "sem-guard-rail",
+    "sem-guard-rails",
+    "sem-howto",
+    "sem-kb",
+    "sem-md",
+    "sem-mockup",
+    "sem-note",
+    "sem-philosophy",
+    "sem-plan",
+    "sem-procedure",
+    "sem-profile",
+    "sem-progress",
+    "sem-properties",
+    "sem-property",
+    "sem-reader",
+    "sem-reference",
+    "sem-references",
+    "sem-requirement",
+    "sem-reveal",
+    "sem-rubric",
+    "sem-runbook",
+    "sem-site-tree",
+    "sem-source",
+    "sem-step",
+    "sem-summary",
+    "sem-table",
+    "sem-tag-attr",
+    "sem-tag-def",
+    "sem-threat-model",
+    "sem-tldr",
+    "sem-tsg",
+    "sem-tsgs",
+    "sem-view",
+    "sem-views",
+    "sem-workflow",
+    "semext-annotate",
+    "semext-docptr",
+    "semext-media-prompt",
+    "semext-sig-logs",
+    "semext-sig-metrics",
+    "semext-sig-synthetic-monitor",
+    "semext-sig-traces",
+    "semext-styleguide-theme",
+    "semext-styleguide-themes"
+  ],
+  "nonRoutes": {
+    "$comment": "Paths the Next site also serves that the parity harness checks only as static resources, not pages.",
+    "static": [
+      "/semtext/semtext-manifest.json",
+      "/js/semtext-island.js"
+    ]
+  }
+}

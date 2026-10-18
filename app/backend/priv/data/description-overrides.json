@@ -1,0 +1,465 @@
+{
+ "$comment": "Hand-authored plain-language copy per tag (round-2 feedback, thread 858cc161): \"tag-name\": [summary, description]. Applied by Semtext.Reference.Tags at consolidation and by `mix semtext.export_elements` to the /data/elements.json search index. Edit here, then rebuild + re-export; never hand-edit priv/data/elements.json itself.",
+ "overrides": {
+  "agent": [
+   "Describes one AI agent inside the document: its name, a short bio, and its instructions.",
+   "You write name, bio, and instructions as plain children. The browser ignores this element; extraction turns it into one agent record. Use it when the document is addressed to or about an agent."
+  ],
+  "agent-kit-acceptance-criteria": [
+   "A given/when/then criteria list for a ticket or story.",
+   "You author the criteria; the card renders them as a structured list. Point it at fixtures or an endpoint and it shows the cached snapshot with a last-refreshed stamp."
+  ],
+  "agent-kit-agent-persona": [
+   "An agent persona card: who the agent is and how it behaves.",
+   "The content you write inside is the record; the card frames it. One renderer serves both persona tags, parameterized by kind."
+  ],
+  "agent-kit-artifact": [
+   "A typed artifact card: code or text produced by the work.",
+   "You set the type and language and author the content; the card renders it as a cached specimen with a refresh stamp."
+  ],
+  "agent-kit-asset": [
+   "A media asset card with a caption.",
+   "You point src at the asset, set its mime type and write the caption. The card renders the cached asset; the caption is the record."
+  ],
+  "agent-kit-board": [
+   "A kanban-style board laid out over ticket references.",
+   "You author the columns and the ticket refs inside; the board renders the layout you wrote. It displays the cached state — it does not poll the tracker."
+  ],
+  "agent-kit-bug": [
+   "A bug ticket card.",
+   "One renderer serves all six ticket tags, parameterized by type. The inner content you write is the record; the chrome adds the type and the cached state."
+  ],
+  "agent-kit-chatroom": [
+   "A chatroom transcript card.",
+   "You author the messages; the card renders the transcript with a cached-snapshot stamp. Refresh is the CLI lane — the embed never fetches at read time."
+  ],
+  "agent-kit-cucumber": [
+   "A Gherkin spec card: the feature source shown as written.",
+   "You author the spec; the card displays the source verbatim in a cached card. Point it at fixtures for the snapshot stamp."
+  ],
+  "agent-kit-custom-assert": [
+   "A list of custom assertions, each an expression and an expectation.",
+   "You author the expr and expect pairs; the card renders them as a structured list from the cached snapshot."
+  ],
+  "agent-kit-cypress": [
+   "A Cypress spec card: the test source shown as written.",
+   "You author the spec; the card displays it verbatim with a last-refreshed stamp from the cached snapshot."
+  ],
+  "agent-kit-epic": [
+   "An epic ticket card.",
+   "One renderer serves all six ticket tags, parameterized by type. The inner content you write is the record; the chrome adds the type and the cached state."
+  ],
+  "agent-kit-issue": [
+   "An issue ticket card with org, project and state.",
+   "You set the key, state and labels and write the body; the card renders the cached ticket snapshot. It displays state — it never queries the tracker live."
+  ],
+  "agent-kit-organization": [
+   "An organization reference card.",
+   "One renderer serves both reference-card tags, parameterized by kind. The content you write inside is the record."
+  ],
+  "agent-kit-project": [
+   "A project reference card.",
+   "One renderer serves both reference-card tags, parameterized by kind. The content you write inside is the record."
+  ],
+  "agent-kit-review": [
+   "A review card: comments and a verdict.",
+   "You author the comments and set the verdict; the card renders the cached review. The verdict is data, not a live check."
+  ],
+  "agent-kit-sub-task": [
+   "A sub-task ticket card.",
+   "One renderer serves all six ticket tags, parameterized by type. The inner content you write is the record; the chrome adds the type and the cached state."
+  ],
+  "agent-kit-task": [
+   "A task ticket card.",
+   "One renderer serves all six ticket tags, parameterized by type. The inner content you write is the record; the chrome adds the type and the cached state."
+  ],
+  "agent-kit-test-case": [
+   "A test-case card: steps and the expectation.",
+   "You author the steps and what should happen; the card renders them as a structured list from the cached snapshot."
+  ],
+  "agent-kit-test-suite": [
+   "A test-suite card with per-branch rows.",
+   "You author the rows — one per branch — and the card renders them from the cached snapshot with a refresh stamp."
+  ],
+  "agent-kit-ticket-ref": [
+   "An inline reference to a ticket.",
+   "You set the key, org and project; the ref renders as an inline card linking into the ticket family. It stays ordinary text with JavaScript off."
+  ],
+  "agent-kit-user-persona": [
+   "A user persona card: who the product serves.",
+   "The content you write inside is the record; the card frames it, with an optional avatar. One renderer serves both persona tags."
+  ],
+  "agent-kit-user-story": [
+   "A user story ticket card.",
+   "One renderer serves all six ticket tags, parameterized by type. The inner content you write is the record; the chrome adds the type and the cached state."
+  ],
+  "conclusion": [
+   "The takeaway side of a fact — what the statement means.",
+   "You write it inside a sem-fact, after the statement. Flashcard views show it on the answer side; extraction pairs it with the statement."
+  ],
+  "highlight": [
+   "Prose with parts the reader can hide to test their recall.",
+   "You wrap the words to remember in a highlight child, or use [[double brackets]] as shorthand. Hiding them turns the passage into a self-test; showing them again reveals the answers."
+  ],
+  "incorrect-statement": [
+   "A wrong version of a fact, shown so readers can spot the error.",
+   "You write it inside a sem-fact. Quiz views can offer it as a wrong answer choice; extraction keeps it labelled as false — never as a claim."
+  ],
+  "npl-agent": [
+   "Describes one AI agent: its name, type, and how it should behave.",
+   "You write the agent's name, type, and rules as attributes and text. The page shows them as a tidy card. Machines can read the same fields back."
+  ],
+  "npl-artifact": [
+   "Shows a piece of work an agent produced, like code or a report, with a title and notes.",
+   "Wrap the artifact's title and content in this element and the page adds a frame around them. The content itself is never changed."
+  ],
+  "npl-cot": [
+   "Shows the steps of a chain of thought, folded up until the reader opens them.",
+   "Each step is listed in order, with the final answer at the end. The list uses a plain details box, so it works even with JavaScript off."
+  ],
+  "npl-critique": [
+   "Shows a review of one thing from one point of view: strengths, weaknesses, and a verdict.",
+   "You write the subject, the strengths, the weaknesses, and the verdict. The element lays them out as a clean, labelled review card."
+  ],
+  "npl-declaration": [
+   "Shows which version of a rules document you are reading.",
+   "It renders the version line of an NPL document, such as NPL@1.0, as a banner at the top. Extended documents are marked the same way."
+  ],
+  "npl-directive": [
+   "Marks a short instruction inside a sentence, so it stands out from the prose.",
+   "You write the instruction, and optionally a longer note, inside this element. The page shows it as a small chip the reader can spot while scanning."
+  ],
+  "npl-example": [
+   "A sample element that shows how npl-* elements are built.",
+   "It exists to demonstrate the pattern, not to be used in real documents. Real elements replace it."
+  ],
+  "npl-flag": [
+   "One setting a reader can switch, shown as a labelled row.",
+   "You give it a name and a value. The reader can click the row to apply the setting. If the name implies a number range, values outside it are flagged."
+  ],
+  "npl-flags": [
+   "A group of settings shown as clickable rows.",
+   "It wraps one or more npl-flag elements. You can add a short note above the rows to explain what they do."
+  ],
+  "npl-hormones": [
+   "Shows seven drive levels — like momentum, tension, and curiosity — as bars.",
+   "Each drive has a level from 0 to 100, drawn as a bar with an arrow showing whether it rose or fell. Notes explain what a bar means when it passes a set limit."
+  ],
+  "npl-intent": [
+   "Shows what a piece of work is meant to achieve: the goal, the scope, and the expected outcomes.",
+   "You write the goal, what is in and out of scope, the outcomes, and any assumptions. The element lays them out in a clear grid so a reader can check the plan at a glance."
+  ],
+  "npl-mindread": [
+   "Shows what one party thinks another party believes or feels.",
+   "You write the subject, the signals (tone, patterns, things left unsaid), and the reading drawn from them. The result is clearly labelled as a guess, not a fact."
+  ],
+  "npl-mode": [
+   "Lists the thinking styles an agent uses, one chip per style.",
+   "You write each mode as a child element. The main mode is marked so the reader knows which lens leads. This element only shows information; it changes nothing."
+  ],
+  "npl-mood": [
+   "Shows a mood with an emoji, plus an optional note on its tone.",
+   "You write the mood in the mood attribute. Extra children can carry the tone, the context, and how the agent will approach work in this mood."
+  ],
+  "npl-poa": [
+   "Shows a plan as a decision tree, plus the reasons each path was weighed.",
+   "You write the tree, the reasoning with weights, and the option that was picked. The element shows all three parts; it never draws the tree for you."
+  ],
+  "npl-ref": [
+   "Looks back at a finished turn: what went well, what to improve, and how it was checked.",
+   "You write the assessment, the improvements, the validation, and any eval notes. The element lays them out as a review card after the work."
+  ],
+  "npl-rubric": [
+   "A scoring table: each row is a criterion with a weight and a score, plus a total.",
+   "You write the criteria, their weights, and their scores. The total is shown as given, or worked out from the weights. Wrong or missing numbers are flagged, not hidden."
+  ],
+  "npl-section": [
+   "A labelled section for any NPL prompt block.",
+   "Known section types get a matching header; unknown types get a warning style so a typo is easy to spot. The content stays plain text, so search and copy still work."
+  ],
+  "npl-thought": [
+   "A thought bubble: short related ideas grouped under one type.",
+   "Each child is one thought with a type attribute, such as a question or a risk. The element shows them as a tidy list of bubbles."
+  ],
+  "npl-vos": [
+   "Shows a persona's inner state: id, ego, superego, and mood, before a reply.",
+   "You write each part of the state. The element shows them as labelled parts of one bracket. An optional collective part covers group personas."
+  ],
+  "sem-api-call": [
+   "Documents one API call's contract: method, endpoint, status and its parameters, as a card.",
+   "The definition card for an endpoint. You write the operation name, HTTP method and path, then one sem-api-param child per parameter or response field; the page shows a table and machines read the same fields back."
+  ],
+  "sem-api-param": [
+   "One parameter row inside a sem-api-call: name, where it lives, type and description.",
+   "The child of sem-api-call. The in attribute says where the parameter lives (query, body, header, or response for a returned field); required marks the ones the caller must send."
+  ],
+  "sem-audiences": [
+   "Names the reader groups a document knows about, so each reader sees the parts meant for them.",
+   "You list each group here, then mark sections with an audience attribute. The reader picks their group and the page hides the rest. Nothing is deleted — machines still read the whole document."
+  ],
+  "sem-browser": [
+   "Draws a browser-style window around a live SemText document.",
+   "It gives the document an address bar and a window frame, while everything inside stays real, working SemText. Use it when a page demonstrates a document rather than being one."
+  ],
+  "sem-changelog": [
+   "A changelog: dated entries describing what changed.",
+   "You wrap the collection in sem-changelogs and write one entry per change inside, each with its date and a name. It stays ordinary readable text with JavaScript off."
+  ],
+  "sem-changelogs": [
+   "The collection wrapper for changelog entries.",
+   "You set the kind — added, changed, fixed, removed — on each entry, and the chrome labels the collection. The entries themselves are the record; nothing is invented."
+  ],
+  "sem-chronology": [
+   "A timeline: dated events shown in the order they happened.",
+   "Each child is one event with a when date, an optional end date, and an optional status. You write the events in order; the element never sorts them. It can show the events as a timeline rail or as a plain list."
+  ],
+  "sem-code": [
+   "A code listing with a file name, a language, and marked lines.",
+   "The code is shown exactly as written — spacing included. You can mark the lines that matter, and the reader gets copy controls a plain code block cannot offer."
+  ],
+  "sem-data-join": [
+   "Combines two named data sets on one shared column, like a database join.",
+   "You name the two sources and the key column. The joined result becomes a new data set that queries can use. Nothing shows on the page by itself — it only feeds queries."
+  ],
+  "sem-data-query": [
+   "A question asked of a data set, written in a small, safe SQL-like language.",
+   "You write one query: pick columns, filter, sort, and limit. Joins are declared separately, and nothing can change the data. Readers see the results, and the query text stays visible."
+  ],
+  "sem-data-source": [
+   "One named set of data inside a data visualizer.",
+   "You either write the data inside the element or point at a file with source. Doing both is an error the element reports clearly. With JavaScript off, the data still reads as text."
+  ],
+  "sem-data-visualizer": [
+   "The container that holds data sets, joins, and queries, and shows the results.",
+   "You put one or more sem-data-source children inside, plus any joins and queries. The container owns the shared state: which data set and query are active. With JavaScript off it shows the data as plain tables."
+  ],
+  "sem-detail": [
+   "One passage of prose with parts that can be hidden for self-testing.",
+   "This is the child of sem-details. Wrap the words to recall in a highlight, or use [[double brackets]]. Hiding them turns the passage into a memory exercise."
+  ],
+  "sem-details": [
+   "A group of passages whose key words can be hidden for recall practice.",
+   "Each sem-detail child is one passage. Readers hide or show the highlighted words to test themselves. This is a study aid — not a reveal box and not a tab set."
+  ],
+  "sem-enhanced-document": [
+   "The required root wrapper around a SemText document.",
+   "You wrap the whole document in it once. Inside, plain HTML and sem-* elements mix freely. Extraction reads everything inside the wrapper; the browser treats it as an ordinary container."
+  ],
+  "sem-eval": [
+   "An evaluation spec: the inputs, expected outputs and criteria in one container.",
+   "You author the cases as sections or prose inside; the container adds the chrome and label. It states what a good answer looks like — it does not run anything."
+  ],
+  "sem-event": [
+   "One dated event on a timeline.",
+   "You give it a when date, an optional until end date, and an optional status such as planned or done. Its place in the page is its place in time — the element does not sort events."
+  ],
+  "sem-fact": [
+   "One fact: a statement, its conclusion, and optionally what would be wrong to believe.",
+   "You write the statement, the conclusion drawn from it, and any incorrect-statement to warn against. The id is the token other text cites. It reads as plain sentences with JavaScript off."
+  ],
+  "sem-facts": [
+   "A group of facts the reader can flip through as cards, a quiz, or plain prose.",
+   "You wrap sem-fact children in it and pick a view with view-as. The view only changes how the facts are shown — the facts themselves stay the same, and machines always read all of them."
+  ],
+  "sem-faq": [
+   "One FAQ entry: the asked question and its authored answer.",
+   "The question child is the question; everything you write in the answer child is the answer. Machines extract both verbatim; the browser can show them as a Q and A pair."
+  ],
+  "sem-faqs": [
+   "A collection of FAQ entries.",
+   "You wrap sem-faq children in it. The view only changes how the questions and answers are shown — the words stay the same."
+  ],
+  "sem-file-tree": [
+   "A file listing written as an indented tree inside a pre block.",
+   "You type the tree with box-drawing characters or plain indentation; with JavaScript on the same engine as sem-site-tree turns it into a browsable listing, and with JavaScript off the pre is the record."
+  ],
+  "sem-guard-rail": [
+   "One guard rail: a rule the reader should not cross.",
+   "You give it a severity and a scope, and write the rule as the content. It renders as a labelled, warning-level item in the guard-rails list."
+  ],
+  "sem-guard-rails": [
+   "A collection of guard rails.",
+   "You wrap sem-guard-rail children in it. The collection sorts nothing and invents nothing — the rails you wrote, in the order you wrote them."
+  ],
+  "sem-howto": [
+   "A how-to guide container: a named guide with free contents.",
+   "The name child is the title; everything else inside is the guide. The container adds the chrome and label — you write the steps with the elements you already have."
+  ],
+  "sem-kb": [
+   "A knowledge-base article: the content you write inside is the article.",
+   "There is no special structure to learn — headings, prose and the other elements all work as usual. The container frames the article with a labelled panel."
+  ],
+  "sem-md": [
+   "A block written in Markdown that the browser turns into HTML.",
+   "You write tables, lists, and other Markdown inside the element. Readers see a formatted table or list; machines get the Markdown back unchanged. Made for content that is easier to write as Markdown than as HTML."
+  ],
+  "sem-mockup": [
+   "A UI mockup container holding text or HTML.",
+   "You pick the mode — text or html — and put the mockup inside. It renders as a framed specimen; nothing inside it is interactive."
+  ],
+  "sem-note": [
+   "A callout: a short piece of prose set beside the main text.",
+   "Pick a variant — info, warning, tip, or danger — for the colour and label. The collapsed attribute hides the body behind a short teaser. It stays ordinary readable text with JavaScript off."
+  ],
+  "sem-option": [
+   "One answer choice in a question.",
+   "The correct attribute marks the right choice. Readers pick an answer; machines read which option was correct."
+  ],
+  "sem-philosophy": [
+   "A principles container: the beliefs or rules a project runs on.",
+   "You write the principles inside as prose or lists. The container gives them a labelled home so machines can find the project's stated principles."
+  ],
+  "sem-plan": [
+   "A plan container: the reasoning and the steps of a solution.",
+   "You write the plan inside as sections or prose, with an optional status. The container keeps the reasoning with the work it produced."
+  ],
+  "sem-procedure": [
+   "An ordered list of steps, each marked with where it stands.",
+   "You write one sem-step per step, in the order they happen. Each step carries a status: done, current, todo, or blocked. There are no step numbers to maintain — position is the number."
+  ],
+  "sem-profile": [
+   "Names one reader group inside a sem-audiences block.",
+   "You give it an id and a short label. Sections tagged with this id show or hide as the reader switches groups."
+  ],
+  "sem-progress": [
+   "A progress bar for one number between 0 and 1.",
+   "You give it a value and an optional label. The page draws a bar with the percentage. Values outside the range are clamped for display, and the raw value still reads as text without JavaScript."
+  ],
+  "sem-properties": [
+   "A list of key–value pairs, shown as a tidy definition grid.",
+   "You write one sem-property per pair. The grid renders with plain CSS, so it works with JavaScript off. Machines read the same pairs back."
+  ],
+  "sem-property": [
+   "One key–value pair in a properties grid.",
+   "The key attribute is the term; the text inside is its meaning. Add role=definition when the value defines the key."
+  ],
+  "sem-question": [
+   "A question with answer choices, for self-testing.",
+   "You write the question and one or more sem-option children. It pairs with the quiz views of sem-facts. Works as plain markup with JavaScript off."
+  ],
+  "sem-reader": [
+   "Reading tools for a long document: an outline, a progress bar, and controls for text size and theme.",
+   "It is page furniture, not content — a document without it loses nothing a machine would read. Readers get focus mode, type size, colour scheme, print, and audience controls in one place."
+  ],
+  "sem-reference": [
+   "One numbered entry in a reference list.",
+   "You give it an id, a link, and a note. In the text, cite it with a plain link to the id. The element carries the fields a plain list item cannot."
+  ],
+  "sem-references": [
+   "A numbered list of sources the document cites.",
+   "You wrap one sem-reference per source. Numbers come from position. With JavaScript off the list still reads as an ordinary numbered list."
+  ],
+  "sem-requirement": [
+   "A requirement statement with a status and priority.",
+   "You write the requirement as the content and set kind, status and priority as attributes. Machines read it as one requirement record; readers see a labelled statement."
+  ],
+  "sem-reveal": [
+   "A question the reader clicks to reveal the answer.",
+   "You write the question as the summary and the answer as the body. It is a plain details box, so it works with JavaScript off. Use it for explanation — a sem-fact is for claims."
+  ],
+  "sem-rubric": [
+   "A scoring rubric container: criteria against levels.",
+   "You author the grid inside as a plain table or row prose — the container does not force a shape. Set max-score and the chrome shows the scale."
+  ],
+  "sem-runbook": [
+   "An operational runbook: preconditions, procedure and references in one container.",
+   "You author the parts inside with the elements you already use; the container adds the chrome and a label. It reads as a document and extracts as one runbook record."
+  ],
+  "sem-site-tree": [
+   "A site or file tree written as nested node elements.",
+   "You nest bare node children with a path and optional label and kind. The same engine that reads sem-file-tree renders it, so both notations share one model."
+  ],
+  "sem-source": [
+   "Lets the reader flip between a section as it renders and the markup behind it.",
+   "You put ordinary SemText inside. The reader sees the rendered result, then the exact source that produced it. Made for documents that teach the vocabulary."
+  ],
+  "sem-step": [
+   "One step in a procedure.",
+   "You write the instruction as the text and set status to done, current, todo, or blocked. Its place in the page is its order in the procedure."
+  ],
+  "sem-summary": [
+   "A summary container: the short version of what follows.",
+   "Everything you put inside is the record. The container labels it as a summary so skimmers and machines both know what it is."
+  ],
+  "sem-table": [
+   "A table the reader can sort and filter — the table you write is the data.",
+   "You write a normal HTML table. Sorting and filtering only change what the reader sees; the markup stays the contract, so machines always read the same rows you wrote."
+  ],
+  "sem-tag-attr": [
+   "One attribute row inside a sem-tag-def: name, type, required flag, default and description.",
+   "The child of sem-tag-def. You write the attribute's name and type, add the required flag when it must be present, and the description text is what readers see in that row."
+  ],
+  "sem-tag-def": [
+   "Documents one tag's contract: its attributes, types, defaults and child tags, as a card.",
+   "The definition card for a markup tag. You write the tag name and one sem-tag-attr child per attribute; the page shows a tidy table and machines read the same fields back. The reference pages use it, so the vocabulary documents itself."
+  ],
+  "sem-threat-model": [
+   "A threat-model container: assets, threats and mitigations.",
+   "You author them inside as sections or list prose; the container adds the chrome, label and scope. It frames the analysis — it does not check it."
+  ],
+  "sem-tldr": [
+   "A summary block the reader can skim or skip.",
+   "Whatever you put inside is the whole record — the element adds nothing and hides nothing. It renders as a set-apart block so the gist is visible at a glance."
+  ],
+  "sem-tsg": [
+   "One troubleshooting entry: a symptom and its fix.",
+   "You write the problem and the resolution inside; the entry stays ordinary readable text with JavaScript off."
+  ],
+  "sem-tsgs": [
+   "A collection of troubleshooting entries.",
+   "You wrap sem-tsg children in it. The collection is the record — the entries you wrote, in the order you wrote them."
+  ],
+  "sem-view": [
+   "One named perspective inside a sem-views tab set.",
+   "The name attribute labels the tab; the content inside is that view of the subject. With JavaScript off every view shows, each under its name."
+  ],
+  "sem-views": [
+   "Shows one subject several ways, with a tab bar to switch.",
+   "You wrap sem-view children and name each one. Readers switch by click, keyboard, or link. The content is never moved or rewritten — only which view shows changes."
+  ],
+  "sem-workflow": [
+   "An ordered workflow whose steps carry verification.",
+   "You write one sem-step per step, like a procedure, plus a duration for the whole run. Each step can carry a gate and check, and an if-no that says what to do when the check fails."
+  ],
+  "semext-annotate": [
+   "Visitor comment threads embedded in the page, backed by the annotate service.",
+   "The embed renders the cached threads snapshot; it is the one embed of the family with a live anonymous read. Visitors pin comments on the page and the embed shows them in place."
+  ],
+  "semext-docptr": [
+   "A doc-pointer card rendered from a cached snapshot.",
+   "The snapshot mirrors the pointer registry so a page can cite a source location durably — the card survives line drift until a CLI refresh re-snapshots it."
+  ],
+  "semext-media-prompt": [
+   "An authored media-generation prompt with an output cache region.",
+   "The record is the prompt you write; the output region beside it is filled by the refresh CLI, not the element. The element never fetches and never generates — it only reports the region's state."
+  ],
+  "semext-sig-logs": [
+   "A SigNoz log-line snapshot with a link to open the query.",
+   "The log lines you author are the record; the chrome builds an Open in SigNoz anchor from the query, range and env you set. The snapshot is refreshed by the CLI, never fetched at read time."
+  ],
+  "semext-sig-metrics": [
+   "A SigNoz metrics snapshot with a link to open the query.",
+   "The metrics table you author is the record; the chrome adds the deep link from your query parameters. Nothing is fetched when the page is read."
+  ],
+  "semext-sig-synthetic-monitor": [
+   "A SigNoz synthetic-monitor definition card with a deep link.",
+   "You author the monitor's expected definition; the card mirrors it and links to SigNoz. Running monitors is a service surface this element deliberately does not touch."
+  ],
+  "semext-sig-traces": [
+   "A SigNoz trace-list snapshot with a link to open the query.",
+   "The trace list you author is the record; the chrome adds the Open in SigNoz anchor. The embed is cached and link-only — no client queries."
+  ],
+  "semext-styleguide-theme": [
+   "One theme's token cards rendered from a cached snapshot.",
+   "The card shows the theme name, key color swatches and a type sample, plus a link to preview the theme CSS at the src you set. Refresh is the CLI lane."
+  ],
+  "semext-styleguide-themes": [
+   "The collection wrapper for theme token cards.",
+   "It renders a summary line over its semext-styleguide-theme children. The snapshots are refreshed by the CLI, not at read time."
+  ],
+  "statement": [
+   "The claim side of a fact — what is asserted.",
+   "You write the statement as the child of a sem-fact. Its pair, the conclusion, draws the takeaway. Plain text, no attributes needed."
+  ]
+ }
+}

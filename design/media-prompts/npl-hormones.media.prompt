@@ -1,0 +1,111 @@
+# npl-hormones - reference-page UX direction for the three display modes.
+# Authored by the tag nitpick lane, 2026-10-14. Not yet generated.
+schema: "0.4"
+id: npl-hormones-reference-ux
+type: image
+quality: high
+prompt:
+  text: |
+    Design board for a reference-documentation page, dark theme (deep
+    navy-charcoal surfaces, near-white text, muted slate secondary text,
+    blue accent). The page documents a synthetic hormone-meter source
+    element: seven named drives, each drawn as one horizontal bar with a
+    numeric readout and a small delta arrow. The board shows THREE stacked
+    example sections, one per display mode, each with a small mode label
+    above it. No marketing chrome, no navigation, no browser window -
+    documentation panels on a flat dark page.
+
+    Section 1 - mode "panel" (default): a table-like stack of rows, one per
+    drive; each row is a short mono uppercase symbol (MTM, TNS, RST), the
+    drive name, a slim rounded horizontal bar filled proportionally in the
+    blue accent on a faint track, a right-aligned mono numeric value, and a
+    small delta arrow after the value (up arrow tinted green, flat dash
+    muted, down arrow tinted red). Below the rows, two quiet secondary-text
+    lines: a compound state sentence and a triggered line. One row (RST,
+    restlessness) is fired: it carries a thin accent-colored left edge bar
+    and a barely-there accent tint behind the row, while its text stays at
+    full brightness - the highlight points, it never dims or occludes.
+
+    Section 2 - mode "bars": the same rows only, no state or triggered
+    lines, slightly tighter vertical rhythm - the compact form for embedding
+    in running text.
+
+    Section 3 - mode "alert": two threshold cards stacked with a small gap.
+    Each card: a one-pixel warning-red-tinted border, a warning-tinted left
+    edge, a faint red tint background, a monospace headline like
+    "RST 8.5 >= 7 - strategy-switch" in the warning tint, and one plain
+    sentence of body text at full contrast below it ("Restlessness threshold
+    crossed. Initiating plan-of-action."). The warning color lives in the
+    border, edge and headline only - body text is ordinary foreground.
+
+    Typography: monospace for symbols, values, thresholds and mode labels;
+    a clean neutral sans for drive names and body sentences. Generous but
+    regular spacing; hairline borders; small border radii (4-6px). Everything
+    must read as quiet instrumentation in a spec document, not as a game HUD
+    or a biotech illustration.
+  negative: |
+    Light theme; white background; glossy gradients; neon cyberpunk glow;
+    game HUD frames; radar, gauge or sparkline charts; pie charts; organic
+    imagery of any kind (molecules, glands, syringes, DNA helices, liquid);
+    mascots; logos; watermarks; navigation bars; browser chrome; more or
+    fewer than the three named sections; dimmed, strikethrough or occluded
+    text anywhere; a fired row rendered disabled; alert cards filling solid
+    red; modal dialogs or toast popups.
+  style: |
+    Flat minimal dark technical documentation, minimal-tech aesthetic,
+    instrumentation-panel restraint, hairline rules, monospace accents,
+    WCAG AA contrast on all text.
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-hormones/npl-hormones-render-1280.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-hormones/npl-hormones-render-390.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-hormones/npl-hormones-ex2-render-390.png
+    role: reference
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+  formats:
+    - format: png
+      filename: npl-hormones-reference-ux.png
+eval:
+  pass_threshold: 0.75
+  criteria:
+    mode-coverage:
+      weight: 0.3
+      description: Exactly three sections labelled panel, bars, alert; bars omits state lines; alert shows cards only.
+      fail_signals:
+        - "only one or two sections visible"
+        - "sections unlabelled or mislabelled"
+        - "bars section shows state or triggered lines"
+    row-anatomy:
+      weight: 0.3
+      description: Rows read symbol, name, proportional bar, numeric value, delta arrow in that order; fired row highlighted without dimming its text.
+      fail_signals:
+        - "bar missing or not proportional to value"
+        - "delta arrows absent or all the same color"
+        - "fired row dimmed or unreadable"
+    theme-match:
+      weight: 0.25
+      description: Dark minimal-tech surfaces, hairline borders, mono and sans split as specified, AA-legible text throughout.
+      fail_signals:
+        - "light background anywhere"
+        - "neon glow or gradient gloss"
+        - "body text below AA contrast"
+    no-invented-chrome:
+      weight: 0.15
+      description: No gauges, radar, sparklines, browser chrome, nav, logos, or organic imagery.
+      fail_signals:
+        - "any gauge or radar chart"
+        - "molecule, syringe, or helix imagery"
+        - "browser or window frame"
+  reject_if:
+    - "image is light-themed overall"
+    - "any organic or biotech illustration appears"
+    - "fewer than three mode sections"
+tags:
+  - semtext
+  - npl-hormones
+  - reference-design
+  - dark-ui

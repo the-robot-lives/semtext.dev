@@ -1,0 +1,127 @@
+{{- if .Values.devSlot.enabled }}
+{{- $slot := .Values.devSlot }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hologram-start-app.fullname" . }}-live-dev
+  labels:
+    {{- include "hologram-start-app.labels" . | nindent 4 }}
+    semtext.dev/slot: live-dev
+spec:
+  # Recreate: the workspace PVC is RWO and holding it during a RollingUpdate
+  # would wedge the new pod. Single-replica dev slot — downtime is fine.
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "hologram-start-app.selectorLabels" . | nindent 6 }}
+      semtext.dev/slot: live-dev
+  template:
+    metadata:
+      labels:
+        {{- include "hologram-start-app.selectorLabels" . | nindent 8 }}
+        semtext.dev/slot: live-dev
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      # --- throwaway Postgres (pgvector: the Liquibase changelog creates the
+      # vector/cube/earthdistance/pg_trgm/citext extensions) ---------------
+      - name: postgres
+        image: {{ $slot.postgres.image }}
+        env:
+        - name: POSTGRES_USER
+          value: semtext
+        - name: POSTGRES_PASSWORD
+          # Dev-only throwaway credential, identical to the public
+          # app/docker-compose.dev.yaml defaults. Not a prod secret: the
+          # port is bound inside the pod and the data is disposable.
+          value: semtext_dev
+        - name: POSTGRES_DB
+          value: semtext_dev
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        ports:
+        - containerPort: 5432
+        resources:
+          {{- toYaml $slot.postgres.resources | nindent 10 }}
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "semtext", "-d", "semtext_dev"]
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: pgdata
+          mountPath: /var/lib/postgresql/data
+      # --- throwaway Redis (Starter.Redis refresh-token JTI store) --------
+      - name: redis
+        image: {{ $slot.redis.image }}
+        args: ["--save", "", "--appendonly", "no"]
+        ports:
+        - containerPort: 6379
+        resources:
+          {{- toYaml $slot.redis.resources | nindent 10 }}
+      # --- live dev server (git-pull + rebuild + dev-mode Phoenix) --------
+      - name: live-dev
+        image: {{ $slot.image }}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: {{ .Values.backend.port }}
+          protocol: TCP
+        env:
+        - name: LIVE_DEV_BRANCH
+          value: {{ $slot.branch | quote }}
+        - name: LIVE_DEV_POLL_SECONDS
+          value: {{ $slot.pollSeconds | quote }}
+        - name: LIVE_DEV_DEPLOY_KEY_FILE
+          value: /run/secrets/live-dev-git/{{ $slot.gitSecret.key }}
+        # Server identity/dev-mode pins (see bin/live-dev for the rest).
+        - name: MIX_ENV
+          value: "dev"
+        - name: HOLOGRAM_ENV
+          value: "dev"
+        - name: HOLOGRAM_START
+          value: "1"
+        - name: PHX_SERVER
+          value: "true"
+        - name: PHX_IP
+          value: "0.0.0.0"
+        - name: PORT
+          value: {{ .Values.backend.port | quote }}
+        - name: FRONTEND_URL
+          value: "https://{{ $slot.host }}"
+        - name: SEMTEXT_EXTRA_MAIN_HOSTS
+          value: {{ $slot.host | quote }}
+        - name: SEMTEXT_PROPOSALS_ORIGIN
+          value: "https://{{ $slot.host }}"
+        volumeMounts:
+        - name: git-key
+          mountPath: /run/secrets/live-dev-git
+          readOnly: true
+        - name: workspace
+          mountPath: /workspace
+        resources:
+          {{- toYaml $slot.resources | nindent 10 }}
+        # Readiness only — NO liveness probe: a long first compile (full dev
+        # deps tree) must never get the pod killed. The big failureThreshold
+        # tolerates a slow rebuild before the slot re-enters the pool.
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.backend.port }}
+          initialDelaySeconds: 90
+          periodSeconds: 15
+          failureThreshold: 60
+      volumes:
+      - name: git-key
+        secret:
+          secretName: {{ $slot.gitSecret.name }}
+      - name: pgdata
+        emptyDir: {}
+      - name: workspace
+        persistentVolumeClaim:
+          claimName: {{ include "hologram-start-app.fullname" . }}-live-dev-workspace
+{{- end }}

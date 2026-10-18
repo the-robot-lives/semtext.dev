@@ -1,0 +1,175 @@
+# SemText npl-declaration — version/extension banner, all display modes
+# Direction A "Slate Console" (house convention). Two example panels in one
+# frame, one per display mode the tag provides: the `definition` banner
+# (default) and the `extension` banner with its extend-target label. The
+# invariant the design must broadcast: the banner is DISPLAY-ONLY chrome —
+# a version stamp header above the authored rules — and the rules body
+# stays fully readable in every mode (a declaration never occludes its
+# body; occlusion belongs to the sem-spoiler / quiz tier).
+#
+# MODE 1 — definition (default `type`):
+#   visible: a full-width banner strip with a 3px violet accent bar on its
+#     left edge and a faint violet tint fill; inside it a single mono-font
+#     version mark in the accent colour (the `⌜NPL@<version>⌝` stamp —
+#     abstract placeholder bars in the mock); below the strip, separated by
+#     clear space, the rules body as bright readable prose bars.
+#   must never: fill the banner strip opaque; render the mark larger or
+#     brighter than the body; run the body into the strip without
+#     separation.
+# MODE 2 — extension (`type="extension" extend-target="…"`):
+#   visible: the identical banner strip; the mark switches to the extend
+#     spelling (the mock shows a subtly longer placeholder bar), followed
+#     after a small arrow by a trailing small-caps muted label — the
+#     extend-target, the vocabulary being extended; same readable rules
+#     body below.
+#   must never: drop the arrow before the target; render the target as
+#     part of the mark or as body prose; restyle the strip differently
+#     from mode 1.
+#
+# Excluded deliberately: the JS-off reading (plain authored prose, no
+# banner) — it is the absence of the runtime, not a display mode; the
+# schema promises "nothing hidden, nothing generated" for it.
+#
+# Reference snapshots (snapshot harness ran for this tag):
+#   .tmp/semtext-docs-overhaul/snaps/npl-declaration/ — the two harness
+#   `-fullpage-` PNGs carry the reference page (attribute table + example
+#   viewers); the `render-fixture-*.png` files are component-level renders
+#   of both modes (dark 2x, light 2x, mobile 390) against the real
+#   vocabulary CSS. Attach before generation.
+schema: '0.4'
+id: reference-npl-declaration
+type: image
+quality: high
+service: gemini
+model: gemini-2.5-flash-image
+
+prompt:
+  text: |
+    Dark-mode UI mockup of two side-by-side reference-page panels
+    illustrating one declaration-banner element in its two display modes,
+    wide 16:9, flat technical illustration (screenshot-like, not 3D). Dark
+    slate navy background (#0F172A) with a barely visible thin grid and a
+    faint violet radial glow upper-left. Two equal panels sit side by side,
+    separated by a thin slate hairline divider, each panel a dark slate
+    card (#1E293B) with a thin slate hairline border, squared corners, deep
+    soft shadow; a small dim caption bar sits above each panel.
+
+    Every panel shows the SAME two-part anatomy at its centre. Part one is
+    a full-width banner strip: squared 6px corners, a 3px violet (#7C3AED)
+    accent bar on its left edge, a hairline slate outline, and a
+    barely-there violet tint fill (#7C3AED at 8% opacity over the card).
+    Inside the strip, one short line of small monospace-feeling placeholder
+    bars in bright violet (#A78BFA) — the version stamp. Part two, below
+    the strip with clear separation, is the rules body: two or three
+    bright near-white prose bars of differing length — the most prominent,
+    fully readable element in the panel. All copy is abstract placeholder
+    bars — strictly no letters, digits, or words anywhere.
+
+    Left panel — DEFINITION (default). The banner strip carries only the
+    short violet stamp line. Body bars below, untouched.
+
+    Right panel — EXTENSION. The identical strip; the stamp line is one
+    bar longer (the extend spelling), and after a small solid violet
+    right-pointing arrow it gains a trailing label: one shorter, dimmer
+    muted-slate placeholder bar in small-caps scale, clearly separated
+    from the stamp. Body bars below, identical to the left panel.
+
+    The two strips must be pixel-comparable: same accent bar, tint,
+    outline, and stamp position — the only differences being the longer
+    stamp and the arrow + trailing target label on the right. The body
+    bars never change between panels.
+
+  negative: legible text, letters, numbers, digits, words, captions,
+    typography, watermark, logo, light mode, white cards, 3D, photorealism,
+    faces, avatars, robot mascots, more than two panels, opaque filled
+    banner strip, solid color-block hiding the stamp, blurred or dimmed
+    body bars, the target label fused with the version stamp, extra chrome
+    (badges, counts, buttons, icons)
+  style: flat dark-mode product UI illustration, squared corners, hairline
+    borders, slate and violet palette, two-panel mode comparison
+
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 1600
+    height: 900
+    aspect_ratio: '16:9'
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-declaration/render-fixture-dark-2x.png
+    role: reference
+    description: component-level render of both modes, dark theme 2x — banner
+      strip anatomy (accent bar, tint, mono stamp, arrow + small-caps target)
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-declaration/render-fixture-light-2x.png
+    role: reference
+    description: the same two modes in the light theme — token-driven palette
+      proof
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-declaration/npl-declaration-fullpage-1280.png
+    role: reference
+    description: full reference page — chrome, attribute table, example viewer
+      placement
+
+requirements:
+  subject: two panels of one declaration banner — left definition (short
+    violet stamp in a tinted accent strip), right extension (longer stamp
+    plus arrow and trailing small-caps target label); readable rules body
+    below the strip in both
+  palette: slate navy background, slate panels, hairline borders, violet
+    accent bar and tint, bright violet mono stamp, near-white body bars,
+    muted slate target label
+  composition: two equal panels side by side, strips at a consistent
+    vertical position, identical body bars across panels
+  do:
+    - keep the rules body bars the most prominent, most readable element
+      in every panel
+    - keep the banner strip a faint tint over the card, never opaque
+    - differentiate modes only by stamp length and the arrow + target
+      label
+  dont:
+    - any legible text, digits, or logos
+    - occluding, blurring, or dimming the rules body
+    - a target label that reads as part of the version stamp or the body
+    - extra chrome (badges, counts, buttons) the tag does not define
+
+eval:
+  pass_threshold: 0.7
+  required_pass:
+    - mode_differentiation
+    - legibility_invariant
+  criteria:
+    mode_differentiation:
+      weight: 3
+      description: Left panel strip carries only the short stamp; right
+        strip is one bar longer with arrow + trailing dim small-caps
+        label — strips otherwise identical
+      fail_signals:
+        - arrow or target label present in the left panel
+        - target label missing in the right panel
+        - strip anatomy (accent bar, tint, corners) differs between panels
+    legibility_invariant:
+      weight: 3
+      description: Body bars are bright, prominent and unoccluded in both
+        panels; the strip is tinted, not filled; body clearly separated
+        from the strip
+      fail_signals:
+        - body bars dimmer than the stamp or label
+        - opaque or solid strip fill
+        - blur, redaction, or occlusion overlays on any body bar
+        - body fused into the strip
+    theme_fidelity:
+      weight: 2
+      description: Dark slate + violet, squared hairline panels, flat style
+      fail_signals:
+        - light theme
+        - glossy 3D look
+        - rounded card corners
+  reject_if:
+    - any legible text, letters, digits, watermark, or logo
+    - an occluded, blurred, or hidden rules body in either panel
+    - more than two panels or a chaotic layout
+
+tags:
+  - semtext
+  - reference
+  - npl-declaration

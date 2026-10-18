@@ -1,0 +1,22 @@
+{
+  "npl-agent": "npl-chunks/npl-agent.js",
+  "npl-artifact": "npl-chunks/npl-artifact.js",
+  "npl-cot": "npl-chunks/npl-cot.js",
+  "npl-critique": "npl-chunks/npl-critique.js",
+  "npl-declaration": "npl-chunks/npl-declaration.js",
+  "npl-directive": "npl-chunks/npl-directive.js",
+  "npl-example": "npl-chunks/npl-example.js",
+  "npl-flag": "npl-chunks/npl-flag.js",
+  "npl-flags": "npl-chunks/npl-flags.js",
+  "npl-hormones": "npl-chunks/npl-hormones.js",
+  "npl-intent": "npl-chunks/npl-intent.js",
+  "npl-mindread": "npl-chunks/npl-mindread.js",
+  "npl-mode": "npl-chunks/npl-mode.js",
+  "npl-mood": "npl-chunks/npl-mood.js",
+  "npl-poa": "npl-chunks/npl-poa.js",
+  "npl-ref": "npl-chunks/npl-ref.js",
+  "npl-rubric": "npl-chunks/npl-rubric.js",
+  "npl-section": "npl-chunks/npl-section.js",
+  "npl-thought": "npl-chunks/npl-thought.js",
+  "npl-vos": "npl-chunks/npl-vos.js"
+}

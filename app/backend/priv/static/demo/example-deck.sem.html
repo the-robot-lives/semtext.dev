@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!--
+  Site demo asset (landing #try — CODE and BROWSER tabs) — the four-fact
+  try-deck as a standalone .sem.html. Well-formed XHTML, HTML file
+  extension: double-click and it renders (same-origin vocabulary CSS plus
+  the fallback-tier script); agents can also parse it as XML. The tui and
+  cli views read the same file; nothing here is view-specific.
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" data-sem-theme="minimal-tech-light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>try-deck · four facts</title>
+  <link rel="stylesheet" href="/semtext/themes/_vocabulary.css" />
+  <link rel="stylesheet" href="/semtext/themes/minimal-tech-light.css" />
+</head>
+<body>
+<sem-enhanced-document role="main">
+
+  <h1 id="title" data-kind="title">try-deck · four facts</h1>
+
+  <sem-note variant="info">The document every view on the landing page
+  reads: authored once, opened here, paged in a shell, rendered as plain
+  text for agents. Switching views rewrites nothing.</sem-note>
+
+  <sem-facts id="try-deck" view-as="flashcards">
+    <sem-fact id="f-view-as" kind="rule">
+      <statement>view-as is a parameter, not an identity</statement>
+      <conclusion>A fact is a fact in every view; the attribute only selects a rendering.</conclusion>
+      <incorrect-statement>Each view is a different element type.</incorrect-statement>
+    </sem-fact>
+    <sem-fact id="f-light-dom" kind="rule">
+      <statement>Components render into light DOM</statement>
+      <conclusion>Content stays in the page, so find-in-page, copy and plain CSS all still reach it.</conclusion>
+      <incorrect-statement>Content moves into a shadow root for encapsulation.</incorrect-statement>
+    </sem-fact>
+    <sem-fact id="f-invariant" kind="rule">
+      <statement>Extraction reads the authored document</statement>
+      <conclusion>Generated chrome is skipped, so records do not depend on the view on screen.</conclusion>
+      <incorrect-statement>Extraction reads whatever is currently rendered.</incorrect-statement>
+    </sem-fact>
+    <sem-fact id="f-no-build" kind="rule">
+      <statement>Authoring needs no build step</statement>
+      <conclusion>One stylesheet and one script tag in a plain HTML file; a theme is optional.</conclusion>
+      <incorrect-statement>A bundler compiles the vocabulary down to HTML.</incorrect-statement>
+    </sem-fact>
+  </sem-facts>
+
+</sem-enhanced-document>
+<script src="/semtext/semtext.js"></script>
+</body>
+</html>

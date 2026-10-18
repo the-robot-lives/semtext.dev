@@ -1,0 +1,81 @@
+/* SemText — v0.6 structural additions + presentation polish
+   Layered AFTER themes/_vocabulary.css in the consolidated
+   semtext/latest/semtext.css bundle (scripts/build-latest.mjs). Same
+   ground rules as the vocabulary: token-driven, no --sem-* declared
+   here, `:is(sem-x, .sem-x)` dual-form selectors, nothing hidden without
+   a tier marker. Covers: the v0.6 elements (sem-list, sem-section,
+   sem-break), the sem-highlight canonical tag, the sem-code flat inline
+   form, the default reading measure, and button polish (hover states +
+   focus-visible) across every chrome the vocabulary lays out. */
+
+/* ---- v0.6 elements ------------------------------------------------- */
+
+/* sem-list: markdown-style lines render as pre-wrapped text before the
+   extension converts them to a real list; after conversion the list is
+   ordinary ul/ol content. */
+:is(sem-list, .sem-list) { display: block; margin: 1rem 0; padding-left: 1.5rem; }
+:is(sem-list, .sem-list):not([data-sem-v06]) { white-space: pre-wrap; }
+:is(sem-list, .sem-list) ul, :is(sem-list, .sem-list) ol { margin: .25rem 0; padding-left: 1.5rem; }
+
+/* sem-section: block wrapper; divider between ADJACENT sections only. */
+:is(sem-section, .sem-section) { display: block; margin: 1.5rem 0; }
+:is(sem-section, .sem-section) + :is(sem-section, .sem-section) {
+  border-top: 1px solid var(--sem-border); padding-top: 1.5rem; }
+
+/* sem-break: the <hr> replacement — a rule in every tier, no script. */
+:is(sem-break, .sem-break) { display: block; border: 0; border-top: 1px solid var(--sem-border);
+  margin: 2rem 0; }
+
+/* ---- sem-highlight canonical tag (v0.6; sugar alias <highlight> keeps
+   the vocabulary rule) ----------------------------------------------- */
+:is(sem-highlight) { font-style: normal; background: color-mix(in srgb, var(--sem-accent) 18%, transparent);
+  border-radius: 4px; padding: 0 .2em; }
+
+/* ---- sem-code flat inline form (v0.6): the element's own text IS the
+   code; block listings carry a <pre> and keep the vocabulary styles. */
+:is(sem-code, .sem-code)[data-sem-v06="inline"] {
+  display: inline; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .875em; background: color-mix(in srgb, var(--sem-fg) 7%, transparent);
+  border: 1px solid var(--sem-border); border-radius: 4px; padding: .1em .35em;
+  white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ---- default reading measure (item 2: generous margins + measure) --- */
+body:has(> :is(sem-enhanced-document, .sem-enhanced-document)) { padding: 2rem 1.25rem 4rem; }
+:is(sem-enhanced-document, .sem-enhanced-document) {
+  max-width: var(--sem-measure, 44rem); margin-inline: auto; }
+
+/* ---- button polish: hover states + focus-visible rings on every
+   chrome button family the vocabulary lays out ----------------------- */
+.sem-facts-chrome button, .sem-quiz-options button, .sem-code-chrome button,
+.sem-md-chrome button, .sem-views-tabs button, .sem-reader-chrome button,
+.sem-source-chrome button, .sem-table-sort, .sem-table-filter {
+  transition: background-color .12s ease, border-color .12s ease, color .12s ease; }
+.sem-facts-chrome button:hover, .sem-code-chrome button:hover,
+.sem-md-chrome button:hover, .sem-reader-chrome button:hover,
+.sem-source-chrome button:hover {
+  background: color-mix(in srgb, var(--sem-accent) 10%, var(--sem-bg));
+  border-color: color-mix(in srgb, var(--sem-accent) 55%, var(--sem-border)); }
+.sem-views-tabs button:hover { color: var(--sem-accent); }
+.sem-table-sort:hover { color: var(--sem-accent); }
+.sem-table-sort:hover::after { opacity: 1; }
+.sem-quiz-options button:hover:not(.sem-answered):not(.sem-wrong-pick) {
+  border-color: color-mix(in srgb, var(--sem-accent) 55%, var(--sem-border)); }
+.sem-facts-chrome button:focus-visible, .sem-quiz-options button:focus-visible,
+.sem-code-chrome button:focus-visible, .sem-md-chrome button:focus-visible,
+.sem-views-tabs button:focus-visible, .sem-reader-chrome button:focus-visible,
+.sem-reader-chrome select:focus-visible, .sem-source-chrome button:focus-visible,
+.sem-table-sort:focus-visible, .sem-table-filter:focus-visible,
+:is(sem-reveal, .sem-reveal) summary:focus-visible {
+  outline: 2px solid var(--sem-accent); outline-offset: 2px; border-radius: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sem-facts-chrome button, .sem-quiz-options button, .sem-code-chrome button,
+  .sem-md-chrome button, .sem-views-tabs button, .sem-reader-chrome button,
+  .sem-source-chrome button, .sem-table-sort, .sem-table-filter { transition: none !important; }
+}
+
+/* newsprint serif body (theme-paired typography; tokens stay in the
+   theme file — this is the one structural nod to the print aesthetic) */
+[data-sem-theme="newsprint"] :is(sem-enhanced-document, .sem-enhanced-document),
+html[data-sem-theme="newsprint"] body {
+  font-family: Georgia, 'Times New Roman', 'Iowan Old Style', serif; }

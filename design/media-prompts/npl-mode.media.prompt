@@ -1,0 +1,122 @@
+# SemText npl-mode — cognitive lens declaration, four render variants
+# Direction A "Slate Console" (house style shared with the other tag prompts).
+# npl-mode is display-only: it has TWO display states (default / primary mark)
+# and no view toggles; its variants are the authoring forms the schema and the
+# vocabulary CSS promise. One example page per variant, in one frame.
+#
+# MODE 1 — element form, default (no primary mark):
+#   visible: one row of unmarked lens chips — rounded-full pills, hairline
+#     slate border, slate surface fill, one near-white label per pill, one
+#     pill per typed lens child, small gaps between pills, the row on its own
+#     line inside a dark slate case card.
+#   must never: tint or bold any pill in this panel (the default state is
+#     deliberately quiet); occlude or blur a label; invent a pill for an
+#     untyped lens child (an untyped child contributes no chip).
+# MODE 2 — element form, primary (`primary` on the element):
+#   visible: the same chip row with EVERY pill carrying the primary mark —
+#     an accent-blue border, a low-opacity blue tint fill, and a slightly
+#     bolder label. Labels stay fully legible on the tint.
+#   must never: mark only some pills (the primary mark is whole-set); make
+#     the mark an opaque or inverted block that hides the label; add focus
+#     rings, buttons, toggles or any interactive chrome (display-only).
+# MODE 3 — class-alias form (`.npl-mode[data-primary]`):
+#   visible: a chip row visually IDENTICAL to mode 2 — same pill geometry,
+#     same accent border, same tint strength, same label weight. The
+#     dual-form invariant: the alternative authoring spelling renders
+#     pixel-identically.
+#   must never: differ from mode 2 in border, tint, weight, spacing or
+#     pill count.
+# MODE 4 — JS-off (vocabulary-only, light theme):
+#   visible: the same declaration in the light theme with NO chips and NO
+#   generated chrome — the authored lens names read as ordinary plain-prose
+#   text lines inside the light case card (grey-dark text on near-white),
+#   proving nothing is generated and nothing hidden without the script.
+#   must never: show pills, borders, badges, tier markers or loading
+#     affordances; differ in structure from the authored source order.
+#
+# Reference snapshots: the render-fixture captures of the privately built
+# bundle + shipped vocabulary CSS in .tmp/semtext-docs-overhaul/snaps/npl-mode/
+# (see reports/tag-npl-mode.md), plus the harness source view of the
+# reference page. The attachments below are live paths.
+schema: '0.4'
+id: reference-npl-mode
+type: image
+quality: high
+service: gemini
+model: gemini-2.5-flash-image
+
+prompt:
+  text: |
+    Dark-mode UI mockup of four reference-page panels in a two-by-two grid
+    illustrating one cognitive-lens declaration tag in its four render
+    variants, wide 16:9, flat technical illustration (screenshot-like, not
+    3D). Dark slate navy background (#0F172A) with a barely visible thin
+    grid and a faint blue radial glow upper-left. Each panel is a dark slate
+    card (#1E293B) with a thin slate hairline border, rounded corners, deep
+    soft shadow, and a small dim caption bar above it; panels are separated
+    by thin slate hairlines.
+
+    Every panel shows the same anatomy: a case card containing ONE row of
+    small rounded-full chips (pills). A pill has a hairline border, a flat
+    surface fill, generous horizontal padding, and ONE short bright
+    near-white label bar centered inside; pills sit in a loose row with small
+    gaps. All copy is abstract placeholder bars — strictly no letters,
+    digits, or words.
+
+    Top-left panel — MODE 1, default state: three pills with slate hairline
+    borders and plain surface fill, no tint anywhere, labels in muted
+    near-white. The quiet baseline.
+    Top-right panel — MODE 2, primary state: three pills of the same size
+    and spacing, but every pill has a blue (#60A5FA) border, a low-opacity
+    blue tint fill (about 12% over the surface), and a slightly bolder
+    brighter label. Legibility untouched — the label bar reads crisply on
+    the tint.
+    Bottom-left panel — MODE 3, the class-alias authoring spelling: a chip
+    row INDISTINGUISHABLE from mode 2 — identical pill geometry, identical
+    blue border and tint strength, identical label weight and pill count
+    (the point of this panel is that the alternative spelling renders
+    pixel-identically).
+    Bottom-right panel — MODE 4, the JS-off light theme: the same case card
+    on a near-white page (#FAFAFA panel) with NO pills at all — three short
+    grey-slate plain-text lines reading as ordinary prose, proving the
+    vocabulary alone generates nothing and hides nothing.
+  negative: legible text, letters, numbers, digits, words, captions,
+    typography, watermark, logo, 3D, photorealism, faces, avatars, robot
+    mascots, more than four panels, buttons, toggles, switches, focus rings,
+    progress spinners, blurred or struck-through text, an opaque or inverted
+    chip fill that hides a label, half-marked chip sets (some pills tinted
+    and some not in the primary panels), pills in the light JS-off panel
+  style: flat dark-mode product UI illustration, rounded card corners,
+    hairline borders, slate and blue palette, pill-shaped chip labels, four
+    panel variant comparison
+
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 1600
+    height: 900
+    aspect_ratio: '16:9'
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-mode/fixture-enhanced-1280.png
+    role: reference
+    description: shipped vocabulary render, dark theme — default, primary,
+      class-alias, untyped-skipped, wide-wrap and prose-context cases stacked
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-mode/fixture-enhanced-narrow-360.png
+    role: reference
+    description: narrow (360px) render — chip wrap behaviour inside the case cards
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-mode/fixture-jsoff-1280.png
+    role: reference
+    description: JS-off render — empty case boxes, no generated chrome
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-mode/npl-mode-fullpage-1280.png
+    role: reference
+    description: the reference page's source view of the authored example at 1280
+
+requirements:
+  subject: four panels of one cognitive-lens declaration — default chip row,
+    primary-marked chip row, class-alias chip row rendered identically, and
+    the JS-off light plain-prose panel
+  palette: slate navy background, slate panels, hairline borders, blue
+    (#60A5FA) for the primary mark border and tint, near-white pill labels
+  typography: none rendered — abstract placeholder bars only

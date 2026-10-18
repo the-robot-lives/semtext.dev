@@ -1,7 +1,7 @@
 /**
  * semtext-validate — schema-driven validation of SemText documents.
  *
- * Normative contracts: spec/conventions.md (v0.5) + spec/schema/*.md.
+ * Normative contracts: spec/conventions.md (v0.6) + spec/schema/*.md.
  * Machine-readable contract: spec/schema/semtext.schema.json — every rule
  * below READS that file; nothing here hardcodes a parallel rule set. When
  * the prose contracts change, update the JSON schema and the validator
@@ -9,7 +9,8 @@
  *
  * Checks (severity from the schema's x-semtext block):
  *   - exactly one document root (`sem-enhanced-document` tag or class alias)
- *   - documented `sem-*` elements only (unknown element = error)
+ *   - documented vocabulary elements only, all four families (`sem-`,
+ *     `npl-`, `semext-`, `agent-kit-` — unknown element = error)
  *   - per-element attribute contracts: required / recommended attributes,
  *     enumerated token values, numeric ranges, flag lists
  *   - dual spelling (`x` + `data-x` on one element) = authoring error
@@ -17,6 +18,11 @@
  *   - unknown attributes = warning; runtime tier markers and generated
  *     chrome in authored source = warning
  *   - orphan record parts (e.g. `<statement>` outside `sem-fact`) = warning
+ *   - v0.6: `childForm` contracts (`sem-table` table-or-markdown,
+ *     `sem-code` pre-or-flat), `sem-list` ordered/unordered exclusivity,
+ *     `<sem-break>` emptiness, and authoring-hygiene warnings
+ *     (`<hr>`, `<br>`, `<b>`, `<strong>`, `<i>`, `<em>` — conventions §3.1;
+ *     outside code contexts only)
  *
  * Line numbers come from a source-side open-tag scan aligned against the
  * parsed tree by (tag name, attribute-name signature); they are exact for
@@ -46,13 +52,33 @@ const { Window } = await (async () => {
  * ------------------------------------------------------------------ */
 
 /**
- * Load and lightly validate the machine-readable contract.
+ * Load and lightly validate the machine-readable contract. `$defs` whose
+ * `extends` names a preset in `x-semtext.defPresets` get the preset's
+ * attributes/children/childRules merged UNDER their own (local keys win;
+ * arrays concatenate preset-first), so a contract's `$def` can be a few
+ * lines. The input schema object is never mutated.
+ *
  * @param {string} schemaPath path to semtext.schema.json
  */
 export function loadSchema(schemaPath) {
   const schema = JSON.parse(readFileSync(schemaPath, 'utf8'));
   if (!schema['x-semtext'] || !schema.$defs) {
     throw new Error(`${schemaPath}: not a SemText schema (missing x-semtext / $defs)`);
+  }
+  const presets = schema['x-semtext'].defPresets || {};
+  const missing = (name, from) =>
+    new Error(`${schemaPath}: $def "${from}" extends unknown defPresets entry "${name}"`);
+  for (const [name, def] of Object.entries(schema.$defs)) {
+    if (!def.extends) continue;
+    const names = Array.isArray(def.extends) ? def.extends : [def.extends];
+    for (const presetName of names) {
+      const preset = presets[presetName];
+      if (!preset) throw missing(presetName, name);
+      def.attributes = { ...(preset.attributes || {}), ...(def.attributes || {}) };
+      if (preset.children || def.children) def.children = [...(preset.children || []), ...(def.children || [])];
+      if (preset.childRules || def.childRules) def.childRules = [...(preset.childRules || []), ...(def.childRules || [])];
+      if (def.record === undefined && preset.record !== undefined) def.record = preset.record;
+    }
   }
   return schema;
 }
@@ -150,6 +176,18 @@ function attrNames(el) {
  * Element identity (tag form + v0.4 class-form alias, Appendix A)
  * ------------------------------------------------------------------ */
 
+/** Every vocabulary namespace prefix the spec knows. Order matters only
+ *  for the class-alias walk below (longest-first would also do); the
+ *  hyphen-anchored `startsWith(prefix + '-')` checks cannot cross-match
+ *  (`semext-note` does not start with `sem-` followed by a token boundary
+ *  — the hyphen IS the boundary). */
+export const FAMILY_PREFIXES = ['sem', 'npl', 'semext', 'agent-kit'];
+
+/** True when `name` is any family's `<prefix>-<token>` name. */
+function isFamilyName(name) {
+  return FAMILY_PREFIXES.some((p) => name.startsWith(p + '-'));
+}
+
 function defNameFor(el, defs) {
   const tag = el.tagName.toLowerCase();
   if (defs[tag]) return tag;
@@ -157,16 +195,23 @@ function defNameFor(el, defs) {
   for (const [defName, def] of Object.entries(defs)) {
     if (def.tagAliases && def.tagAliases.includes(tag)) return defName;
   }
-  // Class-form alias: div/span with class `sem-<token>` (Appendix A). The
-  // token maps to a def name either directly (`sem-agent`) or with the
-  // `sem-` prefix (`sem-fact` -> def `sem-fact`); tag aliases count too.
+  // Class-form alias: div/span with class `<prefix>-<token>` (Appendix A,
+  // every family). The token maps to a def name either directly
+  // (`sem-agent`) or with the family prefix re-attached (`sem-fact` ->
+  // def `sem-fact`); tag aliases count too. Hyphenated prefixes
+  // (`agent-kit-issue` -> token `issue`) slice on the full prefix, so the
+  // derived identifiers never break mid-prefix.
   for (const cls of el.classList) {
-    if (!cls.startsWith('sem-')) continue;
-    const token = cls.slice(4);
-    if (defs[token]) return token;
-    if (defs['sem-' + token]) return 'sem-' + token;
-    for (const [defName, def] of Object.entries(defs)) {
-      if (def.tagAliases && (def.tagAliases.includes(token) || def.tagAliases.includes('sem-' + token))) return defName;
+    for (const prefix of FAMILY_PREFIXES) {
+      if (!cls.startsWith(prefix + '-')) continue;
+      const token = cls.slice(prefix.length + 1);
+      if (defs[token]) return token;
+      const familyTag = prefix + '-' + token;
+      if (defs[familyTag]) return familyTag;
+      for (const [defName, def] of Object.entries(defs)) {
+        if (def.tagAliases && (def.tagAliases.includes(token) || def.tagAliases.includes(familyTag))) return defName;
+      }
+      break; // first matching prefix owns this class token
     }
   }
   return null;
@@ -175,7 +220,16 @@ function defNameFor(el, defs) {
 function matchesIdentity(el, name) {
   if (el.tagName.toLowerCase() === name) return true;
   for (const cls of el.classList) {
-    if (cls === name || cls === 'sem-' + name) return true;
+    if (cls === name) return true;
+    // A bare part name (child-rule selectors: `statement`, `conclusion`)
+    // matches its family-prefixed class alias (`sem-statement`); an
+    // already-prefixed name matches only itself, so double prefixes
+    // (`sem-sem-fact`) never sneak through.
+    if (!isFamilyName(name)) {
+      for (const prefix of FAMILY_PREFIXES) {
+        if (cls === prefix + '-' + name) return true;
+      }
+    }
   }
   return false;
 }
@@ -244,7 +298,7 @@ export function validateSource(source, schema, { filename = '<input>' } = {}) {
   // -- document root ------------------------------------------------
   const rootCfg = x.document.root;
   const usesVocabulary = [...doc.querySelectorAll('*')].some(
-    (el) => defNameFor(el, defs) !== null || el.tagName.toLowerCase().startsWith('sem-')
+    (el) => defNameFor(el, defs) !== null || isFamilyName(el.tagName.toLowerCase())
   );
   const roots = [];
   for (const el of doc.querySelectorAll('*')) {
@@ -296,23 +350,38 @@ export function validateSource(source, schema, { filename = '<input>' } = {}) {
 
     const defName = defNameFor(el, defs);
     if (!defName) {
-      if (tag.startsWith('sem-')) {
+      if (isFamilyName(tag)) {
         push(x.unknownElementSeverity, 'unknown-element', `unknown SemText element <${tag}> — not in spec/schema (see spec/conventions.md)`, line);
       }
       continue; // ordinary semantic HTML is always valid content
     }
     const def = defs[defName];
 
-    // Attribute contracts. Known set = global catalog + element def +
-    // standard HTML/ARIA. data-* is the alias spelling of every parameter.
-    const known = new Set([...Object.keys(x.globalAttributes), ...Object.keys(def.attributes || {}), ...x.standardAttributes]);
+    // Child-form branching (schema `childForms`): a parent def can carry
+    // per-child contracts that only apply in that parent's context — e.g.
+    // `<sem-step>` grows action/gate/check/… under `<sem-workflow>`, while
+    // a sem-procedure step keeps its plain status-only contract, and
+    // `<node>` requires `path` only inside a tree container. The branch's
+    // attributes merge OVER the child def's own (branch keys win); its
+    // presence does not touch children/childRules/partOf.
+    const parentEl = el.parentElement;
+    const parentDefName = parentEl ? defNameFor(parentEl, defs) : null;
+    const parentDef = parentDefName ? defs[parentDefName] : null;
+    const form = parentDef && parentDef.childForms ? parentDef.childForms[defName] : null;
+    const defAttributes =
+      form && form.attributes ? { ...(def.attributes || {}), ...form.attributes } : def.attributes || {};
+
+    // Attribute contracts. Known set = global catalog + element def (+
+    // the context child-form, above) + standard HTML/ARIA. data-* is the
+    // alias spelling of every parameter.
+    const known = new Set([...Object.keys(x.globalAttributes), ...Object.keys(defAttributes), ...x.standardAttributes]);
     const hasBare = (n) => el.hasAttribute(n);
     for (const a of Array.from(el.attributes)) {
       const aname = a.name.toLowerCase();
       const value = a.value;
       if (aname.startsWith('data-')) {
         const base = aname.slice(5);
-        const contract = (def.attributes || {})[base] || x.globalAttributes[base];
+        const contract = defAttributes[base] || x.globalAttributes[base];
         if (contract !== undefined && hasBare(base)) {
           push(x.spelling.dualSpellingSeverity, 'dual-spelling', `both "${base}" and "${aname}" present — writing both spellings is an authoring error (conventions.md §2; data- wins)`, line);
         }
@@ -322,7 +391,7 @@ export function validateSource(source, schema, { filename = '<input>' } = {}) {
         continue;
       }
       if (known.has(aname)) {
-        const contract = (def.attributes || {})[aname] || x.globalAttributes[aname];
+        const contract = defAttributes[aname] || x.globalAttributes[aname];
         const severity = (contract && contract.severityOnUnknown) || 'error';
         for (const p of valueCheck(contract, value, aname)) push(severity, 'attribute-value', p, line);
         if (contract && contract.forbidden) {
@@ -333,8 +402,9 @@ export function validateSource(source, schema, { filename = '<input>' } = {}) {
       push(x.unknownAttributeSeverity, 'unknown-attribute', `unknown attribute "${aname}" on <${defName === tag ? tag : tag + ' [sem-' + defName + ']'}>`, line);
     }
 
-    // required / recommended
-    for (const [attr, contract] of Object.entries(def.attributes || {})) {
+    // required / recommended (child-form contracts included — a required
+    // branch attribute, e.g. a tree node's path, enforces here)
+    for (const [attr, contract] of Object.entries(defAttributes)) {
       if (contract.forbidden) continue;
       const present = el.hasAttribute(attr) || el.hasAttribute('data-' + attr);
       if (!present && contract.required) {
@@ -354,6 +424,36 @@ export function validateSource(source, schema, { filename = '<input>' } = {}) {
       }
     }
 
+    // child form (v0.6): rich child OR authored text — the either/or the
+    // generic childRules grammar cannot express (conventions.md §5).
+    if (def.childForm === 'table-or-markdown') {
+      const n = countChildMatches(el, 'table');
+      if (n === 0 && el.textContent.trim() === '') {
+        push('error', 'child-structure', `${describe(el, defName)} carries neither a <table> child nor a markdown pipe table — author one of the two forms (spec/schema/sem-table.md)`, line);
+      } else if (n > 1) {
+        push('error', 'child-structure', `${describe(el, defName)} allows at most one <table> child, found ${n}`, line);
+      }
+    } else if (def.childForm === 'pre-or-flat') {
+      const n = countChildMatches(el, 'pre');
+      if (n > 1) {
+        push('error', 'child-structure', `${describe(el, defName)} allows at most one <pre> child, found ${n}`, line);
+      } else if (n === 0 && el.textContent.trim() === '') {
+        push('error', 'child-structure', `${describe(el, defName)} is empty — author the flat inline form or a <pre><code> listing (spec/schema/sem-code.md)`, line);
+      }
+    }
+
+    // v0.6 element-specific contracts
+    if (defName === 'sem-list') {
+      const ordered = el.hasAttribute('ordered') || el.hasAttribute('data-ordered');
+      const unordered = el.hasAttribute('unordered') || el.hasAttribute('data-unordered');
+      if (ordered && unordered) {
+        push('error', 'attribute-value', `${describe(el, defName)} carries both ordered and unordered — exactly one (spec/schema/sem-list.md)`, line);
+      }
+    }
+    if (defName === 'sem-break' && (el.childNodes.length > 0 || el.textContent.trim() !== '')) {
+      push('error', 'child-structure', '<sem-break> must be empty — it is a divider; content belongs outside it (spec/schema/sem-break.md)', line);
+    }
+
     // declared children must be their declared parts (orphan detection)
     if (def.partOf) {
       const parent = el.parentElement;
@@ -362,6 +462,19 @@ export function validateSource(source, schema, { filename = '<input>' } = {}) {
         push('warning', 'orphan-part', `<${tag}> is a record part of ${def.partOf.join('/')} but its parent is ${parent ? '<' + parent.tagName.toLowerCase() + '>' : 'the document root'}`, line);
       }
     }
+  }
+
+  // authoring-hygiene warnings (v0.6, conventions.md §3.1): the retired
+  // presentation tags are still valid inputs, but new authoring does not
+  // use them. Skipped inside code contexts (pre/code/sem-code/sem-md),
+  // where the listing is verbatim and emphasis markup may be authored
+  // content.
+  for (const el of doc.querySelectorAll('hr, br, b, strong, i, em')) {
+    if (el.closest('pre, code, sem-code, sem-md')) continue;
+    const alt = el.tagName.toLowerCase() === 'hr'
+      ? '<sem-break>'
+      : el.tagName.toLowerCase() === 'br' ? 'a new element (conventions §3.1)' : '<sem-highlight> or the *text* sugar';
+    push('warning', 'authoring-hygiene', `<${el.tagName.toLowerCase()}> is presentation markup — v0.6 authoring uses ${alt} (conventions.md §3.1)`, lines.get(el));
   }
 
   // document-level child rules from the schema (root scope)
@@ -378,9 +491,15 @@ export function validateSource(source, schema, { filename = '<input>' } = {}) {
 function describe(el, defName) {
   const tag = el.tagName.toLowerCase();
   if (tag === defName) return `<${tag}>`;
-  // Class form: show the class actually present (sem-fact), not sem-sem-fact.
+  // Class form: show the class actually present (sem-fact), not the
+  // double-prefixed spelling — the def name plus any family prefix.
   for (const cls of el.classList) {
-    if (cls === defName || cls === 'sem-' + defName) return `<${tag} class="${cls}">`;
+    if (cls === defName) return `<${tag} class="${cls}">`;
+    if (!isFamilyName(defName)) {
+      for (const prefix of FAMILY_PREFIXES) {
+        if (cls === prefix + '-' + defName) return `<${tag} class="${cls}">`;
+      }
+    }
   }
   return `<${tag}>`;
 }

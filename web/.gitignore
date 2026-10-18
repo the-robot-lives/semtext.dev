@@ -1,0 +1,9 @@
+# Next.js build output
+/.next/
+/out/
+
+# Cypress artifacts — recordings stay out of git; copy what you want to keep
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+

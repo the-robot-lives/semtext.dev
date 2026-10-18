@@ -1,0 +1,54 @@
+databaseChangeLog:
+  # Proposals domain enums (design v1 §4 as amended by v2 §5).
+  # discussion_state: v2 drops v1's `paused` — pending | ok | failed only,
+  # with `attempts` + `last_error` carrying retry state instead.
+
+  - changeSet:
+      id: create-enum-proposal-status
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE TYPE proposal_status_enum AS ENUM ('draft', 'submitted', 'under_review', 'accepted', 'declined', 'merged', 'withdrawn');
+      rollback:
+        - sql:
+            sql: DROP TYPE IF EXISTS proposal_status_enum;
+
+  - changeSet:
+      id: create-enum-discussion-state
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE TYPE discussion_state_enum AS ENUM ('pending', 'ok', 'failed');
+      rollback:
+        - sql:
+            sql: DROP TYPE IF EXISTS discussion_state_enum;
+
+  - changeSet:
+      id: create-enum-moderation-event
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE TYPE moderation_event_enum AS ENUM ('status_change', 'hide', 'unhide', 'report', 'spam_flag', 'lock_discussion', 'claim');
+      rollback:
+        - sql:
+            sql: DROP TYPE IF EXISTS moderation_event_enum;
+
+  - changeSet:
+      id: create-enum-report-reason
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE TYPE report_reason_enum AS ENUM ('spam', 'harassment', 'other');
+      rollback:
+        - sql:
+            sql: DROP TYPE IF EXISTS report_reason_enum;
+
+  - changeSet:
+      id: create-enum-report-status
+      author: semtext-p1-data
+      changes:
+        - sql:
+            sql: CREATE TYPE report_status_enum AS ENUM ('open', 'resolved', 'dismissed');
+      rollback:
+        - sql:
+            sql: DROP TYPE IF EXISTS report_status_enum;

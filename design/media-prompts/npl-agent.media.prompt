@@ -1,0 +1,185 @@
+# SemText npl-agent — agent definition card, three render variants
+# Direction A "Slate Console" (house style shared with the other tag prompts).
+# npl-agent is display-only: ONE display mode (a static card whose generated
+# header sits above the authored prose) and no view toggles; its variants are
+# the render forms the schema and the vocabulary CSS promise. One example page
+# per variant, in one frame.
+#
+# MODE 1 — element form, complete header (the canonical authoring form:
+#   name, type, version, extends all authored):
+#   visible: one card; a header line above a thin divider carrying, in order:
+#     "name ·" small-caps label then the agent identifier in bold;
+#     "type ·" label then the archetype in muted text; "NPL@" label then the
+#     version in muted text; "extends ·" label then the parent agent name in
+#     muted text; below the divider the authored behavioural prose in normal
+#     foreground text, fully legible, never rewritten.
+#   must never: occlude, blur, or strike any prose; invent interactive chrome
+#     (no buttons, toggles, or focus rings — display-only); wrap the four
+#     header fields into a second row of labels (the header flexes and may
+#     wrap as a whole, but each field stays label-then-value on one line).
+# MODE 2 — element form, no parent agent (extends unauthored):
+#   visible: the same card with the header line ending after the version —
+#     "name ·", "type ·", "NPL@" only. The extends field is simply ABSENT:
+#     no gap, no placeholder, no trailing "extends ·" label, no empty slot
+#     where the parent name would sit. Body prose identical in position.
+#   must never: render an empty extends slot or dimmed placeholder for the
+#     missing parent; shift the body prose relative to mode 1 beyond the
+#     header's natural shortening.
+# MODE 3 — JS-off (vocabulary-only):
+#   visible: the authored text as PLAIN PROSE on the page — no card box, no
+#     border, no header line, no divider, no generated labels of any kind.
+#     (The vocabulary gives the un-upgraded element display:block and nothing
+#     else; the JS-off form is the raw authored document text.)
+#   must never: show an empty bordered box, a lone divider, upgrade chrome,
+#     tier markers, or loading affordances.
+#
+# Reference snapshots: harness fullpage captures in
+# .tmp/semtext-docs-overhaul/snaps/npl-agent/ plus private render-fixture
+# captures of the shipped vocabulary CSS (same directory, render-*.jpg;
+# see reports/tag-npl-agent.md). The attachments below are live paths.
+schema: '0.4'
+id: reference-npl-agent
+type: image
+quality: high
+service: gemini
+model: gemini-2.5-flash-image
+
+prompt:
+  text: |
+    Dark-mode UI mockup of three reference-page panels in a single row
+    illustrating one agent-definition card in its three render variants,
+    wide 16:9, flat technical illustration (screenshot-like, not 3D). Dark
+    slate navy background (#0F172A) with a barely visible thin grid and a
+    faint violet radial glow upper-left. Each panel is a dark slate card
+    (#1E293B) with a thin slate hairline border, rounded corners, deep soft
+    shadow, and a small dim caption bar above it; panels are separated by
+    thin slate hairlines.
+
+    The complete-card panels (left and middle) share one anatomy, top to
+    bottom: a header line of four small fields — a bold near-white identifier
+    preceded by a muted small-caps label ("name"), then a muted archetype
+    preceded by the label ("type"), then a muted version preceded by the
+    label ("NPL@"), then in the left panel only a muted parent-agent name
+    preceded by the label ("extends") — and beneath the header a thin slate
+    divider, then two to three lines of bright near-white prose bars (the
+    agent's behavioural text) at full opacity. All copy is abstract
+    placeholder bars — strictly no letters, digits, or words; the only
+    literal glyphs allowed are the label punctuation dots.
+
+    Left panel — MODE 1, the complete card: all four header fields, divider,
+    prose bars.
+    Middle panel — MODE 2, the parentless card: IDENTICAL in every respect
+    except the header line holds exactly three fields (name, type, NPL@) and
+    ends there — no fourth field, no gap, no trailing label; the divider and
+    prose bars sit at the same relative position.
+    Right panel — MODE 3, the JS-off page: the same prose bars as plain body
+    text directly on the dark page — NO card box, NO border, NO header line,
+    NO divider, NO labels; nothing but unadorned text bars.
+  negative: legible text, letters, numbers, digits, words (label punctuation
+    dots excepted), watermark, logo, 3D, photorealism, faces, avatars, robot
+    mascots, buttons, toggles, switches, progress spinners, focus rings,
+    blurred or struck-through text, an empty extends slot or dimmed
+    placeholder in the parentless panel, a card box or divider in the JS-off
+    panel, occlusion or cover plates anywhere
+  style: flat dark-mode product UI illustration, rounded card corners,
+    hairline borders, slate and violet palette, three-panel variant
+    comparison
+
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 1600
+    height: 900
+    aspect_ratio: '16:9'
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-agent/render-dark-upgraded.jpg
+    role: reference
+    description: shipped vocabulary render, dark theme — complete card (extends
+      authored), parentless card (header ends after NPL@), and the authored
+      data-* override card, stacked
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-agent/render-jsoff.jpg
+    role: reference
+    description: JS-off render — the authored text as plain prose, no card box
+      and no header
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/npl-agent/npl-agent-fullpage-1280.png
+    role: reference
+    description: the reference page at 1280 — summary and attribute table the
+      card examples sit under (stitched capture; treat content, not layout,
+      as the reference)
+
+requirements:
+  subject: three panels of one agent-definition card — complete four-field
+    header, parentless three-field header, and the JS-off plain-prose form
+  palette: slate navy background, slate panels, hairline borders, near-white
+    name and prose, muted slate for type/version/extends labels and values
+  composition: three equal panels in one row; identical card anatomy between
+    modes 1 and 2 except the missing fourth field; prose bars at the same
+    full opacity in all three panels
+  do:
+    - keep the header as one visual line of label-then-value fields above the
+      divider, flexing (wrapping as a whole) rather than stacking labels
+    - encode the parentless variant by ABSENCE of the fourth field, never by
+      a gap, placeholder, or dimmed slot
+    - keep body prose at foreground brightness in every panel; color only the
+      small-caps labels and the muted values
+    - render the JS-off panel with literally nothing but text bars
+  dont:
+    - any legible text, digits, or logos
+    - occlusion, blur, or redaction of any authored line (occlusion belongs to
+      spoiler/quiz elements, never to the agent card)
+    - interactive chrome — no buttons, toggles, or focus rings (display-only)
+    - an empty bordered card or stray divider in the JS-off panel
+    - a second row of labels inside one header field
+
+eval:
+  pass_threshold: 0.7
+  required_pass:
+    - no_occlusion
+    - parentless_absence
+    - jsoff_plain_prose
+  criteria:
+    no_occlusion:
+      weight: 3
+      description: Every authored prose line is fully visible in all panels;
+        nothing is blurred, struck, or covered
+      fail_signals:
+        - any blur, strikethrough, cover plate, or redaction bar
+        - prose dimmer than the name field in the card panels
+    parentless_absence:
+      weight: 3
+      description: The middle panel's header ends after the version field with
+        no gap, trailing label, or placeholder where extends would sit
+      fail_signals:
+        - an empty slot, dimmed placeholder, or trailing "extends" label in
+          the middle panel
+        - middle panel structurally different from the left panel beyond the
+          missing fourth field
+    jsoff_plain_prose:
+      weight: 3
+      description: The right panel shows plain text bars with no card box,
+        divider, header, or labels
+      fail_signals:
+        - any border, box, divider, or small-caps label in the right panel
+        - a lone empty card in the JS-off panel
+    header_integrity:
+      weight: 2
+      description: Header reads as one line of label-then-value fields — bold
+        name, muted type, NPL@ version, extends last — above the divider
+      fail_signals:
+        - labels wrapped into their own row under the values
+        - name not visually the boldest header field
+        - divider missing or doubled
+    theme_fidelity:
+      weight: 1
+      description: Slate Console house palette and hairline borders throughout
+      fail_signals:
+        - saturated neon accents on body text
+        - white cards in the dark panels
+
+tags:
+  - semtext
+  - reference
+  - npl-agent
+  - media-prompt

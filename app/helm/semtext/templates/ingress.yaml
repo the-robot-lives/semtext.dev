@@ -1,0 +1,41 @@
+{{- if .Values.ingress.enabled }}
+{{- $svcName := ternary (printf "%s-sandbox" (include "hologram-start-app.fullname" .)) (include "hologram-start-app.fullname" .) (.Values.sandbox.enabled | default false) }}
+{{- $frontendPort := .Values.frontend.port }}
+{{- $backendPort := .Values.backend.port }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "hologram-start-app.fullname" . }}
+  labels:
+    {{- include "hologram-start-app.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+    {{- if .Values.ingress.cloudflareOnly }}
+    nginx.ingress.kubernetes.io/whitelist-source-range: {{ include "hologram-start-app.cloudflareWhitelist" . | quote }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  tls:
+  - hosts:
+    - {{ .Values.domain }}
+    {{- range $h := .Values.ingress.extraHosts }}
+    - {{ $h }}
+    {{- end }}
+    {{- if .Values.appDomain }}
+    - {{ .Values.appDomain }}
+    {{- end }}
+    secretName: {{ .Values.tls.secretName }}
+  rules:
+  {{- range $h := prepend (.Values.ingress.extraHosts | default list) $.Values.domain }}
+  - host: {{ $h }}
+    http:
+      paths:
+      {{- include "hologram-start-app.sitePaths" (dict "svc" $svcName "fe" $frontendPort "be" $backendPort) | nindent 6 }}
+  {{- end }}
+  {{- if .Values.appDomain }}
+  - host: {{ .Values.appDomain }}
+    http:
+      paths:
+      {{- include "hologram-start-app.sitePaths" (dict "svc" $svcName "fe" $frontendPort "be" $backendPort) | nindent 6 }}
+  {{- end }}
+{{- end }}

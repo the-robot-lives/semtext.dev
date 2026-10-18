@@ -48,3 +48,39 @@ import './lit/sem-source.js';
 /* R/W2.2 Markdown block — thin wrapper over src/md/* */
 export { SemMd } from './lit/sem-md.js';
 import './lit/sem-md.js';
+
+/* Vanilla tiers — the former dist/semtext-fallback.js, dist/semtext-md.js and
+ * dist/semtext-reading.js entry points, folded into this one bundle (0.9.0
+ * one-bundle contract: interactivity lives in semtext.js alone). Each folded
+ * entry point still self-initialises on DOMContentLoaded unless
+ * `window.__semJsOff` is set; import order is load-bearing — the core's
+ * sem-source snapshot pass must precede every handler that adds chrome, and
+ * the reading pass (which renders the snapshot copy) runs last. */
+import { enhance as enhanceCore } from './fallback/index.js';
+export type { FallbackHandler } from './fallback/index.js';
+export {
+  enhanceSource,
+  enhanceAttrs,
+  enhanceFacts,
+  enhanceDetails,
+  enhanceNote,
+  enhanceProperties,
+  enhanceViews,
+  enhanceReveal,
+  enhanceProgress,
+  enhanceAudience,
+  enhanceTarget,
+} from './fallback/index.js';
+import { enhance as enhanceMdScan } from './md/index.js';
+export { enhanceMd, enhanceMdElement, normalizeMd, parseBlocks, safeUrl } from './md/index.js';
+import { enhance as enhanceReading } from './reading/index.js';
+export {
+  enhanceCodeElement,
+  enhanceReferencesElement,
+  enhanceGlossaryElement,
+  enhanceTableElement,
+  enhanceSourceElement,
+  enhanceReaderElement,
+  disposeReaderElement,
+} from './reading/index.js';
+export { enhanceCore, enhanceMdScan as enhanceMdDocument, enhanceReading };

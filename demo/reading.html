@@ -17,12 +17,10 @@
   p  { margin: .6rem 0; }
 </style>
 
-<!-- Fallback core (duplicate-key diagnostic, deep links, print) and the
-     reading bundle (sem-code chrome, reference previews, glossary). Both
-     are vanilla IIFEs; sources in src/fallback/** and src/reading/**. -->
-<!-- sem:inline fallback -->
-<!-- sem:inline reading -->
-<!-- sem:inline md -->
+<!-- The one bundle carries the vanilla core (source snapshot, deep links,
+     print), the reading behaviours and the Markdown renderer (0.9.0
+     one-bundle contract). The document reads as plain prose without it. -->
+<!-- sem:inline bundle -->
 </head>
 
 <body>
@@ -155,7 +153,7 @@
   <h2>References</h2>
   <div class="sem-references" id="refs" data-kind="bibliography" role="list">
     <div class="sem-reference" id="r-rfc" role="listitem" data-href="https://www.rfc-editor.org/rfc/rfc6749" data-cite="RFC 6749">The OAuth 2.0 Authorization Framework, §10.4.</div>
-    <div class="sem-reference" id="r-note" role="listitem">A footnote with no external target: rotation is a policy, not a protocol feature.</div>
+    <div class="sem-reference" id="r-note" role="listitem" data-cite="notes/rotation-policy.md">A footnote with no external target: rotation is a policy, not a protocol feature.</div>
   </div>
 
   <h2>Config</h2>
@@ -203,7 +201,7 @@
   </div>
 
   <h2>Disclosures</h2>
-  <!-- Class form on both pages: the reveal and views fallbacks (core) drive
+  <!-- Class form on both pages: the reveal and views handlers drive
        `.sem-reveal` / `.sem-views` only. Headings inside them are reached
        from the outline through the deep-link resolver. -->
   <div class="sem-reveal" id="rv-keys" data-summary="Key rotation detail" collapsed>

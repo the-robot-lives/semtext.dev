@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+# live-dev — in-cluster supervisor for the semtext.dev live dev slot
+# (dev.semtext.dev). Ships in the ops.noizu.com/semtext.dev/app:live-dev
+# image (Dockerfile.live-dev, built by app-ci.yml's live-dev-image job).
+#
+# Contract (LIVE_DEV pattern):
+#   * clone the repo once (read-only GitHub deploy key mounted at
+#     LIVE_DEV_DEPLOY_KEY_FILE), then poll origin/<branch> every
+#     LIVE_DEV_POLL_SECONDS. On a new commit: git reset --hard, Liquibase +
+#     Ecto migrations, recompile, restart the dev server.
+#   * The server runs Phoenix dev mode (`mix holo`): CodeReloader +
+#     LiveReloader are ON — pages recompile on request, the browser
+#     live-reloads. NEVER expose this outside the house Authentik gate:
+#     dev mode is remote code execution by design.
+#   * Data isolation: the dev slot's Postgres + Redis run as sidecars in the
+#     same pod on 127.0.0.1 (throwaway, volume-backed). Nothing here ever
+#     points at the cluster DB or prod secrets — all signing secrets are
+#     generated at first boot and kept in the workspace volume.
+set -euo pipefail
+
+REPO_URL="${LIVE_DEV_REPO_URL:-git@github.com:the-robot-lives/semtext.dev.git}"
+BRANCH="${LIVE_DEV_BRANCH:-develop}"
+WORKSPACE="${LIVE_DEV_WORKSPACE:-/workspace}"
+POLL_SECONDS="${LIVE_DEV_POLL_SECONDS:-30}"
+KEY_FILE="${LIVE_DEV_DEPLOY_KEY_FILE:-/run/secrets/live-dev-git/SEMTEXT_LIVE_DEV_DEPLOY_KEY}"
+PORT="${PORT:-4000}"
+
+REPO_DIR="$WORKSPACE/repo"
+APP_DIR="$REPO_DIR/app/backend"
+SECRETS_FILE="$WORKSPACE/.dev-secrets.env"
+KEY_COPY="$WORKSPACE/.gitkey"
+
+log() { echo "[live-dev $(date -u '+%Y-%m-%dT%H:%M:%SZ')] $*"; }
+
+# ---------------------------------------------------------------- git access
+mkdir -p "$WORKSPACE"
+umask 077
+install -m 600 "$KEY_FILE" "$KEY_COPY"   # mounted secret keys are 0644; ssh demands 600
+# dc get strips trailing newlines from the stored PEM; ssh needs the final
+# line terminated or it fails with "error in libcrypto" - append one if gone.
+[ "$(tail -c1 "$KEY_COPY" | od -An -c | tr -d ' \n')" = '\n' ] || printf '\n' >> "$KEY_COPY"
+export GIT_SSH_COMMAND="ssh -i $KEY_COPY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+if [ ! -d "$REPO_DIR/.git" ]; then
+  log "cloning $REPO_URL (branch $BRANCH)"
+  git clone --single-branch --branch "$BRANCH" "$REPO_URL" "$REPO_DIR"
+fi
+git -C "$REPO_DIR" fetch origin "$BRANCH"
+git -C "$REPO_DIR" reset --hard "origin/$BRANCH"
+
+# ------------------------------------------------------- dev-only environment
+# Signing secrets are generated ONCE per workspace volume — throwaway dev
+# values, never prod material.
+# Generated from /dev/urandom, NOT `mix phx.gen.secret` — this runs before
+# cd into app/backend, where mix has no project and the phoenix task prints
+# nothing, silently writing EMPTY values (the -s guard then never regenerates
+# the broken file). Plug's cookie store also demands secret_key_base >= 64
+# bytes; 64 urandom bytes -> 86 base64 chars, safely over.
+if [ ! -s "$SECRETS_FILE" ] \
+   || ! grep -q "^SECRET_KEY_BASE=.\{64,\}" "$SECRETS_FILE" \
+   || ! grep -q "^SESSION_SIGNING_SALT=.\{8,\}" "$SECRETS_FILE"; then
+  log "generating dev-only signing secrets ($SECRETS_FILE)"
+  {
+    echo "SECRET_KEY_BASE=$(head -c 64 /dev/urandom | base64 | tr -d '\n')"
+    echo "SESSION_SIGNING_SALT=$(head -c 16 /dev/urandom | base64 | tr -d '\n')"
+    echo "GUARDIAN_SECRET_KEY=$(head -c 48 /dev/urandom | base64 | tr -d '\n')"
+  } > "$SECRETS_FILE"
+fi
+set -a
+# shellcheck disable=SC1090
+. "$SECRETS_FILE"
+set +a
+
+export MIX_ENV=dev
+export HOLOGRAM_ENV=dev
+export HOLOGRAM_START=1
+export PHX_SERVER=true
+export PHX_IP=0.0.0.0
+export PORT
+export DB_HOST=127.0.0.1 DB_PORT=5432 DB_USER=semtext DB_PASS=semtext_dev DB_NAME=semtext_dev
+export DATABASE_URL="ecto://semtext:semtext_dev@127.0.0.1:5432/semtext_dev"
+export REDIS_URL="redis://127.0.0.1:6379/0"
+export FRONTEND_URL="https://dev.semtext.dev"
+# HostDispatch 404s unknown hosts (design v2 §3.1) — register the dev host.
+export SEMTEXT_EXTRA_MAIN_HOSTS="dev.semtext.dev"
+# Keep proposals redirects on the dev slot, never prod.
+export SEMTEXT_PROPOSALS_ORIGIN="https://dev.semtext.dev"
+
+# The tobor_kit_hologram path dep is baked at /Portfolio/Libs/tobor-kit/hologram
+# (mix.exs walks up and finds it). Its own :hologram compiler looks for JS
+# assets under ITS deps dir — point that at the clone's deps (same trick as
+# the release Dockerfile and app-ci.yml).
+KIT_DIR="/Portfolio/Libs/tobor-kit/hologram"
+relink_kit() { [ -d "$KIT_DIR" ] && ln -sfn "$APP_DIR/deps" "$KIT_DIR/deps"; }
+
+wait_pg() {
+  log "waiting for sidecar postgres"
+  for _ in $(seq 1 120); do
+    if pg_isready -h 127.0.0.1 -p 5432 -U "$DB_USER" -q; then return 0; fi
+    sleep 1
+  done
+  log "postgres sidecar never became ready"
+  exit 1
+}
+
+build() {
+  cd "$APP_DIR"
+  relink_kit
+  log "mix deps.get"
+  mix deps.get
+  log "liquibase.update (schema)"
+  mix liquibase.update
+  log "ecto.migrate"
+  mix ecto.migrate
+  log "mix compile"
+  mix compile
+}
+
+SERVER_PID=""
+start_server() {
+  log "starting dev server (mix holo) on :$PORT"
+  setsid mix holo &
+  SERVER_PID=$!
+}
+stop_server() {
+  if [ -n "$SERVER_PID" ]; then
+    kill -- "-$SERVER_PID" 2>/dev/null || true
+    wait "$SERVER_PID" 2>/dev/null || true
+    SERVER_PID=""
+  fi
+}
+trap stop_server EXIT INT TERM
+
+prev_head() { git -C "$REPO_DIR" rev-parse HEAD; }
+
+wait_pg
+build
+start_server
+
+# ------------------------------------------------------------------ poll loop
+while true; do
+  sleep "$POLL_SECONDS"
+  if ! git -C "$REPO_DIR" fetch origin "$BRANCH" 2>/dev/null; then
+    log "fetch failed (transient?) — retrying next cycle"
+    continue
+  fi
+  NEW="$(git -C "$REPO_DIR" rev-parse "origin/$BRANCH")"
+  OLD="$(prev_head)"
+  if [ "$NEW" = "$OLD" ]; then continue; fi
+
+  log "origin/$BRANCH moved: ${OLD:0:7} -> ${NEW:0:7} — redeploying"
+  git -C "$REPO_DIR" reset --hard "origin/$BRANCH"
+  stop_server
+  if ! build; then
+    log "BUILD FAILED on $NEW — rolling the clone back to $OLD"
+    git -C "$REPO_DIR" reset --hard "$OLD"
+    build
+  fi
+  start_server
+  log "now serving ${OLD:+$(git -C "$REPO_DIR" rev-parse --short HEAD)}"
+done

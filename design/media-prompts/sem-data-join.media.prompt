@@ -1,0 +1,205 @@
+# SemText sem-data-join — one declarative join, four surfaces
+# Direction: minimal-tech-light panes on a dark slate page (the reference-site
+# render context). The sheet must make the CONTRACT legible, not decorate it:
+# a join never renders itself — its bucket surfaces only through a query's
+# results table — and failures render one inline alert chip.
+#
+# MODE 1 — join-success (two named buckets, the join, a query over the joined
+#           bucket):
+#   visible: two small rendered tables (Users: user-id/name; Orders:
+#     order/user-id/total), then the query chrome (caption "QUERY — SELECT …
+#     FROM <bucket>", monospace textarea holding the statement, Run button,
+#     status "2 rows.") and the results table NAME/TOTAL with two rows
+#     (Bao 120, Ada 80). The third user (no orders) has dropped — inner join.
+#   must never: render a row for the unmatched user; show a join element
+#     itself as a block; disagree with the status row count.
+#
+# MODE 2 — column-collision (the right side also has a `name` column):
+#   visible: same story, results headers USER-ID / NAME / ORDER / ORDERS.NAME
+#     / TOTAL — the colliding right column surfaces qualified as orders.name
+#     with the product names (Desk lamp, Footrest) beside the person name.
+#   must never: print two unqualified NAME columns; keep three rows (u3 drops).
+#
+# MODE 3 — authoring-error (unknown bucket, key column missing, join name
+#           shadowing a source):
+#   visible: the source tables render; the join emits one inline accent-red
+#     alert chip (.sem-data-error, role=alert) naming the miss in one line;
+#     no results table anywhere in the card.
+#   must never: render a results table in an error state; show a stack trace;
+#     hide or dim the authored sources.
+#
+# MODE 4 — declaration, JS-off (the bare element, nothing to read):
+#   visible: the authored element as plain text (source pane), no chrome,
+#     nothing generated, nothing hidden.
+#   must never: invent chrome for the invisible declaration.
+#
+# Reference captures: the fixture renders below plus the site's source-pane
+# capture in the parent directory. The authored-row echo line above rendered
+# tables is a known in-flight fix (data-payload lane) — draw the tables
+# WITHOUT the echo strip.
+schema: '0.4'
+id: sem-data-join-ux-design
+type: image
+quality: high
+product_targets:
+  - semtext.dev
+tags:
+  - semtext
+  - sem-data-join
+  - ux-design
+  - reference
+
+prompt:
+  text: |
+    UX design sheet for the SemText `<sem-data-join>` element — a declarative
+    inner join that materializes a queryable bucket, rendered in the
+    minimal-tech-light theme on a dark slate canvas (bg #0f172a, surface
+    #1e293b cards #f8fafc panes, fg #0f172a on panes, muted #64748b, border
+    #e2e8f0, accent #7c3aed, error red #dc2626). Four stacked cards, each in a
+    rounded 12px light pane with a small mono uppercase caption above it.
+
+    Card 1 — caption "WORKING JOIN (INNER JOIN, QUERY READS THE BUCKET)". Two
+    small tables: Users (USER-ID / NAME; u1 Ada, u2 Bao, u3 Cleo) and Orders
+    (ORDER / USER-ID / TOTAL; o-101 u2 120, o-102 u1 80). Below them the query
+    chrome: a dim caption line "QUERY — SELECT … FROM <bucket> (WHERE / ORDER
+    BY / LIMIT)", a white monospace textarea holding
+    "SELECT name, total FROM user-orders ORDER BY total DESC", a compact Run
+    button, the status "2 rows.", and a results table NAME / TOTAL with Bao
+    120 and Ada 80. No row for u3 — the inner join dropped the unmatched user.
+
+    Card 2 — caption "COLLIDING RIGHT COLUMN IS QUALIFIED (ORDERS.NAME)". The
+    Orders table here also carries a NAME column (Desk lamp, Footrest — the
+    products). The results table reads USER-ID / NAME / ORDER / ORDERS.NAME /
+    TOTAL with u2 Bao o-101 Desk lamp 120 and u1 Ada o-102 Footrest 80: both
+    name columns visible, the right one qualified, u3 dropped.
+
+    Card 3 — caption "AUTHORING ERROR — ONE INLINE ALERT". The Users table
+    renders; beneath it one inline accent-red chip (#dc2626 border, #fef2f2
+    fill, dark red text) whose single line reads like
+    `sem-data-join: unknown bucket "orders" — buckets: users` with a small
+    alert glyph. No results table, no stack trace, no second chip.
+
+    Card 4 — caption "DECLARATION — JS-OFF". A dark source pane with faint
+    line numbers showing the bare element
+    `<sem-data-join name="user-orders" left="Users" right="Orders"
+    on="user-id">` as plain monospace text — no chrome, nothing rendered.
+
+    Typography: clean system sans for captions and status, monospace for
+    source, query text and table cells. Generous margins, hairline card
+    borders, no decorative noise.
+
+  negative: >
+    more or fewer than four cards; a rendered row for the unmatched third user;
+    two unqualified NAME columns in the collision results; a results table on
+    the error card; a stack trace or raw exception; neon glow, drop shadows or
+    gradients on text; light page background; watermark; lorem ipsum; the join
+    element drawn as a visible block between the tables.
+
+  style: >
+    Flat UI spec sheet, minimal-tech aesthetic, restrained palette, crisp
+    12px radii, hairline borders, generous negative space. Reads like a panel
+    from a design-system guide describing one component's states.
+
+attachments:
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-join/renders/join-collision-scrolled.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-join/renders/join-s-primary-big.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-join/renders/join-results-primary.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-join/renders/join-err-shadowed.png
+    role: reference
+  - path: /Users/keithbrings/Work/Space/Noizu/.tmp/semtext-docs-overhaul/snaps/sem-data-join/sem-data-join-primary-source-1280.png
+    role: reference
+
+output:
+  dimensions:
+    width: 1536
+    height: 1024
+    aspect_ratio: "3:2"
+  formats:
+    - format: png
+      filename: sem-data-join-ux-design.png
+
+requirements:
+  modes:
+    - id: join-success
+      label: "WORKING JOIN (INNER JOIN, QUERY READS THE BUCKET)"
+      must_show:
+        - Users and Orders source tables (3 and 2 rows)
+        - query textarea with the SELECT statement, Run button, "2 rows." status
+        - results table NAME/TOTAL with exactly Bao 120 and Ada 80
+      must_never:
+        - render a row for u3 (inner join drops the unmatched user)
+        - show the join element as a visible block between the tables
+    - id: column-collision
+      label: "COLLIDING RIGHT COLUMN IS QUALIFIED (ORDERS.NAME)"
+      must_show:
+        - results headers USER-ID / NAME / ORDER / ORDERS.NAME / TOTAL
+        - product names Desk lamp and Footrest under the qualified column
+        - exactly two result rows
+      must_never:
+        - print two unqualified NAME columns
+        - keep the unmatched user's row
+    - id: authoring-error
+      label: "AUTHORING ERROR — ONE INLINE ALERT"
+      must_show:
+        - the rendered Users table
+        - one inline red alert chip naming the miss in a single line
+        - no results table
+      must_never:
+        - render a results table or stack trace
+        - show more than one chip
+        - hide or dim the authored sources
+    - id: js-off
+      label: "DECLARATION — JS-OFF"
+      must_show:
+        - the bare element as plain monospace text in a source pane
+      must_never:
+        - invent chrome, buttons or tables for the invisible declaration
+
+eval:
+  pass_threshold: 0.75
+  criteria:
+    join-semantics:
+      weight: 0.35
+      description: >
+        The inner-join story is arithmetically true: 2 result rows (Bao 120,
+        Ada 80), u3 absent, the colliding column surfaced as ORDERS.NAME.
+      fail_signals:
+        - a third results row or u3 anywhere in results
+        - the collision card showing two unqualified NAME columns
+        - status line disagreeing with the results row count
+    chrome-fidelity:
+      weight: 0.25
+      description: >
+        Each card carries exactly the chrome its state defines — source
+        tables, query caption/textarea/Run/status/results on cards 1-2, one
+        alert chip on card 3, bare source text on card 4.
+      fail_signals:
+        - invented controls beyond Run
+        - chrome on the JS-off card
+        - missing status line under the query
+    error-distinction:
+      weight: 0.2
+      description: >
+        The authoring-error card reads as a single inline red alert, visually
+        distinct from tables and from the neutral query status.
+      fail_signals:
+        - a results table on the error card
+        - the alert styled as a table or a modal
+        - more than one alert chip
+    spec-sheet-quality:
+      weight: 0.2
+      description: >
+        Four labeled cards, consistent monospace, dark page with light panes,
+        minimal-tech restraint.
+      fail_signals:
+        - watermark or lorem ipsum
+        - more or fewer than four cards
+        - neon or gradient decoration
+  reject_if:
+    - any card occludes, dims or blurs the authored statement or tables
+    - the inner-join results contain a row for the unmatched user
+    - the collision results show two unqualified name columns
+    - the error card renders a results table or a stack trace
