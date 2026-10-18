@@ -39,7 +39,8 @@ appDomain: ""
 # work-<short-sha of the chart/branch commit that built it> (+ mutable lane
 # tag work-lane1). Never pin a tag not verified in the registry
 # (ImagePullBackOff trap).
-image: ops.noizu.com/semtext.dev-work/app:work-4e15828c
+# NOTE: the key is backend.image INSIDE the backend stanza below — a
+# top-level `image:` here is a dead key the template never reads.
 
 # Dev-mode resources: first boot runs BEAM + Hologram compile (native on the
 # node, but a full cold bootstrap) — far hungrier than the prod release
@@ -47,6 +48,12 @@ image: ops.noizu.com/semtext.dev-work/app:work-4e15828c
 # uncapped-ish for compile speed.
 backend:
   enabled: true
+  # The template reads .Values.backend.image (NOT a top-level image: key —
+  # that one is a dead key; pod silently boots the PROD image otherwise,
+  # observed 2026-10-18 as a fast CrashLoop: prod image has no
+  # /app/entrypoint-dev.sh). Registry-verified: both lane tags =
+  # linux/amd64 sha256:fa569efc008d02a8c1e0f0613cf9d851c7cdb8.
+  image: ops.noizu.com/semtext.dev-work/app:work-4e15828c
   port: 4000
   resources:
     requests:
