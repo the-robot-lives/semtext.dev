@@ -254,7 +254,7 @@ devSlot:
   host: dev.semtext.dev
   # Toolchain image (Dockerfile.live-dev) — code comes from git, so the
   # mutable :live-dev tag + Always pull is correct here (NOT for prod).
-  image: ops.noizu.com/semtext.dev/app:sha-867484a
+  image: ops.noizu.com/semtext.dev/app:live-dev
   branch: develop
   pollSeconds: 30
   resources:
