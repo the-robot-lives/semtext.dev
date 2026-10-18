@@ -587,11 +587,16 @@ function choiceLine(entry: Record<string, unknown>): HTMLElement {
 
 /**
  * Conservative sanitizer for fetched `plan` markup: script/iframe/object/
- * embed/link/meta/base elements are dropped, `on*` handlers and
- * `javascript:`/`data:` URLs are stripped. The plan definition is
- * first-party authored, but it renders as live HTML — it gets the same
+ * embed/link/meta/base elements are dropped, `on*` handlers are stripped,
+ * and `href`/`src` are scheme-ALLOWLISTED: http, https and mailto pass,
+ * any other scheme (javascript:, vbscript:, data:, file:, …) is removed —
+ * scheme-less values (relative URLs, fragments) pass. The plan definition
+ * is first-party authored, but it renders as live HTML — it gets the same
  * hygiene as anything the network delivered.
  */
+const SAFE_URL_SCHEMES = /^($|https?:|mailto:)/i;
+const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
+
 export function sanitizeMarkup(html: string): DocumentFragment {
   const template = document.createElement('template');
   template.innerHTML = html;
@@ -602,10 +607,12 @@ export function sanitizeMarkup(html: string): DocumentFragment {
   for (const el of Array.from(root.querySelectorAll('*'))) {
     for (const attr of Array.from(el.attributes)) {
       const name = attr.name.toLowerCase();
-      const value = attr.value.trim().toLowerCase();
+      const value = attr.value.trim();
       if (name.startsWith('on')) el.removeAttribute(attr.name);
-      else if ((name === 'href' || name === 'src') && (value.startsWith('javascript:') || value.startsWith('data:'))) {
-        el.removeAttribute(attr.name);
+      else if (name === 'href' || name === 'src') {
+        // Scheme allowlist: a URL carrying a scheme must be http/https/
+        // mailto; relative URLs (no scheme) pass untouched.
+        if (HAS_SCHEME.test(value) && !SAFE_URL_SCHEMES.test(value)) el.removeAttribute(attr.name);
       }
     }
   }

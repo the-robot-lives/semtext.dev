@@ -32,8 +32,9 @@
   object) or walked sequence (choice array, numbered in order). Unknown
   payload keys and unknown step keys pass through untouched; other tags get
   `data-sem-bind-payload` + a `sem-bind-payload` event. Fetched `plan`
-  markup is sanitized (script/iframe dropped, `on*` and `javascript:`/`data:`
-  URLs stripped).
+  markup is sanitized (script/iframe dropped, `on*` handlers stripped,
+  `href`/`src` scheme-allowlisted — http/https/mailto and relative URLs
+  pass, every other scheme removed).
 - **Vocabulary chrome** (`_vocabulary.css`): the `skipped` step marker,
   bind comment/choice/state lines, and the payload-meter caption — the
   catalog glyphs keep working through the mapped status attribute.

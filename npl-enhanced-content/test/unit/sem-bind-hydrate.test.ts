@@ -160,6 +160,24 @@ describe('hydratePlan — body + status dictionary', () => {
     expect(a.textContent).toBe('x');
   });
 
+  it('scheme-allowlists href/src — vbscript/data dropped, relative and https kept', () => {
+    const plan = el('sem-plan');
+    hydratePlan(plan, {
+      plan: [
+        '<a id="vbs" href="vbscript:evil()">v</a>',
+        '<a id="data" href="data:text/html,evil()">d</a>',
+        '<a id="rel" href="docs/page.html">r</a>',
+        '<a id="frag" href="#section">f</a>',
+        '<img id="img" src="https://example.com/i.png">',
+      ].join(''),
+    });
+    expect(plan.querySelector('#vbs')!.hasAttribute('href')).toBe(false);
+    expect(plan.querySelector('#data')!.hasAttribute('href')).toBe(false);
+    expect(plan.querySelector('#rel')!.getAttribute('href')).toBe('docs/page.html');
+    expect(plan.querySelector('#frag')!.getAttribute('href')).toBe('#section');
+    expect(plan.querySelector('#img')!.getAttribute('src')).toBe('https://example.com/i.png');
+  });
+
   it('unknown step keys and unknown payload keys pass through harmlessly', () => {
     const plan = el('sem-plan', '<sem-step id="k1">step</sem-step>');
     hydratePlan(plan, {
