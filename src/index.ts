@@ -23,6 +23,9 @@ export {
 /* Elements — importing registers the custom element */
 export { SemNote } from './lit/sem-note.js';
 import './lit/sem-note.js';
+/* sem-thought — display-only typed thought bubble (no fallback behavior) */
+export { SemThought, THOUGHT_TYPES } from './lit/sem-thought.js';
+import './lit/sem-thought.js';
 export { SemFacts } from './lit/sem-facts.js';
 import './lit/sem-facts.js';
 export { SemDetails } from './lit/sem-details.js';

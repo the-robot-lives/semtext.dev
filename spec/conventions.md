@@ -248,7 +248,8 @@ both present; authors pick one per fact.
    same rules; a document with no Markdown need not carry it.
 2. `semtext/semtext.js` (Lit 3, IIFE) defines the interactive elements
    (`sem-note`, `sem-facts`, `sem-details`, `sem-properties`, `sem-code`,
-   `sem-references`, `sem-reader`, `sem-table`, `sem-source`, `sem-md`) and
+   `sem-references`, `sem-reader`, `sem-table`, `sem-source`, `sem-md`;
+   plus display-only `sem-thought`) and
    upgrades them in place when reachable; component implementations
    supersede fallback behaviors. Handoff contract: fallback sets
    `data-sem-fallback` on elements it enhanced; components remove it on
@@ -302,6 +303,19 @@ element is one row of Appendix A.
 `collapsed` ⇒ ten-word teaser, click to expand (the tier wraps the body in
 `.sem-note-body` to hide it); `view-as="margin"` ⇒ CSS-only right-gutter
 aside on wide viewports, inline otherwise. Light DOM, `role="note"`.
+
+**sem-thought** — typed thought bubble; display-only, mints nothing.
+**Normative: `spec/schema/sem-thought.md`.**
+```html
+<sem-thought type="observation">The draft pulls one fact per section — the outline says two.</sem-thought>
+<sem-thought type="mind-read">A skimming reader assumes rotation is automatic.</sem-thought>
+```
+`type="observation|reflection|assumption|mind-read|tangent|concern"`,
+optional — no `type` is a plain bubble; an unknown `type` degrades to plain
+text (validator warning, not error). No collapsed state, no summary teaser,
+no events, no chrome: the body is the element's content; on upgrade the tier
+mirrors `type` to `data-type` and adds the class `sem-thought-<type>`.
+Light DOM, `role="note"`.
 
 **sem-audiences / sem-profile** — reader profiles; metadata, mints nothing.
 **Normative: `spec/schema/sem-audiences.md`.**
@@ -680,6 +694,7 @@ every bare child part = a `div`/`span` classed `.sem-<part>`.
 | `<sem-enhanced-document>` | `div.sem-enhanced-document` |
 | `<agent>` + name/bio/instructions | `div.sem-agent` › `.sem-agent-name/-bio/-instructions` |
 | `<sem-note variant="warning">` body | `div.sem-note[data-variant="warning"]` › `.sem-note-body`; `collapsed` attr |
+| `<sem-thought type>` body | `div.sem-thought[data-type]`; unknown `type` degrades to plain text |
 | `<sem-audiences>` / `<sem-profile id label implies>` | `div.sem-audiences` › `div.sem-profile[id][data-label][data-implies]`; `audience="…"` → `data-audience` |
 | `<sem-facts view-as="quiz">` | `div.sem-facts[data-view-as="quiz"]` |
 | `<sem-fact>` › `<statement>` / `<conclusion>` | `div.sem-fact` › `.sem-statement`, `.sem-conclusion` |

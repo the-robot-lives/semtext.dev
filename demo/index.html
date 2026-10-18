@@ -199,6 +199,17 @@
   <p>Nothing in this section changes what a machine reads: the margin mode is a presentation parameter, and extraction reports the note as a note.</p>
   </div>
 
+  <!-- sem-thought: display-only typed bubbles. Mints no record, so
+       extraction.cy.js's positional record list is unchanged. -->
+  <div class="sem-source" id="s-thought" data-label="Thought — typed bubbles">
+  <h2>Thought — typed bubbles</h2>
+  <div class="sem-thought" id="t-obs" data-type="observation">The draft pulls one fact per section — the outline says two. Pure CSS in class form: type label, accent border, tail dots.</div>
+  <div class="sem-thought" id="t-mind" data-type="mind-read">A skimming reader assumes rotation is automatic.</div>
+  <div class="sem-thought" id="t-tangent" data-type="tangent">The margin-note idea in the note element came from a thought like this one.</div>
+  <div class="sem-thought" id="t-unknown" data-type="hallucination">An unknown type: with JS off this reads as an unstyled-by-type bubble; the Lit tier would degrade it to plain text and log a warning.</div>
+  <p>No record is minted for any of these — <code>sem-thought</code> is display-only; extraction reads the surrounding prose, not the bubble.</p>
+  </div>
+
   <!-- sem-source fixture: an authored data-view-as="source" starts in source
        mode. Plain prose only, so it mints nothing and extraction.cy.js's
        positional record list is unchanged. -->
