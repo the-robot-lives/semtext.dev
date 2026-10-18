@@ -1,6 +1,6 @@
 {
   "name": "semtext",
-  "version": "0.1.0",
-  "description": "Detect SemText (sem-*) documents and render them specially: inline annotation, live outline pane, validation.",
+  "version": "0.3.0",
+  "description": "Detect SemText (sem-*) documents and render them specially: inline annotation, rich viewer pane (glyphed file-tree outline, box-drawn frames per sem-* kind, breadcrumbs, quiz/flashcard runner with progress meters), validation.",
   "types": "./types/index.d.ts"
 }
