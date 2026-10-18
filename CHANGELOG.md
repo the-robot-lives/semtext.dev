@@ -26,6 +26,7 @@
 
 ## 2026-10-18 (claude-mods: semtext Claude Code mod)
 - claude-mods/semtext — Claude Code mod: detects SemText sem-* docs, inline annotation + outline pane + validation (#183)
+- v0.2–v0.3: interactive section viewer — quiz/flashcards runners, reveals/notes/views, rich terminal renders (tree outline, box frames, color), design assets (#191)
 
 ## 2026-10-18 (Phase 7 vocabulary on the reference: runtime 0.9.3 vendored, 54 new elements, 4 families)
 - vendored runtime **0.9.3** (the first family-complete snapshot — `semext.js/-lazy/-manifest` + `agent-kit.js/-lazy/-manifest` and their chunk dirs now ride `stamp-version.mjs` and the CDN payload upstream, npl-enhanced-content#73): `web/public/semtext/v0.9.3/` snapshot, stable/latest mirrors, versions.json 0.9.3, VERSION.md provenance, bundles.json regen; `/editor` repinned v0.9.1 → v0.9.3
