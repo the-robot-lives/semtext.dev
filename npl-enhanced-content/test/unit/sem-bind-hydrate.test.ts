@@ -197,6 +197,111 @@ describe('hydratePlan — body + status dictionary', () => {
   });
 });
 
+describe('hydratePlan — KV-provided definition (the agentonomi {definition, status} shape)', () => {
+  it('an object definition with steps generates the keyed step list on an empty element', () => {
+    const plan = el('sem-plan');
+    hydratePlan(plan, {
+      definition: {
+        steps: [
+          { id: 's1', label: 'provision Infisical path' },
+          { key: 's2', title: 'port-forward MinIO admin' },
+          'apply the secrets stack',
+        ],
+      },
+      status: {},
+    });
+    const steps = plan.querySelectorAll('.sem-bind-definition sem-step');
+    expect(steps.length).toBe(3);
+    expect(steps[0].getAttribute('id')).toBe('s1');
+    expect(steps[0].textContent).toBe('provision Infisical path');
+    expect(steps[1].getAttribute('id')).toBe('s2');
+    expect(steps[1].textContent).toBe('port-forward MinIO admin');
+    expect(steps[2].getAttribute('id')).toBe('apply the secrets stack'); // string steps key by their text
+    expect(steps[2].textContent).toBe('apply the secrets stack');
+  });
+
+  it('generated steps receive the full dictionary hydration — status, comment, choice array', () => {
+    const plan = el('sem-workflow');
+    hydratePlan(plan, {
+      definition: { steps: [{ id: 'a', label: 'scout' }, { id: 'b', label: 'build' }, { id: 'c', label: 'ship' }] },
+      status: {
+        a: { status: 'complete', comment: 'done deal' },
+        b: { status: 'pending', choice: [{ option: 'fix-forward', reason: 'sandbox' }, { option: 'revert', reason: 'rejected' }] },
+        c: { status: 'error' },
+      },
+    });
+    const step = (id: string): HTMLElement => plan.querySelector(`sem-step[id="${id}"]`) as HTMLElement;
+    expect(step('a').getAttribute('data-status')).toBe('done');
+    expect((step('a').querySelector('.sem-bind-comment') as HTMLElement).textContent).toBe('done deal');
+    expect(step('b').getAttribute('data-status')).toBe('todo');
+    const walk = step('b').querySelectorAll('.sem-bind-choice-walk li');
+    expect(walk.length).toBe(2);
+    expect(walk[0].textContent).toContain('fix-forward');
+    expect(step('c').getAttribute('data-sem-bind-status')).toBe('error');
+  });
+
+  it('authored children win — a definition is never generated over authored steps', () => {
+    const plan = el('sem-plan', '<sem-step id="authored">hand-written</sem-step>');
+    hydratePlan(plan, {
+      definition: { steps: [{ id: 'kv', label: 'from KV' }] },
+      status: { authored: { status: 'complete' } },
+    });
+    expect(plan.querySelectorAll('.sem-bind-definition').length).toBe(0);
+    expect(plan.querySelectorAll('sem-step').length).toBe(1);
+    expect((plan.querySelector('sem-step') as HTMLElement).getAttribute('data-status')).toBe('done');
+  });
+
+  it('a definition without steps is a harmless pass-through — no crash, statuses match nothing', () => {
+    const plan = el('sem-plan');
+    hydratePlan(plan, {
+      definition: { title: 'a plan with prose but no steps' },
+      status: { ghost: { status: 'complete', comment: 'nobody home' } },
+    });
+    expect(plan.querySelectorAll('sem-step').length).toBe(0);
+    expect(plan.querySelector('.sem-bind-definition')).toBeNull();
+    expect(plan.querySelectorAll('[data-sem-bind-status]').length).toBe(0);
+    expect(plan.querySelector('.sem-bind-state')).toBeNull(); // not an error either
+  });
+
+  it('a non-object definition (string markup, array) passes through untouched', () => {
+    const plan = el('sem-plan');
+    hydratePlan(plan, { definition: '<p>not an object</p>', status: {} });
+    expect(plan.querySelector('.sem-bind-definition')).toBeNull();
+    expect(plan.querySelector('p')).toBeNull();
+    const plan2 = el('sem-plan');
+    hydratePlan(plan2, { definition: ['also', 'not'], status: {} });
+    expect(plan2.querySelector('.sem-bind-definition')).toBeNull();
+  });
+
+  it('re-hydration replaces the generated list instead of appending', () => {
+    const plan = el('sem-plan');
+    hydratePlan(plan, { definition: { steps: ['one', 'two'] }, status: {} });
+    hydratePlan(plan, { definition: { steps: ['fresh'] }, status: {} });
+    const lists = plan.querySelectorAll('.sem-bind-definition');
+    expect(lists.length).toBe(1);
+    expect(lists[0].querySelectorAll('sem-step').length).toBe(1);
+    expect((lists[0].querySelector('sem-step') as HTMLElement).textContent).toBe('fresh');
+  });
+
+  it('shapeless step entries still render — indexed key, stringified label', () => {
+    const plan = el('sem-plan');
+    hydratePlan(plan, {
+      definition: { steps: [42, { note: 'odd shape' }, { title: 'titled only' }] },
+      status: { 'step-1': { status: 'complete' }, 'titled only': { status: 'pending' } },
+    });
+    const steps = plan.querySelectorAll('.sem-bind-definition sem-step');
+    expect(steps.length).toBe(3);
+    expect(steps[0].getAttribute('id')).toBe('step-1');
+    expect(steps[0].textContent).toBe('42');
+    expect(steps[0].getAttribute('data-status')).toBe('done');
+    expect(steps[1].getAttribute('id')).toBe('step-2');
+    expect(steps[1].textContent).toContain('odd shape');
+    expect(steps[2].getAttribute('id')).toBe('titled only'); // label alone becomes the key
+    expect(steps[2].textContent).toBe('titled only');
+    expect(steps[2].getAttribute('data-status')).toBe('todo');
+  });
+});
+
 describe('hydrateFor dispatch', () => {
   it('renders the empty state for null payloads — never blank', () => {
     const p = el('sem-progress');

@@ -80,8 +80,26 @@ describe('attachBind — static URL binds', () => {
     expect((el.querySelector('.sem-bind-state') as HTMLElement).textContent).toContain('offline');
   });
 
+  it('a relative bind resolves against the document base and fetches', async () => {
+    const el = mount({ 'sem-bind': './data/progress.json' });
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, { percent: 5 }));
+    await attachBind(el, { fetchImpl, store: mapStore() });
+    const fetched = String(fetchImpl.mock.calls[0][0]);
+    expect(fetched).toMatch(/^https?:\/\//);
+    expect(fetched).toMatch(/\/data\/progress\.json$/);
+    expect((el.querySelector('.sem-bind-progress-label') as HTMLElement).textContent).toBe('progress :: 5%');
+  });
+
   it('an unparseable bind renders the error state without fetching', async () => {
-    const el = mount({ 'sem-bind': 'not-a-bind' });
+    const el = mount({ 'sem-bind': 'javascript:alert(1)' });
+    const fetchImpl = vi.fn();
+    await attachBind(el, { fetchImpl, store: mapStore() });
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect((el.querySelector('.sem-bind-state') as HTMLElement).textContent).toContain('unparseable sem-bind');
+  });
+
+  it('a botched agent-kit shorthand is unparseable, never a bogus relative fetch', async () => {
+    const el = mount({ 'sem-bind': 'agent-kit/acme/semtext/progress/demo-1' }); // no /proj/
     const fetchImpl = vi.fn();
     await attachBind(el, { fetchImpl, store: mapStore() });
     expect(fetchImpl).not.toHaveBeenCalled();

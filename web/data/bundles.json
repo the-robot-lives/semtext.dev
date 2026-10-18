@@ -12,6 +12,116 @@
     "sem": "semtext.js"
   },
   "tags": {
+    "agent-kit-acceptance-criteria": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-agent-persona": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-artifact": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-asset": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-board": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-bug": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-chatroom": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-cucumber": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-custom-assert": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-cypress": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-epic": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-issue": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-organization": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-project": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-review": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-sub-task": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-task": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-test-case": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-test-suite": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-ticket-ref": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-user-persona": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-user-story": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
     "npl-agent": {
       "shipped": true,
       "bundles": [
@@ -263,6 +373,26 @@
         }
       ]
     },
+    "sem-changelog": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-changelogs.js",
+          "chunk": "chunks/sem-changelogs.js"
+        }
+      ]
+    },
+    "sem-changelogs": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-changelogs.js",
+          "chunk": "chunks/sem-changelogs.js"
+        }
+      ]
+    },
     "sem-chronology": {
       "shipped": true,
       "bundles": [
@@ -343,6 +473,16 @@
         }
       ]
     },
+    "sem-eval": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-eval.js",
+          "chunk": "chunks/sem-eval.js"
+        }
+      ]
+    },
     "sem-event": {
       "shipped": true,
       "bundles": [
@@ -373,6 +513,76 @@
         }
       ]
     },
+    "sem-faq": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-faqs.js",
+          "chunk": "chunks/sem-faqs.js"
+        }
+      ]
+    },
+    "sem-faqs": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-faqs.js",
+          "chunk": "chunks/sem-faqs.js"
+        }
+      ]
+    },
+    "sem-file-tree": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-file-tree.js",
+          "chunk": "chunks/sem-file-tree.js"
+        }
+      ]
+    },
+    "sem-guard-rail": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-guard-rails.js",
+          "chunk": "chunks/sem-guard-rails.js"
+        }
+      ]
+    },
+    "sem-guard-rails": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-guard-rails.js",
+          "chunk": "chunks/sem-guard-rails.js"
+        }
+      ]
+    },
+    "sem-howto": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-howto.js",
+          "chunk": "chunks/sem-howto.js"
+        }
+      ]
+    },
+    "sem-kb": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-kb.js",
+          "chunk": "chunks/sem-kb.js"
+        }
+      ]
+    },
     "sem-md": {
       "shipped": true,
       "bundles": [
@@ -380,6 +590,16 @@
           "file": "semtext-lazy.js",
           "detail": "loads chunks/sem-md.js",
           "chunk": "chunks/sem-md.js"
+        }
+      ]
+    },
+    "sem-mockup": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-mockup.js",
+          "chunk": "chunks/sem-mockup.js"
         }
       ]
     },
@@ -393,13 +613,33 @@
         }
       ]
     },
+    "sem-philosophy": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-philosophy.js",
+          "chunk": "chunks/sem-philosophy.js"
+        }
+      ]
+    },
+    "sem-plan": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-plan.js",
+          "chunk": "chunks/sem-plan.js"
+        }
+      ]
+    },
     "sem-procedure": {
       "shipped": true,
       "bundles": [
         {
           "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "detail": "loads chunks/sem-procedure.js",
+          "chunk": "chunks/sem-procedure.js"
         }
       ]
     },
@@ -418,8 +658,8 @@
       "bundles": [
         {
           "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "detail": "loads chunks/sem-progress.js",
+          "chunk": "chunks/sem-progress.js"
         }
       ]
     },
@@ -473,6 +713,16 @@
         }
       ]
     },
+    "sem-requirement": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-requirement.js",
+          "chunk": "chunks/sem-requirement.js"
+        }
+      ]
+    },
     "sem-reveal": {
       "shipped": true,
       "bundles": [
@@ -480,6 +730,36 @@
           "file": "semtext-lazy.js",
           "detail": "loads chunks/sem-reveal.js",
           "chunk": "chunks/sem-reveal.js"
+        }
+      ]
+    },
+    "sem-rubric": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-rubric.js",
+          "chunk": "chunks/sem-rubric.js"
+        }
+      ]
+    },
+    "sem-runbook": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-runbook.js",
+          "chunk": "chunks/sem-runbook.js"
+        }
+      ]
+    },
+    "sem-site-tree": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-site-tree.js",
+          "chunk": "chunks/sem-site-tree.js"
         }
       ]
     },
@@ -500,6 +780,16 @@
           "file": "semtext-lazy.js",
           "detail": "loads chunks/sem-stubs.js",
           "chunk": "chunks/sem-stubs.js"
+        }
+      ]
+    },
+    "sem-summary": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-summary.js",
+          "chunk": "chunks/sem-summary.js"
         }
       ]
     },
@@ -533,6 +823,46 @@
         }
       ]
     },
+    "sem-threat-model": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-threat-model.js",
+          "chunk": "chunks/sem-threat-model.js"
+        }
+      ]
+    },
+    "sem-tldr": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-tldr.js",
+          "chunk": "chunks/sem-tldr.js"
+        }
+      ]
+    },
+    "sem-tsg": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-tsgs.js",
+          "chunk": "chunks/sem-tsgs.js"
+        }
+      ]
+    },
+    "sem-tsgs": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-tsgs.js",
+          "chunk": "chunks/sem-tsgs.js"
+        }
+      ]
+    },
     "sem-view": {
       "shipped": true,
       "bundles": [
@@ -552,6 +882,61 @@
           "chunk": "chunks/sem-stubs.js"
         }
       ]
+    },
+    "sem-workflow": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "semtext-lazy.js",
+          "detail": "loads chunks/sem-workflow.js",
+          "chunk": "chunks/sem-workflow.js"
+        }
+      ]
+    },
+    "semext-annotate": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-docptr": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-media-prompt": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-sig-logs": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-sig-metrics": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-sig-synthetic-monitor": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-sig-traces": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-styleguide-theme": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-styleguide-themes": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
     },
     "sem-enhanced-document": {
       "shipped": false,

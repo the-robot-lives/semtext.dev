@@ -1,6 +1,7 @@
 // Unit spec — src/lit/bind.ts · parse + token + login-URL + hash-return
 // (pure layer; no DOM). The contract lives in the workstream doc
-// semtext-sem-bind (2026-10-18): full URL → direct fetch; agent-kit path
+// semtext-sem-bind (2026-10-18): full URL → direct fetch; same-origin
+// relative path → resolved against the document base; agent-kit path
 // → agentonomi status route; token in localStorage["semtext.bind.token"];
 // redirect returns carry #access_token + a verified state nonce.
 import { describe, it, expect } from 'vitest';
@@ -57,19 +58,51 @@ describe('parseBind', () => {
     });
   });
 
-  it('rejects malformed agent-kit paths', () => {
-    expect(parseBind('agent-kit/acme/semtext/progress/demo-1')).toBeNull(); // no /proj/
-    expect(parseBind('agent-kit/acme/proj/semtext/progress')).toBeNull(); // missing id
-    expect(parseBind('agent-kit//proj/semtext/progress/x')).toBeNull(); // empty org
+  it('resolves relative binds against the document base (same-origin static JSON)', () => {
+    const base = 'http://127.0.0.1:4173/demo/sem-bind.html';
+    expect(parseBind('./data/x.json', base)).toEqual({
+      kind: 'url',
+      url: 'http://127.0.0.1:4173/demo/data/x.json',
+    });
+    expect(parseBind('/api/plan.json', base)).toEqual({
+      kind: 'url',
+      url: 'http://127.0.0.1:4173/api/plan.json',
+    });
+    expect(parseBind('../up.json?a=1', base)).toEqual({
+      kind: 'url',
+      url: 'http://127.0.0.1:4173/up.json?a=1',
+    });
   });
 
-  it('rejects empty, relative and non-http values', () => {
+  it('the agent-kit shorthand never falls through to relative resolution', () => {
+    expect(parseBind('agent-kit/acme/proj/semtext/progress/demo-1', 'https://example.com/page.html')).toEqual({
+      kind: 'agent-kit',
+      org: 'acme',
+      project: 'semtext',
+      resource: 'progress',
+      id: 'demo-1',
+      url: `${AGENTONOMI_ORIGIN}/status/acme/proj/semtext/progress/demo-1`,
+    });
+  });
+
+  it('rejects malformed agent-kit paths — even against a base', () => {
+    const base = 'https://example.com/page.html';
+    expect(parseBind('agent-kit/acme/semtext/progress/demo-1', base)).toBeNull(); // no /proj/
+    expect(parseBind('agent-kit/acme/proj/semtext/progress', base)).toBeNull(); // missing id
+    expect(parseBind('agent-kit//proj/semtext/progress/x', base)).toBeNull(); // empty org
+  });
+
+  it('rejects empty and non-http values — relative or not', () => {
     expect(parseBind(null)).toBeNull();
     expect(parseBind('')).toBeNull();
     expect(parseBind('   ')).toBeNull();
+    expect(parseBind('ftp://example.com/x.json', 'https://example.com/')).toBeNull();
+    expect(parseBind('javascript:alert(1)', 'https://example.com/')).toBeNull();
+    expect(parseBind('data:text/html,evil', 'https://example.com/')).toBeNull();
+  });
+
+  it('a relative bind without a resolvable base stays unparseable (non-browser)', () => {
     expect(parseBind('./data/x.json')).toBeNull();
-    expect(parseBind('ftp://example.com/x.json')).toBeNull();
-    expect(parseBind('javascript:alert(1)')).toBeNull();
   });
 });
 
