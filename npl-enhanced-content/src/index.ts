@@ -88,11 +88,26 @@ import './lit/sem-source.js';
 /* R/W2.2 Markdown block — thin wrapper over src/md/* */
 export { SemMd } from './lit/sem-md.js';
 import './lit/sem-md.js';
+/* sem-tldr — the namespace walking skeleton (spec/schema/sem-tldr.md):
+ * a no-logic display stub in its own module; ships in the core bundle. */
+export { SemTldr } from './lit/sem-tldr.js';
+import './lit/sem-tldr.js';
 /* sem-browser — chrome-like document window (lazy-first: the same
  * element ships as chunks/sem-browser.js for semtext-lazy.js pages;
  * src/lit/sem-browser.ts is the registration the lazy scanner keys on). */
 export { SemBrowser, SEM_BROWSER_TAG } from './lit/sem-browser.js';
 import './lit/sem-browser.js';
+/* interactive containers (spec/schema/sem-workflow.md, sem-site-tree.md,
+ * sem-file-tree.md) — lazy-first: each tag also ships as its own
+ * chunks/<tag>.js via the lazy manifest; src/lit/<tag>.ts are the
+ * registrations the scanner keys on (the trees share src/lit/sem-tree.ts,
+ * which registers nothing and factors into a shared chunk). */
+export { SemWorkflow, parseStepModels } from './lit/sem-workflow.js';
+import './lit/sem-workflow.js';
+export { SemSiteTree } from './lit/sem-site-tree.js';
+import './lit/sem-site-tree.js';
+export { SemFileTree } from './lit/sem-file-tree.js';
+import './lit/sem-file-tree.js';
 /* Data visualizer — inline data sources (spec/data-visualizer.md) */
 export { SemDataVisualizer } from './lit/sem-data-visualizer.js';
 import './lit/sem-data-visualizer.js';
@@ -148,14 +163,48 @@ import './lit/sem-provider-picker.js';
 /* sem-quota-meter — rolling usage window (provider caps); pure display */
 export { SemQuotaMeter } from './lit/sem-quota-meter.js';
 import './lit/sem-quota-meter.js';
+/* Family A — static knowledge/doc containers (spec/schema/sem-*.md):
+ * no-logic display stubs, one module per contract file; ships in the
+ * core bundle. Append-only section (parallel lanes touch this file). */
+export { SemKb } from './lit/sem-kb.js';
+import './lit/sem-kb.js';
+export { SemRunbook } from './lit/sem-runbook.js';
+import './lit/sem-runbook.js';
+export { SemHowto } from './lit/sem-howto.js';
+import './lit/sem-howto.js';
+export { SemRequirement } from './lit/sem-requirement.js';
+import './lit/sem-requirement.js';
+export { SemThreatModel } from './lit/sem-threat-model.js';
+import './lit/sem-threat-model.js';
+export { SemGuardRails, SemGuardRail } from './lit/sem-guard-rails.js';
+import './lit/sem-guard-rails.js';
+export { SemMockup } from './lit/sem-mockup.js';
+import './lit/sem-mockup.js';
+export { SemRubric } from './lit/sem-rubric.js';
+import './lit/sem-rubric.js';
+export { SemEval } from './lit/sem-eval.js';
+import './lit/sem-eval.js';
+export { SemPhilosophy } from './lit/sem-philosophy.js';
+import './lit/sem-philosophy.js';
+export { SemSummary } from './lit/sem-summary.js';
+import './lit/sem-summary.js';
+export { SemPlan } from './lit/sem-plan.js';
+import './lit/sem-plan.js';
+export { SemTsgs, SemTsg } from './lit/sem-tsgs.js';
+import './lit/sem-tsgs.js';
+export { SemFaqs, SemFaq } from './lit/sem-faqs.js';
+import './lit/sem-faqs.js';
+export { SemChangelogs, SemChangelog } from './lit/sem-changelogs.js';
+import './lit/sem-changelogs.js';
 
-/* Vanilla handlers — the former dist/semtext-fallback.js,
- * dist/semtext-md.js and dist/semtext-reading.js entry points. */
+/* Core vanilla handlers — sem-views/progress/audiences, deep links, the
+ * sem-source snapshot pass and the other elements no Lit component defines
+ * (the former standalone fallback bundle's code, renamed 0.9.0). */
 import {
   enhance as enhanceCore,
-  type FallbackHandler,
-} from './fallback/index.js';
-export type { FallbackHandler } from './fallback/index.js';
+  type VanillaHandler,
+} from './vanilla/index.js';
+export type { VanillaHandler } from './vanilla/index.js';
 export {
   enhanceSource,
   enhanceAttrs,
@@ -168,7 +217,7 @@ export {
   enhanceProgress,
   enhanceAudience,
   enhanceTarget,
-} from './fallback/index.js';
+} from './vanilla/index.js';
 import { enhance as enhanceMdScan } from './md/index.js';
 export { enhanceMd, enhanceMdElement, normalizeMd, parseBlocks, safeUrl } from './md/index.js';
 import { enhance as enhanceReading } from './reading/index.js';

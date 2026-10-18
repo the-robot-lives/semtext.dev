@@ -133,7 +133,9 @@ defmodule SemtextWeb.Docs.SearchIndex do
   description and the ordered tag names per bucket. INTERIM data — see the
   moduledoc.
   """
-  @spec buckets() :: [%{id: String.t(), label: String.t(), description: String.t(), tags: [String.t()]}]
+  @spec buckets() :: [
+          %{id: String.t(), label: String.t(), description: String.t(), tags: [String.t()]}
+        ]
   def buckets do
     Enum.map(@raw["buckets"], fn b ->
       %{id: b["id"], label: b["label"], description: b["description"], tags: b["tags"]}
@@ -153,7 +155,7 @@ defmodule SemtextWeb.Docs.SearchIndex do
     tag_entries =
       for t <- tags() do
         hint = if t.summary == "", do: t.description, else: t.summary
-        group = if t.family == "sem", do: "SemText elements", else: "NPL elements"
+        group = family_group(t.family)
 
         haystack =
           Enum.join(
@@ -196,7 +198,14 @@ defmodule SemtextWeb.Docs.SearchIndex do
   end
 
   defp family_note("sem"), do: "semtext tag element"
+  defp family_note("semext"), do: "semext embed tag element"
+  defp family_note("agent-kit"), do: "agent-kit card tag element"
   defp family_note(_), do: "npl prompt tag element"
+
+  defp family_group("sem"), do: "SemText elements"
+  defp family_group("npl"), do: "NPL elements"
+  defp family_group("semext"), do: "SemExt elements"
+  defp family_group("agent-kit"), do: "Agent-kit elements"
 
   @doc "Case-insensitive substring search over the index, in group order."
   @spec search(String.t()) :: [entry()]
