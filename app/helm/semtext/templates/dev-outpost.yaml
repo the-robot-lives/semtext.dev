@@ -1,0 +1,119 @@
+{{- if .Values.devSlot.enabled }}
+{{- $slot := .Values.devSlot }}
+# Manual-deploy Authentik PROXY OUTPOST for this slot.
+#
+# Why chart-owned: the authentik worker's Local-Kubernetes outpost
+# integration cannot create objects in this cluster (authentik pods run as
+# SA `default` — no outpost RBAC), so the outpost is deployed HERE in
+# authentik's supported "manual/unmanaged" mode. The outpost object itself
+# (and its provider/application bindings) still live in Authentik and stay
+# centrally manageable.
+#
+# Why a SECOND ingress for /outpost.goauthentik.io: the main dev ingress
+# carries the forward-auth annotations; applying them to the outpost's own
+# endpoints would deadlock (the browser redirect to /start would itself be
+# forward-auth'd). A dedicated auth-free ingress for this path prefix breaks
+# the loop; nginx routes by longest path prefix.
+#
+# The outpost token secret is created out-of-band (re-mintable via the
+# authentik API as admin); TODO: Infisical wiring.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hologram-start-app.fullname" . }}-live-dev-outpost
+  labels:
+    {{- include "hologram-start-app.labels" . | nindent 4 }}
+    semtext.dev/slot: live-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "hologram-start-app.selectorLabels" . | nindent 6 }}
+      semtext.dev/component: live-dev-outpost
+  template:
+    metadata:
+      labels:
+        {{- include "hologram-start-app.labels" . | nindent 8 }}
+        semtext.dev/component: live-dev-outpost
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: outpost
+        image: {{ $slot.outpost.image }}
+        env:
+        - name: AUTHENTIK_HOST
+          value: "http://authentik-server.infra.svc.cluster.local"
+        - name: AUTHENTIK_INSECURE
+          value: "false"
+        - name: AUTHENTIK_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ $slot.outpost.tokenSecret.name }}
+              key: {{ $slot.outpost.tokenSecret.key }}
+        ports:
+        - name: http
+          containerPort: 9000
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /outpost.goauthentik.io/ping
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 12
+        resources:
+          {{- toYaml $slot.outpost.resources | nindent 10 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "hologram-start-app.fullname" . }}-live-dev-outpost
+  labels:
+    {{- include "hologram-start-app.labels" . | nindent 4 }}
+    semtext.dev/slot: live-dev
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 9000
+    targetPort: http
+    protocol: TCP
+  selector:
+    {{- include "hologram-start-app.selectorLabels" . | nindent 4 }}
+    semtext.dev/component: live-dev-outpost
+---
+# The outpost's own routes on the slot host: browser sign-in (start?rd=),
+# sign-out and callback. NO forward-auth annotations here (see above).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "hologram-start-app.fullname" . }}-live-dev-outpost
+  labels:
+    {{- include "hologram-start-app.labels" . | nindent 4 }}
+    semtext.dev/slot: live-dev
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    {{- if .Values.ingress.cloudflareOnly }}
+    nginx.ingress.kubernetes.io/whitelist-source-range: {{ include "hologram-start-app.cloudflareWhitelist" . | quote }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  tls:
+  - hosts:
+    - {{ $slot.host }}
+    secretName: {{ $slot.tls.secretName }}
+  rules:
+  - host: {{ $slot.host }}
+    http:
+      paths:
+      - path: /outpost.goauthentik.io
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "hologram-start-app.fullname" . }}-live-dev-outpost
+            port:
+              number: 9000
+{{- end }}
