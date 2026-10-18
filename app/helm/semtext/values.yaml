@@ -12,7 +12,7 @@ cookieDomain: ""
 # releases never fight over names, hosts, or synced secrets.
 backend:
   enabled: true
-  image: ops.noizu.com/semtext.dev/app:sha-e89026f
+  image: ops.noizu.com/semtext.dev/app:sha-1b83e9b
   port: 4000
   resources:
     requests:
@@ -254,7 +254,7 @@ devSlot:
   host: dev.semtext.dev
   # Toolchain image (Dockerfile.live-dev) — code comes from git, so the
   # mutable :live-dev tag + Always pull is correct here (NOT for prod).
-  image: ops.noizu.com/semtext.dev/app:sha-e89026f
+  image: ops.noizu.com/semtext.dev/app:sha-1b83e9b
   branch: develop
   pollSeconds: 30
   resources:
