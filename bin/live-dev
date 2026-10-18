@@ -51,12 +51,19 @@ git -C "$REPO_DIR" reset --hard "origin/$BRANCH"
 # ------------------------------------------------------- dev-only environment
 # Signing secrets are generated ONCE per workspace volume — throwaway dev
 # values, never prod material.
-if [ ! -s "$SECRETS_FILE" ]; then
+# Generated from /dev/urandom, NOT `mix phx.gen.secret` — this runs before
+# cd into app/backend, where mix has no project and the phoenix task prints
+# nothing, silently writing EMPTY values (the -s guard then never regenerates
+# the broken file). Plug's cookie store also demands secret_key_base >= 64
+# bytes; 64 urandom bytes -> 86 base64 chars, safely over.
+if [ ! -s "$SECRETS_FILE" ] \
+   || ! grep -q "^SECRET_KEY_BASE=.\{64,\}" "$SECRETS_FILE" \
+   || ! grep -q "^SESSION_SIGNING_SALT=.\{8,\}" "$SECRETS_FILE"; then
   log "generating dev-only signing secrets ($SECRETS_FILE)"
   {
-    echo "SECRET_KEY_BASE=$(mix phx.gen.secret 48)"
-    echo "SESSION_SIGNING_SALT=$(mix phx.gen.secret 16)"
-    echo "GUARDIAN_SECRET_KEY=$(mix phx.gen.secret 48)"
+    echo "SECRET_KEY_BASE=$(head -c 64 /dev/urandom | base64 | tr -d '\n')"
+    echo "SESSION_SIGNING_SALT=$(head -c 16 /dev/urandom | base64 | tr -d '\n')"
+    echo "GUARDIAN_SECRET_KEY=$(head -c 48 /dev/urandom | base64 | tr -d '\n')"
   } > "$SECRETS_FILE"
 fi
 set -a

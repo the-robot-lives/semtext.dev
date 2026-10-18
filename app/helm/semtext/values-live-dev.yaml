@@ -30,3 +30,13 @@ domain: semtext.dev
 # The slot itself.
 devSlot:
   enabled: true
+  # The toolchain image is pinned HERE, not in values.yaml, because the
+  # backend CI's chart-tag bump rewrites EVERY `image:
+  # ops.noizu.com/semtext.dev/app:` line in values.yaml — a mutable :live-dev
+  # default there gets flipped to a prod sha on every release, and the
+  # main→develop back-merge carries the flip back, swapping this pod to the
+  # prod image (which crashloops: the release runtime expects a DATABASE_URL
+  # the dev slot must never have). This file is release-scoped and CI never
+  # touches it, so this override is the authoritative pin.
+  image: ops.noizu.com/semtext.dev/app:live-dev
+

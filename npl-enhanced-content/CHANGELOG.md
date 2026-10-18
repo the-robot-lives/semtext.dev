@@ -1,5 +1,57 @@
 # Changelog
 
+## 2026-10-18 (sem-bind — live data on sem-* elements)
+
+- **`sem-bind` runtime (`src/lit/bind.ts`).** One hydration pipe for every
+  source: `sem-bind="<https URL>"` fetches plain (static JSON, no auth unless
+  the host 401s); `sem-bind="agent-kit/{org}/proj/{project}/{kind}/{id}"`
+  resolves to `https://agentonomi.com/status/{org}/proj/{project}/{kind}/{id}`
+  with bearer auth. Token lives per-origin in `localStorage["semtext.bind.token"]`
+  (`semtext.bind.expires` alongside), sent as `Authorization: Bearer`, never a
+  cookie (`credentials: 'omit'`). On 401 the embed authorize flow runs —
+  `agentonomi.com/embed/authorize?redirect_uri&state` in a popup, token via
+  `postMessage` (`semtext-bind-token`, origin + state verified); popup blocked
+  or closed empty → full-page redirect, token returns in the
+  `#access_token=…&state=…` fragment and is verified, stored and stripped on
+  the next load (`consumeBindHash`). Progress binds poll every 30s
+  (`sem-refresh="<seconds>"` overrides); definition+status kinds fetch once.
+  Error / empty / auth states render into the host — a bound element never
+  sits blank.
+- **Payload intake on the elements.** `sem-progress` and `sem-procedure`
+  graduate from the claim stubs to their own modules (round-2 graduation
+  rule); `sem-plan`, `sem-runbook`, `sem-workflow` rebase on the new
+  `BindableElement` base — a reactive `payload` property (direct JSON, no
+  server) plus automatic attach for authored `sem-bind` attributes, poll
+  torn down on disconnect. `sem-progress` hydrates `{percent, comment}` and
+  `{step, steps, comment}` into the same meter DOM the vanilla handler
+  builds; the plan family hydrates `{plan, status}` — the fetched definition
+  replaces authored children, the per-step dictionary
+  (`complete|pending|error|skipped|none` + comment + choice) lands as
+  `data-sem-bind-status` plus the mapped catalog status
+  (`done|todo|blocked`), a comment line, and the taken fork (single choice
+  object) or walked sequence (choice array, numbered in order). Unknown
+  payload keys and unknown step keys pass through untouched; other tags get
+  `data-sem-bind-payload` + a `sem-bind-payload` event. Fetched `plan`
+  markup is sanitized (script/iframe dropped, `on*` handlers stripped,
+  `href`/`src` scheme-allowlisted — http/https/mailto and relative URLs
+  pass, every other scheme removed).
+- **Vocabulary chrome** (`_vocabulary.css`): the `skipped` step marker,
+  bind comment/choice/state lines, and the payload-meter caption — the
+  catalog glyphs keep working through the mapped status attribute.
+- **Budget ratchet**: `semtext.js` 152 → 162 KB raw (sem-bind measured
+  161.3 / 50.2 gzipped; history note in ROADMAP "Size budgets" and the
+  `build.mjs` budget comment).
+- **Demo + fixtures**: `web/demo/sem-bind.html` (static-JSON binds with a
+  `sem-refresh` override, direct-payload intakes, plan + status dictionary,
+  agent-kit shorthand with its error states) and
+  `web/demo/data/{progress-percent,progress-steps,plan-status}.json`.
+- **Tests**: `test/unit/sem-bind-{parse,hydrate,attach}.test.ts` — parse
+  rules, token store/expiry, hash-return state verification, both progress
+  payload forms, plan hydration (choice object + array, sanitize, body
+  replacement), attach wiring with an injected fetch (bearer header,
+  401 → login → retry-once, error/empty states) and the poll loop with
+  fake timers.
+
 ## 2026-10-18 (0.9.0 — fallback tier removal)
 
 - **Breaking (0.8.3 → 0.9.0): the standalone fallback tier is gone.** The retired
