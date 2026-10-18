@@ -1,0 +1,174 @@
+# =============================================================================
+# STAGE DEV LANE values — stage.semtext.dev
+# docs/runbooks/stage-dev-lane.md · proven pattern: stage.agentonomi.com
+# (agent-kit-mcp) + stage.codemoshiach.com (the-robot-reviews `work` branch).
+#
+# Deployed BY HAND:  helm upgrade --install semtext-stage ./app/helm/semtext \
+#                      -f ./app/helm/semtext/values-stage.yaml -n apps
+# NEVER via ArgoCD (no semtext-stage Application exists — keep it that way;
+# ArgoCD self-heal+prune fights helm forever).
+#
+# The lane runs DEV-MODE LIVE CODE: single-container thin image built by hand
+# from the `work` branch (docker/dev/Dockerfile.app — no mix/npm at build
+# time; the arm64 host cannot emulate the BEAM, so entrypoint-dev.sh
+# bootstraps natively on first pod boot), code volume synced from the branch
+# by a git-poller, shared over Samba, with a run-claude sidecar. It shares the
+# app's PRODUCTION database (own-name InfisicalSecret semtext-stage-secrets
+# syncing the SAME Infisical section /apps/semtext as prod) by design.
+#
+# Every dev-lane chart block is gated behind a flag that defaults to false,
+# so the prod render (CI's helm template diff) is byte-identical — verified
+# against a saved baseline after every chart edit.
+# =============================================================================
+
+# Release fullname: semtext-stage (resources semtext-stage, semtext-stage-code,
+# semtext-stage-samba, InfisicalSecret infisical-semtext-stage-secrets, ...).
+fullnameOverride: semtext-stage
+
+replicas: 1
+
+domain: stage.semtext.dev
+
+# No proposals host on the stage lane (appDomain empty => no extra ingress
+# host; HostDispatch would 404 it as unknown anyway without a hosts entry).
+appDomain: ""
+
+# Dev image — hand-built from the `work` branch (docker/dev/Dockerfile.app),
+# pushed to a registry namespace DISJOINT from prod's semtext.dev/* so no
+# prod automation can ever reference a dev image. Tag convention:
+# work-<short-sha of the chart/branch commit that built it> (+ mutable lane
+# tag work-lane1). Never pin a tag not verified in the registry
+# (ImagePullBackOff trap).
+image: ops.noizu.com/semtext.dev-work/app:work-4e15828c
+
+# Dev-mode resources: first boot runs BEAM + Hologram compile (native on the
+# node, but a full cold bootstrap) — far hungrier than the prod release
+# (512Mi). 4Gi ceiling guards against OOMKilled 137 mid-compile; CPU
+# uncapped-ish for compile speed.
+backend:
+  enabled: true
+  port: 4000
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+
+# Port alias for service.yaml/ingress.yaml (same single backend process).
+frontend:
+  port: 4000
+
+# Migrate Job OFF on the lane (runbook: Liquibase owns schema; the entrypoint
+# never auto-migrates; audits/applys are explicit operator actions).
+migrate:
+  enabled: false
+
+# Stage shares the PROD database: own-name InfisicalSecret syncing the same
+# /apps/semtext section as prod (keys identical, k8s Secret name distinct —
+# infisical-semtext-stage-secrets CR -> semtext-stage-secrets Secret, so the
+# two syncs never fight). keys stanza inherits values.yaml verbatim.
+secrets:
+  name: semtext-stage-secrets
+  infisical:
+    enabled: true
+    resyncInterval: 300
+
+# Stage host dispatch + cache isolation:
+#  * SEMTEXT_EXTRA_MAIN_HOSTS merges stage.semtext.dev into the runtime main
+#    host list (config.exs :hosts is compile-time; HostDispatch 404s unknown
+#    hosts by design).
+#  * REDIS_KEY_PREFIX namespaces cache/session keys away from prod's (both
+#    releases share platform-valkey db 6 via the same REDIS_URL).
+extraEnv:
+  - name: SEMTEXT_EXTRA_MAIN_HOSTS
+    value: "stage.semtext.dev"
+  - name: REDIS_KEY_PREFIX
+    value: "semtext-stage:"
+
+# Stage traces distinguishable in SigNoz; service.version falls back to the
+# image tag (work-<sha>).
+otel:
+  deploymentEnvironment: stage
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # Stage-only: Hologram's live-reload WebSocket + long dev requests need
+    # generous timeouts and no response buffering (prod keeps the bare
+    # ssl-redirect default).
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+  cloudflareOnly: true
+
+tls:
+  enabled: true
+  # Existing wildcard secret (SANs semtext.dev + *.semtext.dev, verified at
+  # lane setup with openssl). infisical stays OFF here: prod's release already
+  # runs the InfisicalSecret that owns `semtext-dev-tls`; a second owner CR
+  # would fight it (creationPolicy Owner on both sides).
+  secretName: semtext-dev-tls
+  infisical:
+    enabled: false
+
+# Dev-tuned probe budgets — the first cold boot (clone wait + hex + deps.get
+# + Hologram compile, native but cold) has a real time budget. initialDelay
+# 2400s = 40 min liveness grace; readiness failureThreshold 300 (30 min at
+# 10s) rides out the same slow first boot. The entrypoint's own clone-wait
+# cap (10 min) + bootstrap fit inside.
+probeTuning:
+  liveness:
+    initialDelaySeconds: 2400
+    periodSeconds: 30
+    failureThreshold: 3
+  readiness:
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 300
+
+# --- Dev-lane blocks (all default OFF in the chart; ON here) ------------------
+
+devCode:
+  enabled: true
+  size: 10Gi
+  storageClass: longhorn
+  accessMode: ReadWriteOnce
+
+gitPoller:
+  enabled: true
+  image: alpine/git:v2.45.2
+  repo: https://github.com/the-robot-lives/semtext.dev.git
+  branch: work
+  intervalSeconds: 60
+  # key GITHUB_TOKEN (ops PAT, repo read). Stage-local secret, NOT the
+  # Infisical-synced semtext-stage-secrets.
+  secretName: semtext-stage-extra
+
+samba:
+  enabled: true
+  image: ghcr.io/servercontainers/samba:latest
+  # keys SAMBA_USER + SAMBA_PASS (same stage-local secret as gitPoller).
+  # Username is `stagecode` — dash-FREE: the samba image's entrypoint unsets
+  # ACCOUNT_<user> by name, and dashes are illegal in POSIX var names
+  # (bad variable name -> CrashLoop, observed 2026-10-18).
+  secretName: semtext-stage-extra
+  # Mount from a mac:
+  #   kubectl -n apps port-forward svc/semtext-stage-samba 4455:445
+  #   mount_smbfs //stagecode@127.0.0.1:4455/code ~/mnt-semtext
+  # (mac prompts for the password — it is in semtext-stage-extra/SAMBA_PASS,
+  # handed over via clipboard, never printed.)
+
+# run-claude sidecar: interactive attach (kubectl -n apps attach -it <pod>
+# -c runclaude) into the live code tree at /code. Image runenv:v1 verified in
+# the registry (agentonomi lane; generic toolchain, zero key material). tty+
+# stdin are set by the template (zellij entrypoint exits without a tty).
+# Config comes from secret semtext-stage-runclaude (whole .secrets file, key
+# `secrets`, mounted at /root/.config/run-claude/.secrets).
+runClaude:
+  enabled: true
+  image: ops.noizu.com/agent-kit-work/runenv:v1
+  secretName: semtext-stage-runclaude
