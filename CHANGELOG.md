@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-18 (sem-thought: display-only typed thought bubble + spec-pages e2e repair)
+- new vocabulary element `sem-thought` (#185) — display-only typed thought container, the lightweight sibling of tobor-kit's tobor-thought-bubble: six types (`observation|reflection|assumption|mind-read|tangent|concern`), per-type `--sem-thought-current` accent tokens in all three minimal-tech-light palettes, dual authoring form (`:is(sem-thought, .sem-thought)`), `attr()` label in both spellings (data- wins), unknown type degrades to its own text + validator warning; no events/chrome/fallback, mints no record; schema-driven validation only (no validator code changed)
+- spec + fixtures: schema doc (`spec/schema/sem-thought.md`), schema def, conventions §buckets/§5/Appendix A/`r-sem-thought` (r-sem-thought href 404s until the npl-enhanced-content subtree syncs), demo class-form fixtures, standalone-lit Lit fixtures, `test/e2e/sem-thought.cy.js` 7/7
+- merge of origin/develop (0.9.0 one-runtime, sem-bind #182, claude-mods #183, vendor 0.9.3) resolved on the regenerated upstream content; regenerated the stale committed `spec/conventions.nojs.html` snapshot (#146 left it behind the build's readdir input scan, which clobbered fresh nojs artifacts and emitted a junk `conventions.nojs.nojs.html` in dist)
+- spec-pages e2e repaired to the one-runtime/v0.7 contract (4 assertions still described the two-script tier; develop's own CI failed `test (e2e 1/3)` on them, transitively skipping build-push/publish-cdn on main): deferred-bundle regex, asset floor >= 4, escaped path `semtext/semtext.css`, `sem-distractor` → `incorrect-statement`, nojs visibility covers text-bearing elements only
+
 ## 2026-10-18 (claude-mods: semtext Claude Code mod)
 - claude-mods/semtext — Claude Code mod: detects SemText sem-* docs, inline annotation + outline pane + validation (#183)
 
