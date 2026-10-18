@@ -98,13 +98,18 @@ defmodule SemtextWeb.PortDocsPagesTest do
   describe "showcase slug pages" do
     @slugs ~w(claude-md documentation onboarding agent command skill data-viewer embedding sem-shell)
 
+    # onboarding rides the island-bridge viewer (SEMTEX-013 port): its
+    # ExampleViewer anchor is "primary", every other page anchors by slug.
+    @viewer_anchors %{"onboarding" => "primary"}
+
     for slug <- @slugs do
       test "GET /showcase/#{slug}", %{conn: conn} do
         conn = get(conn, "/showcase/#{unquote(slug)}")
         assert conn.status == 200
         body = html_response(conn, 200)
         # the ExampleViewer section marker this page's viewer renders
-        assert body =~ ~s(id="example-#{unquote(slug)}")
+        anchor = Map.get(@viewer_anchors, unquote(slug), unquote(slug))
+        assert body =~ ~s(id="example-#{anchor}")
         assert body =~ "https://semtext.dev/showcase/#{unquote(slug)}/"
       end
     end
@@ -166,7 +171,10 @@ defmodule SemtextWeb.PortDocsPagesTest do
       # never go negative and must end at zero.
       for slug <- @renderable_slugs do
         body = html_response(get(conn, "/showcase/#{slug}"), 200)
-        assert body =~ "data-sem-html="
+        # site-variant viewers carry the escaped source in data-sem-html;
+        # onboarding's island-bridge viewer carries the pane payload in
+        # data-sem-pane — both are hydration payloads the scan must see.
+        assert body =~ ~r/data-sem-(html|pane)=/
 
         depth =
           Regex.scan(~r/<\/?script\b/i, body)
