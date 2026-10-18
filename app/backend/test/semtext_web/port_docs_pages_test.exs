@@ -98,18 +98,19 @@ defmodule SemtextWeb.PortDocsPagesTest do
   describe "showcase slug pages" do
     @slugs ~w(claude-md documentation onboarding agent command skill data-viewer embedding sem-shell)
 
-    # onboarding rides the island-bridge viewer (SEMTEX-013 port): its
-    # ExampleViewer anchor is "primary", every other page anchors by slug.
-    @viewer_anchors %{"onboarding" => "primary"}
-
     for slug <- @slugs do
       test "GET /showcase/#{slug}", %{conn: conn} do
         conn = get(conn, "/showcase/#{unquote(slug)}")
         assert conn.status == 200
         body = html_response(conn, 200)
-        # the ExampleViewer section marker this page's viewer renders
-        anchor = Map.get(@viewer_anchors, unquote(slug), unquote(slug))
-        assert body =~ ~s(id="example-#{anchor}")
+        # the section marker the page renders. ExampleViewer pages use
+        # id="example-<slug>"; the onboarding island page (#153) owns its
+        # section directly with the plain id="example" anchor.
+        if unquote(slug) == "onboarding" do
+          assert body =~ ~s(id="example")
+        else
+          assert body =~ ~s(id="example-#{unquote(slug)}")
+        end
         assert body =~ "https://semtext.dev/showcase/#{unquote(slug)}/"
       end
     end
@@ -169,12 +170,25 @@ defmodule SemtextWeb.PortDocsPagesTest do
       # neutralized there; this guards the whole document regardless of
       # which layer regresses). Scan as a tag-state machine: depth must
       # never go negative and must end at zero.
+      #
+      # Payload carriers differ by page (SEMTEX-013, #153): most panes
+      # still ship their markup in the `data-sem-html` attribute; the
+      # onboarding page boots through the island bridge — its pane spec
+      # (`data-sem-pane`) carries the authored markup and `wire: true`,
+      # and `reference_assets` loads semtext-lazy.js. Each page must ship
+      # ONE of the two carriers; the tag-balance scan runs regardless.
       for slug <- @renderable_slugs do
         body = html_response(get(conn, "/showcase/#{slug}"), 200)
-        # site-variant viewers carry the escaped source in data-sem-html;
-        # onboarding's island-bridge viewer carries the pane payload in
-        # data-sem-pane — both are hydration payloads the scan must see.
-        assert body =~ ~r/data-sem-(html|pane)=/
+
+        if slug == "onboarding" do
+          assert body =~ "data-sem-pane",
+                 "/showcase/onboarding: no island pane spec — the render pane cannot boot"
+
+          assert body =~ "semtext-lazy.js",
+                 "/showcase/onboarding: island assets missing — the pane would stay un-upgraded"
+        else
+          assert body =~ "data-sem-html="
+        end
 
         depth =
           Regex.scan(~r/<\/?script\b/i, body)

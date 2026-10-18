@@ -73,8 +73,8 @@ defmodule SemtextWeb.Parity.EditorRouteTest do
   test "the editor static assets serve" do
     for path <- [
           "/js/editor-flags.js",
-          "/semtext/v0.9.0/semtext.js",
-          "/semtext/v0.9.0/semtext-editor.js",
+          "/semtext/v0.9.1/semtext.js",
+          "/semtext/v0.9.1/semtext-editor.js",
           "/js/editor-boot.js"
         ] do
       conn = get(build_conn(), path)
