@@ -37,6 +37,24 @@
   sem-note[data-sem-upgraded][collapsed] > .sem-note-body { display: none; }
   sem-note .sem-note-summary { cursor: pointer; color: var(--sem-accent); }
 
+  /* sem-thought base (pre- and post-upgrade; the Lit element keeps light DOM).
+     Mirrors the vocabulary bubble; the type accent reads the theme's
+     --sem-thought-* tokens with a --sem-accent fallback. */
+  sem-thought { display: block; position: relative; margin: 1rem 0 1.25rem;
+    padding: .75rem 1rem; border-radius: 12px;
+    background: var(--sem-surface); border: 1px solid var(--sem-border);
+    border-left: 4px solid var(--sem-accent); }
+  sem-thought[data-type="observation"] { border-left-color: var(--sem-thought-observation, var(--sem-accent)); }
+  sem-thought[data-type="reflection"]  { border-left-color: var(--sem-thought-reflection, var(--sem-accent)); }
+  sem-thought[data-type="assumption"]  { border-left-color: var(--sem-thought-assumption, var(--sem-accent)); }
+  sem-thought[data-type="mind-read"]   { border-left-color: var(--sem-thought-mind-read, var(--sem-accent)); }
+  sem-thought[data-type="tangent"]     { border-left-color: var(--sem-thought-tangent, var(--sem-accent)); }
+  sem-thought[data-type="concern"]     { border-left-color: var(--sem-thought-concern, var(--sem-accent)); }
+  sem-thought[data-type]::before { content: attr(data-type) " · ";
+    font-size: .75rem; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--sem-muted); display: block; }
+  sem-thought.sem-thought-unknown { border-left-color: var(--sem-border); }
+
   /* sem-facts base (pre- and post-upgrade; the Lit element keeps light DOM) */
   sem-facts { display: block; margin: 1.5rem 0; }
   sem-facts .sem-fact { border: 1px solid var(--sem-border); border-radius: 12px;
@@ -102,6 +120,13 @@
       on click — the component owns the behavior, the light DOM keeps the text
       searchable and copyable.</div>
   </sem-note>
+
+  <h2>Thoughts — typed bubbles (Lit)</h2>
+  <sem-thought id="lit-thought" type="observation">The draft pulls one fact per section — the outline says two. Upgraded: check <code>data-type</code>, the <code>sem-thought-observation</code> class and <code>role="note"</code>.</sem-thought>
+  <sem-thought id="lit-thought-mindread" type="mind-read">A skimming reader assumes rotation is automatic.</sem-thought>
+  <sem-thought id="lit-thought-tangent" type="tangent">The margin-note idea in the note element came from a thought like this one.</sem-thought>
+  <sem-thought id="lit-thought-unknown" type="hallucination">An unknown type degrades to this plain text: the tier logs a warning and stamps <code>sem-thought-unknown</code>.</sem-thought>
+  <sem-thought id="lit-thought-plain">No <code>type</code>: a plain bubble — no <code>data-type</code>, no type class, content untouched.</sem-thought>
 
   <h2>Facts — flashcards (Lit)</h2>
   <sem-facts data-view-as="flashcards" id="lit-fc">

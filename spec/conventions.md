@@ -42,7 +42,7 @@ listed with its full entry in [SS5](#5-element-entries).
 | Bucket | Elements | What it covers |
 | :-- | :-- | :-- |
 | **Document & structure** | `sem-enhanced-document`, `sem-reader`, `sem-audiences` / `sem-profile`, `agent` | The root wrapper, reading chrome, audience declarations and document-level metadata that frame a SemText document |
-| **Prose & code** | `sem-md`, `sem-note`, `sem-code`, `sem-browser` | Content blocks beyond plain HTML -- Markdown bodies, callouts and source listings with provenance |
+| **Prose & code** | `sem-md`, `sem-note`, `sem-thought`, `sem-code`, `sem-browser` | Content blocks beyond plain HTML -- Markdown bodies, callouts, typed thought bubbles and source listings with provenance |
 | **Disclosure & views** | `sem-details` / `sem-detail`, `highlight`, `sem-reveal`, `sem-source`, `sem-views` / `sem-view` | The same content under different reading interactions -- occluded detail, Q-A reveal, markup flip, perspective tabs |
 | **Facts & recall** | `sem-facts` / `sem-fact`, `statement`, `conclusion`, `incorrect-statement`, `sem-question` / `sem-option` | Assertable statement/conclusion pairs -- the citable unit -- with the quiz candidates and distractors built on them |
 | **Data & tables** | `sem-table`, `sem-data-visualizer`, `sem-data-source`, `sem-data-join`, `sem-data-query` | Authored tables and the data-visualizer's named buckets, joins and editable queries |
@@ -400,6 +400,19 @@ reads as pre-wrapped text. Extraction keeps `source` **normalised**
 `collapsed` => ten-word teaser, click to expand (the tier wraps the body in
 `.sem-note-body` to hide it); `view-as="margin"` => CSS-only right-gutter
 aside on wide viewports, inline otherwise. Light DOM, `role="note"`.
+
+**sem-thought** -- typed thought bubble; display-only, mints nothing.
+**Normative: `spec/schema/sem-thought.md`.**
+```html
+<sem-thought type="observation">The draft pulls one fact per section -- the outline says two.</sem-thought>
+<sem-thought type="mind-read">A skimming reader assumes rotation is automatic.</sem-thought>
+```
+`type="observation|reflection|assumption|mind-read|tangent|concern"`,
+optional -- no `type` is a plain bubble; an unknown `type` degrades to plain
+text (validator warning, not error). No collapsed state, no summary teaser,
+no events, no chrome: the body is the element's content; on upgrade the tier
+mirrors `type` to `data-type` and adds the class `sem-thought-<type>`.
+Light DOM, `role="note"`.
 
 **sem-code** -- verbatim listing with provenance and copy / wrap.
 **Normative: `spec/schema/sem-code.md`.**
@@ -923,6 +936,7 @@ exception: `<incorrect-statement>`'s class form is the unprefixed
 | `<sem-enhanced-document>` | `div.sem-enhanced-document` |
 | `<agent>` + name/bio/instructions | `div.sem-agent` > `.sem-agent-name/-bio/-instructions` |
 | `<sem-note variant="warning">` body | `div.sem-note[data-variant="warning"]` > `.sem-note-body`; `collapsed` attr |
+| `<sem-thought type>` body | `div.sem-thought[data-type]`; unknown `type` degrades to plain text |
 | `<sem-audiences>` / `<sem-profile id label implies>` | `div.sem-audiences` > `div.sem-profile[id][data-label][data-implies]`; `audience="..."` - `data-audience` |
 | `<sem-facts view-as="quiz">` | `div.sem-facts[data-view-as="quiz"]` |
 | `<sem-fact>` > `<statement>` / `<conclusion>` | `div.sem-fact` > `.sem-statement`, `.sem-conclusion` |

@@ -31,7 +31,7 @@ body { margin: 0; background: var(--sem-bg); color: var(--sem-fg); }
 sem-enhanced-document, sem-agent, sem-audiences, sem-note, sem-facts, sem-fact,
 sem-details, sem-detail, sem-procedure, sem-step, sem-properties, sem-property,
 sem-views, sem-view, sem-reveal, sem-progress,
-sem-chronology, sem-event, sem-code, sem-references, sem-reference, sem-reader, sem-table, sem-source, sem-md,
+sem-chronology, sem-event, sem-code, sem-references, sem-reference, sem-reader, sem-table, sem-thought, sem-source, sem-md,
 sem-agent > :is(name, bio, instructions), sem-fact > :is(statement, conclusion, sem-distractor) { display: block; }
 /* The audience fallback hides with the native attribute; keep it winning
    over the block rule above for element forms. */
@@ -89,6 +89,40 @@ sem-agent > :is(name, bio, instructions), sem-fact > :is(statement, conclusion, 
     margin: 0 var(--sem-margin-offset, 0) 1rem 1.5rem;
     font-size: .875rem; }
 }
+
+/* thought — typed thought bubble (spec/schema/sem-thought.md). Display-only:
+   the tail is pure CSS, behavior none (a collapsible thought is sem-reveal
+   territory). Type styling reads --sem-thought-<type> with an accent
+   fallback, so an un-themed document shows one uniform accent bubble per
+   type instead of broken boxes; the theme file declares the values. No hide
+   rule here: the element hides nothing, so D12 has nothing to gate. */
+:is(sem-thought, .sem-thought) { position: relative; margin: 1rem 0 1.25rem;
+  padding: .75rem 1rem; border-radius: 12px;
+  background: var(--sem-thought-bg, var(--sem-surface));
+  border: 1px solid var(--sem-thought-border, var(--sem-border));
+  border-left: 4px solid var(--sem-thought-current, var(--sem-accent)); }
+/* per-type accent: one custom property, consumed by the border rule above */
+:is(sem-thought, .sem-thought):is([data-type="observation"], [type="observation"]) { --sem-thought-current: var(--sem-thought-observation, var(--sem-accent)); }
+:is(sem-thought, .sem-thought):is([data-type="reflection"], [type="reflection"])   { --sem-thought-current: var(--sem-thought-reflection, var(--sem-accent)); }
+:is(sem-thought, .sem-thought):is([data-type="assumption"], [type="assumption"])   { --sem-thought-current: var(--sem-thought-assumption, var(--sem-accent)); }
+:is(sem-thought, .sem-thought):is([data-type="mind-read"], [type="mind-read"])     { --sem-thought-current: var(--sem-thought-mind-read, var(--sem-accent)); }
+:is(sem-thought, .sem-thought):is([data-type="tangent"], [type="tangent"])         { --sem-thought-current: var(--sem-thought-tangent, var(--sem-accent)); }
+:is(sem-thought, .sem-thought):is([data-type="concern"], [type="concern"])         { --sem-thought-current: var(--sem-thought-concern, var(--sem-accent)); }
+/* degraded unknown type (class set by the Lit upgrade): muted, not styled
+   as a valid type — the label still names what was authored */
+:is(sem-thought, .sem-thought).sem-thought-unknown { --sem-thought-current: var(--sem-border); }
+/* type label, both spellings from one pair of rules (D10, sem-note pattern) */
+:is(sem-thought, .sem-thought)[type]:not([data-type])::before { content: attr(type) " · "; }
+:is(sem-thought, .sem-thought):is([data-type], [type])::before { content: attr(data-type) " · ";
+  font-size: .75rem; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--sem-muted); display: block; }
+/* CSS-only tail: a trailing dot (::after) with a smaller shadow sibling —
+   no SVG asset, no extra element. Sits in the element's own margin. */
+:is(sem-thought, .sem-thought)::after { content: ""; position: absolute;
+  left: 2.4rem; bottom: -1rem; width: .7rem; height: .7rem; border-radius: 50%;
+  background: var(--sem-thought-bg, var(--sem-surface));
+  border: 1px solid var(--sem-thought-border, var(--sem-border));
+  box-shadow: -1.1rem .55rem 0 -.24rem color-mix(in srgb, var(--sem-thought-border, var(--sem-border)) 60%, var(--sem-thought-bg, var(--sem-surface))); }
 
 /* facts */
 :is(sem-facts, .sem-facts) { margin: 1.5rem 0; }
@@ -474,7 +508,7 @@ th[aria-sort="descending"] .sem-table-sort::after { content: "↓"; opacity: 1; 
   :is(sem-reveal, .sem-reveal) summary { list-style: none; }
   .sem-occluded { color: inherit !important; background: none !important; }
   :is(sem-fact, .sem-fact), :is(sem-step, .sem-step), :is(sem-note, .sem-note), :is(sem-detail, .sem-detail),
-  :is(sem-property, .sem-property), :is(sem-event, .sem-event), :is(sem-reference, .sem-reference) { break-inside: avoid; page-break-inside: avoid; }
+  :is(sem-property, .sem-property), :is(sem-event, .sem-event), :is(sem-reference, .sem-reference), :is(sem-thought, .sem-thought) { break-inside: avoid; page-break-inside: avoid; }
   .sem-target { outline: none; }
 }
 
