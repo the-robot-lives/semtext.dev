@@ -1,15 +1,78 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register, ToolCallInput } from 'claude-code'
+import type { EngineInterface, Register, RenderElement, ToolCallInput } from 'claude-code'
 
-import type { SemTextDoc, SemTextNode } from '../types'
+import {
+  GLYPHS,
+  INITIAL_VIEWER,
+  RENDERERS,
+  backToOutline,
+  breadcrumbOf,
+  buildQuizOptions,
+  collapseWhitespace,
+  factLine,
+  firstWords,
+  flipCard,
+  focusSection,
+  meterLine,
+  nextItem,
+  outlineTree,
+  pickOption,
+  promptFor,
+  sanitize,
+  setActiveView,
+  setExpanded,
+  startQuiz,
+  truncateCell,
+  truncateSummary,
+  wrapLines,
+} from './render'
+import type { RenderCtx } from './render'
+import type {
+  FactItem,
+  QuizOption,
+  SemBlock,
+  SemNodeContent,
+  SemTextDoc,
+  SemTextNode,
+  SemTextViewer,
+} from '../types'
+
+// Re-exported for the test harness (and any importer of the legacy surface):
+// the pure layer lives in ./render now.
+export {
+  backToOutline,
+  buildQuizOptions,
+  factLine,
+  firstWords,
+  flipCard,
+  focusSection,
+  INITIAL_VIEWER,
+  nextItem,
+  pickOption,
+  promptFor,
+  sanitize,
+  setExpanded,
+  setActiveView,
+  startQuiz,
+  truncateSummary,
+  collapseWhitespace,
+}
 
 // --- constants ---
 
 const PANE_ID = 'semtext-outline'
-const PANE_TITLE = 'SemText outline'
+const PANE_TITLE = 'SemText'
 const MAX_STORED_NODES = 2000
 const MAX_SEEN_SOURCES = 50
 const MAX_NOTES = 20
+const MAX_TEXT = 4000 // per-node captured text, characters
+const MAX_CODE_LINES = 40 // sem-code body cap, lines
+const MAX_TABLE_ROWS = 10 // sem-table rows cap
+const MAX_BLOCKS = 32 // headings/paragraphs captured per node
+const MAX_FACT_ITEMS = 50 // items captured per facts set
+const MAX_WIDGETS = 10 // interactive widgets drawn per section view
+const NOTE_SUMMARY_WORDS = 10 // collapsed-note summary rule
+const FALLBACK_COLUMNS = 72 // pane width when the surface reports none
 
 // The element vocabulary of sem-text.v0.7.spec.html (the 57 §2 table entries
 // plus the structural authoring elements its §1 names: sem-enhanced-document,
@@ -26,6 +89,11 @@ const KNOWN_ELEMENTS: ReadonlySet<string> = new Set([
   'sem-changelogs',
   'sem-chronology',
   'sem-code',
+  // sem-conclusion / sem-distractor: the interactive fact markup the browser
+  // fallback enhances (d("conclusion"), d("distractor")) even though the spec
+  // table lists them only as parts of sem-fact content.
+  'sem-conclusion',
+  'sem-distractor',
   'sem-data-join',
   'sem-data-query',
   'sem-data-source',
@@ -85,6 +153,8 @@ const KNOWN_ELEMENTS: ReadonlySet<string> = new Set([
 
 const DOC = atom({ plugin: 'semtext', key: 'doc' } as const, null)
 const SEEN = atom({ plugin: 'semtext', key: 'seenSources' } as const, [])
+/** Exported for tests; all pane writes go through update($, VIEWER, …). */
+export const VIEWER = atom({ plugin: 'semtext', key: 'viewer' } as const, INITIAL_VIEWER)
 
 // --- detection ---
 
@@ -95,18 +165,12 @@ export interface ParsedSemText {
   notes: string[]
 }
 
-const ANSI_OR_CONTROL =
-  /\x1b\[[0-9;]*[A-Za-z]|\x1b\][^\u0007]*(?:\u0007|\x1b\\)|[\u0000-\u0008\u000b-\u001f\u007f]/g
-
-/** Strips ANSI escape sequences and C0 control characters (keeps \n and \t). */
-export function sanitize(value: string): string {
-  return value.replace(ANSI_OR_CONTROL, '')
-}
-
 /** Cheap prefix-match gate: a sem-* custom element open tag. */
 export function looksLikeSemText(text: string): boolean {
   return /<sem-[a-z][a-z0-9-]*(?=[\s/>])/i.test(text)
 }
+
+// --- parser ---
 
 function countNewlines(text: string, from: number, to: number): number {
   let seen = 0
@@ -152,26 +216,199 @@ function attrSrcOf(src: string): string {
 }
 
 const RAW_TEXT_CLOSE = /<\/(script|style)\s*>/gi
+const COMMENT_BLOCK = /<!--[\s\S]*?-->/g
+const TAG_LIKE = /<[^>]*>/g
+const HEADING_NAME = /^h([1-6])$/
+
+/** Internal parse-time fields, stripped before the tree is stored. */
+type ParseNode = SemTextNode & {
+  raw?: string
+  inheritedSeed?: number | null
+}
+
+type TextContainer = { name: string; start: number }
+
+function parseSeedAttr(value: string | undefined): number | null {
+  if (value === undefined) return null
+  const trimmed = value.trim()
+  if (!/^[+-]?\d+$/.test(trimmed)) return null
+  const parsed = Number.parseInt(trimmed, 10)
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : null
+}
+
+function collectTag(node: SemTextNode, tag: string, out: SemTextNode[]): void {
+  for (const child of node.children) {
+    if (child.tag === tag) out.push(child)
+    collectTag(child, tag, out)
+  }
+}
+
+function contentFor(
+  node: ParseNode,
+  full: string,
+  raw: string,
+  childRaws: readonly string[],
+): SemNodeContent | undefined {
+  switch (node.tag) {
+    case 'sem-facts': {
+      // Every view-as mode captures: quiz/flashcards drive the runner, list
+      // (the bare-tag default) renders as an inline item list — the browser
+      // leaves list markup visible, so a plain <sem-facts> must never
+      // capture as empty. Unknown modes fall back to list (safe display).
+      const viewRaw = node.attrs['view-as'] ?? node.attrs['data-view-as'] ?? 'list'
+      const viewAs = viewRaw === 'quiz' || viewRaw === 'flashcards' ? viewRaw : 'list'
+      const found: SemTextNode[] = []
+      collectTag(node, 'sem-fact', found)
+      const items: FactItem[] = []
+      for (const fact of found) {
+        if (items.length >= MAX_FACT_ITEMS) break
+        const conclusions: SemTextNode[] = []
+        collectTag(fact, 'sem-conclusion', conclusions)
+        const distractorNodes: SemTextNode[] = []
+        collectTag(fact, 'sem-distractor', distractorNodes)
+        const conclusion = collapseWhitespace(conclusions[0]?.text ?? '')
+        const distractors = distractorNodes
+          .map(d => collapseWhitespace(d.text ?? ''))
+          .filter(text => text !== '')
+        let body = fact.text ?? ''
+        if (conclusion !== '') body = body.split(conclusion).join(' ')
+        for (const text of distractors) body = body.split(text).join(' ')
+        items.push({ body: collapseWhitespace(body), conclusion, distractors })
+      }
+      if (items.length === 0) return undefined
+      return { kind: 'facts', viewAs, seed: node.inheritedSeed ?? 0, items }
+    }
+    case 'sem-reveal': {
+      if (full === '') return undefined
+      const summary = node.attrs['summary'] ?? node.attrs['data-summary'] ?? truncateSummary(full)
+      return { kind: 'reveal', summary, body: full, collapsed: node.attrs['collapsed'] !== undefined }
+    }
+    case 'sem-note': {
+      if (node.attrs['collapsed'] === undefined || full === '') return undefined
+      return {
+        kind: 'note',
+        collapsed: true,
+        summary: `${firstWords(full, NOTE_SUMMARY_WORDS)} …`,
+        body: full,
+      }
+    }
+    case 'sem-views': {
+      const views = node.children
+        .filter(child => child.tag === 'sem-view')
+        .map((child, idx) => ({
+          name: child.attrs['name'] ?? child.attrs['data-name'] ?? `view ${idx + 1}`,
+          body: child.text ?? '',
+          active: child.attrs['active'] !== undefined || child.attrs['data-active'] !== undefined,
+        }))
+      if (views.length === 0) return undefined
+      const initial = Math.max(0, views.findIndex(view => view.active))
+      return {
+        kind: 'views',
+        views: views.map(view => ({ name: view.name, body: view.body })),
+        initial,
+      }
+    }
+    case 'sem-properties': {
+      const properties = node.children
+        .filter(child => child.tag === 'sem-property')
+        .map(child => ({
+          key: child.attrs['key'] ?? child.attrs['data-key'] ?? '',
+          value: child.text ?? '',
+        }))
+      if (properties.length === 0) return undefined
+      return { kind: 'properties', properties }
+    }
+    case 'sem-table': {
+      const lines = raw
+        .split('\n')
+        .map(row => row.trim())
+        .filter(row => row !== '')
+      const rows = (lines.length > 0 ? lines : [full].filter(row => row !== '')).slice(
+        0,
+        MAX_TABLE_ROWS,
+      )
+      if (rows.length === 0) return undefined
+      return { kind: 'table', rows }
+    }
+    case 'sem-code': {
+      const source = [raw.trim(), ...childRaws.map(line => line.trim())]
+        .filter(part => part !== '')
+        .join('\n')
+      const body = source.split('\n').slice(0, MAX_CODE_LINES).join('\n')
+      if (body === '') return undefined
+      return { kind: 'code', lang: node.attrs['lang'] ?? node.attrs['data-lang'] ?? '', body }
+    }
+    default:
+      return undefined
+  }
+}
+
+function finalizeNode(node: ParseNode): void {
+  const childRaws = node.children.map(child => (child as ParseNode).raw ?? '')
+  for (const child of node.children) finalizeNode(child as ParseNode)
+  const raw = node.raw ?? ''
+  const direct = collapseWhitespace(raw)
+  const childText = node.children
+    .map(child => child.text ?? '')
+    .filter(text => text !== '')
+    .join(' ')
+  const full = collapseWhitespace(`${direct} ${childText}`)
+  node.text = full.slice(0, MAX_TEXT)
+  node.content = contentFor(node, full, raw, childRaws)
+  delete node.raw
+  delete node.inheritedSeed
+}
 
 /**
- * Parses the sem-* markup of `text` into a nested element tree.
+ * Parses the sem-* markup of `text` into a nested element tree, capturing
+ * per-element content (facts/reveal/note/views/properties/table/code) and the
+ * headings/paragraphs/blockquotes inside each sem element as `blocks`.
  * Skips HTML comments, doctype/PI forms and the raw bodies of <script>/<style>
  * (a page's fallback JS mentions sem-* names as strings — not markup).
  * Returns null when the text carries no sem-* element at all.
  */
 export function parseSemText(text: string): ParsedSemText | null {
   if (!looksLikeSemText(text)) return null
-  const roots: SemTextNode[] = []
-  const stack: SemTextNode[] = []
+  const roots: ParseNode[] = []
+  const stack: ParseNode[] = []
+  const containers: TextContainer[] = []
   const unknown = new Set<string>()
   const notes: string[] = []
   let count = 0
   let stored = 0
   let line = 1
   let i = 0
+
+  const captureGap = (from: number, to: number): void => {
+    if (to <= from) return
+    const top = stack[stack.length - 1]
+    if (top === undefined || containers.length > 0) return
+    top.raw = (top.raw ?? '') + sanitize(text.slice(from, to))
+  }
+  const captureContainer = (container: TextContainer, to: number): void => {
+    const top = stack[stack.length - 1]
+    if (top === undefined) return
+    const inner = text
+      .slice(container.start, to)
+      .replace(COMMENT_BLOCK, ' ')
+      .replace(TAG_LIKE, ' ')
+    const clean = collapseWhitespace(sanitize(inner))
+    if (clean === '') return
+    const blocks: SemBlock[] = (top.blocks ??= [])
+    if (blocks.length >= MAX_BLOCKS) return
+    const heading = HEADING_NAME.exec(container.name)
+    if (heading !== null) blocks.push({ kind: 'heading', level: Number(heading[1]), text: clean })
+    else if (container.name === 'blockquote') blocks.push({ kind: 'quote', text: clean })
+    else blocks.push({ kind: 'text', text: clean })
+  }
+
   while (i < text.length) {
     const lt = text.indexOf('<', i)
-    if (lt < 0) break
+    if (lt < 0) {
+      captureGap(i, text.length)
+      break
+    }
+    captureGap(i, lt)
     line += countNewlines(text, i, lt)
     i = lt
     if (text.startsWith('<!--', i)) {
@@ -198,6 +435,7 @@ export function parseSemText(text: string): ParsedSemText | null {
     }
     const name = nameMatch[1]!.toLowerCase()
     const closing = src.charCodeAt(1) === 47
+    const selfClosing = /\/\s*>$/.test(src)
     line += countNewlines(text, i, end)
     if (!closing && (name === 'script' || name === 'style')) {
       RAW_TEXT_CLOSE.lastIndex = end
@@ -207,42 +445,65 @@ export function parseSemText(text: string): ParsedSemText | null {
       i = stop
       continue
     }
-    if (name.startsWith('sem-')) {
+    if (!name.startsWith('sem-')) {
       if (closing) {
         let at = -1
-        for (let s = stack.length - 1; s >= 0; s--) {
-          if (stack[s]!.tag === name) {
+        for (let s = containers.length - 1; s >= 0; s--) {
+          if (containers[s]!.name === name) {
             at = s
             break
           }
         }
         if (at >= 0) {
-          stack.length = at
-        } else if (notes.length < MAX_NOTES) {
-          notes.push(`line ${line}: </${name}> closes nothing`)
+          captureContainer(containers[at]!, i)
+          containers.length = at
         }
-      } else {
-        count++
-        if (!KNOWN_ELEMENTS.has(name)) unknown.add(name)
-        if (stored < MAX_STORED_NODES) {
-          stored++
-          const selfClosing = /\/\s*>$/.test(src)
-          const node: SemTextNode = {
-            tag: name,
-            attrs: parseAttrs(attrSrcOf(src)),
-            line,
-            children: [],
-          }
-          const parent = stack[stack.length - 1]
-          if (parent === undefined) roots.push(node)
-          else parent.children.push(node)
-          if (!selfClosing) stack.push(node)
+      } else if (
+        !selfClosing &&
+        (name === 'p' || name === 'blockquote' || HEADING_NAME.test(name))
+      ) {
+        containers.push({ name, start: end })
+      }
+      i = end
+      continue
+    }
+    if (closing) {
+      let at = -1
+      for (let s = stack.length - 1; s >= 0; s--) {
+        if (stack[s]!.tag === name) {
+          at = s
+          break
         }
+      }
+      if (at >= 0) {
+        stack.length = at
+      } else if (notes.length < MAX_NOTES) {
+        notes.push(`line ${line}: </${name}> closes nothing`)
+      }
+    } else {
+      count++
+      if (!KNOWN_ELEMENTS.has(name)) unknown.add(name)
+      if (stored < MAX_STORED_NODES) {
+        stored++
+        const parent = stack[stack.length - 1]
+        const node: ParseNode = {
+          tag: name,
+          attrs: parseAttrs(attrSrcOf(src)),
+          line,
+          children: [],
+        }
+        node.raw = ''
+        node.inheritedSeed =
+          parseSeedAttr(node.attrs['data-sem-seed']) ?? parent?.inheritedSeed ?? null
+        if (parent === undefined) roots.push(node)
+        else parent.children.push(node)
+        if (!selfClosing) stack.push(node)
       }
     }
     i = end
   }
   if (count === 0) return null
+  for (const root of roots) finalizeNode(root)
   return { roots, elementCount: count, unknownElements: [...unknown].sort(), notes }
 }
 
@@ -306,7 +567,15 @@ function sourceOf(e: ToolCallInput): string {
   return file !== undefined ? file : `tool:${e.tool}`
 }
 
-async function ingest(
+/**
+ * A fresh source resets the viewer; a re-read of the same source leaves a
+ * quiz in progress alone. (Pure; ingest applies it.)
+ */
+export function resetsViewer(previous: SemTextDoc | null, source: string): boolean {
+  return previous === null || previous.source !== source
+}
+
+export async function ingest(
   $: EngineInterface,
   text: string,
   source: string,
@@ -322,7 +591,11 @@ async function ingest(
     unknownElements: parsed.unknownElements,
     firstSeen: await $.clock.now(),
   }
+  const previous = await read($, DOC)
   await update($, DOC, () => nextDoc)
+  if (resetsViewer(previous, source)) {
+    await update($, VIEWER, () => ({ ...INITIAL_VIEWER }))
+  }
   const seen = await read($, SEEN)
   if (!seen.includes(source)) {
     await update($, SEEN, list => [...list, source].slice(-MAX_SEEN_SOURCES))
@@ -334,28 +607,47 @@ async function ingest(
   }
 }
 
-// --- outline ---
+/** The node at an outline row key path ('0.2.1'). */
+export function nodeAt(tree: readonly SemTextNode[], key: string): SemTextNode | undefined {
+  if (key === '') return undefined
+  let nodes = tree
+  let node: SemTextNode | undefined
+  for (const part of key.split('.')) {
+    const idx = Number.parseInt(part, 10)
+    node = Number.isInteger(idx) && idx >= 0 ? nodes[idx] : undefined
+    if (node === undefined) return undefined
+    nodes = node.children
+  }
+  return node
+}
 
-function outlineRows(doc: SemTextDoc): { key: string; depth: number; label: string }[] {
-  const rows: { key: string; depth: number; label: string }[] = []
-  const walk = (nodes: readonly SemTextNode[], depth: number, prefix: string): void => {
-    for (let i = 0; i < nodes.length; i++) {
+const INTERACTIVE: ReadonlySet<SemNodeContent['kind']> = new Set([
+  'facts',
+  'reveal',
+  'note',
+  'views',
+  'properties',
+  'table',
+  'code',
+])
+
+type Widget = { key: string; node: SemTextNode }
+
+/** Interactive-content descendants of `root`, keyed by outline row key. */
+function widgetsIn(root: SemTextNode, baseKey: string): Widget[] {
+  const out: Widget[] = []
+  const walk = (nodes: readonly SemTextNode[], prefix: string): void => {
+    for (let i = 0; i < nodes.length && out.length < MAX_WIDGETS; i++) {
       const node = nodes[i]!
       const key = `${prefix}${i}`
-      const id = node.attrs['id']
-      const named = node.attrs['label'] ?? node.attrs['title'] ?? node.attrs['name']
-      const head =
-        named !== undefined ? `${node.tag} — ${sanitize(named).slice(0, 60)}` : node.tag
-      rows.push({
-        key,
-        depth,
-        label: id !== undefined ? `${head} #${sanitize(id)}` : head,
-      })
-      if (depth < 8) walk(node.children, depth + 1, `${key}.`)
+      if (node.content !== undefined && INTERACTIVE.has(node.content.kind)) {
+        out.push({ key, node })
+      }
+      walk(node.children, `${key}.`)
     }
   }
-  walk(doc.tree, 0, '')
-  return rows
+  walk(root.children, `${baseKey}.`)
+  return out
 }
 
 // --- the mod ---
@@ -364,7 +656,7 @@ export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'semtext',
-      description: 'Toggle the SemText outline pane.',
+      description: 'Toggle the SemText viewer pane.',
     })
     return next(e)
   })
@@ -412,37 +704,391 @@ export const register: Register = on => {
     return next({ ...e, props: { ...e.props, output: annotated } })
   })
 
-  // The outline pane.
+  // The pane: outline / section / quiz runner, one mode at a time.
   on('ui.render', { component: 'Pane', requestId: PANE_ID }, async ($, e) => {
-    const { Box, Text } = $.ui.resolve(e)
-    const current = await read($, DOC)
-    if (current === null) {
+    const { Box, Text, Button } = $.ui.resolve(e)
+    const doc = await read($, DOC)
+    const viewer = await read($, VIEWER)
+    if (doc === null) {
       return (
         <Box flexDirection="column">
           <Text dimColor>No SemText document detected yet.</Text>
         </Box>
       )
     }
-    const rows = outlineRows(current)
-    const room = Math.max(1, (e.viewport?.rows ?? 24) - 4)
-    const unknown = current.unknownElements
-    return (
-      <Box flexDirection="column">
-        <Text>{sanitize(current.fileName ?? current.source)}</Text>
-        <Text dimColor>
-          {current.elementCount} elements ·{' '}
-          {unknown.length === 0
-            ? 'no unknown elements'
-            : `${unknown.length} unknown: ${unknown.slice(0, 4).join(', ')}`}
-        </Text>
-        {rows.slice(0, room).map(row => (
-          <Text key={row.key} dimColor={row.depth > 0}>
-            {'  '.repeat(row.depth)}
-            {row.label}
+    // Width: the pane's own body columns (inside the frame), falling back to
+    // the viewport, then a 72-column assumption with truncation.
+    const width = Math.max(20, e.props.bodyColumns ?? e.viewport?.columns ?? FALLBACK_COLUMNS)
+    const room = Math.max(6, (e.viewport?.rows ?? 24) - 3)
+    const rows = outlineTree(doc.tree)
+    const ctx: RenderCtx = {
+      el: { Box, Text, Button },
+      viewer,
+      width,
+      wkey: '',
+      budget: room,
+      spent: { rows: 0 },
+      showBody: false,
+      press: fn => {
+        void update($, VIEWER, fn)
+      },
+    }
+
+    const outlineView = (): RenderElement => {
+      const unknown = doc.unknownElements
+      const body = rows.slice(0, Math.max(1, room - 3))
+      const selected = viewer.focusedSection ?? body[0]?.key
+      return (
+        <Box flexDirection="column">
+          <Text>
+            {`${GLYPHS.kind.source} ${sanitize(doc.fileName ?? doc.source)}`}
           </Text>
-        ))}
+          <Text dimColor>
+            {unknown.length === 0
+              ? `${GLYPHS.kind.section} ${doc.elementCount} elements · ${GLYPHS.check} all elements known`
+              : `${GLYPHS.kind.section} ${doc.elementCount} elements`}
+          </Text>
+          {unknown.length > 0 && (
+            <Text color="warning">
+              {`${GLYPHS.cross} ${unknown.length} unknown: ${unknown.slice(0, 4).join(', ')}`}
+            </Text>
+          )}
+          {body.map(row => (
+            <Button
+              key={`sec:${row.key}`}
+              plain
+              dimColor={row.depth > 0}
+              onPress={() => {
+                void update($, VIEWER, v => focusSection(v, row.key))
+              }}
+            >
+              {`${row.key === selected ? GLYPHS.toggle.open : ' '} ${row.prefix}${row.glyph} ${row.label}`}
+              {row.count > 0 && <Text dimColor>{` (${row.count})`}</Text>}
+            </Button>
+          ))}
+          {rows.length > body.length && (
+            <Text dimColor>{`${GLYPHS.more} (+${rows.length - body.length})`}</Text>
+          )}
+        </Box>
+      )
+    }
+
+    const stepSection = (delta: number): void => {
+      void update($, VIEWER, v => {
+        const at = rows.findIndex(row => row.key === v.focusedSection)
+        const next = at < 0 ? 0 : Math.min(rows.length - 1, Math.max(0, at + delta))
+        return focusSection(v, rows[next]!.key)
+      })
+    }
+
+    const navRow = (): RenderElement => (
+      <Box flexDirection="row" gap={1}>
+        <Button
+          key="nav:outline"
+          plain
+          dimColor
+          onPress={() => {
+            void update($, VIEWER, backToOutline)
+          }}
+        >
+          {`${GLYPHS.nav.back} outline`}
+        </Button>
+        <Button
+          key="nav:prev"
+          plain
+          dimColor
+          onPress={() => {
+            stepSection(-1)
+          }}
+        >
+          {`${GLYPHS.nav.back} prev`}
+        </Button>
+        <Button
+          key="nav:next"
+          plain
+          dimColor
+          onPress={() => {
+            stepSection(1)
+          }}
+        >
+          {`${GLYPHS.nav.next} next`}
+        </Button>
       </Box>
     )
+
+    // Blocks: headings (`##` dim marker), blockquotes (`▌`), paragraphs plain.
+    // Returns the number of rows actually drawn.
+    const pushBlock = (parts: RenderElement[], block: SemBlock, budget: number): number => {
+      if (budget <= 0) return 0
+      const cellWidth = Math.max(8, width - 2)
+      const draw = (marker: string, text: string, dim: boolean, weight?: 'semibold'): number => {
+        const lines = wrapLines(sanitize(text), Math.max(4, cellWidth - marker.length), budget)
+        lines.forEach((line, i) => {
+          parts.push(
+            i === 0 && marker !== '' ? (
+              <Text key={`b${parts.length}-${i}`} dimColor={dim} weight={weight}>
+                <Text dimColor>{marker}</Text>
+                {line}
+              </Text>
+            ) : (
+              <Text
+                key={`b${parts.length}-${i}`}
+                dimColor={dim}
+                weight={i === 0 ? weight : undefined}
+              >
+                {marker !== '' && i > 0 ? `${' '.repeat(marker.length)}${line}` : line}
+              </Text>
+            ),
+          )
+        })
+        return lines.length
+      }
+      if (block.kind === 'heading') {
+        const mark = `${'#'.repeat(Math.min(6, Math.max(1, block.level)))} `
+        return draw(mark, block.text, false, block.level <= 2 ? 'semibold' : undefined)
+      }
+      if (block.kind === 'quote') {
+        return draw(`${GLYPHS.quote} `, block.text, true)
+      }
+      return draw('', block.text, false)
+    }
+
+    const sectionView = (): RenderElement => {
+      const key = viewer.focusedSection ?? ''
+      const node = nodeAt(doc.tree, key)
+      if (node === undefined) return outlineView()
+      let used = 1 // the breadcrumb row
+      const budget = Math.max(1, room - 2)
+      const parts: RenderElement[] = []
+
+      // Breadcrumb: source › ancestors (dim) › leaf.
+      const { trail, leaf } = breadcrumbOf(doc.tree, key)
+      const crumbs: RenderElement[] = [
+        <Text key="c0" dimColor>
+          {sanitize(doc.fileName ?? doc.source)}
+        </Text>,
+      ]
+      trail.forEach((label, i) => {
+        crumbs.push(
+          <Text key={`c${i + 1}`} dimColor>
+            {`${GLYPHS.crumb} ${label}`}
+          </Text>,
+        )
+      })
+      crumbs.push(
+        <Text key="leaf">
+          {`${GLYPHS.crumb} ${truncateCell(leaf, Math.max(8, width - 4))}`}
+        </Text>,
+      )
+      parts.push(
+        <Box key="crumb" flexDirection="row">
+          {crumbs}
+        </Box>,
+      )
+
+      // Headings / paragraphs / blockquotes captured inside the element.
+      for (const block of node.blocks ?? []) {
+        if (used >= budget) break
+        used += pushBlock(parts, block, budget - used)
+      }
+
+      // The element's own content, then interactive descendants — both
+      // through the render registry. `spent` is shared; only the delta
+      // between calls counts against the budget.
+      const renderWith = (widgetKey: string, target: SemTextNode, showBody: boolean): void => {
+        if (used >= budget) return
+        const render = RENDERERS[target.tag] ?? RENDERERS['*']!
+        const before = ctx.spent.rows
+        const sub: RenderCtx = { ...ctx, wkey: widgetKey, budget: budget - used, showBody }
+        const drawn = render(target, sub)
+        used += ctx.spent.rows - before
+        parts.push(
+          <Box key={`w:${widgetKey}`} flexDirection="column">
+            {drawn}
+          </Box>,
+        )
+      }
+      renderWith(key, node, (node.blocks ?? []).length === 0 && node.content === undefined)
+      for (const widget of widgetsIn(node, key)) {
+        if (used >= budget) break
+        renderWith(widget.key, widget.node, false)
+      }
+
+      return (
+        <Box flexDirection="column">
+          {parts.length === 1 ? <Text dimColor>(no content captured)</Text> : parts}
+          {used >= budget && <Text dimColor>{GLYPHS.more}</Text>}
+          {navRow()}
+        </Box>
+      )
+    }
+
+    const quizView = (): RenderElement => {
+      const setNode =
+        viewer.activeFactSet === null ? undefined : nodeAt(doc.tree, viewer.activeFactSet)
+      const content = setNode?.content
+      if (content === undefined || content.kind !== 'facts') return outlineView()
+      const items = content.items
+      const n = items.length
+      const isQuiz = viewer.factSetKind === 'quiz'
+      const at = Math.min(viewer.itemIndex, n)
+      const position = at < n ? at + 1 : n
+      const budget = Math.max(1, room - 4)
+      const out: RenderElement[] = []
+      let used = 0
+      const push = (el: RenderElement): void => {
+        if (used < budget) {
+          out.push(el)
+          used++
+        }
+      }
+      const cellWidth = Math.max(8, width - 6)
+      if (at >= n || n === 0) {
+        push(
+          <Text key="done">{`${meterLine(isQuiz, n, n, viewer)} — set complete`}</Text>,
+        )
+      } else {
+        const item = items[viewer.itemIndex]!
+        push(
+          <Text key="meter" dimColor>
+            {meterLine(isQuiz, position, n, viewer)}
+          </Text>,
+        )
+        const prompt = promptFor(item, position, viewer.factSetKind, viewer.flipped)
+        for (const line of wrapLines(sanitize(prompt), cellWidth, Math.max(1, budget - used))) {
+          push(<Text key={`p${out.length}`}>{line}</Text>)
+        }
+        if (isQuiz) {
+          if (viewer.picked === null && viewer.order.length === 0) {
+            // Conclusion-less item with an empty distractor pool: nothing to
+            // pick, so offer the skip rather than a dead end.
+            push(
+              <Text key="noopts" dimColor>
+                (no options recorded for this item)
+              </Text>,
+            )
+            push(
+              <Button
+                key="quiz:next"
+                plain
+                onPress={() => {
+                  void update($, VIEWER, v =>
+                    nextItem(v, buildQuizOptions(items, v.itemIndex + 1, content.seed), n),
+                  )
+                }}
+              >
+                {`skip ${GLYPHS.nav.next}`}
+              </Button>,
+            )
+          } else if (viewer.picked === null) {
+            const letters = ['a', 'b', 'c', 'd']
+            viewer.order
+              .slice(0, 4)
+              .forEach((option, idx) =>
+                push(
+                  <Button
+                    key={`opt:${idx}`}
+                    plain
+                    hotkey={letters[idx]}
+                    onPress={() => {
+                      void update($, VIEWER, v => pickOption(v, idx))
+                    }}
+                  >
+                    {`${GLYPHS.option} ${letters[idx]!.toUpperCase()}) ${truncateCell(sanitize(option.text), cellWidth - 5)}`}
+                  </Button>,
+                ),
+              )
+          } else {
+            viewer.order.slice(0, 4).forEach((option, idx) => {
+              const correct = option.correct
+              const picked = idx === viewer.picked
+              const mark = correct ? GLYPHS.check : picked ? GLYPHS.cross : '·'
+              push(
+                <Text
+                  key={`opt:${idx}`}
+                  color={correct ? 'success' : picked ? 'error' : undefined}
+                  dimColor={!correct && !picked}
+                >
+                  {`${mark} ${truncateCell(sanitize(option.text), cellWidth - 3)}`}
+                </Text>,
+              )
+            })
+            push(
+              <Button
+                key="quiz:next"
+                plain
+                onPress={() => {
+                  void update($, VIEWER, v =>
+                    nextItem(v, buildQuizOptions(items, v.itemIndex + 1, content.seed), n),
+                  )
+                }}
+              >
+                {`next ${GLYPHS.nav.next}`}
+              </Button>,
+            )
+          }
+        } else {
+          push(
+            <Button
+              key="quiz:flip"
+              plain
+              hotkey="f"
+              onPress={() => {
+                void update($, VIEWER, flipCard)
+              }}
+            >
+              {`${GLYPHS.kind.flashcards} ${viewer.flipped ? 'hide' : 'flip'}`}
+            </Button>,
+          )
+          push(
+            <Button
+              key="quiz:next"
+              plain
+              onPress={() => {
+                void update($, VIEWER, v =>
+                  nextItem(v, buildQuizOptions(items, v.itemIndex + 1, content.seed), n),
+                )
+              }}
+            >
+              {`next ${GLYPHS.nav.next}`}
+            </Button>,
+          )
+        }
+      }
+      return (
+        <Box flexDirection="column">
+          {out}
+          <Box flexDirection="row" gap={1}>
+            <Button
+              key="nav:outline"
+              plain
+              dimColor
+              onPress={() => {
+                void update($, VIEWER, backToOutline)
+              }}
+            >
+              {`${GLYPHS.nav.back} outline`}
+            </Button>
+            <Button
+              key="nav:section"
+              plain
+              dimColor
+              onPress={() => {
+                void update($, VIEWER, v =>
+                  focusSection(v, viewer.activeFactSet ?? v.focusedSection ?? ''),
+                )
+              }}
+            >
+              {`${GLYPHS.nav.back} section`}
+            </Button>
+          </Box>
+        </Box>
+      )
+    }
+
+    if (viewer.mode === 'section') return sectionView()
+    if (viewer.mode === 'quiz') return quizView()
+    return outlineView()
   })
 
   // The band above the prompt while a document is active.
@@ -453,7 +1099,7 @@ export const register: Register = on => {
     return (
       <Box>
         <Text dimColor>
-          SemText: {current.elementCount} elements · {current.unknownElements.length} unknown{' '}
+          {`${GLYPHS.kind.section} SemText: ${current.elementCount} elements · ${current.unknownElements.length} unknown `}
         </Text>
       </Box>
     )
@@ -464,9 +1110,9 @@ export const register: Register = on => {
     const panes = await $.ui.panes()
     if (panes.some(pane => pane.id === PANE_ID)) {
       await $.ui.close({ id: PANE_ID })
-      return { text: 'SemText outline closed.' }
+      return { text: 'SemText viewer closed.' }
     }
     await $.ui.open({ id: PANE_ID, title: PANE_TITLE })
-    return { text: 'SemText outline open.' }
+    return { text: 'SemText viewer open.' }
   })
 }
