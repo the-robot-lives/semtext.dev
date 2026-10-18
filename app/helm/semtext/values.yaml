@@ -299,9 +299,32 @@ devSlot:
     # two Owner-secrets never fight over the same name (cdn-semtext-tls
     # precedent).
     secretName: semtext-live-dev-tls
+  # Manual-deploy proxy outpost (authentik's supported unmanaged mode). The
+  # worker's Local-Kubernetes integration cannot create objects in this
+  # cluster (both authentik pods run as SA `default`, no outpost RBAC), so
+  # the slot ships its OWN outpost pod — see templates/dev-outpost.yaml.
+  # The token secret is created out-of-band (kubectl create secret; value is
+  # re-mintable in seconds: POST /core/tokens/ + GET .../view_key/ as the
+  # admin token). TODO: wire Infisical once we can create secrets via API
+  # (this instance's v3 POST enforces client-side encryption).
+  outpost:
+    # MUST match the authentik SERVER version (goauthentik/server:2025.6.0).
+    image: ghcr.io/goauthentik/proxy:2025.6.0
+    tokenSecret:
+      name: semtext-live-dev-outpost-token
+      key: SEMTEXT_LIVE_DEV_OUTPOST_TOKEN
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
   auth:
-    # House Authentik gate (auth.derobot.is embedded outpost, forward-auth
-    # nginx mode). auth-url is resolved in-cluster (no Cloudflare hop for
-    # every subrequest); auth-signin is the browser-facing URL.
-    authUrl: "http://authentik-server.infra.svc.cluster.local/outpost.goauthentik.io/auth/nginx"
-    authSignin: "https://auth.derobot.is/outpost.goauthentik.io/start?rd=$scheme://$host$escaped_request_uri"
+    # House Authentik gate via THIS slot's proxy outpost (in-namespace
+    # service; see templates/dev-outpost.yaml). auth-url is resolved
+    # in-cluster (no Cloudflare hop for every subrequest); auth-signin loops
+    # back through the SAME ingress host, where the /outpost.goauthentik.io
+    # path (own auth-free ingress) reaches the outpost pod.
+    authUrl: "http://semtext-live-dev-live-dev-outpost.apps.svc.cluster.local:9000/outpost.goauthentik.io/auth/nginx"
+    authSignin: "https://dev.semtext.dev/outpost.goauthentik.io/start?rd=$scheme://$host$escaped_request_uri"
