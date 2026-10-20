@@ -46,7 +46,7 @@
     | **Sequences &amp; progress** | `sem-chronology` / `sem-event`, `sem-procedure` / `sem-step`, `sem-progress` | Ordered, status-annotated content -- timelines, procedures and completion meters |
     | **Interactive containers** | `sem-workflow` / `sem-step`, `sem-site-tree` / `node`, `sem-file-tree` / `node` | Steps with gate/check/if-no branches, and site/file trees (structured or text-authored) with collapse, filter and find |
     | **Agent-kit records** | `agent-kit-issue` / `-epic` / `-bug` / `-user-story` / `-task` / `-sub-task`, `agent-kit-ticket-ref`, `agent-kit-user-persona` / `agent-kit-agent-persona`, `agent-kit-acceptance-criteria` / `agent-kit-criterion`, `agent-kit-custom-assert`, `agent-kit-board`, `agent-kit-organization` / `agent-kit-project`, `agent-kit-chatroom`, `agent-kit-asset` / `agent-kit-artifact` / `agent-kit-review`, `agent-kit-test-suite` / `agent-kit-test-case` / `agent-kit-cypress` / `agent-kit-cucumber` | Project-tracking records over cached snapshots -- tickets, personas, criteria, boards, chat logs, media and test results; `livePolicy: never`, JS-off == JS-on |
-    | **Definitions &amp; citations** | `sem-properties` / `sem-property`, `sem-references` / `sem-reference`, `sem-tag-def` / `sem-tag-attr`, `sem-api-call` / `sem-api-param` | Closed key/value assertions, the numbered works the prose cites, and the reference-definition cards that document a vocabulary's tags and an API's endpoints |
+    | **Definitions &amp; citations** | `sem-properties` / `sem-property`, `sem-references` / `sem-reference`, `sem-tag-def` / `sem-tag-attr`, `sem-api-call` / `sem-api-param`, `sem-component`, `sem-see-also` | Closed key/value assertions, the numbered works the prose cites, the reference-definition cards that document a vocabulary's tags and an API's endpoints, component-inventory cards over a `components/manifest.yaml` vocabulary, and related-reference entries (hover preview, shared modal, View all) |
     | **NPL** | `npl-agent`, `npl-directive`, `npl-section`, `npl-rubric`, `npl-critique`, `npl-declaration`, `npl-example`, `npl-flag` / `npl-flags`, `npl-hormones`, `npl-mindread`, `npl-mode`, `npl-mood`, `npl-poa`, `npl-ref`, `npl-thought`, `npl-vos`, `npl-artifact`, `npl-cot`, `npl-intent` | NPL prompt-engineering elements; loaded by `npl.js` / `npl-lazy.js` on top of the SemText core |
   </sem-md>
 
@@ -596,7 +596,22 @@ themes/
 &lt;/sem-references&gt;</code></pre></sem-code>
   <p>CSS-counter numbering in every tier; the script adds hover / focus previews on citing anchors (<code>.sem-references-ref</code>, popover <code>role="tooltip"</code>, <code>Esc</code> closes), backlinks (<code>aria-label="Back to citation N"</code>) and an external link. Citations mint nothing; print shows <code>(href)</code> inside the block only. The live example is this page's own reference list in <a href="#references">References</a>.</p>
 
-  
+  <!-- sem-component ------------------------------------------------------ -->
+  <h4 id="e-component">sem-component -- component-inventory card</h4>
+  <p><strong>Normative: <a href="#r-sem-component">spec/schema/sem-component.md</a>.</strong></p>
+  <sem-code id="c-component" lang="html"><pre><code>&lt;sem-component id="c-waitlist" tag="noizu-waitlist" name="Waitlist"
+  type="form" status="live" source="src/components/waitlist/noizu-waitlist.ts"&gt;
+  Collects waitlist signups against the Authentik edge.
+&lt;/sem-component&gt;</code></pre></sem-code>
+  <p>One card per entry of a <code>components/manifest.yaml</code> registry. The authored children are the description (the JS-off record); the script prepends a <code>div.sem-component-head</code> (tag, name, status chip) and appends a <code>div.sem-component-meta</code> (type, source, labels) without moving the authored DOM. <code>type</code> is free text carrying the manifest's type vocabulary; <code>status</code> takes the manifest status vocabulary (<code>planned|wip|live|deprecated</code>); <code>labels</code> is a flaglist. Light DOM, <code>role="article"</code>, headless &mdash; every visual knob a <code>--sem-component-*</code> variable. <code>sem-see-also reference="component"</code> resolves its target against these cards' tags.</p>
+
+  <!-- sem-see-also -------------------------------------------------------- -->
+  <h4 id="e-see-also">sem-see-also -- related-reference entry</h4>
+  <p><strong>Normative: <a href="#r-sem-see-also">spec/schema/sem-see-also.md</a>.</strong></p>
+  <sem-code id="c-see-also" lang="html"><pre><code>&lt;sem-see-also id="sa-bands" reference="section" target="#bands"&gt;Score bands&lt;/sem-see-also&gt;</code></pre></sem-code>
+  <p>Hover shows a preview of the target (the shared <code>sem-popover</code>, the glossary surface); click opens it in the shared modal shell (<code>role="dialog"</code>, Escape, focus trap &mdash; a clone, so the document never moves); the View-all affordance (<code>&#8599;</code>, <code>target="_blank"</code>) opens the real thing in a new tab. <code>reference</code> names what <code>target</code> points at (<code>section</code> id, <code>component</code> tag, <code>file</code> path; default <code>section</code>); <code>preview="tldr|file"</code> (default <code>tldr</code>); <code>insert-as="link|inline"</code> (default <code>link</code>). Deep link: <code>#ref=&lt;see-also-id&gt;</code> opens the entry's modal once per page load, alongside the <code>#dv=</code> scheme. A section/component target resolving to nothing warns (<code>dangling-fragment</code>).</p>
+
+
   <h3 id="npl">NPL</h3>
   <p>NPL elements are loaded by <code>npl.js</code> / <code>npl-lazy.js</code> on top of the SemText core. Each has a normative schema under <code>spec/schema/npl/</code>. The core bundle (<code>semtext.js</code>, <code>semtext-lazy.js</code>) carries no NPL code. Each element also carries the class-form alias of <a href="#npl-namespace-npl-">Appendix A's NPL namespace</a> (<code>.npl-&lt;element&gt;</code> identity class, <code>data-&lt;parameter&gt;</code> parameters, <code>.npl-&lt;part&gt;</code> part aliases).</p>
 
@@ -728,6 +743,8 @@ themes/
     | `&lt;sem-chronology view-as&gt;` / `&lt;sem-event when until status&gt;` | `div.sem-chronology[data-view-as]` &gt; `div.sem-event[data-when][data-until][data-status]` (+ `&lt;time datetime&gt;`) |
     | `&lt;sem-code lang filename mark wrap controls&gt;` &gt; `&lt;pre&gt;&lt;code&gt;` | `div.sem-code[data-lang][data-filename][data-mark][data-controls]` &gt; `&lt;pre&gt;&lt;code&gt;` |
     | `&lt;sem-references kind&gt;` / `&lt;sem-reference id href cite&gt;` | `div.sem-references[data-kind]` &gt; `div.sem-reference[id][data-href][data-cite]`; citations are plain `&lt;a href="#id"&gt;` |
+    | `&lt;sem-component tag name type status source labels&gt;` body | `div.sem-component[data-sem-component-tag]`; head `div.sem-component-head` (tag/name/status), meta `div.sem-component-meta` (type/source/labels); authored children stay between them |
+    | `&lt;sem-see-also reference target preview insert-as&gt;` label | `div.sem-see-also[data-reference][data-target]`; link `a.sem-see-also-link`, view-all `a.sem-see-also-view`, inline `div.sem-see-also-inline` |
     | `&lt;sem-source label view-as="html\|source"&gt;` &gt; any content | `div.sem-source[data-label][data-view-as]` &gt; any content; transparent wrapper, mints nothing |
     | `&lt;sem-reader controls outline-depth&gt;` &gt; optional `&lt;nav aria-label="Contents"&gt;` | `div.sem-reader[data-controls][data-outline-depth]` &gt; same optional nav; chrome, mints nothing |
     | `&lt;sem-md label view-as="rendered\|raw" controls&gt;` &gt; Markdown text | `div.sem-md[data-label][data-view-as][data-controls]` &gt; Markdown text |
@@ -785,6 +802,8 @@ themes/
     <sem-reference id="r-sem-views" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/schema/sem-views.md" cite="spec/schema/sem-views.md">Schema -- sem-views / sem-view.</sem-reference>
     <sem-reference id="r-sem-tag-def" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/schema/sem-tag-def.md" cite="spec/schema/sem-tag-def.md">Schema -- sem-tag-def / sem-tag-attr.</sem-reference>
     <sem-reference id="r-sem-api-call" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/schema/sem-api-call.md" cite="spec/schema/sem-api-call.md">Schema -- sem-api-call / sem-api-param.</sem-reference>
+    <sem-reference id="r-sem-component" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/schema/sem-component.md" cite="spec/schema/sem-component.md">Schema -- sem-component.</sem-reference>
+    <sem-reference id="r-sem-see-also" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/schema/sem-see-also.md" cite="spec/schema/sem-see-also.md">Schema -- sem-see-also.</sem-reference>
     <sem-reference id="r-sem-reveal" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/schema/sem-reveal.md" cite="spec/schema/sem-reveal.md">Schema -- sem-reveal.</sem-reference>
     <sem-reference id="r-sem-chronology" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/schema/sem-chronology.md" cite="spec/schema/sem-chronology.md">Schema -- sem-chronology / sem-event.</sem-reference>
     <sem-reference id="r-sem-code" role="listitem" href="https://github.com/noizu-labs-ml/npl-enhanced-content/blob/develop/spec/schema/sem-code.md" cite="spec/schema/sem-code.md">Schema -- sem-code.</sem-reference>
