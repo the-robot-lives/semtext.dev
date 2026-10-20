@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" data-sem-theme="minimal-tech-light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web Component Evaluator — Rubric</title>
+<link rel="stylesheet" href="/semtext/latest/semtext.css">
+<script src="/semtext/latest/semtext.js"></script>
+</head>
+<body>
+<sem-enhanced-document role="main">
+
+<sem-reader controls="outline,progress" outline-depth="3">
+  <nav aria-label="Contents">
+    <ol>
+      <li><a href="#how">How grading works</a></li>
+      <li><a href="#bands">Score-to-grade bands</a></li>
+      <li><a href="#dim-api">Dimension 1 — API clarity and attribute design</a></li>
+      <li><a href="#dim-render">Dimension 2 — Rendering fidelity and zero-JS fallback</a></li>
+      <li><a href="#dim-a11y">Dimension 3 — Accessibility</a></li>
+      <li><a href="#dim-docs">Dimension 4 — Docs and examples</a></li>
+      <li><a href="#dim-tests">Dimension 5 — Test coverage</a></li>
+      <li><a href="#dim-conv">Dimension 6 — Convention fit</a></li>
+      <li><a href="#dim-theme">Dimension 7 — CSS-variable theming compliance</a></li>
+      <li><a href="#dim-pkg">Dimension 8 — Packaging and wrappers</a></li>
+      <li><a href="#fragment">Review fragment schema</a></li>
+      <li><a href="#rendering">Manifest and review rendering</a></li>
+      <li><a href="#rules">Scope, venues, branches</a></li>
+      <li><a href="#refs">References</a></li>
+    </ol>
+  </nav>
+</sem-reader>
+
+<agent>
+<name>Web Component Evaluator</name>
+<bio>Grading contract for the SemText web-component evaluation program. Every component review in the program is scored against this rubric, version v1, and emits a machine-checkable review fragment.</bio>
+<instructions>
+Grade one component per run against the eight weighted dimensions of this rubric (rubric_version v1; weights sum to 100). Read the component's source, examples, tests, and docs; score each dimension with file:line evidence; the total score is the sum of the dimension scores; the grade is the band that total falls in per the #bands table. Emit exactly one review fragment matching the YAML schema in #fragment to the run file named by the invoking prompt; never edit components/manifest.yaml; append-only on any existing review file. Before exiting: YAML-parse your own output (a fragment that does not parse is a failed run); run bin/semtext-validate.mjs from the semtext.dev checkout on any .sem.html file you touched (must exit 0); exit non-zero on any schema mismatch. Extraction note: this document is SemText — the authored text is the record and E(D)=E(R(D)) holds by construction; grading scripts may extract sem-rubric and sem-eval records directly instead of screen-scraping rendered chrome, and must never depend on runtime state (data-view-as, data-active, hidden) to reach a criterion.
+</instructions>
+</agent>
+
+<h1 id="title" data-kind="title">Web Component Evaluator — Rubric</h1>
+
+<sem-tldr>
+Grading measures one web component against eight weighted dimensions: API clarity and attribute design 15, rendering fidelity and zero-JS fallback 15, accessibility 15, docs and examples 10, test coverage 10, convention fit 10, CSS-variable theming compliance 15, packaging and wrappers 10 — weights sum to a 100-point scale. The total maps to a letter grade: A at 90 or above, A- at 85, B+ at 80, B at 75, B- at 70, C+ at 65, C at 60, C- at 55, D at 50, F below 50. One graded run emits one YAML review fragment (tag, run, branch, venue, grade, score, rubric_version, summary, findings) appended to the run's review file. Vendored dependencies — tailwind-plus in particular — are out of scope and never graded.
+</sem-tldr>
+
+<sem-section kind="contract">
+<h2 id="how">How grading works</h2>
+A run grades exactly one component (located by its tag in the evaluated repo's <code>components/manifest.yaml</code>) on exactly one branch slice, through exactly one venue. The evaluator reads the component's source, its examples and demo pages, its test files (unit, cypress/e2e), and its docs; every non-obvious score cites file:line evidence in <code>findings</code>.
+The eight dimension sections below each carry a <code>&lt;sem-rubric&gt;</code> with the dimension's weight as its <code>max-score</code>, and the criteria as <code>&lt;sem-eval kind="criterion"&gt;</code> rows. Score each dimension against its criteria, then sum.
+<sem-note variant="warning" id="exclusion">Vendored exclusion: the vendored tailwind-plus UI dependency is out of scope for every run — never graded, never cited as evidence, never a reason to deduct theming, packaging, or convention points. Grade the components the program owns, not the vendored kit.</sem-note>
+</sem-section>
+
+<sem-section kind="mapping">
+<h2 id="bands">Score-to-grade bands</h2>
+<sem-rubric max-score="100">The full scale is 0–100 points: the eight dimension scores sum to the total. The total — not any single dimension — maps to the band. A dimension scored 0 does not cap the grade by itself, but any unresolved blocker-severity finding caps the run at F regardless of arithmetic.</sem-rubric>
+<sem-table label="Score-to-grade bands" controls="sort">
+| Band | Min score | Reading |
+| :--- | --: | :--- |
+| A | 90 | Exemplary — hold up as the reference for the dimension set |
+| A- | 85 | Strong — minor, non-blocking gaps only |
+| B+ | 80 | Solid — a few gaps worth scheduling |
+| B | 75 | Good — clear gaps, nothing structural |
+| B- | 70 | Acceptable — several gaps, at most one structural |
+| C+ | 65 | Mixed — structural gaps forming |
+| C | 60 | Mediocre — structural gaps, still shippable internally |
+| C- | 55 | Weak — rework needed before it ships anywhere |
+| D | 50 | Poor — major rework; do not consume as-is |
+| F | 0 | Failing — below 50, or an unresolved blocker finding |
+</sem-table>
+</sem-section>
+
+<sem-section kind="dimension">
+<h2 id="dim-api">Dimension 1 — API clarity and attribute design (weight 15)</h2>
+<sem-rubric max-score="15">13–15: the attribute, event, and slot surface is string-typed, documented, and consistent with the repo's existing registry entries; nothing payload-bearing hides in an attribute; aliases are declared, not accidental. 8–12: usable surface with naming drift, one undocumented event or slot, or an attribute smuggling structured payload. 0–7: invented spellings, undocumented surface, or attributes carrying JSON/objects where the contract says strings.</sem-rubric>
+<sem-eval kind="criterion" id="crit-api-attrs">Attributes are string-only, kebab-named, and each one is documented (or self-evident from the registry entry). Structured data never rides an attribute; alias spellings are declared in the registry, not discovered in the wild.</sem-eval>
+<sem-eval kind="criterion" id="crit-api-events">Events are named per repo convention, documented with their payload shape, and fired at the documented moments. No undocumented global listeners.</sem-eval>
+<sem-eval kind="criterion" id="crit-api-slots">Slots are declared with a stated default-slot contract; consumers can predict what renders where without reading the source.</sem-eval>
+<sem-eval kind="criterion" id="crit-api-consistency">The surface matches the repo's other registered components in shape and naming; renames never ship silently — the registry, the docs, and the code agree.</sem-eval>
+</sem-section>
+
+<sem-section kind="dimension">
+<h2 id="dim-render">Dimension 2 — Rendering fidelity and zero-JS fallback (weight 15)</h2>
+<sem-rubric max-score="15">13–15: rendered output matches the documented behavior in every example, and the JS-off page carries the full authored content as the record. 8–12: renders correctly JS-on with fallback gaps (layout-only degradation, chrome appearing late). 0–7: content that only exists after upgrade, or examples that do not render as documented.</sem-rubric>
+<sem-eval kind="criterion" id="crit-render-parity">The rendered output matches the documented behavior; every shipped example renders correctly against the current build.</sem-eval>
+<sem-eval kind="criterion" id="crit-render-nojs">With JavaScript off, the authored content is fully readable and the component's meaning survives — the fallback is the record, not a degraded afterthought.</sem-eval>
+<sem-eval kind="criterion" id="crit-render-chrome">The upgrade path appends chrome without destroying or reordering the authored DOM; no content appears, disappears, or shifts purely as a script side effect.</sem-eval>
+</sem-section>
+
+<sem-section kind="dimension">
+<h2 id="dim-a11y">Dimension 3 — Accessibility (weight 15)</h2>
+<sem-rubric max-score="15">13–15: native semantics first, full keyboard operability with visible focus, async states announced. 8–12: semantics sound but keyboard or announcement gaps. 0–7: divs with click handlers, missing names, or focus traps.</sem-rubric>
+<sem-eval kind="criterion" id="crit-a11y-semantics">Native HTML semantics carry the structure (button, link, table, list); ARIA roles appear only where native semantics are impossible, and are correct when present.</sem-eval>
+<sem-eval kind="criterion" id="crit-a11y-keyboard">Every interactive behavior is operable by keyboard with visible focus and no traps; tab order matches visual order.</sem-eval>
+<sem-eval kind="criterion" id="crit-a11y-announce">Loading, error, and result states are announced (role="status"/"alert" or live-region equivalents); controls have accessible names; contrast defaults do not depend on the consumer fixing them.</sem-eval>
+</sem-section>
+
+<sem-section kind="dimension">
+<h2 id="dim-docs">Dimension 4 — Docs and examples (weight 10)</h2>
+<sem-rubric max-score="10">9–10: usage docs and the registry entry match the shipped code, and runnable examples demonstrate real use. 6–8: docs present but drifting from the code in spots. 0–5: stub docs, stale examples, or examples exercising an API the component no longer has.</sem-rubric>
+<sem-eval kind="criterion" id="crit-docs-usage">The usage documentation is current: attributes, events, slots, and CSS variables in the docs match the code, and the registry notes are in sync.</sem-eval>
+<sem-eval kind="criterion" id="crit-docs-examples">Runnable examples exist and demonstrate realistic use — not stubs — and the example code is the component's actual API.</sem-eval>
+</sem-section>
+
+<sem-section kind="dimension">
+<h2 id="dim-tests">Dimension 5 — Test coverage (weight 10)</h2>
+<sem-rubric max-score="10">9–10: documented behaviors and failure paths are covered, interactive behavior has e2e coverage, fixed bugs have regression tests. 6–8: happy paths covered, failure paths thin. 0–5: smoke coverage only, or tests that mock the component under test into irrelevance.</sem-rubric>
+<sem-eval kind="criterion" id="crit-test-units">Unit tests cover the documented behaviors including failure and edge paths — not just the happy path.</sem-eval>
+<sem-eval kind="criterion" id="crit-test-e2e">Interactive behavior is covered end to end (cypress/e2e) against stable data-cy hooks, and the hooks match the registry's declared set.</sem-eval>
+<sem-eval kind="criterion" id="crit-test-regs">Every fixed bug referenced in the component's history has a test that fails without the fix.</sem-eval>
+</sem-section>
+
+<sem-section kind="dimension">
+<h2 id="dim-conv">Dimension 6 — Convention fit (weight 10)</h2>
+<sem-rubric max-score="10">9–10: light DOM throughout, semantic classes only, data-cy hooks present and registry-named. 6–8: convention-fitting with isolated deviations. 0–5: shadow DOM styling escape hatches, presentational class soup, or missing test hooks.</sem-rubric>
+<sem-eval kind="criterion" id="crit-conv-lightdom">The component renders into light DOM; any shadow-DOM usage is a documented exception with a stated styling contract, never a default.</sem-eval>
+<sem-eval kind="criterion" id="crit-conv-classes">Semantic class names only — no utility or presentational class soup — and every emitted class appears in the registry's declared set.</sem-eval>
+<sem-eval kind="criterion" id="crit-conv-cy">data-cy hooks exist for every testable surface and follow the registry's cy_prefix naming, so e2e selectors stay stable.</sem-eval>
+</sem-section>
+
+<sem-section kind="dimension">
+<h2 id="dim-theme">Dimension 7 — CSS-variable theming compliance (weight 15)</h2>
+<sem-rubric max-score="15">13–15: headless by default, every visual knob an overridable variable with a sensible default, restyling achievable purely through variable tweaks. 8–12: variables exposed but with hardcoded values leaking through. 0–7: baked-in brand styling, inline presentational styles, or a theme switch that requires touching the component.</sem-rubric>
+<sem-eval kind="criterion" id="crit-theme-headless">Components are headless: structure, not skin. No brand styling baked into the component; consumers get an unopinionated, themeable base.</sem-eval>
+<sem-eval kind="criterion" id="crit-theme-vars">Every visual knob is an overridable CSS variable with a sensible default; no inline presentational styles; no hardcoded hex, rgb, or pixel values where a variable exists.</sem-eval>
+<sem-eval kind="criterion" id="crit-theme-defaults">Defaults live in theme-*.css files; the variable set is defined in main.css; themes restyle by variable tweaks plus html[theme] selectors — switching a theme never requires editing a component.</sem-eval>
+</sem-section>
+
+<sem-section kind="dimension">
+<h2 id="dim-pkg">Dimension 8 — Packaging and wrappers (weight 10)</h2>
+<sem-rubric max-score="10">9–10: builds clean, exports correct through the barrel, wrappers thin and typed, registry updated with the shipped surface. 6–8: packaging works with rough edges (deep imports, untyped wrappers). 0–5: broken builds, smuggled wrapper logic, or a registry that misstates the component.</sem-rubric>
+<sem-eval kind="criterion" id="crit-pkg-build">The component builds clean from a fresh checkout; exports resolve through the package barrel; no accidental deep imports in docs or examples.</sem-eval>
+<sem-eval kind="criterion" id="crit-pkg-wrappers">Framework wrappers (React and friends) are thin, typed pass-throughs — props map one to one, and no logic hides in a wrapper that belongs in the component.</sem-eval>
+<sem-eval kind="criterion" id="crit-pkg-registry">The registry entry states the component's real surface (attrs, slots, classes, cy hooks, events) and is updated in the same change as the component.</sem-eval>
+</sem-section>
+
+<sem-section kind="schema">
+<h2 id="fragment">Review fragment schema</h2>
+One graded run appends exactly one YAML fragment to the run's review file (default <code>components/review.yaml</code> in the evaluated repo, or the path given as the run's <code>REVIEW_OUTPUT</code>). The fragment must parse as YAML on its own and must match this schema exactly — the schema block doubles as the worked example:
+<sem-code lang="yaml" filename="review-fragment.schema.yaml"><pre><code># SemText web-component review fragment — rubric_version v1
+# One fragment per component per run; appended to the run's review.yaml.
+fragment:
+  tag: noizu-waitlist              # component tag; must exist in components/manifest.yaml
+  run: eval-2026-10-20-tobor-kit   # opaque run id; matches the run file's name
+  branch: dev                      # prod | stage | dev | oob — the slice that was graded
+  venue: subagent                  # evalnomi | subagent | script
+  grade: A-                        # A | A- | B+ | B | B- | C+ | C | C- | D | F
+  score: 87                        # integer 0-100; grade must equal the #bands table's band for it
+  rubric_version: v1               # the rubric this score was produced against
+  summary: &gt;-                     # one-paragraph verdict; cite at least one file path
+    Light-DOM Lit component with a clean, registry-aligned attribute surface and
+    solid data-cy coverage; loses points on hardcoded fallback colors in the
+    error state (web/src/components/waitlist/noizu-waitlist.ts:118).
+  findings:                        # at least one per dimension worth noting; file:line evidence
+    - severity: minor              # info | minor | major | blocker
+      note: "web/src/components/waitlist/noizu-waitlist.ts:118 — hardcoded #dc2626
+        where --noizu-danger exists; breaks theme switching in dark themes."
+    - severity: info
+      note: "web/examples/auth.html demonstrates the fallback-field path; good example hygiene."</code></pre></sem-code>
+Field rules: <code>grade</code> is the band from the #bands table for the integer <code>score</code> — a fragment whose grade disagrees with its score is invalid. <code>branch</code> and <code>venue</code> take only their enumerated values. <code>findings</code> is a list of <code>{severity, note}</code> objects; a <code>blocker</code> finding caps the run at F. Never edit <code>components/manifest.yaml</code> — the manifest is read-only input; the review file is append-only.
+</sem-section>
+
+<sem-section kind="example">
+<h2 id="rendering">Manifest and review rendering</h2>
+The evaluated repo's <code>components/manifest.yaml</code> (the inventory being graded) and the accumulated <code>review.yaml</code> fragments are themselves data — render them as tables with a <code>&lt;sem-data-source&gt;</code> pair inside one <code>&lt;sem-data-visualizer&gt;</code>. The example below carries the real shapes: the manifest slice (tag, file, cy hooks, events) and the review fragments (tag, run, venue, grade, score), with a view and a query over the reviews:
+<sem-data-visualizer id="dv-review-store">
+<sem-data-source data-name="component-manifest" data-format="yaml" data-views="summary=tag,file,cy_prefix;all=*" data-view="summary">
+- tag: noizu-waitlist
+  file: src/components/waitlist/noizu-waitlist.ts
+  cy_prefix: waitlist
+  events: [waitlist-success, waitlist-error]
+- tag: noizu-client-telemetry
+  file: src/components/client-telemetry/noizu-client-telemetry.ts
+  cy_prefix: telemetry
+  events: [telemetry-flush]
+</sem-data-source>
+<sem-data-source data-name="component-reviews" data-format="yaml">
+- tag: noizu-waitlist
+  run: eval-2026-10-20-tobor-kit
+  venue: subagent
+  grade: A-
+  score: 87
+- tag: noizu-client-telemetry
+  run: eval-2026-10-20-tobor-kit
+  venue: script
+  grade: B
+  score: 76
+</sem-data-source>
+<sem-data-query>SELECT tag, venue, grade, score FROM component-reviews WHERE score &gt;= 90 ORDER BY score DESC LIMIT 10</sem-data-query>
+</sem-data-visualizer>
+Both payloads are the YAML subset the data family parses (block mappings and sequences, flow sequences of scalars); each inline body could equally be a <code>source</code> path pointing at the real file. Views select columns without dropping data, and the query answers "which runs produced an A" without leaving the page.
+</sem-section>
+
+<sem-section kind="rules">
+<h2 id="rules">Scope, venues, branches</h2>
+<h3>Venues</h3>
+<sem-list>
+- evalnomi — the hosted evalnomi.com eval lane graded the component; expect broader sweep, batch scoring.
+- subagent — a delegated reviewer agent graded the component; the richest evidence trail (file:line findings).
+- script — deterministic scripted checks scored the component; narrow evidence budget, strongest on coverage and convention counts.
+</sem-list>
+<h3>Branches</h3>
+<sem-list>
+- prod — the released slice (origin/main): grade what users actually run.
+- stage — the staging slice: grade release candidates.
+- dev — the development slice (develop): grade work in progress; the default for routine runs.
+- oob — out-of-band: an experiment or local branch under review; findings never gate the listed slices.
+</sem-list>
+A fragment's <code>branch</code> names the slice that was actually checked out and read — never the branch the component is destined for.
+<h3>Scope edges</h3>
+<sem-list>
+- Grade only components listed in the evaluated repo's components/manifest.yaml; a tag absent from the manifest is not a valid grading target.
+- The vendored tailwind-plus dependency is out of scope entirely (see the #exclusion note).
+- One run, one component, one branch, one venue, one fragment — never batch multiple tags into a single fragment.
+</sem-list>
+</sem-section>
+
+<sem-references id="refs" kind="bibliography">
+<sem-reference id="r-registry" cite="tobor-kit/web/registry.yaml">tobor-kit web component registry — the declared tag/attr/class/cy/event surface components are graded against.</sem-reference>
+<sem-reference id="r-conventions" cite="tobor-kit/docs/CONVENTIONS.md">tobor-kit repo conventions — light DOM, semantic classes, data-cy hooks, registry discipline.</sem-reference>
+<sem-reference id="r-dv-spec" cite="spec/data-visualizer.md">SemText data-visualizer design — the sem-data-source contract used by the rendering example.</sem-reference>
+<sem-reference id="r-v07-digest" cite="commands/sem-text-author/sem-text.v0.7.spec.html">SemText v0.7 tag digest — the vocabulary this document is authored in.</sem-reference>
+</sem-references>
+
+</sem-enhanced-document>
+</body>
+</html>
