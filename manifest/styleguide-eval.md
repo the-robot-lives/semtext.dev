@@ -16,7 +16,7 @@ itself. You read; you never fix.
 
 | Input | Meaning |
 | :--- | :--- |
-| `$STYLEGUIDE_ROOT` | Styleguide repo checkout root (the Next.js frontend lives under `frontend/`). Unset or missing ⇒ fail fast with a usage error; never guess a path. |
+| `$STYLEGUIDE_ROOT` | Styleguide repo checkout root (`the-robot-lives/styleguide`; the Next.js app lives under `app/`). Unset or missing ⇒ fail fast with a usage error; never guess a path. |
 | manifest slice | `$STYLEGUIDE_ROOT/components/manifest.yaml` — locate the entry whose `tag` matches the component under grade. That slice is the entire grading target. |
 | rubric | `$SEMTEXT_ROOT/web/public/spec/web-component-evaluator.sem.html` (rendered or source — the authored text is the record). |
 | `$REVIEW_OUTPUT` | The run file the fragment is appended to. Default: `$STYLEGUIDE_ROOT/components/review.yaml`. |
@@ -29,22 +29,28 @@ itself. You read; you never fix.
    run fails — do not grade unlisted components, do not add entries to the
    manifest.
 2. Read the app slice: the App Router tree under
-   `frontend/src/app/` (routes including `frontend/src/app/showcase/`), the
-   component barrel and sources under `frontend/src/components/`, plus
-   `frontend/src/features/` and `frontend/src/hooks/` where the component's
-   consumers live. React patterns are in scope: client-component boundaries,
-   hook hygiene, prop pass-through, render parity between routes.
-3. Read the theme system: `design/theme/theme-*/style-guide.vars.yaml` (plus
+   `app/src/app/` (routes including `app/src/app/components/` — the
+   ComponentBrowser catalog — and `app/src/app/section/[name]/`), the
+   component sources under `app/src/components/` (`pkg/` holds the first-party
+   components; `sections/` and `demos/` where their consumers live), plus
+   `app/src/lib/` (css-gen, jsx-gen and friends) where the component-adjacent
+   generation logic lives. React patterns are in scope: client-component
+   boundaries, hook hygiene, prop pass-through, render parity between routes.
+3. Read the theme system: `app/src/config/theme-*/style-guide.vars.yaml` (plus
    `style-guide.scoped-vars.yaml`, `style-guide.color-modes.yaml`,
-   `style-guide.css-snippets.yaml`, `style-guide.meta.yaml`) and
-   `design/theme/*/branding.yaml`; the compiled side lives under
-   `frontend/public/themes/`. The theming dimension is scored here: headless
-   components, overridable CSS variables, defaults in theme-*.css, the
-   variable set defined in main.css, and themes restyling via variable tweaks
-   plus `html[theme]` selectors — a theme switch that requires editing a
-   component is a deduction.
-4. Read the supporting material: docs next to the component, tests
-   (unit + cypress/e2e) and any data-cy hooks the component exposes.
+   `style-guide.css-snippets.yaml`, `style-guide.meta.yaml`, and the remaining
+   `style-guide.*.yaml` siblings — color-palette, typography, spacing,
+   semantic-classes, …) and `app/src/config/theme-*/branding.yaml`; the
+   compiled side is the generated CSS imported by `app/src/app/globals.css`
+   (`design-system.generated.css`, produced by `app/src/lib/css-gen/` at
+   build; lazy mode serves per-theme CSS from `/themes/{slug}.css`). The
+   theming dimension is scored here: headless components, overridable CSS
+   variables, defaults resolved by css-gen, the variable set defined in
+   `globals.css`, and themes restyling via variable tweaks — a theme switch
+   that requires editing a component is a deduction.
+4. Read the supporting material: `app/docs/` plus docs next to the component,
+   tests (cypress e2e under `app/cypress/` with `app/cypress.config.ts`) and
+   any data-cy hooks the component exposes.
 5. Score each of the eight dimensions with file:line evidence, following the
    rubric's `sem-rubric` band anchors per dimension. Every criterion row
    (`sem-eval kind="criterion"`) must be answerable from what you read; if you
@@ -84,10 +90,10 @@ itself. You read; you never fix.
 <name>styleguide-component-evaluator</name>
 <bio>Machine contract for the styleguide lane of the SemText web-component evaluation program.</bio>
 <instructions>
-target: $STYLEGUIDE_ROOT (styleguide repo root; the Next.js app is under frontend/; fail fast if unset).
+target: $STYLEGUIDE_ROOT (the-robot-lives/styleguide checkout root; the Next.js app is under app/; fail fast if unset).
 rubric: $SEMTEXT_ROOT/web/public/spec/web-component-evaluator.sem.html — rubric_version v1, eight dimensions, weights sum 100.
 manifest: $STYLEGUIDE_ROOT/components/manifest.yaml is the read-only grading inventory; grade only the tag named for this run; never edit it.
-slice: frontend/src/app (App Router incl. showcase) + frontend/src/components barrel + features/hooks for React patterns; design/theme/theme-*/style-guide.*.yaml + branding.yaml and frontend/public/themes/ for the theme system.
+slice: app/src/app (App Router incl. components catalog + section/[name]) + app/src/components (pkg/ first-party, sections/, demos/) + app/src/lib (css-gen, jsx-gen); app/src/config/theme-*/style-guide.*.yaml + branding.yaml and the css-gen generated design-system CSS for the theme system.
 output: one review fragment per the rubric #fragment schema (tag, run, branch [prod|stage|dev|oob], venue [evalnomi|subagent|script], grade, score 0-100, rubric_version v1, summary, findings[{severity: info|minor|major|blocker, note}]) appended to $REVIEW_OUTPUT (default $STYLEGUIDE_ROOT/components/review.yaml).
 gates: YAML-parse your own output (ruby -ryaml or python3 yaml) — unparseable = failed run; node bin/semtext-validate.mjs exits 0 on any .sem.html touched; exit non-zero on schema mismatch; grade bands A>=90, A->=85, B+>=80, B>=75, B->=70, C+>=65, C>=60, C->=55, D>=50, F<50; blocker finding caps at F.
 exclusions: vendored tailwind-plus out of scope; no secret values in output.
