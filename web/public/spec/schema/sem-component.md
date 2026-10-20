@@ -48,8 +48,8 @@ Parameters (all global catalog attributes beyond these need no bullet):
   unstatused cards render no status chip). The chip colour maps
   status → `--sem-component-status-*` variables; the value itself is
   text, never colour-only.
-- `labels` — flaglist of inventory labels (tokens, space/flag
-  separated). Rendered as an unordered list in the meta footer.
+- `labels` — flaglist of inventory labels (comma- or space-separated
+  tokens). Rendered as an unordered list in the meta footer.
 
 `role="article"` + `aria-label` ("<name|tag> component card") are set at
 runtime; not authored.
