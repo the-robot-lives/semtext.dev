@@ -23,6 +23,30 @@ Nothing to run. When an application lands, follow the portfolio
 static-site or Hologram starter pattern (see sibling Brand repos, e.g.
 `phpspec.org`) and add CI + a helm chart at that point.
 
+## Web Component Evaluation
+
+A rubric-driven program that grades web components (tobor-kit, the styleguide
+frontend) on eight weighted dimensions — API clarity, rendering + zero-JS
+fallback, accessibility, docs, tests, convention fit, CSS-variable theming,
+packaging — on a 100-point scale mapped to letter grades (A ≥ 90 … F < 50).
+
+- **Rubric** (SemText document, `rubric_version` v1):
+  `web/public/spec/web-component-evaluator.sem.html` — dimensions, criteria,
+  review-fragment schema, and the manifest/review rendering example.
+- **Eval prompts**: `manifest/tobor-kit.eval.md` and
+  `manifest/styleguide-eval.md` — one per source repo; each grades one
+  component per run and appends one YAML review fragment to the run file
+  (default `components/review.yaml` in the evaluated repo).
+- **Manifest**: each evaluated repo holds `components/manifest.yaml` — the
+  read-only inventory of gradeable component tags. Graders never edit it.
+- **Venues**: `evalnomi` (hosted eval lane), `subagent` (delegated reviewer),
+  `script` (deterministic checks). **Branches**: `prod` (origin/main),
+  `stage`, `dev` (develop), `oob` (experiments; findings never gate the
+  listed slices).
+
+Anything authored as `.sem.html` for this program must pass
+`node bin/semtext-validate.mjs <file>` from the repo root.
+
 ## Consolidation (2026-10-13)
 
 This repo now holds BOTH halves of semtext.dev:
