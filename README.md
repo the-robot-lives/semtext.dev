@@ -47,6 +47,21 @@ packaging — on a 100-point scale mapped to letter grades (A ≥ 90 … F < 50)
 Anything authored as `.sem.html` for this program must pass
 `node bin/semtext-validate.mjs <file>` from the repo root.
 
+### Viewing documents — `semtext-view`
+
+`node bin/semtext-view.mjs <file.html | file.md>` renders a SemText document
+with the vendored bundle so elements actually display:
+
+- **Serve** (interactive): `node bin/semtext-view.mjs <file> --serve [--port N]`
+  — mounts `/semtext/*` from `web/public/semtext/` (the vendored bundle is
+  served, never rebuilt), the document plus its sibling assets from its own
+  directory, and prints the full clickable `http://127.0.0.1:PORT/<file>` URL.
+- **Stdout** (default): `node bin/semtext-view.mjs <file>` — prints the
+  assembled HTML to stdout; pipe-friendly.
+- **Markdown input**: wrapped in a minimal `<sem-md>` scaffold page (title
+  from the filename) and served identically — e.g. view the eval prompts in
+  `manifest/` without hand-writing a shell page.
+
 ## Consolidation (2026-10-13)
 
 This repo now holds BOTH halves of semtext.dev:
