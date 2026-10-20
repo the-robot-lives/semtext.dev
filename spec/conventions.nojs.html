@@ -739,12 +739,12 @@ themes/
     | `&lt;sem-reveal summary&gt;` | `div.sem-reveal[data-summary]`, `open` attr (starts revealed; `collapsed` accepted, no-op) |
     | `&lt;sem-tag-def tag name group children&gt;` / `&lt;sem-tag-attr name type required default allowed&gt;` | `div.sem-tag-def[data-tag][data-name][data-group][data-children]` &gt; `div.sem-tag-attr[data-name][data-type][data-required][data-default][data-allowed]` |
     | `&lt;sem-api-call name method endpoint status&gt;` / `&lt;sem-api-param name in type required default allowed&gt;` | `div.sem-api-call[data-name][data-method][data-endpoint][data-status]` &gt; `div.sem-api-param[data-name][data-in][data-type][data-required][data-default][data-allowed]` |
-    | `&lt;sem-component tag name type status source labels&gt;` body | `div.sem-component[data-sem-component-tag]`; head `div.sem-component-head` (tag/name/status), meta `div.sem-component-meta` (type/source/labels); authored children stay between them |
-    | `&lt;sem-see-also reference target preview insert-as&gt;` label | `div.sem-see-also[data-reference][data-target]`; link `a.sem-see-also-link`, view-all `a.sem-see-also-view`, inline `div.sem-see-also-inline` |
     | `&lt;sem-progress value label&gt;` | `div.sem-progress[data-value][data-label]` |
     | `&lt;sem-chronology view-as&gt;` / `&lt;sem-event when until status&gt;` | `div.sem-chronology[data-view-as]` &gt; `div.sem-event[data-when][data-until][data-status]` (+ `&lt;time datetime&gt;`) |
     | `&lt;sem-code lang filename mark wrap controls&gt;` &gt; `&lt;pre&gt;&lt;code&gt;` | `div.sem-code[data-lang][data-filename][data-mark][data-controls]` &gt; `&lt;pre&gt;&lt;code&gt;` |
     | `&lt;sem-references kind&gt;` / `&lt;sem-reference id href cite&gt;` | `div.sem-references[data-kind]` &gt; `div.sem-reference[id][data-href][data-cite]`; citations are plain `&lt;a href="#id"&gt;` |
+    | `&lt;sem-component tag name type status source labels&gt;` body | `div.sem-component[data-sem-component-tag]`; head `div.sem-component-head` (tag/name/status), meta `div.sem-component-meta` (type/source/labels); authored children stay between them |
+    | `&lt;sem-see-also reference target preview insert-as&gt;` label | `div.sem-see-also[data-reference][data-target]`; link `a.sem-see-also-link`, view-all `a.sem-see-also-view`, inline `div.sem-see-also-inline` |
     | `&lt;sem-source label view-as="html\|source"&gt;` &gt; any content | `div.sem-source[data-label][data-view-as]` &gt; any content; transparent wrapper, mints nothing |
     | `&lt;sem-reader controls outline-depth&gt;` &gt; optional `&lt;nav aria-label="Contents"&gt;` | `div.sem-reader[data-controls][data-outline-depth]` &gt; same optional nav; chrome, mints nothing |
     | `&lt;sem-md label view-as="rendered\|raw" controls&gt;` &gt; Markdown text | `div.sem-md[data-label][data-view-as][data-controls]` &gt; Markdown text |

@@ -639,7 +639,7 @@ themes/
   <h4 id="e-component">sem-component -- component-inventory card</h4>
   <p><strong>Normative: <a href="#r-sem-component">spec/schema/sem-component.md</a>.</strong></p>
   <sem-code id="c-component" lang="html"><pre><code>&lt;sem-component id="c-waitlist" tag="noizu-waitlist" name="Waitlist"
-  type="form" status="stable" source="src/components/waitlist/noizu-waitlist.ts"&gt;
+  type="form" status="live" source="src/components/waitlist/noizu-waitlist.ts"&gt;
   Collects waitlist signups against the Authentik edge.
 &lt;/sem-component&gt;</code></pre></sem-code>
   <p>One card per entry of a <code>components/manifest.yaml</code> registry. The authored children are the description (the JS-off record); the script prepends a <code>div.sem-component-head</code> (tag, name, status chip) and appends a <code>div.sem-component-meta</code> (type, source, labels) without moving the authored DOM. <code>type</code> is free text carrying the manifest's type vocabulary; <code>status</code> takes the manifest status vocabulary (<code>planned|wip|live|deprecated</code>); <code>labels</code> is a flaglist. Light DOM, <code>role="article"</code>, headless &mdash; every visual knob a <code>--sem-component-*</code> variable. <code>sem-see-also reference="component"</code> resolves its target against these cards' tags.</p>
