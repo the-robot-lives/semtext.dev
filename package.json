@@ -22,7 +22,8 @@
     "spec/schema"
   ],
   "bin": {
-    "semtext-validate": "bin/semtext-validate.mjs"
+    "semtext-validate": "bin/semtext-validate.mjs",
+    "semtext-view": "bin/semtext-view.mjs"
   },
   "scripts": {
     "build": "node scripts/build.mjs && node scripts/build-standalone.mjs",
