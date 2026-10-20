@@ -49,6 +49,7 @@ Grading measures one web component against eight weighted dimensions: API clarit
 <h2 id="how">How grading works</h2>
 A run grades exactly one component (located by its tag in the evaluated repo's <code>components/manifest.yaml</code>) on exactly one branch slice, through exactly one venue. The evaluator reads the component's source, its examples and demo pages, its test files (unit, cypress/e2e), and its docs; every non-obvious score cites file:line evidence in <code>findings</code>.
 The eight dimension sections below each carry a <code>&lt;sem-rubric&gt;</code> with the dimension's weight as its <code>max-score</code>, and the criteria as <code>&lt;sem-eval kind="criterion"&gt;</code> rows. Score each dimension against its criteria, then sum.
+<sem-see-also id="sa-how-fragment" reference="section" target="#fragment">Review fragment schema — the output contract every run must satisfy</sem-see-also>
 <sem-note variant="warning" id="exclusion">Vendored exclusion: the vendored tailwind-plus UI dependency is out of scope for every run — never graded, never cited as evidence, never a reason to deduct theming, packaging, or convention points. Grade the components the program owns, not the vendored kit.</sem-note>
 </sem-section>
 
@@ -159,11 +160,20 @@ fragment:
     - severity: info
       note: "web/examples/auth.html demonstrates the fallback-field path; good example hygiene."</code></pre></sem-code>
 Field rules: <code>grade</code> is the band from the #bands table for the integer <code>score</code> — a fragment whose grade disagrees with its score is invalid. <code>branch</code> and <code>venue</code> take only their enumerated values. <code>findings</code> is a list of <code>{severity, note}</code> objects; a <code>blocker</code> finding caps the run at F. Never edit <code>components/manifest.yaml</code> — the manifest is read-only input; the review file is append-only.
+<sem-see-also id="sa-fragment-bands" reference="section" target="#bands">Score-to-grade bands — <code>grade</code> must equal the band for <code>score</code></sem-see-also>
 </sem-section>
 
 <sem-section kind="example">
 <h2 id="rendering">Manifest and review rendering</h2>
-The evaluated repo's <code>components/manifest.yaml</code> (the inventory being graded) and the accumulated <code>review.yaml</code> fragments are themselves data — render them as tables with a <code>&lt;sem-data-source&gt;</code> pair inside one <code>&lt;sem-data-visualizer&gt;</code>. The example below carries the real shapes: the manifest slice (tag, file, cy hooks, events) and the review fragments (tag, run, venue, grade, score), with a view and a query over the reviews:
+The evaluated repo's <code>components/manifest.yaml</code> (the inventory being graded) and the accumulated <code>review.yaml</code> fragments are themselves data. Each inventory entry renders as a <code>&lt;sem-component&gt;</code> card — the graded record graders cite by tag — carrying the manifest vocabulary (tag, name, description, source, type, status, labels):
+<sem-component id="c-noizu-waitlist" tag="noizu-waitlist" name="Waitlist" type="form" status="live" source="src/components/waitlist/noizu-waitlist.ts" labels="auth,edge">
+Collects waitlist signups against the Authentik edge; emits <code>waitlist-success</code> / <code>waitlist-error</code>.
+</sem-component>
+<sem-component id="c-noizu-client-telemetry" tag="noizu-client-telemetry" name="Client telemetry" type="utility" status="wip" source="src/components/client-telemetry/noizu-client-telemetry.ts" labels="telemetry">
+Flushes client-side telemetry batches on page hide; emits <code>telemetry-flush</code>.
+</sem-component>
+<sem-see-also id="sa-rendering-manifest" reference="file" target="components/manifest.yaml" preview="file">The manifest itself — read-only input, never edited</sem-see-also>
+The same payloads render queryably as tables with a <code>&lt;sem-data-source&gt;</code> pair inside one <code>&lt;sem-data-visualizer&gt;</code>: the manifest slice (tag, file, cy hooks, events) and the review fragments (tag, run, venue, grade, score), with a view and a query over the reviews:
 <sem-data-visualizer id="dv-review-store">
 <sem-data-source data-name="component-manifest" data-format="yaml" data-views="summary=tag,file,cy_prefix;all=*" data-view="summary">
 - tag: noizu-waitlist
@@ -190,6 +200,7 @@ The evaluated repo's <code>components/manifest.yaml</code> (the inventory being 
 <sem-data-query>SELECT tag, venue, grade, score FROM component-reviews WHERE score &gt;= 90 ORDER BY score DESC LIMIT 10</sem-data-query>
 </sem-data-visualizer>
 Both payloads are the YAML subset the data family parses (block mappings and sequences, flow sequences of scalars); each inline body could equally be a <code>source</code> path pointing at the real file. Views select columns without dropping data, and the query answers "which runs produced an A" without leaving the page.
+<sem-see-also id="sa-rendering-fragment" reference="section" target="#fragment">The review fragment schema these runs append</sem-see-also>
 </sem-section>
 
 <sem-section kind="rules">

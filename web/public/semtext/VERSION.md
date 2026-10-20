@@ -1,9 +1,9 @@
 # SemText runtime — synced bundles
 
-- stable: 0.9.4
-- latest: 0.9.4
-- this unversioned directory mirrors stable 0.9.4
-- last sync: 2026-10-18T16:33:47.000Z (epoch 1792341227), source ../../../../../npl-enhanced-content/.claude/worktrees/vendor-094/dist
+- stable: 0.9.5
+- latest: 0.9.5
+- this unversioned directory mirrors stable 0.9.5
+- last sync: 2026-10-20T18:06:48.000Z (epoch 1792519608), source ../../../../../npl-enhanced-content/.claude/worktrees/feat-sem-component-see-also/dist
 
 URL scheme: `/semtext/v<semver>/` is an immutable per-release snapshot;
 `/semtext/stable/` and `/semtext/latest/` are refreshable mirrors;

@@ -477,6 +477,52 @@ export function validateSource(source, schema, { filename = '<input>' } = {}) {
     push('warning', 'authoring-hygiene', `<${el.tagName.toLowerCase()}> is presentation markup — v0.6 authoring uses ${alt} (conventions.md §3.1)`, lines.get(el));
   }
 
+  // dangling-fragment (v0.7, spec/schema/sem-see-also.md): every authored
+  // in-document reference — an anchor `href="#id"` or a sem-see-also
+  // section/component `target` — must resolve to an id in the same
+  // document. This is the id-drift failure mode: sections get renamed or
+  // cut and their inbound anchors silently rot. Skipped inside code
+  // contexts, where the reference is verbatim listing text.
+  const CODE_CONTEXT = 'pre, code, sem-code, sem-md';
+  const authoredIds = new Set(
+    [...doc.querySelectorAll('[id]')].map((el) => el.id).filter(Boolean),
+  );
+  const refTargets = [];
+  for (const a of doc.querySelectorAll('a[href]')) {
+    if (a.closest(CODE_CONTEXT)) continue;
+    const href = a.getAttribute('href') || '';
+    if (!href.startsWith('#') || href.length < 2) continue;
+    const seg = href.slice(1);
+    // State links, not fragments: the &-joined hash grammar (#key=value,
+    // the audience picker) and composed view links (#container/view)
+    // address runtime state, never an id — out of scope here.
+    if (seg.includes('=') || seg.includes('/')) continue;
+    refTargets.push([seg, a]);
+  }
+  for (const sa of doc.querySelectorAll('sem-see-also, .sem-see-also')) {
+    if (sa.closest(CODE_CONTEXT)) continue;
+    const raw = (sa.getAttribute('target') || sa.getAttribute('data-target') || '').trim();
+    const kind = (sa.getAttribute('reference') || sa.getAttribute('data-reference') || 'section').trim();
+    if (raw === '' || kind === 'file') continue;
+    const bare = raw.replace(/^#/, '');
+    if (kind === 'component') {
+      // A component target names a card's manifest tag, not an id —
+      // resolved against the document's sem-component cards.
+      const tagged = [...doc.querySelectorAll('sem-component, .sem-component')].some((c) => {
+        const t = c.getAttribute('tag') || c.getAttribute('data-tag') || c.getAttribute('data-sem-component-tag');
+        return (t || '').trim() === bare;
+      });
+      if (tagged) continue;
+    }
+    refTargets.push([bare, sa]);
+  }
+  for (const [id, el] of refTargets) {
+    if (authoredIds.has(id)) continue;
+    push('warning', 'dangling-fragment',
+      `in-document reference "#${id}" resolves to nothing — no element in this document carries that id (anchor drift; fix the target or the reference)`,
+      lines.get(el));
+  }
+
   // document-level child rules from the schema (root scope)
   for (const cr of x.document.childRules || []) {
     const n = roots.length === 1 ? countChildMatches(roots[0], cr.selector) : 0;
