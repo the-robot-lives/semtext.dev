@@ -128,6 +128,33 @@ defmodule SemtextWeb.ReferencePagesTest do
     end
   end
 
+  # Every payload string that reaches the pageMountData <script> block must
+  # keep the raw `</` sequence (and, once a `<!--` has opened an escaped
+  # region, even a bare `<script`) out of serialized text — otherwise the
+  # browser ends the script element early and renders state as page text.
+  # Walk every reference page and assert the browser-visible text carries
+  # no serialized-state markers.
+  test "no serialized state leaks as text on any reference page", %{conn: conn} do
+    extra_slugs = ~w(sem-code sem-kb agent-kit-acceptance-criteria semext-sig-traces)
+
+    slugs =
+      Enum.uniq(
+        for t <- Semtext.Reference.Elements.all(),
+            do: Semtext.Reference.Tags.tag_slug(t.name)
+      ) ++ extra_slugs
+
+    for slug <- slugs do
+      body = get(conn, "/reference/#{slug}") |> html_response(200)
+      leaked = SemtextWeb.TestSupport.LeakScan.leaked_text(body)
+
+      Enum.each(~w(Type.atom Type.bitstring Type.map componentRegistry), fn marker ->
+        refute String.contains?(leaked, marker),
+               "#{slug}: serialized state leaked as browser-visible text (near #{marker}): " <>
+                 String.slice(hd(String.split(leaked, marker)), -160, 160)
+      end)
+    end
+  end
+
   describe "GET /reference/<unknown>" do
     test "renders the not-found body", %{conn: conn} do
       conn = get(conn, "/reference/definitely-not-a-tag")
