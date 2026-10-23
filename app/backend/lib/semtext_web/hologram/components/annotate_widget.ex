@@ -2,11 +2,15 @@ defmodule SemtextWeb.Hologram.Components.AnnotateWidget do
   @moduledoc """
   The annotate page-comments widget (tobor-kit `noizu-page-comments`).
 
-  Loaded through the tobor-kit `latest` loader
-  (`https://cdn.derobot.is/tobor-kit/latest/annotate.js`), which registers
+  Loaded from a pinned tobor-kit release loader
+  (`https://cdn.derobot.is/tobor-kit/sha-cd2ec4a1259af49acabc19367ed749fbe92fb736/annotate.js`),
+  which registers
   `<noizu-page-comments>` itself (it re-exports components/page-comments/
   page-comments.js from the same release; its lazy chunks are relative imports
-  on the same CDN origin). Rendered once from each public layout (Site,
+  on the same CDN origin). Pinned to the immutable release sha — never
+  `latest/`, whose files can lag the `latest.json` pointer (they did: the
+  pointer advertised the pe:none fix while latest/* still served the Oct-20
+  mouse-dead build). Rendered once from each public layout (Site,
   Landing, Main) at the end of `<body>`; the element is part of the static
   template, never Hologram page state. No `enabled` attribute, so the widget
   starts collapsed (the pill expands it). Not used by ProposalsLayout:
@@ -24,7 +28,7 @@ defmodule SemtextWeb.Hologram.Components.AnnotateWidget do
 
   def template do
     ~HOLO"""
-    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/annotate.js"></script>
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/sha-cd2ec4a1259af49acabc19367ed749fbe92fb736/annotate.js"></script>
     <noizu-page-comments site="semtext" api-base="https://annotate-srv.therobotlives.com"></noizu-page-comments>
     """
   end

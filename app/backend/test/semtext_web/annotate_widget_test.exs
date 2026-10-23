@@ -1,7 +1,7 @@
 defmodule SemtextWeb.AnnotateWidgetTest do
   use SemtextWeb.ConnCase, async: true
 
-  @script ~s(src="https://cdn.derobot.is/tobor-kit/latest/annotate.js")
+  @script ~s(src="https://cdn.derobot.is/tobor-kit/sha-cd2ec4a1259af49acabc19367ed749fbe92fb736/annotate.js")
 
   for path <- ["/integrations", "/themes", "/extend"] do
     test "SiteLayout page #{path} carries the annotate widget", %{conn: conn} do
