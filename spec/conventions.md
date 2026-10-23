@@ -49,7 +49,7 @@ listed with its full entry in [SS5](#5-element-entries).
 | **Sequences & progress** | `sem-chronology` / `sem-event`, `sem-procedure` / `sem-step`, `sem-progress` | Ordered, status-annotated content -- timelines, procedures and completion meters |
 | **Interactive containers** | `sem-workflow` / `sem-step`, `sem-site-tree` / `node`, `sem-file-tree` / `node` | Steps with gate/check/if-no branches, and site/file trees (structured or text-authored) with collapse, filter and find |
 | **Agent-kit records** | `agent-kit-issue` / `-epic` / `-bug` / `-user-story` / `-task` / `-sub-task`, `agent-kit-ticket-ref`, `agent-kit-user-persona` / `agent-kit-agent-persona`, `agent-kit-acceptance-criteria` / `agent-kit-criterion`, `agent-kit-custom-assert`, `agent-kit-board`, `agent-kit-organization` / `agent-kit-project`, `agent-kit-chatroom`, `agent-kit-asset` / `agent-kit-artifact` / `agent-kit-review`, `agent-kit-test-suite` / `agent-kit-test-case` / `agent-kit-cypress` / `agent-kit-cucumber` | Project-tracking records over cached snapshots -- tickets, personas, criteria, boards, chat logs, media and test results; `livePolicy: never`, JS-off == JS-on |
-| **Definitions & citations** | `sem-properties` / `sem-property`, `sem-references` / `sem-reference`, `sem-tag-def` / `sem-tag-attr`, `sem-api-call` / `sem-api-param` | Closed key/value assertions, the numbered works the prose cites, and the reference-definition cards that document a vocabulary's tags and an API's endpoints |
+| **Definitions & citations** | `sem-properties` / `sem-property`, `sem-references` / `sem-reference`, `sem-tag-def` / `sem-tag-attr`, `sem-api-call` / `sem-api-param`, `sem-component`, `sem-see-also` | Closed key/value assertions, the numbered works the prose cites, the reference-definition cards that document a vocabulary's tags and an API's endpoints, component-inventory cards over a `components/manifest.yaml` vocabulary, and related-reference entries (hover preview, shared modal, View all) |
 | **NPL** | `npl-agent`, `npl-directive`, `npl-section`, `npl-rubric`, `npl-critique`, `npl-declaration`, `npl-example`, `npl-flag` / `npl-flags`, `npl-hormones`, `npl-mindread`, `npl-mode`, `npl-mood`, `npl-poa`, `npl-ref`, `npl-thought`, `npl-vos`, `npl-artifact`, `npl-cot`, `npl-intent` | NPL prompt-engineering elements; loaded by `npl.js` / `npl-lazy.js` on top of the SemText core |
 
 Every element's normative schema lives under `spec/schema/<element>.md`
@@ -255,7 +255,7 @@ both present; authors pick one per fact.
    Lit 3 IIFE, global `SemText`, it carries: the ten interactive Lit
    components (`sem-note`, `sem-facts`, `sem-details`, `sem-properties`,
    `sem-code`, `sem-references`, `sem-reader`, `sem-table`, `sem-source`,
-   `sem-md`); the vanilla core handlers for everything no component
+   `sem-md`, `sem-component`, `sem-see-also`); the vanilla core handlers for everything no component
    defines -- `view-as` switching, reveal toggles, `<highlight>` occlusion,
    quiz checking, audience gating, deep-link resolution, print disclosure;
    the prose-reading renderers (sem-code chrome, reference / glossary
@@ -765,6 +765,36 @@ previews on citing anchors (`.sem-references-ref`, popover
 N"`) and an external link. Citations mint nothing; print shows `(href)`
 inside the block only.
 
+**sem-component** -- a component-inventory card over the
+`components/manifest.yaml` vocabulary (tag, name, description, source,
+type, status, labels).
+**Normative: `spec/schema/sem-component.md`.**
+```html
+<sem-component id="c-waitlist" tag="noizu-waitlist" name="Waitlist"
+  type="form" status="live" source="src/components/waitlist/noizu-waitlist.ts">
+  Collects waitlist signups against the Authentik edge.
+</sem-component>
+```
+The authored children are the description (the JS-off record); the script
+prepends the tag/name/status head and appends the type/source/labels
+meta. `status` takes the manifest vocabulary (`planned|wip|live|deprecated`).
+`sem-see-also reference="component"` resolves its target against
+these cards' tags.
+
+**sem-see-also** -- a related-reference entry: hover shows a preview of
+the target (the shared popover), click opens it in the shared modal shell
+(`role="dialog"`), and the View-all affordance (`↗`, `target="_blank"`)
+opens the real thing in a new tab.
+**Normative: `spec/schema/sem-see-also.md`.**
+```html
+<sem-see-also id="sa-bands" reference="section" target="#bands">Score bands</sem-see-also>
+```
+`reference` names what `target` points at (`section` id, `component` tag,
+`file` path); `insert-as="inline"` embeds the target in place instead.
+Deep link: `#ref=<see-also-id>` opens the entry's modal once per page
+load, alongside the `#dv=` scheme. A section/component target resolving
+to nothing warns (`dangling-fragment`).
+
 ### NPL
 
 
@@ -954,6 +984,8 @@ exception: `<incorrect-statement>`'s class form is the unprefixed
 | `<sem-chronology view-as>` / `<sem-event when until status>` | `div.sem-chronology[data-view-as]` > `div.sem-event[data-when][data-until][data-status]` (+ `<time datetime>`) |
 | `<sem-code lang filename mark wrap controls>` > `<pre><code>` | `div.sem-code[data-lang][data-filename][data-mark][data-controls]` > `<pre><code>` |
 | `<sem-references kind>` / `<sem-reference id href cite>` | `div.sem-references[data-kind]` > `div.sem-reference[id][data-href][data-cite]`; citations are plain `<a href="#id">` |
+| `<sem-component tag name type status source labels>` body | `div.sem-component[data-sem-component-tag]`; head `div.sem-component-head` (tag/name/status), meta `div.sem-component-meta` (type/source/labels); authored children stay between them |
+| `<sem-see-also reference target preview insert-as>` label | `div.sem-see-also[data-reference][data-target]`; link `a.sem-see-also-link`, view-all `a.sem-see-also-view`, inline `div.sem-see-also-inline` |
 | `<sem-source label view-as="html\|source">` > any content | `div.sem-source[data-label][data-view-as]` > any content; transparent wrapper, mints nothing |
 | `<sem-reader controls outline-depth>` > optional `<nav aria-label="Contents">` | `div.sem-reader[data-controls][data-outline-depth]` > same optional nav; chrome, mints nothing |
 | `<sem-md label view-as="rendered\|raw" controls>` > Markdown text | `div.sem-md[data-label][data-view-as][data-controls]` > Markdown text |
