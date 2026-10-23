@@ -163,7 +163,9 @@ defmodule Semtext.Reference.Tags do
   the SSR data attribute the island bridge reads: files to load (bundle
   files, then lazy chunks, then class-form alias files), each with its script
   type, plus the theme CSS links. Mirrors the Next ExampleViewer's
-  loadFiles/bootElementRuntime derivation exactly.
+  loadFiles/bootElementRuntime derivation exactly. `tag` rides along so the
+  island can verify the element actually registered (tobor-kit CDN panes have
+  no fallback-tier markers to check).
   """
   @spec viewer_spec(tag() | nil, String.t(), boolean()) :: map()
   def viewer_spec(nil, _code, _class_form), do: %{"renderable" => false, "files" => []}
@@ -198,7 +200,8 @@ defmodule Semtext.Reference.Tags do
       "renderable" => renderable,
       "lazy" => lazy_covered,
       "classForm" => class_form,
-      "files" => Enum.map(all, &%{"src" => "/semtext/" <> &1, "type" => script_type(&1)}),
+      "tag" => tag_record.name,
+      "files" => Enum.map(all, &file_entry/1),
       "themeCss" => [
         "/semtext/themes/_vocabulary.css",
         "/semtext/themes/minimal-tech-light.css"
@@ -206,11 +209,22 @@ defmodule Semtext.Reference.Tags do
     }
   end
 
+  # One spec file entry. Relative bundle names keep their /semtext/ root;
+  # absolute URLs (the tobor-kit CDN overlay entries) pass through as-is —
+  # the island's origin allowlist admits cdn.derobot.is and loads them as
+  # the modules they are.
+  defp file_entry(file) do
+    src = if String.starts_with?(file, "https://"), do: file, else: "/semtext/" <> file
+    %{"src" => src, "type" => script_type(file)}
+  end
+
   @doc """
   Module-vs-classic script type, ported from the Next loadScript rule: lazy
   loaders and everything under a chunks directory are module builds; IIFE
-  bundles (full bundles, shell) are classic. Retired 0.9.0 artifacts - the
-  standalone fallback tier was folded into the one bundle - type as `nil`.
+  bundles (full bundles, shell) are classic. Absolute CDN URLs (tobor-kit
+  sem-vocab overlay) are ES modules by construction. Retired 0.9.0 artifacts
+  - the standalone fallback tier was folded into the one bundle - type as
+  `nil`.
   """
   @spec script_type(String.t()) :: String.t() | nil
   @retired_bundles MapSet.new(["semtext-fallback.js"])
@@ -218,6 +232,7 @@ defmodule Semtext.Reference.Tags do
   def script_type(file) do
     cond do
       MapSet.member?(@retired_bundles, file) -> nil
+      String.starts_with?(file, "https://") -> "module"
       String.ends_with?(file, "-lazy.js") or file =~ ~r{(^|/)[a-z-]*chunks/} -> "module"
       true -> "classic"
     end
