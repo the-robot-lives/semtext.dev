@@ -197,6 +197,61 @@ describe('element and attribute contracts', () => {
   });
 });
 
+describe('dangling-fragment (anchor drift, v0.7)', () => {
+  const DOC = (body) => `<!doctype html>
+<body>
+<sem-enhanced-document>${body}</sem-enhanced-document>
+</body>`;
+
+  it('a plain anchor to a missing id is a dangling-fragment warning', () => {
+    const r = validateSource(DOC('<p><a href="#gone">x</a></p><sem-note id="here">y</sem-note>'), schema);
+    expect(rules(r)).toContain('dangling-fragment');
+    expect(r.diagnostics.find((d) => d.rule === 'dangling-fragment').severity).toBe('warning');
+  });
+
+  it('a plain anchor to an existing id is clean', () => {
+    const r = validateSource(DOC('<p><a href="#here">x</a></p><sem-note id="here">y</sem-note>'), schema);
+    expect(rules(r)).not.toContain('dangling-fragment');
+  });
+
+  it('a sem-see-also section target must resolve; a file target need not', () => {
+    const bad = validateSource(
+      DOC('<sem-see-also id="sa" reference="section" target="#nowhere">x</sem-see-also>'), schema);
+    expect(rules(bad)).toContain('dangling-fragment');
+    const file = validateSource(
+      DOC('<sem-see-also id="sa" reference="file" target="docs/other.md">x</sem-see-also>'), schema);
+    expect(rules(file)).not.toContain('dangling-fragment');
+  });
+
+  it('a sem-see-also component target resolves against a sem-component card', () => {
+    const ok = validateSource(DOC(`
+      <sem-component id="c1" tag="noizu-waitlist" name="Waitlist">card</sem-component>
+      <sem-see-also id="sa" reference="component" target="noizu-waitlist">Waitlist</sem-see-also>`), schema);
+    expect(rules(ok)).not.toContain('dangling-fragment');
+    const bad = validateSource(DOC(`
+      <sem-see-also id="sa" reference="component" target="noizu-missing">Missing</sem-see-also>`), schema);
+    expect(rules(bad)).toContain('dangling-fragment');
+  });
+
+  it('anchors inside code listings are verbatim text, skipped', () => {
+    const r = validateSource(DOC(
+      '<sem-code lang="html"><pre><code>&lt;a href="#gone"&gt;x&lt;/a&gt;</code></pre></sem-code>'), schema);
+    expect(rules(r)).not.toContain('dangling-fragment');
+  });
+
+  it('href="#" and external hrefs are out of scope', () => {
+    const r = validateSource(DOC('<p><a href="#">top</a><a href="https://example.com/#x">ext</a></p>'), schema);
+    expect(rules(r)).not.toContain('dangling-fragment');
+  });
+
+  it('state links (#key=value, #container/view) address runtime state, not ids', () => {
+    const r = validateSource(DOC(
+      '<p><a href="#sem-audience=operator">Read as an operator</a>' +
+      '<a href="#x-deploy/argocd">ArgoCD view</a></p>'), schema);
+    expect(rules(r)).not.toContain('dangling-fragment');
+  });
+});
+
 describe('file:line accuracy', () => {
   it('reports the line of the offending open tag', () => {
     // 6 lines of padding; the bad element sits on line 7.

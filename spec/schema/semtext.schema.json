@@ -657,6 +657,81 @@
       ],
       "childForm": "pre-or-flat"
     },
+    "sem-component": {
+      "source": "spec/schema/sem-component.md",
+      "record": true,
+      "attributes": {
+        "tag": {
+          "required": true,
+          "type": "token",
+          "note": "the component's manifest.yaml tag; the card's key"
+        },
+        "name": {},
+        "source": {
+          "note": "path of the component's implementation file, as in the manifest"
+        },
+        "type": {
+          "type": "text",
+          "note": "free text in upstream's contract (manifest type vocabulary); rendered as the card's type chip"
+        },
+        "status": {
+          "type": "token",
+          "values": [
+            "planned",
+            "wip",
+            "live",
+            "deprecated"
+          ],
+          "severityOnUnknown": "error",
+          "note": "manifest status vocabulary; rendered as the card's status chip"
+        },
+        "labels": {
+          "type": "flaglist"
+        }
+      }
+    },
+    "sem-see-also": {
+      "source": "spec/schema/sem-see-also.md",
+      "record": true,
+      "attributes": {
+        "reference": {
+          "type": "token",
+          "values": [
+            "section",
+            "component",
+            "file"
+          ],
+          "default": "section",
+          "severityOnUnknown": "warning",
+          "note": "what kind of target `target` names"
+        },
+        "target": {
+          "required": true,
+          "note": "the target's address: an id or #id (section/component) or a file path (file); the dangling-fragment check resolves section/component targets against authored ids"
+        },
+        "href": {
+          "note": "optional explicit URL for the View-all affordance, overriding the target-derived link"
+        },
+        "preview": {
+          "type": "token",
+          "values": [
+            "tldr",
+            "file"
+          ],
+          "default": "tldr",
+          "severityOnUnknown": "warning"
+        },
+        "insert-as": {
+          "type": "token",
+          "values": [
+            "link",
+            "inline"
+          ],
+          "default": "link",
+          "severityOnUnknown": "warning"
+        }
+      }
+    },
     "sem-references": {
       "source": "spec/schema/sem-references.md",
       "record": true,
