@@ -12,7 +12,7 @@ cookieDomain: ""
 # releases never fight over names, hosts, or synced secrets.
 backend:
   enabled: true
-  image: ops.noizu.com/semtext.dev/app:sha-b6aee9d
+  image: ops.noizu.com/semtext.dev/app:sha-0d15d7c
   port: 4000
   resources:
     requests:
@@ -258,7 +258,7 @@ devSlot:
   # every `image: ...app:` line in this file, so it drifts to a prod sha over
   # time. Harmless: the prod release has devSlot disabled, and the live-dev
   # release overrides the pin from values-live-dev.yaml (the real pin).
-  image: ops.noizu.com/semtext.dev/app:sha-b6aee9d
+  image: ops.noizu.com/semtext.dev/app:sha-0d15d7c
   branch: develop
   pollSeconds: 30
   resources:
