@@ -66,21 +66,21 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseOnboardingPage do
   # mirror Semtext.Reference.Tags.viewer_spec/3 (kept literal here — the
   # onboarding document is not a schema tag, so it has no tag record).
   @viewer_spec_json Jason.encode!(%{
-    "renderable" => true,
-    "lazy" => true,
-    "classForm" => false,
-    "wire" => true,
-    "html" => @example,
-    "files" => [
-      %{"src" => "/semtext/semtext-lazy.js", "type" => "module"},
-      %{"src" => "/semtext/chunks/sem-stubs.js", "type" => "module"},
-      %{"src" => "/semtext/chunks/sem-facts.js", "type" => "module"}
-    ],
-    "themeCss" => [
-      "/semtext/themes/_vocabulary.css",
-      "/semtext/themes/minimal-tech-light.css"
-    ]
-  })
+                      "renderable" => true,
+                      "lazy" => true,
+                      "classForm" => false,
+                      "wire" => true,
+                      "html" => @example,
+                      "files" => [
+                        %{"src" => "/semtext/semtext-lazy.js", "type" => "module"},
+                        %{"src" => "/semtext/chunks/sem-stubs.js", "type" => "module"},
+                        %{"src" => "/semtext/chunks/sem-facts.js", "type" => "module"}
+                      ],
+                      "themeCss" => [
+                        "/semtext/themes/_vocabulary.css",
+                        "/semtext/themes/minimal-tech-light.css"
+                      ]
+                    })
 
   # Prebuilt clipboard/download snippets (parity with the reference viewer's
   # Copy/Save chrome — built server-side so the client never needs Jason).
@@ -131,7 +131,6 @@ defmodule SemtextWeb.Hologram.Pages.ShowcaseOnboardingPage do
         <ExampleViewer
           cid="onboarding-viewer"
           anchor="primary"
-          code={@example}
           lines={@lines}
           renderable={true}
           render_note=""
