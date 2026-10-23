@@ -107,11 +107,23 @@ defmodule Semtext.Reference.ReferenceDataTest do
       end
     end
 
-    test "sem-note ships lazy" do
-      b = Bundles.for_tag("sem-note")
+    test "implemented sem-* tags ship the pinned tobor-kit runtime" do
+      for name <- ["sem-note", "sem-kb", "sem-md", "sem-tldr"] do
+        b = Bundles.for_tag(name)
+        assert b.shipped, "#{name} should ship the tobor-kit runtime"
+        assert [%{file: file, chunk: nil}] = b.bundles
+
+        assert file =~
+                 ~r{^https://cdn\.derobot\.is/tobor-kit/sha-[0-9a-f]{40}/components/sem-vocab/#{name}\.js$},
+               "unexpected runtime file for #{name}: #{file}"
+      end
+    end
+
+    test "non-kit vocabulary keeps the local lazy tier" do
+      b = Bundles.for_tag("npl-agent")
       assert b.shipped
       files = Enum.map(b.bundles, & &1.file)
-      assert "semtext-lazy.js" in files
+      assert "npl-lazy.js" in files
       refute "semtext-fallback.js" in files
     end
 
@@ -137,8 +149,17 @@ defmodule Semtext.Reference.ReferenceDataTest do
   end
 
   describe "viewer spec" do
-    test "shipped tag: keeps the lazy loader, adds the chunk, types modules" do
+    test "tobor-kit tag: one pinned CDN module, no lazy hydration, tag rides along" do
       spec = Tags.viewer_spec(Tags.get("sem-note"), "x", false)
+      assert [%{"src" => src, "type" => "module"}] = spec["files"]
+      assert src =~ ~r{^https://cdn\.derobot\.is/tobor-kit/sha-[0-9a-f]{40}/}
+      assert spec["renderable"]
+      refute spec["lazy"]
+      assert spec["tag"] == "sem-note"
+    end
+
+    test "lazy-tier tag: keeps the lazy loader, adds the chunk, types modules" do
+      spec = Tags.viewer_spec(Tags.get("statement"), "x", false)
       srcs = Enum.map(spec["files"], & &1["src"])
 
       assert "/semtext/semtext-lazy.js" in srcs
@@ -155,7 +176,11 @@ defmodule Semtext.Reference.ReferenceDataTest do
       assert spec["files"] == []
     end
 
-    test "script type: chunks and lazy loaders are modules, full bundles classic" do
+    test "script type: CDN, chunks and lazy loaders are modules, full bundles classic" do
+      assert Tags.script_type(
+               "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-kb.js"
+             ) == "module"
+
       assert Tags.script_type("semtext-lazy.js") == "module"
       assert Tags.script_type("chunks/sem-note.js") == "module"
       assert Tags.script_type("semtext.js") == "classic"

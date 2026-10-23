@@ -3,7 +3,8 @@
   "generatedFrom": {
     "manifest": "public/semtext/semtext-manifest.json",
     "nplManifest": "public/semtext/npl-manifest.json",
-    "themeCss": "public/semtext/themes/_vocabulary.css"
+    "themeCss": "public/semtext/themes/_vocabulary.css",
+    "toborKitOverlay": "data/tobor-kit-runtime.json"
   },
   "notShippedUpstream": [
     "semtext-agent.js"
@@ -12,6 +13,116 @@
     "sem": "semtext.js"
   },
   "tags": {
+    "agent-kit-acceptance-criteria": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-agent-persona": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-artifact": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-asset": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-board": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-bug": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-chatroom": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-cucumber": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-custom-assert": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-cypress": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-epic": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-issue": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-organization": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-project": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-review": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-sub-task": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-task": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-test-case": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-test-suite": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-ticket-ref": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-user-persona": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "agent-kit-user-story": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
     "npl-agent": {
       "shipped": true,
       "bundles": [
@@ -227,9 +338,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-api-call.js",
-          "chunk": "chunks/sem-api-call.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-api-call.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -237,9 +348,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-api-param.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -247,9 +358,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-audiences.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -257,9 +368,29 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-browser.js",
-          "chunk": "chunks/sem-browser.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-browser.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-changelog": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-changelog.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-changelogs": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-changelogs.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -267,9 +398,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-chronology.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -277,9 +408,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-code.js",
-          "chunk": "chunks/sem-code.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-code.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -287,9 +418,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-data-join.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -297,9 +428,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-data-query.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -307,9 +438,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-data-source.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -317,9 +448,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-data-visualizer.js",
-          "chunk": "chunks/sem-data-visualizer.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-data-visualizer.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -327,9 +458,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-detail.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -337,9 +468,19 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-details.js",
-          "chunk": "chunks/sem-details.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-details.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-eval": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-eval.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -347,9 +488,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-event.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -357,9 +498,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-fact.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -367,9 +508,79 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-facts.js",
-          "chunk": "chunks/sem-facts.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-facts.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-faq": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-faq.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-faqs": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-faqs.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-file-tree": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-file-tree.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-guard-rail": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-guard-rail.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-guard-rails": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-guard-rails.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-howto": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-howto.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-kb": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-kb.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -377,9 +588,19 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-md.js",
-          "chunk": "chunks/sem-md.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-md.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-mockup": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-mockup.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -387,9 +608,29 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-note.js",
-          "chunk": "chunks/sem-note.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-note.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-philosophy": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-philosophy.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-plan": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-plan.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -397,9 +638,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-procedure.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -407,9 +648,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-profile.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -417,9 +658,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-progress.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -427,9 +668,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-properties.js",
-          "chunk": "chunks/sem-properties.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-properties.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -437,9 +678,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-property.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -447,9 +688,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-reader.js",
-          "chunk": "chunks/sem-reader.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-reader.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -457,9 +698,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-reference.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -467,9 +708,19 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-references.js",
-          "chunk": "chunks/sem-references.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-references.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-requirement": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-requirement.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -477,9 +728,39 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-reveal.js",
-          "chunk": "chunks/sem-reveal.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-reveal.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-rubric": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-rubric.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-runbook": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-runbook.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-site-tree": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-site-tree.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -487,9 +768,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-source.js",
-          "chunk": "chunks/sem-source.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-source.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -497,9 +778,19 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-step.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-summary": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-summary.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -507,9 +798,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-table.js",
-          "chunk": "chunks/sem-table.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-table.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -517,9 +808,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-tag-attr.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -527,9 +818,49 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-tag-def.js",
-          "chunk": "chunks/sem-tag-def.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-tag-def.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-threat-model": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-threat-model.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-tldr": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-tldr.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-tsg": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-tsg.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "sem-tsgs": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-tsgs.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -537,9 +868,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-view.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -547,16 +878,76 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-stubs.js",
-          "chunk": "chunks/sem-stubs.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-views.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
-    "sem-enhanced-document": {
+    "sem-workflow": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-workflow.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
+    },
+    "semext-annotate": {
       "shipped": false,
       "cssOnly": true,
       "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-docptr": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-media-prompt": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-sig-logs": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-sig-metrics": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-sig-synthetic-monitor": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-sig-traces": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-styleguide-theme": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "semext-styleguide-themes": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
+    "sem-enhanced-document": {
+      "shipped": true,
+      "bundles": [
+        {
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-enhanced-document.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
+        }
+      ]
     },
     "agent": {
       "shipped": false,
@@ -600,9 +991,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-question.js",
-          "chunk": "chunks/sem-question.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-question.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     },
@@ -610,9 +1001,9 @@
       "shipped": true,
       "bundles": [
         {
-          "file": "semtext-lazy.js",
-          "detail": "loads chunks/sem-question.js",
-          "chunk": "chunks/sem-question.js"
+          "file": "https://cdn.derobot.is/tobor-kit/sha-318363a030c0505f2cb372f60af58368cd36ebf9/components/sem-vocab/sem-option.js",
+          "detail": "tobor-kit sem-vocab Lit component @ sha-318363a",
+          "chunk": null
         }
       ]
     }
