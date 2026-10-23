@@ -56,23 +56,27 @@
   // but the flag pins make document scans inert either way). Resolves when
   // every file has run, rejects on first failure.
   var loadedSrcs = {};
-  // Only same-origin scripts are loadable: the spec is build-authored, but
-  // the guard keeps a tampered pane spec from turning the loader into a
-  // cross-origin script injector.
-  function sameOriginSrc(src) {
+  // Same-origin scripts, plus the pinned tobor-kit CDN the bundles.json
+  // overlay points at (build-authored spec entries; the CDN serves the
+  // release-pinned sem-vocab modules with ACAO:*). The allowlist stays a
+  // fixed constant: a tampered pane spec still cannot turn the loader into
+  // an arbitrary cross-origin script injector.
+  var ALLOWED_ORIGINS = ["https://cdn.derobot.is"];
+  function allowedSrc(src) {
     try {
-      return new URL(src, location.href).origin === location.origin;
+      var origin = new URL(src, location.href).origin;
+      return origin === location.origin || ALLOWED_ORIGINS.indexOf(origin) !== -1;
     } catch (e) {
       return false;
     }
   }
-  function loadScript(src, pane) {
+  function loadScript(src, type, pane) {
     if (loadedSrcs[src]) return loadedSrcs[src];
-    if (!sameOriginSrc(src)) {
-      return Promise.reject(new Error("semtext-island: refusing non-same-origin script " + src));
+    if (!allowedSrc(src)) {
+      return Promise.reject(new Error("semtext-island: refusing script from non-allowed origin " + src));
     }
     var p;
-    if (/(^|\/)[a-z-]*chunks\//.test(src) || /-lazy\.js$/.test(src)) {
+    if (type === "module" || /(^|\/)[a-z-]*chunks\//.test(src) || /-lazy\.js$/.test(src)) {
       p = import(src);
     } else {
       p = new Promise(function (resolve, reject) {
@@ -109,7 +113,8 @@
     });
     files.forEach(function (f) {
       seq = seq.then(function () {
-        return loadScript(typeof f === "string" ? f : f.src, pane);
+        if (typeof f === "string") return loadScript(f, undefined, pane);
+        return loadScript(f.src, f.type, pane);
       });
     });
     return seq;
@@ -264,7 +269,11 @@
             wireNow();
             var marked =
               !!p.querySelector("[data-sem-fallback], [data-sem-upgraded]") ||
-              !wantsWire; // hydrate-only panes (sem-md) release on the last check
+              !wantsWire || // hydrate-only panes (sem-md) release on the last check
+              // tobor-kit CDN panes carry no fallback-tier markers: the spec's
+              // tag registering in the custom-elements registry IS the live
+              // marker (the module import defines it).
+              !!(spec.tag && window.customElements && customElements.get(spec.tag));
             if (i === CHECKS.length - 1 || marked) release(p);
           }, ms);
         });
