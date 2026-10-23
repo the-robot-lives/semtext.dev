@@ -114,7 +114,7 @@ defmodule Semtext.Reference.ReferenceDataTest do
         assert [%{file: file, chunk: nil}] = b.bundles
 
         assert file =~
-                 ~r{^https://cdn\.derobot\.is/tobor-kit/sha-[0-9a-f]{40}/components/sem-vocab/#{name}\.js$},
+                 ~r"^https://cdn\.derobot\.is/tobor-kit/sha-[0-9a-f]{40}/components/sem-vocab/#{name}\.js$",
                "unexpected runtime file for #{name}: #{file}"
       end
     end
@@ -152,7 +152,7 @@ defmodule Semtext.Reference.ReferenceDataTest do
     test "tobor-kit tag: one pinned CDN module, no lazy hydration, tag rides along" do
       spec = Tags.viewer_spec(Tags.get("sem-note"), "x", false)
       assert [%{"src" => src, "type" => "module"}] = spec["files"]
-      assert src =~ ~r{^https://cdn\.derobot\.is/tobor-kit/sha-[0-9a-f]{40}/}
+      assert src =~ ~r"^https://cdn\.derobot\.is/tobor-kit/sha-[0-9a-f]{40}/"
       assert spec["renderable"]
       refute spec["lazy"]
       assert spec["tag"] == "sem-note"
