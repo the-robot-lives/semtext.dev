@@ -26,6 +26,7 @@ defmodule SemtextWeb.ReferencePagesTest do
 
     test "renders every bucket label and the NPL family", %{conn: conn} do
       body = html_response(conn, 200)
+
       for label <- ["Prose & code", "Document & structure", "Facts & recall", "NPL elements"] do
         assert body =~ label
       end
@@ -97,6 +98,36 @@ defmodule SemtextWeb.ReferencePagesTest do
     end
   end
 
+  # Regression: the semext-sig-traces authored example embeds a
+  # `<script type="application/json">…</script>` block, and Hologram
+  # serializes component props/state into the pageMountData <script>
+  # block without escaping `</` — the literal close-tag inside the
+  # example ended the state script early and dumped serialized state
+  # (componentRegistry: Type.map(…)…) onto the rendered page.
+  describe "GET /reference/semext-sig-traces (pageMountData integrity)" do
+    setup %{conn: conn}, do: {:ok, conn: get(conn, "/reference/semext-sig-traces")}
+
+    test "responds 200 with the viewer, pane payload and authored source", %{conn: conn} do
+      assert conn.status == 200
+      body = html_response(conn, 200)
+      assert body =~ "example-primary"
+      assert body =~ "data-sem-pane"
+      assert body =~ "checkout-traces"
+      # the authored inner script block still reaches the pane payload
+      assert body =~ "application/json"
+    end
+
+    test "serialized state script is never terminated early", %{conn: conn} do
+      body = html_response(conn, 200)
+      offset = elem(:binary.match(body, "pageMountData"), 0)
+      tail = binary_part(body, offset, byte_size(body) - offset)
+      close = elem(:binary.match(tail, "</script>"), 0)
+      # The first close-tag after pageMountData must be the state script's
+      # own — the emitted state runs to completion before it.
+      assert binary_part(tail, 0, close) =~ "subReceiptDrops"
+    end
+  end
+
   describe "GET /reference/<unknown>" do
     test "renders the not-found body", %{conn: conn} do
       conn = get(conn, "/reference/definitely-not-a-tag")
@@ -109,6 +140,7 @@ defmodule SemtextWeb.ReferencePagesTest do
   describe "canonical links" do
     test "index canonical carries the trailing slash", %{conn: conn} do
       conn = get(conn, "/reference")
+
       assert html_response(conn, 200) =~
                ~s(rel="canonical" href="https://semtext.dev/reference/")
     end
@@ -118,6 +150,7 @@ defmodule SemtextWeb.ReferencePagesTest do
       # addressable in layouts — renderer TODO) — per-element canonicals need
       # a SiteLayout change; flagged in the lane report.
       conn = get(conn, "/reference/sem-note")
+
       assert html_response(conn, 200) =~
                ~s(href="https://semtext.dev/reference/")
     end

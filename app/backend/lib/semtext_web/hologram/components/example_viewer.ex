@@ -30,7 +30,6 @@ defmodule SemtextWeb.Hologram.Components.ExampleViewer do
 
   prop :anchor, :string, required: true
   prop :tag_name, :string, default: ""
-  prop :code, :string, required: true
   prop :lines, :list, required: true
   prop :renderable, :boolean, default: false
   prop :render_note, :string, default: ""

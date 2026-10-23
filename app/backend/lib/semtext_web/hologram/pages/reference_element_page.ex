@@ -223,7 +223,6 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
     if tag.family == :npl, do: "https://promptlingo.dev/reference/#{tag.name}", else: ""
   end
 
-
   # ————— example blocks —————
 
   defp primary_block(tag, renderable, render_note) do
@@ -244,8 +243,7 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
         %{
           kind: :viewer,
           anchor: "primary",
-          code: tag.example,
-          lines: Tokenize.html_lines(tag.example),
+          lines: script_safe_lines(Tokenize.html_lines(tag.example)),
           renderable: renderable,
           render_note: render_note,
           spec_json: viewer_spec_json(tag, tag.example),
@@ -253,7 +251,7 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
           chrome_label: "",
           filename: "#{tag.name}.html",
           copy_js: copy_js(tag.example, "#{tag.name}.html"),
-          save_js: save_js(tag.example, "#{tag.name}.html", "text/html;charset=utf-8"),
+          save_js: save_js(tag.example, "#{tag.name}.html", "text/html;charset=utf-8")
         }
       end
     end
@@ -281,11 +279,10 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
   defp variant_block(v, tag, renderable, render_note) do
     %{
       id: v.id,
-      code: v.code,
       label: v.label,
       note: v.note || "",
       anchor: v.id,
-      lines: Tokenize.html_lines(v.code),
+      lines: script_safe_lines(Tokenize.html_lines(v.code)),
       renderable: if(is_boolean(v.renderable), do: v.renderable, else: renderable),
       render_note: render_note,
       spec_json: viewer_spec_json(tag, v.code),
@@ -306,23 +303,58 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
     |> Map.put("html", code)
     |> Map.put("wire", true)
     |> Jason.encode!()
+    |> script_safe()
   end
 
   # Prebuilt snippets (the client never needs Jason). Copy goes through the
   # clipboard API; save builds a Blob download.
+  # The prebuilt snippets ride to the client inside the pageMountData
+  # <script> block; escape any `</` (e.g. the authored example's own script
+  # tags) so the block can never be terminated early. `<\/` decodes to `/`
+  # in JS string literals, so clipboard/Blob output is unchanged.
   defp copy_js(code, _filename) do
-    "navigator.clipboard.writeText(" <> Jason.encode!(code) <> ")"
+    script_safe("navigator.clipboard.writeText(" <> Jason.encode!(code) <> ")")
   end
 
   defp save_js(code, filename, mime) do
-    "var b=new Blob([" <>
-      Jason.encode!(code) <>
-      "],{type:\"" <>
-      mime <>
-      "\"}),u=URL.createObjectURL(b),a=document.createElement(\"a\");" <>
-      "a.href=u;a.download=" <>
-      Jason.encode!(filename) <>
-      ";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u)"
+    script_safe(
+      "var b=new Blob([" <>
+        Jason.encode!(code) <>
+        "],{type:\"" <>
+        mime <>
+        "\"}),u=URL.createObjectURL(b),a=document.createElement(\"a\");" <>
+        "a.href=u;a.download=" <>
+        Jason.encode!(filename) <>
+        ";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u)"
+    )
+  end
+
+  # Hologram serializes props/state into the pageMountData <script> block
+  # without escaping `</`, so a literal `</script` in ANY serialized string
+  # ends that element early and dumps the remaining state onto the page as
+  # text (the semext-sig-traces leak). `<\/` decodes to `/` in both JS
+  # string literals and JSON, so this is invisible to behaviour.
+  defp script_safe(binary), do: String.replace(binary, "</", "<\\/")
+
+  # Source-pane lines render by concatenating token texts — splitting a
+  # token at `</` keeps the pane byte-identical while no single serialized
+  # token string carries the raw sequence.
+  defp script_safe_lines(lines) do
+    Enum.map(lines, fn %{toks: toks} = line ->
+      %{line | toks: Enum.flat_map(toks, &script_safe_tok/1)}
+    end)
+  end
+
+  defp script_safe_tok([text, class]) do
+    if String.contains?(text, "</") do
+      text
+      |> String.split("</")
+      |> Enum.intersperse("</")
+      |> Enum.reject(&(&1 == ""))
+      |> Enum.map(&[&1, class])
+    else
+      [[text, class]]
+    end
   end
 
   # ————— template —————
@@ -412,7 +444,6 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
                     <ExampleViewer
                       cid="example-primary"
                       anchor={@primary.anchor}
-                      code={@primary.code}
                       lines={@primary.lines}
                       renderable={@primary.renderable}
                       render_note={@primary.render_note}
@@ -436,7 +467,6 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
                     <ExampleViewer
                       cid={"example-" <> v.anchor}
                       anchor={v.anchor}
-                      code={v.code}
                       lines={v.lines}
                       renderable={v.renderable}
                       render_note={v.render_note}
