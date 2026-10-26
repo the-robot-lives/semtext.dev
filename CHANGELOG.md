@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-26 (Google Analytics gtag.js on landing + main layouts)
+## 2026-10-26 (Google Analytics gtag.js on landing + main layouts) (#219)
 - added the gtag.js pair (measurement ID `G-XZX7QMLD7H`) to the `<head>` of both public layouts (`landing_layout.ex`, `main_layout.ex`): a src-based async loader tag plus a src-based config script — `priv/static/js/gtag-init.js` (new) carries the standard config because Hologram templates treat `{...}` as interpolation, so the canonical inline snippet cannot ride in a ~HOLO template; plain `/js/gtag-init.js` path (no AssetVersion hashing), matching the keep-location.js idiom.
 
 ## 2026-10-23 (reference pages: fix serialized-state script leak — semext-sig-traces rendered raw state) (#213)
