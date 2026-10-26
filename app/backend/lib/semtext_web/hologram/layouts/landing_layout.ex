@@ -18,7 +18,6 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
   """
   use Hologram.Component
 
-
   alias SemtextWeb.Hologram.Components.AnnotateWidget
   alias SemtextWeb.Hologram.Components.Site.Footer
 
@@ -86,6 +85,8 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
         <Hologram.UI.Runtime />
         <script defer="defer" src="/semtext/semtext.js"></script>
         <script defer="defer" src={@bootstrap_js}></script>
+        <script async="async" src="https://www.googletagmanager.com/gtag/js?id=G-XZX7QMLD7H"></script>
+        <script src="/js/gtag-init.js"></script>
       </head>
       <body class="docs-bg min-h-screen antialiased">
         <a class="skip-link" href="#main">Skip to docs</a>

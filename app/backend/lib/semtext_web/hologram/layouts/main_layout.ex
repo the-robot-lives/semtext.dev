@@ -67,6 +67,8 @@ defmodule SemtextWeb.Hologram.Layouts.MainLayout do
         <link rel="stylesheet" href="/css/viewer.css" />
         <script src="/js/keep-location.js"></script>
         <Hologram.UI.Runtime />
+        <script async="async" src="https://www.googletagmanager.com/gtag/js?id=G-XZX7QMLD7H"></script>
+        <script src="/js/gtag-init.js"></script>
       </head>
       <body>
         <a class="skip-link" href="#main">Skip to content</a>
