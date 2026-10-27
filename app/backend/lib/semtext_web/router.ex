@@ -1,4 +1,7 @@
 defmodule SemtextWeb.Router do
+  @moduledoc """
+  〚📦:87d06606-48c9-573b-aa5b-389e9dca48b7〛 SemtextWeb.Router :: Main-host router (semtext.dev) — /api/v1 JSON, auth/SSO, media, PBAC scopes, proxy lanes, Hologram pages.
+  """
   use SemtextWeb, :router
 
   pipeline :api do

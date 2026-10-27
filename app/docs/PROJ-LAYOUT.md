@@ -1,5 +1,7 @@
 # Project Layout — semtext app
 
+<!-- 〚📁:4efc0d7a-b182-5c64-862f-382f9f19568b〛 PROJ-LAYOUT :: Navigable map of the app/ subtree — backend, assets, nginx, helm, docs, compose. -->
+
 Hydrated product app of the [semtext.dev](https://github.com/the-robot-lives/semtext.dev) repo (scaffold origin: `hologram-start-app`, hydrated 2026-10-14). Two-container Docker stack: **Phoenix 1.8 + Hologram backend** (single OTP app `:semtext` — `Semtext` / `SemtextWeb` — serving `~HOLO` pages, the `/api/v1/*` JSON API, and the proposals subdomain) and **nginx reverse proxy**, orchestrated by Make + docker-compose, against shared Postgres/Redis on a shared Docker network. No separate frontend; UI is Elixir (Hologram ~> 0.10).
 
 One backend serves two hosts via `SemtextWeb.Plugs.HostDispatch` (host-only cookies): `semtext.dev` (showcase, docs, reference, editor, styleguide) and `proposals.semtext.dev` (proposal pipeline + moderation, own router/session).

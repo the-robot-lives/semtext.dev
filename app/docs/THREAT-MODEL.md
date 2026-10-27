@@ -1,5 +1,7 @@
 # Threat Model — semtext app
 
+<!-- 〚📁:8178a490-1ba0-5c89-9dd8-3fb00fde5b4b〛 THREAT-MODEL :: Threat model — trust boundaries, attack surface, vulnerability register T-001..T-012. -->
+
 Security counterpart to [PROJ-ARCH.md](PROJ-ARCH.md). Scope: the two-container stack (Phoenix + Hologram backend `:semtext`, nginx reverse proxy) serving **two hosts** (`semtext.dev` + `www.semtext.dev` main site, `proposals.semtext.dev` proposals pipeline), its auth/authz stack, media pipeline, GitHub integration (OAuth login, GraphQL egress, inbound App webhook), sandbox lane, and the Helm-deployed perimeter. Structure map: [PROJ-LAYOUT.md](PROJ-LAYOUT.md). The app was hydrated from the `hologram-start-app` scaffold (2026-10-14) and inherited its controls; product-era additions (proposals, GitHub, proxy lanes) are modeled on their own merits below.
 
 ## Trust Boundaries

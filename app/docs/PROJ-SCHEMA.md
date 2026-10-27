@@ -1,5 +1,7 @@
 # Database Schema & Data Artifacts — semtext app
 
+<!-- 〚📁:b6f12a40-bcea-57ad-aec8-b21d63b1df7d〛 PROJ-SCHEMA :: Data schema reference — ERDs, enums, changesets 000-031, domain files. -->
+
 Schema for the semtext.dev product app (hydrated from the start-app Hologram scaffold). Managed by Liquibase YAML changelogs (`backend/db/changelog/`, changesets 000–031) applied via `mix liquibase.update` / `make migrate`; a small Ecto-migration lane exists for `smart_token` and Oban tables. All tables use UUID primary keys and `timestamptz` timestamps with `now()` defaults; modification timestamps are always `updated_at`.
 
 Detailed domain breakdowns live under [`schema/`](schema/):

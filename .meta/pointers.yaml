@@ -1,0 +1,110 @@
+---
+pointers:
+  0c187ff2-d759-53b6-b2a6-f770a7f6be4f:
+    created_at: 2026-10-27T04:30:46.121997Z
+    description: Proposals domain facade — proposals, versions, discussion links, moderation, reports, rate limits (P1 lane contract).
+    file_path: app/backend/lib/semtext/proposals.ex
+    function: Semtext.Proposals
+    kind: module
+    line: 3
+    locations:
+      - file_path: app/backend/lib/semtext/proposals.ex
+        line: 3
+    token: 𓒚𓆦𔄡𓫯
+    updated_at: 2026-10-27T04:30:46.121997Z
+  3306d379-9a0f-5214-a378-e94caae134f3:
+    created_at: 2026-10-27T04:30:46.121989Z
+    description: Architecture overview — two-host Hologram app, core components, routing, deployment.
+    file_path: app/docs/PROJ-ARCH.md
+    function: PROJ-ARCH
+    kind: file
+    line: 3
+    locations:
+      - file_path: app/docs/PROJ-ARCH.md
+        line: 3
+    token: 𓏧𓈦𓟈𓺃
+    updated_at: 2026-10-27T04:30:46.121989Z
+  4efc0d7a-b182-5c64-862f-382f9f19568b:
+    created_at: 2026-10-27T04:30:46.122001Z
+    description: Navigable map of the app/ subtree — backend, assets, nginx, helm, docs, compose.
+    file_path: app/docs/PROJ-LAYOUT.md
+    function: PROJ-LAYOUT
+    kind: file
+    line: 3
+    locations:
+      - file_path: app/docs/PROJ-LAYOUT.md
+        line: 3
+    token: 𓟰𓋝𔁧𓦋
+    updated_at: 2026-10-27T04:30:46.122001Z
+  4f8efb43-74a1-50c0-89b4-26a47cf95dd8:
+    created_at: 2026-10-27T04:30:46.122021Z
+    description: 'Repo entry point — SemText product repo: landing, format code, Hologram app (app/), proposals pipeline.'
+    file_path: README.md
+    function: README.md
+    kind: file
+    line: 3
+    locations:
+      - file_path: README.md
+        line: 3
+    token: 𔄫𔀯𓽁𓍈
+    updated_at: 2026-10-27T04:30:46.122021Z
+  7ae9dcac-68ff-5027-91c7-2ddc2ba29be9:
+    created_at: 2026-10-27T04:30:46.122017Z
+    description: Liquibase master changelog — includes changesets 000-031.
+    file_path: app/backend/db/changelog/db.changelog-master.yaml
+    function: db.changelog-master
+    kind: file
+    line: 1
+    locations:
+      - file_path: app/backend/db/changelog/db.changelog-master.yaml
+        line: 1
+    token: 𔀦𓑭𓦘𔍹
+    updated_at: 2026-10-27T04:30:46.122017Z
+  8178a490-1ba0-5c89-9dd8-3fb00fde5b4b:
+    created_at: 2026-10-27T04:30:46.122014Z
+    description: Threat model — trust boundaries, attack surface, vulnerability register T-001..T-012.
+    file_path: app/docs/THREAT-MODEL.md
+    function: THREAT-MODEL
+    kind: file
+    line: 3
+    locations:
+      - file_path: app/docs/THREAT-MODEL.md
+        line: 3
+    token: 𓼓𓬃𓆏𓆛
+    updated_at: 2026-10-27T04:30:46.122014Z
+  87d06606-48c9-573b-aa5b-389e9dca48b7:
+    created_at: 2026-10-27T04:30:46.122024Z
+    description: Main-host router (semtext.dev) — /api/v1 JSON, auth/SSO, media, PBAC scopes, proxy lanes, Hologram pages.
+    file_path: app/backend/lib/semtext_web/router.ex
+    function: SemtextWeb.Router
+    kind: module
+    line: 3
+    locations:
+      - file_path: app/backend/lib/semtext_web/router.ex
+        line: 3
+    token: 𔗒𓮾𓾙𓣗
+    updated_at: 2026-10-27T04:30:46.122024Z
+  b6f12a40-bcea-57ad-aec8-b21d63b1df7d:
+    created_at: 2026-10-27T04:30:46.121965Z
+    description: Data schema reference — ERDs, enums, changesets 000-031, domain files.
+    file_path: app/docs/PROJ-SCHEMA.md
+    function: PROJ-SCHEMA
+    kind: file
+    line: 3
+    locations:
+      - file_path: app/docs/PROJ-SCHEMA.md
+        line: 3
+    token: 𓇍𓩵𔘱𔘝
+    updated_at: 2026-10-27T04:30:46.121965Z
+  f7f5127a-7784-5148-8ce5-d6bce647c845:
+    created_at: 2026-10-27T04:30:46.122010Z
+    description: Proposals-host router (proposals.semtext.dev) — SSR pages, GitHub OAuth, inbound webhook receiver; own session.
+    file_path: app/backend/lib/semtext_web/proposals_router.ex
+    function: SemtextWeb.ProposalsRouter
+    kind: module
+    line: 3
+    locations:
+      - file_path: app/backend/lib/semtext_web/proposals_router.ex
+        line: 3
+    token: 𓹆𓦡𓇮𓴵
+    updated_at: 2026-10-27T04:30:46.122010Z
