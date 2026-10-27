@@ -3,6 +3,7 @@
 ## 2026-10-26
 
 - docs: correct stale "main is CI/CD-only" deploy note — merging into main triggers CI/CD (user-verified 2026-10-26)
+- docs: doc-sweep refresh — app/docs + app/backend/docs layout/arch/schema/threat-model set re-grounded on the hydrated `:semtext` app (was pre-hydration `:starter` scaffold docs): helm chart path `app/helm/semtext`, changelogs 000–031 with the new Proposals & GitHub domain (schema/proposals-github.md), two-host `HostDispatch` routing (`proposals.semtext.dev`), TLS `semtext-dev-tls`, threat register +T-011/+T-012; README "stub repo" framing replaced; pointer-seed PR to follow
 
 ## 2026-10-26 (Google Analytics gtag.js on landing + main layouts) (#219)
 - added the gtag.js pair (measurement ID `G-XZX7QMLD7H`) to the `<head>` of both public layouts (`landing_layout.ex`, `main_layout.ex`): a src-based async loader tag plus a src-based config script — `priv/static/js/gtag-init.js` (new) carries the standard config because Hologram templates treat `{...}` as interpolation, so the canonical inline snippet cannot ride in a ~HOLO template; plain `/js/gtag-init.js` path (no AssetVersion hashing), matching the keep-location.js idiom.

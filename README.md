@@ -8,20 +8,23 @@ Part of the [The Robot Lives](https://therobotlives.com) portfolio.
 
 ## What
 
-Currently holds only project docs (`CLAUDE.md`, `AGENTS.md`) and this
-README. No site, no build, no CI.
+The consolidated SemText product repo: the Next.js landing (`landing/`), the
+format code + showcase (`site/`, `demo/`, `spec/`, `src/`, `themes/`), and the
+hydrated Hologram application under `app/` (Phoenix backend `:semtext` serving
+`semtext.dev` and `proposals.semtext.dev` via one image). CI builds
+`sha-*` images; the chart lives at `app/helm/semtext`.
 
 ## Why
 
-Reserves the semtext.dev domain within the portfolio so it can later host a
-SemText-related product or landing page without a land grab. Infra (DNS,
-TLS, eventual ArgoCD app) lives in `trl-infra`.
+Home of the SemText format — spec, vocabulary, validators, bundles, showcase,
+and the proposal pipeline that feeds new elements (GitHub Discussions sync,
+moderation). Infra (DNS, TLS, ArgoCD app) lives in `trl-infra`.
 
 ## Getting Started
 
-Nothing to run. When an application lands, follow the portfolio
-static-site or Hologram starter pattern (see sibling Brand repos, e.g.
-`phpspec.org`) and add CI + a helm chart at that point.
+Landing/showcase: root `package.json` scripts + `node bin/semtext-view.mjs`
+for rendering documents. Hologram app: `cd app && make init && make build &&
+make run` (see `app/README.md`).
 
 ## Web Component Evaluation
 

@@ -1,6 +1,6 @@
-# Database Schema & Data Artifacts — hologram-start-app
+# Database Schema & Data Artifacts — semtext app
 
-Schema for the start-app Hologram scaffold. Managed by Liquibase YAML changelogs (`backend/db/changelog/`, changesets 000–025) applied via `mix liquibase.update` / `make migrate`; a small Ecto-migration lane exists for `smart_token` and Oban tables. All tables use UUID primary keys and `timestamptz` timestamps with `now()` defaults; modification timestamps are always `updated_at`.
+Schema for the semtext.dev product app (hydrated from the start-app Hologram scaffold). Managed by Liquibase YAML changelogs (`backend/db/changelog/`, changesets 000–031) applied via `mix liquibase.update` / `make migrate`; a small Ecto-migration lane exists for `smart_token` and Oban tables. All tables use UUID primary keys and `timestamptz` timestamps with `now()` defaults; modification timestamps are always `updated_at`.
 
 Detailed domain breakdowns live under [`schema/`](schema/):
 
@@ -10,6 +10,7 @@ Detailed domain breakdowns live under [`schema/`](schema/):
 | [schema/users-auth-media.md](schema/users-auth-media.md) | Users, credentials, sessions, auth providers, media, media variants, invite tokens + redemptions |
 | [schema/orgs-pbac.md](schema/orgs-pbac.md) | Organizations, legacy memberships, groups/hierarchy, scoped memberships, policies, custom roles, stored procedures, PBAC seeds |
 | [schema/apps-consent.md](schema/apps-consent.md) | Webhooks, projects, cookie consents |
+| [schema/proposals-github.md](schema/proposals-github.md) | Proposals, proposal versions, discussion links, moderation events, reports, rate limits, GitHub webhook deliveries |
 | [schema/config-artifacts.md](schema/config-artifacts.md) | Non-SQL persistence/config artifacts (scaffold hydration manifest, env structure, theme YAML format, Helm values, generated CSS) |
 
 ## Extensions
@@ -40,6 +41,11 @@ Detailed domain breakdowns live under [`schema/`](schema/):
 | `member_type_enum` | user, group (013) |
 | `resource_type_enum` | organization, project (013) |
 | `role_name_enum` | owner, admin, member, viewer (013) |
+| `proposal_status_enum` | draft, submitted, under_review, accepted, declined, merged, withdrawn (028) |
+| `discussion_state_enum` | pending, ok, failed (028); `removed` added in 031 |
+| `moderation_event_enum` | status_change, hide, unhide, report, spam_flag, lock_discussion, claim (028) |
+| `report_reason_enum` | spam, harassment, other (028) |
+| `report_status_enum` | open, resolved, dismissed (028) |
 
 ## ERD — Mermaid
 
@@ -54,6 +60,7 @@ erDiagram
     users ||--o{ user_policies : "direct policies"
     users ||--o{ invite_token_redemptions : "redeems"
     users ||--o{ cookie_consents : "consent"
+    users ||--o{ proposals : "submits"
 
     user_credentials }o--|| auth_providers : "uses"
     user_credentials ||--o{ user_sessions : "creates"
@@ -72,6 +79,12 @@ erDiagram
     policies ||--o{ group_policies : "attached by"
     policies ||--o{ user_policies : "attached by"
     custom_roles ||--o{ custom_role_permissions : "has permissions"
+
+    proposals ||--o{ proposal_versions : "has versions"
+    proposals ||--o| discussion_links : "discussion sync"
+    proposals ||--o{ moderation_events : "moderated via"
+    proposals ||--o{ proposal_reports : "reported via"
+    proposals ||--o{ proposals : "forked from"
 
     versioned_strings {
         UUID id PK
@@ -100,6 +113,9 @@ erDiagram
         BOOLEAN admin
         BOOLEAN verified
         UUID invite_token_id FK
+        CITEXT github_login
+        SMALLINT trust_tier
+        CITEXT role
     }
     user_credentials {
         UUID id PK
@@ -227,6 +243,53 @@ erDiagram
         INTEGER version
         JSONB categories
     }
+    proposals {
+        UUID id PK
+        CITEXT slug
+        proposal_status_enum status
+        UUID current_version_id FK
+        UUID forked_from_proposal_id FK
+        UUID submitter_id FK
+        TSVECTOR search
+    }
+    proposal_versions {
+        UUID id PK
+        UUID proposal_id FK
+        INTEGER version
+        JSONB options
+        JSONB files
+        TEXT files_sha256
+    }
+    discussion_links {
+        UUID id PK
+        UUID proposal_id FK
+        TEXT repo
+        INTEGER discussion_number
+        discussion_state_enum state
+    }
+    moderation_events {
+        UUID id PK
+        UUID proposal_id FK
+        UUID actor_user_id FK
+        moderation_event_enum event
+    }
+    proposal_reports {
+        UUID id PK
+        UUID proposal_id FK
+        UUID reporter_id FK
+        report_reason_enum reason
+        report_status_enum status
+    }
+    rate_limit_events {
+        UUID id PK
+        TEXT bucket
+        TEXT subject
+    }
+    github_webhook_deliveries {
+        UUID id PK
+        TEXT delivery_id
+        TEXT event
+    }
 ```
 
 ## ERD — PlantUML
@@ -267,6 +330,9 @@ package "Users & Auth" {
     name_id : UUID <<FK>>
     description_id : UUID <<FK>>
     invite_token_id : UUID <<FK>>
+    github_login : CITEXT
+    trust_tier : SMALLINT
+    role : CITEXT
   }
   TABLE(auth_providers) {
     * id : UUID <<PK>>
@@ -383,8 +449,8 @@ package "PBAC" {
     * is_system : BOOLEAN
   }
   TABLE(group_hierarchy) {
-    * ancestor_id : UUID <<FK>>
-    * descendant_id : UUID <<FK>>
+    ancestor_id : UUID <<FK>>
+    descendant_id : UUID <<FK>>
     --
     * depth : INTEGER
   }
@@ -433,6 +499,67 @@ package "Consent" {
   }
 }
 
+package "Proposals & GitHub" {
+  TABLE(proposals) {
+    * id : UUID <<PK>>
+    --
+    * slug : CITEXT <<UNIQUE>>
+    * element_tag : TEXT
+    * title : TEXT
+    * status : proposal_status_enum
+    current_version_id : UUID <<FK>>
+    forked_from_proposal_id : UUID <<FK>>
+    * submitter_id : UUID <<FK>>
+    idempotency_key : TEXT <<UNIQUE>>
+    hidden_at : TIMESTAMPTZ
+    search : TSVECTOR (generated)
+  }
+  TABLE(proposal_versions) {
+    * id : UUID <<PK>>
+    --
+    * proposal_id : UUID <<FK>>
+    * version : INTEGER
+    * files : JSONB
+    * files_sha256 : TEXT
+    created_by_id : UUID <<FK>>
+  }
+  TABLE(discussion_links) {
+    * id : UUID <<PK>>
+    --
+    * proposal_id : UUID <<FK>> <<UNIQUE>>
+    * repo : TEXT
+    discussion_number : INTEGER
+    * state : discussion_state_enum
+  }
+  TABLE(moderation_events) {
+    * id : UUID <<PK>>
+    --
+    * proposal_id : UUID <<FK>>
+    actor_user_id : UUID <<FK>>
+    * event : moderation_event_enum
+  }
+  TABLE(proposal_reports) {
+    * id : UUID <<PK>>
+    --
+    * proposal_id : UUID <<FK>>
+    reporter_id : UUID <<FK>>
+    * reason : report_reason_enum
+    * status : report_status_enum
+  }
+  TABLE(rate_limit_events) {
+    * id : UUID <<PK>>
+    --
+    * bucket : TEXT
+    * subject : TEXT
+  }
+  TABLE(github_webhook_deliveries) {
+    * id : UUID <<PK>>
+    --
+    * delivery_id : TEXT <<UNIQUE>>
+    event : TEXT
+  }
+}
+
 users }o--o| versioned_names : "name_id"
 users }o--o| versioned_descriptions : "description_id"
 users ||--o{ user_credentials : "has many"
@@ -442,6 +569,7 @@ users ||--o{ scoped_memberships : "member of resources"
 users ||--o{ user_policies : "direct policies"
 users ||--o{ invite_token_redemptions : "redeems"
 users ||--o{ cookie_consents : "consent"
+users ||--o{ proposals : "submits"
 
 user_credentials }o--|| auth_providers : "uses"
 user_credentials ||--o{ user_sessions : "creates"
@@ -459,6 +587,12 @@ groups ||--o{ group_policies : "attaches"
 policies ||--o{ group_policies : "attached by"
 policies ||--o{ user_policies : "attached by"
 custom_roles ||--o{ custom_role_permissions : "has permissions"
+
+proposals ||--o{ proposal_versions : "has versions"
+proposals ||--o| discussion_links : "discussion sync"
+proposals ||--o{ moderation_events : "moderated via"
+proposals ||--o{ proposal_reports : "reported via"
+proposals ||--o{ proposals : "forked from"
 @enduml
 ```
 
@@ -492,6 +626,12 @@ custom_roles ||--o{ custom_role_permissions : "has permissions"
 | 023 | media-visibility-and-short-id | media.short_id (unique), visibility CHECK ('public','private','org'), owner_type/owner_id + partial index, generate_media_short_id() |
 | 024 | media-variants-cache | media_variants |
 | 025 | auth-registration-consent | user_status_enum += 'pending'; users registration/approval columns; invite_tokens.starts_at/redemption_count; invite_token_redemptions; cookie_consents |
+| 026 | invite-role | invite_tokens.role column |
+| 027 | invite-redemption-unique-per-user | unique constraint on invite_token_redemptions (invite_token_id, user_id) |
+| 028 | proposals-enums | proposal_status_enum, discussion_state_enum, moderation_event_enum, report_reason_enum, report_status_enum |
+| 029 | proposals-tables | users GitHub columns (github_login, trust_tier, role); view_submitters view; proposals, proposal_versions, discussion_links, moderation_events, proposal_reports, rate_limit_events, github_webhook_deliveries (+ FKs) |
+| 030 | proposals-indexes | proposals list/search/tag/fork/submitter/idempotency indexes, version constraints, discussion-links unique (repo, number), moderation/report/rate-limit/webhook-delivery indexes |
+| 031 | discussion-removed-state | discussion_state_enum += 'removed' |
 
 ## Non-Liquibase Migrations
 
@@ -503,4 +643,4 @@ Ecto migrations in `backend/priv/repo/migrations/` (applied by the release migra
 | 20260526000000_add_oban_tables | oban_jobs + Oban support tables |
 | 20260527000000_update_oban_to_v14 | Oban v14 index/state updates |
 
-Oban queue tables back the `Starter.Workers` (cleanup, email) — see `backend/lib/starter/workers/`.
+Oban queue tables back the `Semtext.Workers` (cleanup, email, github discussion/webhook) — see `backend/lib/semtext/workers/`.
