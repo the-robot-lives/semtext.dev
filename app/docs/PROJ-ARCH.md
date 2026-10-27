@@ -1,5 +1,7 @@
 # Architecture — semtext app
 
+<!-- 〚📁:3306d379-9a0f-5214-a378-e94caae134f3〛 PROJ-ARCH :: Architecture overview — two-host Hologram app, core components, routing, deployment. -->
+
 Product app of the **semtext.dev** repo (hydrated from the `hologram-start-app` scaffold, 2026-10-14): the SemText showcase/site/docs experience plus the proposals pipeline, as **Hologram** (isomorphic Elixir UI) over a Phoenix 1.8 JSON API. Two Docker containers — **Phoenix + Hologram backend** (`:semtext`), **nginx reverse proxy** — sharing Postgres/Redis on the external Docker network.
 
 One backend, two hosts: `SemtextWeb.Plugs.HostDispatch` dispatches **before** the Hologram router, splitting `semtext.dev` (main site) from `proposals.semtext.dev` (proposal pipeline). Cookies are host-only — the two hosts keep separate sessions by design.

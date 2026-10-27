@@ -1,5 +1,7 @@
 # semtext.dev
 
+<!-- 〚📁:4f8efb43-74a1-50c0-89b4-26a47cf95dd8〛 README.md :: Repo entry point — SemText product repo: landing, format code, Hologram app (app/), proposals pipeline. -->
+
 **Repo:** https://github.com/the-robot-lives/semtext.dev
 
 Stub repo for the semtext.dev domain — reserved, no application yet.
