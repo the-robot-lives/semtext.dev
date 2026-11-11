@@ -78,21 +78,43 @@ const MAX_WIDGETS = 10 // interactive widgets drawn per section view
 const NOTE_SUMMARY_WORDS = 10 // collapsed-note summary rule
 const FALLBACK_COLUMNS = 72 // pane width when the surface reports none
 
-// NPL pump-tag vocabulary (Trinity response elements) + the Trinity friction
-// markers. The parser lowercases tag names, so these stay lowercase; they
-// parse like sem elements and warn-match like them (never an unknown-note).
+// NPL pump-tag vocabulary (the sem-text v0.8 §npl family) + the Trinity
+// friction markers. The parser lowercases tag names, so these stay lowercase;
+// they parse like sem elements and warn-match like them (never an
+// unknown-note).
 const NPL_ELEMENTS: ReadonlySet<string> = new Set([
-  'npl-mindread',
-  'npl-thought',
+  'npl-agent',
+  'npl-artifact',
   'npl-block',
-  'npl-ref',
+  'npl-cot',
+  'npl-critique',
+  'npl-declaration',
+  'npl-directive',
+  'npl-example',
+  'npl-flag',
+  'npl-flags',
   'npl-hormones',
   'npl-intent',
+  'npl-mindread',
+  'npl-mode',
+  'npl-mood',
+  'npl-poa',
+  'npl-ref',
+  'npl-rubric',
+  'npl-section',
+  'npl-thought',
+  'npl-vos',
   'wedge',
   'shadow',
   'critic',
   'weego',
 ])
+
+// The Trinity friction markers: flat sibling sections of the Friction phase
+// (WEDGE ▲ SHADOW ▼ CRITIC ✕ WEEGO ◎). Model output emits them unclosed
+// (markdown-escaped `\<WEDGE\>` and bare `<WEDGE>` alike), so the parser
+// applies the flat-section rule to exactly this set (see parseSemText).
+const FRICTION_MARKERS: ReadonlySet<string> = new Set(['wedge', 'shadow', 'critic', 'weego'])
 
 // The element vocabulary of sem-text.v0.7.spec.html (the 57 §2 table entries
 // plus the structural authoring elements its §1 names: sem-enhanced-document,
@@ -188,7 +210,9 @@ export interface ParsedSemText {
 
 /** Cheap prefix-match gate: a sem-/npl- element open tag or a Trinity marker. */
 export function looksLikeSemText(text: string): boolean {
-  return /<(?:sem-[a-z][a-z0-9-]*|npl-[a-z][a-z0-9-]*|wedge|shadow|critic|weego)(?=[\s/>])/i.test(text)
+  // `\\` in the lookahead: markdown-escaped markers (`\<WEDGE\>`) must trip
+  // detection too, or a fully escaped Trinity answer is never parsed at all.
+  return /<(?:sem-[a-z][a-z0-9-]*|npl-[a-z][a-z0-9-]*|wedge|shadow|critic|weego)(?=[\s/>\\])/i.test(text)
 }
 
 // --- parser ---
@@ -374,7 +398,10 @@ function finalizeNode(node: ParseNode): void {
     .filter(text => text !== '')
     .join(' ')
   const full = collapseWhitespace(`${direct} ${childText}`)
-  node.text = full.slice(0, MAX_TEXT)
+  // An NPL block card draws its own prose; its element children render as
+  // their own rows (expandedPlan), so their text stays out of the body here
+  // — never drawn twice.
+  node.text = (NPL_ELEMENTS.has(node.tag) ? direct : full).slice(0, MAX_TEXT)
   node.content = contentFor(node, full, raw, childRaws)
   delete node.raw
   delete node.inheritedSeed
@@ -404,7 +431,13 @@ export function parseSemText(text: string): ParsedSemText | null {
     if (to <= from) return
     const top = stack[stack.length - 1]
     if (top === undefined || containers.length > 0) return
-    top.raw = (top.raw ?? '') + sanitize(text.slice(from, to))
+    // Markdown-escaped tag markers (`\<WEDGE\>`) leak their backslash into
+    // the gap text; strip the escape. The backslash before an opening `<`
+    // always sits at the very end of the gap slice (the tag starts the next
+    // slice), so `$` must count as an escape position too.
+    top.raw =
+      (top.raw ?? '') +
+      sanitize(text.slice(from, to)).replace(/\\([<>]|$)/g, '$1')
   }
   const captureContainer = (container: TextContainer, to: number): void => {
     const top = stack[stack.length - 1]
@@ -504,6 +537,25 @@ export function parseSemText(text: string): ParsedSemText | null {
     } else {
       count++
       if (!KNOWN_ELEMENTS.has(name)) unknown.add(name)
+      // Implied end tags, NPL family only. The friction markers are flat
+      // sibling sections emitted unclosed (WEDGE then SHADOW then CRITIC…),
+      // so one marker opening closes the still-open marker; an NPL element
+      // also closes an earlier open of its own name. Same-name nesting stays
+      // legal elsewhere (nested sem-section is real markup) — without this
+      // rule each unclosed marker nested into the previous one and vanished
+      // inside its parent card.
+      if (!selfClosing && NPL_ELEMENTS.has(name)) {
+        for (let s = stack.length - 1; s >= 0; s--) {
+          const open = stack[s]!.tag
+          if (
+            open === name ||
+            (FRICTION_MARKERS.has(open) && FRICTION_MARKERS.has(name))
+          ) {
+            stack.length = s
+            break
+          }
+        }
+      }
       if (stored < MAX_STORED_NODES) {
         stored++
         const parent = stack[stack.length - 1]
@@ -715,14 +767,21 @@ const INTERACTIVE: ReadonlySet<SemNodeContent['kind']> = new Set([
 
 type Widget = { key: string; node: SemTextNode }
 
-/** Interactive-content descendants of `root`, keyed by outline row key. */
+/**
+ * Card descendants of `root` (interactive content or an NPL-family block),
+ * keyed by outline row key — the section view draws each through the render
+ * registry after the focused node's own render.
+ */
 function widgetsIn(root: SemTextNode, baseKey: string): Widget[] {
   const out: Widget[] = []
   const walk = (nodes: readonly SemTextNode[], prefix: string): void => {
     for (let i = 0; i < nodes.length && out.length < MAX_WIDGETS; i++) {
       const node = nodes[i]!
       const key = `${prefix}${i}`
-      if (node.content !== undefined && INTERACTIVE.has(node.content.kind)) {
+      if (
+        (node.content !== undefined && INTERACTIVE.has(node.content.kind)) ||
+        NPL_ELEMENTS.has(node.tag)
+      ) {
         out.push({ key, node })
       }
       walk(node.children, `${key}.`)

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" data-sem-theme="minimal-tech-light">
+<head>
+<meta charset="utf-8">
+<title>SemText pane TUI design — component classes, states, rationale</title>
+</head>
+<body>
+<sem-enhanced-document>
+
+<sem-tldr>*The intended TUI presentation for every component class in the semtext pane: what is expandable, default states, glyphs, indentation, dim/bold rules, and how children nest.* This is the design the v0.5 renderer implements; where reality differs, the gap is named and tracked in the defect ledger of render-reference.html.</sem-tldr>
+
+<sem-guard-rails>
+<sem-guard-rail severity="block" scope="pane rendering">Content never contributes glyphs. Every decoration character comes from the GLYPHS vocabulary; content strings are control-stripped and truncated before drawing.</sem-guard-rail>
+<sem-guard-rail severity="warn" scope="information density">One concept per row. An outline row names a node; content lines under it are bodies, not new nodes. If something deserves its own row it must be a parsed element.</sem-guard-rail>
+</sem-guard-rails>
+
+<sem-section>
+<h2>1 The row model</h2>
+<p>The pane is a *file tree with inline content*. Every parsed element owns one outline row: tree prefix (├── / └── with │ spines), a kind glyph from the fixed vocabulary, a label (named attr else tag, plus #id), and a dim child count. Under that row, the node's content renders inline, indented by the tree prefix with the branch glyphs blanked — spines stay so nesting stays readable.</p>
+<p>Rows are clickable everywhere: in the overviews they focus the section; inside focus the nav row moves prev/next. The current overview mode (compact outline vs expanded) is remembered and restored by ◂ outline.</p>
+</sem-section>
+
+<sem-section>
+<h2>2 Component classes</h2>
+
+<sem-properties kind="design-contract">
+<sem-property key="Headings (§)">Semantically a section marker: row only, never a body. sem-section/summary/tldr draw the heading row and their children plan below — a heading never consumes or hides anything.</sem-property>
+<sem-property key="Prose and flow">Unknown tags and generic containers draw their captured p/heading blocks (## dim marker, ▌ for quotes) or, for childless leaves, their own text — dim, wrapped, indented. Text is never dropped just because a tag has no renderer.</sem-property>
+<sem-property key="Cards (collapsible)">note/reveal/facts/views/properties/npl draw a toggle row when shut (glyph + summary or head + ▸) and their body when open. Default open (v0.4+); an authored collapsed attribute keeps a card shut; an explicit hide always wins and survives expand-all/collapse-all.</sem-property>
+<sem-property key="Friction blocks (NPL)">Same card renderer for the whole npl family plus the four Trinity markers (name uppercased, glyph per tag). Body framed, dim, under a header badge carrying the first three attributes. Flat siblings by parser contract — one card per phase item, never nested.</sem-property>
+<sem-property key="Tables">Caption row (▦ rows × cols), then a box-drawn table: ┌─┬─┐ top, bold header, ├─┼─┤, dim body, └─┴─┘. Markdown delimiter rows are separator decoration, never data. Columns shrink from the widest until the frame fits the width; cells truncate with ….</sem-property>
+<sem-property key="Code">Framed body with the ⌨ lang badge top-right. Content dim, tab-expanded, capped at 40 lines with an explicit (+N lines) footer. Raw text only — code never nests elements.</sem-property>
+<sem-property key="Procedures">Framed list of numbered steps (1 → text), title in the badge, overflow as (+N steps). One line per step, truncated to width.</sem-property>
+<sem-property key="Key/values">Properties draw 🗂 head then aligned 🔑 key ──▸ value rows — one visual unit, not collapsible (already the terse form).</sem-property>
+<sem-property key="Fact sets">List mode shows every item (❍ body — conclusion) inline. quiz/flashcards draw a run button; the runner owns the full pane (meter ▰▱, prompt, ▢ a)–d) options, ✓/✗ grading, or 🃏 flip) and returns via ◂ outline / ◂ section.</sem-property>
+<sem-property key="Views">Tab row [● active │ other] as plain buttons, then the active view's body wrapped dim below.</sem-property>
+<sem-property key="Sources and references">Framed body with a badge (glyph + tag name); one frame per element, children consumed into the frame.</sem-property>
+<sem-property key="Unknown tags">Misc glyph ·, row + text, never a dead end. The pane header counts unknowns and names the first four so authors see their typos.</sem-property>
+</sem-properties>
+</sem-section>
+
+<sem-section>
+<h2>3 States and defaults</h2>
+<sem-list>
+- Cards default open. Rationale: the expanded view's promise is "everything visible"; hiding by default was the v0.3 behaviour and read as data loss.
+- Authored collapsed still respected: a collapsed attribute is an author decision, kept on every render until the user overrides.
+- The expanded map stores the requested value, so expand-all/collapse-all set a baseline and per-card toggles keep winning afterwards.
+- Focus starts at the breadcrumb; content budget flows top-down; anything past the budget is counted, never silently clipped — the footer says (+N rows hidden).
+- A fresh document resets the viewer; re-reading the same source keeps a quiz in progress alive.
+</sem-list>
+</sem-section>
+
+<sem-section>
+<h2>4 Glyph vocabulary</h2>
+<p>One glyph per concept, fixed strings only. Outline glyphs are mostly single-width ASCII/box characters so tree alignment survives; emoji appear only inside card bodies where alignment does not matter.</p>
+<sem-table label="Glyph map">
+| Family | Glyphs |
+| --- | --- |
+| Kinds | 📌 note · ⚠ warning · 🧭 procedure · → step · ▦ table · ⌨ code · ❓ facts · 🃏 flashcards · 💡 reveal · 🔑 property · 🗂 properties · 👁 views · ◦ view · 📖 reader · ◫ source · § section · ❍ fact · · misc |
+| NPL | ◆ mindread · ◇ thought · ≈ hormones · → intent · ↗ ref · ▣ block · ▲ wedge · ▼ shadow · ✕ critic · ◎ weego · Ⓐ agent · ➤ directive/poa · ☰ section · ◈ rubric · ⚑ critique · ❝ declaration · ✦ example · ⚐ flag(s) · ▧ mode · ⋇ mood · ◍ vos · ⬢ artifact · ⋯ cot |
+| Chrome | ├─└│ tree · ▸▾ toggles · ▌ quote · ▢ option · ▰▱ meter · ✓ ✗ verdicts · … overflow · ● active · ◂▸ nav · › breadcrumb |
+</sem-table>
+</sem-section>
+
+<sem-section>
+<h2>5 Emphasis, color and dim</h2>
+<sem-list>
+- dimColor = secondary: tree spines, child counts, bodies, borders, labels, captions. If a row is content the user asked to see, it is not dimmed twice.
+- bold = the one thing to read first: table header row, first line of a heading block.
+- success/error color only inside quiz grading; warning color only on the unknown-elements header row. No other colors — the pane stays quiet next to the chat.
+- Truncation always ends in … and, for multi-line bodies, a counted (+N …) footer. Nothing disappears without arithmetic.
+</sem-list>
+</sem-section>
+
+<sem-summary>The design in one sentence: a clickable file tree whose every row keeps its content visible under itself, cards default open, friction markers flat, unknown tags honest, and every cut counted. Deviations from this contract belong in the render-reference defect ledger, not in ad-hoc renderer tweaks.</sem-summary>
+
+</sem-enhanced-document>
+</body>
+</html>
