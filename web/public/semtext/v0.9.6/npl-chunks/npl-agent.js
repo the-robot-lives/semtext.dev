@@ -1,0 +1,6 @@
+import{S as r,n as t,b as n,d as h}from"./shared-CkZ1UibF.js";class p extends r{static{this.properties={name:{type:String,reflect:!0},type:{type:String,reflect:!0},version:{type:String,reflect:!0},extends:{type:String,reflect:!0}}}constructor(){super(),this.name="",this.type="",this.version="",this.extends=""}updated(){const e=this.querySelector(":scope > .npl-agent-header");e&&e!==this.firstChild&&this.insertBefore(e,this.firstChild),this.afterParse("name",()=>this.setAttribute("data-name",t(this,"name",this.name))),this.afterParse("type",()=>this.setAttribute("data-type",t(this,"type",this.type))),this.afterParse("version",()=>this.setAttribute("data-version",t(this,"version",this.version))),this.afterParse("extends",()=>this.setAttribute("data-extends",t(this,"extends",this.extends)))}render(){const e=t(this,"name",this.name),i=t(this,"type",this.type),a=t(this,"version",this.version),s=t(this,"extends",this.extends);return n`<div class="npl-agent-header">
+      <span class="npl-agent-name">${e}</span>
+      <span class="npl-agent-type">${i}</span>
+      <span class="npl-agent-version">${a}</span>
+      ${s?n`<span class="npl-agent-extends">${s}</span>`:""}
+    </div>`}}h("npl-agent",p);

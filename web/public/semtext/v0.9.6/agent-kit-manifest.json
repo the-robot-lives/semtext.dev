@@ -1,0 +1,22 @@
+{
+  "agent-kit-acceptance-criteria": "agent-kit-chunks/agent-kit-acceptance-criteria.js",
+  "agent-kit-agent-persona": "agent-kit-chunks/agent-kit-agent-persona.js",
+  "agent-kit-artifact": "agent-kit-chunks/agent-kit-artifact.js",
+  "agent-kit-asset": "agent-kit-chunks/agent-kit-asset.js",
+  "agent-kit-board": "agent-kit-chunks/agent-kit-board.js",
+  "agent-kit-bug": "agent-kit-chunks/agent-kit-bug.js",
+  "agent-kit-chatroom": "agent-kit-chunks/agent-kit-chatroom.js",
+  "agent-kit-custom-assert": "agent-kit-chunks/agent-kit-custom-assert.js",
+  "agent-kit-epic": "agent-kit-chunks/agent-kit-epic.js",
+  "agent-kit-issue": "agent-kit-chunks/agent-kit-issue.js",
+  "agent-kit-organization": "agent-kit-chunks/agent-kit-organization.js",
+  "agent-kit-project": "agent-kit-chunks/agent-kit-project.js",
+  "agent-kit-review": "agent-kit-chunks/agent-kit-review.js",
+  "agent-kit-sub-task": "agent-kit-chunks/agent-kit-sub-task.js",
+  "agent-kit-task": "agent-kit-chunks/agent-kit-task.js",
+  "agent-kit-test-case": "agent-kit-chunks/agent-kit-test-case.js",
+  "agent-kit-test-suite": "agent-kit-chunks/agent-kit-test-suite.js",
+  "agent-kit-ticket-ref": "agent-kit-chunks/agent-kit-ticket-ref.js",
+  "agent-kit-user-persona": "agent-kit-chunks/agent-kit-user-persona.js",
+  "agent-kit-user-story": "agent-kit-chunks/agent-kit-user-story.js"
+}
