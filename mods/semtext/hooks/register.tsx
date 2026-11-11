@@ -21,6 +21,7 @@ import {
   pickOption,
   promptFor,
   sanitize,
+  selectedMark,
   setActiveView,
   setAllExpanded,
   setExpanded,
@@ -115,6 +116,13 @@ const NPL_ELEMENTS: ReadonlySet<string> = new Set([
 // (markdown-escaped `\<WEDGE\>` and bare `<WEDGE>` alike), so the parser
 // applies the flat-section rule to exactly this set (see parseSemText).
 const FRICTION_MARKERS: ReadonlySet<string> = new Set(['wedge', 'shadow', 'critic', 'weego'])
+
+// Same-name implied end for the loose sem-* leaves: sem-note, sem-step and
+// sem-fact are routinely emitted unclosed back-to-back (one per item), so a
+// new opening of the same name closes the still-open one and both render as
+// siblings. Every other sem-* name keeps normal same-name nesting (nested
+// sem-section is real markup) — see parseSemText.
+const IMPLIED_END_SEM: ReadonlySet<string> = new Set(['sem-note', 'sem-step', 'sem-fact'])
 
 // The element vocabulary of sem-text.v0.7.spec.html (the 57 §2 table entries
 // plus the structural authoring elements its §1 names: sem-enhanced-document,
@@ -537,14 +545,16 @@ export function parseSemText(text: string): ParsedSemText | null {
     } else {
       count++
       if (!KNOWN_ELEMENTS.has(name)) unknown.add(name)
-      // Implied end tags, NPL family only. The friction markers are flat
-      // sibling sections emitted unclosed (WEDGE then SHADOW then CRITIC…),
-      // so one marker opening closes the still-open marker; an NPL element
-      // also closes an earlier open of its own name. Same-name nesting stays
-      // legal elsewhere (nested sem-section is real markup) — without this
-      // rule each unclosed marker nested into the previous one and vanished
-      // inside its parent card.
-      if (!selfClosing && NPL_ELEMENTS.has(name)) {
+      // Implied end tags: the NPL family (friction markers are flat sibling
+      // sections emitted unclosed — WEDGE then SHADOW then CRITIC… — so one
+      // marker opening closes the still-open marker, and an NPL element also
+      // closes an earlier open of its own name), plus same-name implied end
+      // for sem-note/sem-step/sem-fact. Same-name nesting stays legal for
+      // every other sem-* name (nested sem-section is real markup) — without
+      // these rules each unclosed marker nested into the previous one and
+      // vanished inside its parent card, and back-to-back notes/steps/facts
+      // collapsed into a single swallowed body.
+      if (!selfClosing && (NPL_ELEMENTS.has(name) || IMPLIED_END_SEM.has(name))) {
         for (let s = stack.length - 1; s >= 0; s--) {
           const open = stack[s]!.tag
           if (
@@ -942,7 +952,7 @@ export const register: Register = on => {
                 void update($, VIEWER, v => focusSection(v, row.key))
               }}
             >
-              {`${row.key === selected ? GLYPHS.toggle.open : ' '} ${row.prefix}${row.glyph} ${row.label}`}
+              {`${selectedMark(row.key === selected)} ${row.prefix}${row.glyph} ${row.label}`}
               {row.count > 0 && <Text dimColor>{` (${row.count})`}</Text>}
             </Button>
           ))}

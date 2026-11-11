@@ -338,6 +338,7 @@ export const GLYPHS = {
   },
   tree: { branch: '├──', last: '└──', spine: '│', blank: ' ' },
   crumb: '›',
+  selected: '❯',
   toggle: { open: '▸', shut: '▾' },
   quote: '▌',
   option: '▢',
@@ -493,6 +494,14 @@ export function treePrefix(ancestorsLast: readonly boolean[], isLast: boolean): 
     .map(last => (last ? '   ' : `${GLYPHS.tree.spine}  `))
     .join('')
   return `${spine}${isLast ? GLYPHS.tree.last : GLYPHS.tree.branch} `
+}
+
+/**
+ * The outline's selected-row mark: dedicated `❯` in the leftmost column,
+ * blank elsewhere. `▸`/`▾` stay toggle/nav glyphs — they never mean selection.
+ */
+export function selectedMark(isSelected: boolean): string {
+  return isSelected ? GLYPHS.selected : ' '
 }
 
 /** `▰▰▱▱`: `filled/total` over `cells` cells, rounded, clamped. */

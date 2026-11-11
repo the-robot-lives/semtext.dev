@@ -35,6 +35,7 @@ import {
   outlineTree,
   progressBar,
   propertyLines,
+  selectedMark,
   setAllExpanded,
   setOutlineMode,
   tableCells,
@@ -518,6 +519,16 @@ test('treePrefix draws ├──/└── with │ continuation', async () => {
   )
 })
 
+test('selectedMark draws the dedicated ❯ — never the toggle glyphs', async () => {
+  expect(selectedMark(true)).toBe('❯')
+  expect(selectedMark(false)).toBe(' ')
+  // The selection mark is its own vocabulary entry: ▸/▾ stay toggle/nav glyphs.
+  expect(GLYPHS.selected).toBe('❯')
+  expect(GLYPHS.selected).not.toBe(GLYPHS.toggle.open)
+  expect(GLYPHS.selected).not.toBe(GLYPHS.toggle.shut)
+  expect(GLYPHS.selected).not.toBe(GLYPHS.nav.next)
+})
+
 test('summary truncation follows the word-boundary and word-count rules', async () => {
   // 60-char cap cuts at the last word boundary and strips trailing punctuation.
   const long = 'one two three four five six seven eight nine ten eleven twelve thirteen'
@@ -921,6 +932,43 @@ test('implied end rules: friction closes friction, same-name closes same-name, s
   const inline = parseSemText('<wedge>a <npl-ref>cite</npl-ref> b</wedge>')!
   expect(inline.roots.length).toBe(1)
   expect(inline.roots[0]!.children[0]!.tag).toBe('npl-ref')
+})
+
+test('unclosed sem-note/sem-step/sem-fact siblings close their own name', async () => {
+  // Back-to-back unclosed notes: flat siblings, each keeping its own text.
+  const notes = parseSemText('<sem-note>one<sem-note>two')!
+  expect(notes.roots.map(root => root.tag)).toEqual(['sem-note', 'sem-note'])
+  expect(notes.roots[0]!.text).toBe('one')
+  expect(notes.roots[1]!.text).toBe('two')
+  // Each note gets its own outline row — none swallowed into a sibling.
+  const noteRows = expandedPlan(notes.roots).filter(unit => unit.role === 'row')
+  expect(noteRows.map(unit => unit.row.label)).toEqual(['sem-note', 'sem-note'])
+  expect(noteRows.map(unit => unit.key)).toEqual(['0', '1'])
+
+  // Unclosed steps inside a procedure stay sibling steps (leaf role intact).
+  const steps = parseSemText('<sem-procedure title="t"><sem-step>a<sem-step>b<sem-step>c')!
+  expect(steps.roots[0]!.tag).toBe('sem-procedure')
+  expect(steps.roots[0]!.children.map(child => child.tag)).toEqual([
+    'sem-step', 'sem-step', 'sem-step',
+  ])
+
+  // Facts likewise, closed only by their container's end tag.
+  const facts = parseSemText('<sem-facts><sem-fact>a<sem-fact>b</sem-facts>')!
+  expect(facts.roots[0]!.children.map(child => child.tag)).toEqual(['sem-fact', 'sem-fact'])
+
+  // Sibling notes inside a section — the same-name rule applies at depth too.
+  const inside = parseSemText('<sem-section>a<sem-note>x<sem-note>y</sem-section>')!
+  expect(inside.roots[0]!.children.map(child => child.tag)).toEqual(['sem-note', 'sem-note'])
+  expect(inside.roots[0]!.children[0]!.text).toBe('x')
+  expect(inside.roots[0]!.children[1]!.text).toBe('y')
+
+  // Other sem-* names keep same-name nesting, and a properly closed note is
+  // unaffected: the flat rule is exactly sem-note/sem-step/sem-fact.
+  const nested = parseSemText('<sem-section>a<sem-section>b</sem-section>')!
+  expect(nested.roots.length).toBe(1)
+  expect(nested.roots[0]!.children.length).toBe(1)
+  const proper = parseSemText('<sem-section><sem-note>a</sem-note></sem-section>')!
+  expect(proper.roots[0]!.children[0]!.text).toBe('a')
 })
 
 test('npl card children re-plan below the card; card body keeps own text only', async () => {

@@ -2,18 +2,18 @@
 <html lang="en" data-sem-theme="minimal-tech-light">
 <head>
 <meta charset="utf-8">
-<title>SemText mod render reference — v0.5 full vocabulary audit</title>
+<title>SemText mod render reference — v0.5.1 vocabulary audit</title>
 </head>
 <body>
 <sem-enhanced-document>
 
-<sem-tldr>*Every tag the semtext pane knows, how each one parses, glyphs, and renders across the four view modes, plus the defect ledger.* Reference for the Claude Code pane at mods/semtext (v0.5). Screens live in tui-screens.html; design rationale in tui-design.html.</sem-tldr>
+<sem-tldr>*Every tag the semtext pane knows, how each one parses, glyphs, and renders across the four view modes, plus the defect ledger.* Reference for the Claude Code pane at mods/semtext (v0.5.1). Screens live in tui-screens.html; design rationale in tui-design.html.</sem-tldr>
 
 <sem-section>
 <h2>1 How the pane reads a document</h2>
 <p>The parser (hooks/register.tsx parseSemText) walks raw text, lowercases tag names, and builds a tree of SemTextNode (tag, attrs, children, collapsed text, captured content, captured p/heading blocks). Detection fires on any sem-*, npl-*, or Trinity marker tag — markdown-escaped spellings like &lt;WEDGE&gt; included.</p>
 <p>Three render roles decide what appears in the expanded view: *heading* (the outline row is the render; children always plan below), *flow* (row plus captured blocks or leaf text; children always plan below), *card* (a dedicated renderer draws the body; children are consumed — except npl cards, whose children re-plan below the card since v0.5).</p>
-<p>The parser applies implied end tags inside the NPL family only: a friction marker opening closes the still-open marker, and an npl tag closes an earlier open of its own name. Same-name nesting elsewhere (nested sem-section) stays legal. This is the fix for Trinity markers being emitted unclosed.</p>
+<p>The parser applies implied end tags inside the NPL family — a friction marker opening closes the still-open marker, and an npl tag closes an earlier open of its own name — plus same-name implied end for the loose leaves sem-note, sem-step and sem-fact (back-to-back unclosed notes/steps/facts render as siblings, never one swallowed body). Same-name nesting for every other sem-* name (nested sem-section) stays legal. This is the fix for Trinity markers being emitted unclosed.</p>
 </sem-section>
 
 <sem-section>
@@ -90,22 +90,28 @@
 | Spec NPL family unknown | 16 spec npl-* tags warn-matched as unknown with a misc glyph | full 21-tag family mapped to glyphs and the block renderer |
 </sem-table>
 
+<h3>Fixed in v0.5.1</h3>
+<sem-table label="v0.5.1 fixes">
+| Defect | Was | Fix |
+| --- | --- | --- |
+| Unclosed sem-* elements still nest | an unclosed collapsed sem-note swallows following siblings into its body | same-name implied end for sem-note/sem-step/sem-fact: a new opening closes the still-open one, so back-to-back notes/steps/facts render as siblings; all other sem-* names keep same-name nesting (nested sem-section is real markup) |
+| Outline selected marker reuses ▸ | the compact outline marks the selected row with the collapse glyph | dedicated ❯ selection glyph in the leftmost column (GLYPHS.selected, selectedMark); ▸/▾ stay toggle/nav glyphs only |
+</sem-table>
+
 <h3>Open defects (documented, not fixed)</h3>
 <sem-table label="Open defects">
 | Defect | Impact | Why deferred |
 | --- | --- | --- |
-| Unclosed sem-* elements still nest | an unclosed collapsed sem-note swallows following siblings into its body | only the NPL family is semantically flat; same-name sem nesting is real markup, so a general rule would break nested sem-section |
 | wrapLines cuts mid-word | long prose splits anywhere inside the width | word-boundary wrap changes row counts everywhere; needs its own pass |
 | MAX_TEXT cut without marker | bodies over 4000 chars end silently | needs an ellipsis contract change |
 | Procedure steps = direct children only | sem-step nested in sub-groups missed | spec does not define step grouping yet |
 | v0.8 vocabulary without TUI render | sem-list, sem-break, sem-progress, sem-chronology, sem-threat-model, sem-rubric, sem-eval, sem-mockup, sem-philosophy, sem-browser, sem-site-tree, sem-file-tree, sem-data-*, sem-alternatives/variant, agent-kit-*, semext-* render generic head + text | interactive/JS chrome cannot be reproduced in a TUI by design; generic flow keeps text visible |
-| Outline selected marker reuses ▸ | the compact outline marks the selected row with the collapse glyph | cosmetic; needs a distinct selected glyph decision |
 | Gap capture inside open p containers dropped | prose between an unclosed p and a sem element is lost | rare in practice |
 | Emoji glyphs are double-width | 📌 🃏 👁 🗂 misalign box borders by one cell in most terminals | cosmetic; would need a width-aware glyph set or emoji-free outline glyphs |
 </sem-table>
 </sem-section>
 
-<sem-summary>This reference describes the pane exactly as of v0.5: three render roles, one registry entry per tag family, flat Trinity friction sections, children never silently dropped. When adding an element kind: one glyphOf mapping, one RENDERERS entry, and — if its children should stay visible — an expandedRoleOf decision. The defect ledger above is the backlog; fixed rows cite the v0.5 release.</sem-summary>
+<sem-summary>This reference describes the pane exactly as of v0.5.1: three render roles, one registry entry per tag family, flat Trinity friction sections, flat unclosed note/step/fact siblings, children never silently dropped. When adding an element kind: one glyphOf mapping, one RENDERERS entry, and — if its children should stay visible — an expandedRoleOf decision. The defect ledger above is the backlog; fixed rows cite the v0.5/v0.5.1 releases.</sem-summary>
 
 </sem-enhanced-document>
 </body>
