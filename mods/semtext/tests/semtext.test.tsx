@@ -1328,3 +1328,101 @@ test('fixture: collapse-all state shuts every card to its single header line', a
   expect(json.includes('│ note body')).toBe(false)
   expect(json.includes('│ block body')).toBe(false)
 })
+
+// --- v0.6.1 lists (amendment 8): bullets, ordered labels, tasks, dl, nested
+// items, procedure steps through sub-groups ---
+
+test('lists capture as blocks: bullets by depth, no double-draw of nested items', async () => {
+  const doc =
+    '<sem-section title="L">' +
+    '<ul><li>one<ul><li>inner a<ul><li>deepest</li></ul></li><li>inner b</li></ul></li><li>two</li></ul>' +
+    '</sem-section>'
+  const section = parseSemText(doc)!.roots[0]!
+  const blocks = section.blocks ?? []
+  const kinds = blocks.map(b => (b.kind === 'list-item' ? `${b.bullet} ${b.text}` : b.kind))
+  expect(kinds).toEqual([
+    '• one', '◦ inner a', '▪ deepest', '◦ inner b', '• two',
+  ])
+  const innerA = blocks[1] as { text: string; bullet: string }
+  expect(innerA.text).toBe('inner a')
+  expect(innerA.bullet).toBe('◦')
+  const deepest = blocks[2] as { bullet: string; text: string }
+  expect(deepest.bullet).toBe('▪')
+  expect(deepest.text).toBe('deepest')
+})
+
+test('ordered lists: start attr, type a/i labels, right-aligned hang', async () => {
+  const doc =
+    '<sem-section><ol start="3" type="a"><li>alpha</li><li>beta</li></ol>' +
+    '<ol type="i"><li>roman one</li></ol><ol start="9"><li>nine</li><li>ten</li></ol></sem-section>'
+  const section = parseSemText(doc)!.roots[0]!
+  const labels = (section.blocks ?? []).map(
+    b => (b.kind === 'list-item-ordered' ? b.label : (b as { kind: string }).kind),
+  )
+  expect(labels).toEqual(['c.', 'd.', 'i.', '9.', '10.'])
+  // Rendering right-aligns labels in a 3-char gutter with a hanging indent.
+  const rows = blockRows((section.blocks ?? [])[0]!, 24, 8)
+  expect(rows[0]!.text).toBe(' c. alpha')
+  const long = blockRows((section.blocks ?? [])[3]!, 24, 8)
+  expect(long[0]!.text).toBe(' 9. nine')
+  expect(long[1]).toBeUndefined()
+  // Wrap keeps continuation rows under the text column.
+  const wrapped = blockRows({ kind: 'list-item', text: 'aaa bbb ccc ddd', bullet: '•', depth: 0 }, 12, 8)
+  expect(wrapped[0]!.text).toBe('• aaa bbb')
+  expect(wrapped[1]!.text.startsWith('  ')).toBe(true)
+})
+
+test('task checkboxes: input type=checkbox and the task-list class both mark items', async () => {
+  const doc =
+    '<sem-section>' +
+    '<ul><li><input type="checkbox" checked>shipped thing</li>' +
+    '<li><input type="checkbox">open thing</li>' +
+    '<li class="task-list-item">class task</li></ul></sem-section>'
+  const blocks = parseSemText(doc)!.roots[0]!.blocks ?? []
+  expect(blocks.map(b => (b.kind === 'task-item' ? (b.done ? '☑' : '☐') : b.kind))).toEqual([
+    '☑', '☐', '☐',
+  ])
+  expect((blocks[0] as { text: string }).text).toBe('shipped thing')
+  const rows = blockRows(blocks[1]!, 24, 4)
+  expect(rows[0]!.text).toBe('☐ open thing')
+})
+
+test('dl: term draws bold, definition indented under it', async () => {
+  const doc = '<sem-section><dl><dt>Budget</dt><dd>What it costs and why.</dd></dl></sem-section>'
+  const blocks = parseSemText(doc)!.roots[0]!.blocks ?? []
+  expect(blocks.map(b => b.kind)).toEqual(['term', 'definition'])
+  const term = blockRows(blocks[0]!, 24, 4)
+  expect(term[0]!.text).toBe('Budget')
+  expect(term[0]!.bold).toBe(true)
+  const def = blockRows(blocks[1]!, 24, 4)
+  expect(def[0]!.text).toBe('  What it costs and why.')
+})
+
+test('procedure steps collect through nested sub-groups (was direct children only)', async () => {
+  const doc =
+    '<sem-procedure title="Ship"><sem-step>first</sem-step>' +
+    '<sem-group><sem-step>grouped</sem-step></sem-group>' +
+    '<sem-step>last</sem-step></sem-procedure>'
+  const tree = parseSemText(doc)!.roots
+  const json = drawJSON(tree)
+  expect(json).toContain('1 → first')
+  expect(json).toContain('2 → grouped')
+  expect(json).toContain('3 → last')
+})
+
+test('fixture: lists, dl and tasks draw inside the section frame (webpage-like)', async () => {
+  const doc =
+    '<sem-doc><sem-section title="Plan">' +
+    '<ul><li>outer<ul><li>inner</li></ul></li></ul>' +
+    '<ol start="2"><li>second</li></ol>' +
+    '<dl><dt>Scope</dt><dd>One screen, no chrome.</dd></dl>' +
+    '<ul><li class="task-list-item"><input type="checkbox" checked>landed</li></ul>' +
+    '</sem-doc></sem-section>'
+  const json = drawJSON(parseSemText(doc)!.roots)
+  expect(json).toContain('• outer')
+  expect(json).toContain('◦ inner')
+  expect(json).toContain('2. second')
+  expect(json).toContain('Scope')
+  expect(json).toContain('One screen, no chrome.')
+  expect(json).toContain('☑ landed')
+})

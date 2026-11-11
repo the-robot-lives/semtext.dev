@@ -1022,7 +1022,20 @@ export function headingBlock(
 
 export type StyledRow = { text: string; bold?: boolean; dim?: boolean }
 
-/** One captured block as style-tagged rows (headings bold + rule, quotes `▌` dim, prose plain). */
+/**
+ * Hang-indented list rows: the first row carries `marker` + the text, every
+ * continuation row aligns under the text column (the hang). Ordered labels
+ * are passed pre-padded so `1.`/`10.` align right in their gutter.
+ */
+function hangRows(marker: string, value: string, width: number, maxLines: number): StyledRow[] {
+  const gutter = cpLen(marker) + 1
+  const wrapped = wrapLines(sanitize(value), Math.max(4, width - gutter), maxLines)
+  return wrapped.map((row, i) => ({
+    text: i === 0 ? `${marker} ${row}` : `${' '.repeat(gutter)}${row}`,
+  }))
+}
+
+/** One captured block as style-tagged rows (headings bold + rule, quotes `▌` dim, prose plain, lists hanging). */
 export function blockRows(block: SemBlock, width: number, maxLines: number): StyledRow[] {
   if (block.kind === 'heading') {
     const head = headingBlock(block.text, width, block.level, maxLines)
@@ -1038,6 +1051,27 @@ export function blockRows(block: SemBlock, width: number, maxLines: number): Sty
     return wrapLines(sanitize(block.text), Math.max(4, width - 2), maxLines).map(text => ({
       text: `${GLYPHS.quote} ${text}`,
       dim: true,
+    }))
+  }
+  if (block.kind === 'list-item') {
+    return hangRows(block.bullet, block.text, width, maxLines)
+  }
+  if (block.kind === 'list-item-ordered') {
+    // Right-aligned number/letter label in a 3-char gutter.
+    return hangRows(block.label.padStart(3), block.text, width, maxLines)
+  }
+  if (block.kind === 'task-item') {
+    return hangRows(block.done ? '☑' : '☐', block.text, width, maxLines)
+  }
+  if (block.kind === 'term') {
+    return wrapLines(sanitize(block.text), Math.max(4, width), maxLines).map(text => ({
+      text,
+      bold: true,
+    }))
+  }
+  if (block.kind === 'definition') {
+    return wrapLines(sanitize(block.text), Math.max(4, width - 2), maxLines).map(text => ({
+      text: `  ${text}`,
     }))
   }
   return wrapLines(sanitize(block.text), Math.max(4, width), maxLines).map(text => ({ text }))
@@ -1466,12 +1500,22 @@ const sourceRenderer: ElementRenderer = (node, ctx) => {
   })
 }
 
+/** Depth-first sem-step collection (document order) — nested groups included. */
+function collectSteps(node: SemTextNode, out: SemTextNode[]): void {
+  for (const child of node.children) {
+    if (child.tag === 'sem-step') out.push(child)
+    collectSteps(child, out)
+  }
+}
+
 const procedureRenderer: ElementRenderer = (node, ctx) => {
   const room = roomOf(ctx)
   if (room <= 2) return genericRenderer(node, ctx)
-  // Steps: direct sem-step children, else the flattened text as one step.
-  // One line per step (truncated), so the drawn count is exact.
-  const steps = node.children.filter(child => child.tag === 'sem-step')
+  // Steps: any sem-step descendant (nested sub-groups included since v0.6.1),
+  // else the flattened text as one step. One line per step (truncated), so
+  // the drawn count is exact.
+  const steps: SemTextNode[] = []
+  collectSteps(node, steps)
   const stepTexts =
     steps.length > 0
       ? steps.map(step => collapseWhitespace(sanitize(step.text ?? '')))

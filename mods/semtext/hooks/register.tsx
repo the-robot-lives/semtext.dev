@@ -281,7 +281,75 @@ type ParseNode = SemTextNode & {
   inheritedSeed?: number | null
 }
 
-type TextContainer = { name: string; start: number }
+type TextContainer = {
+  name: string
+  start: number
+  /** Tag attributes (ol start/type matter for the ordered labels). */
+  attrs?: Record<string, string>
+  /** Absolute spans of inner containers already captured — subtracted from
+   *  this container's own capture so nested lists never double-draw. */
+  consumed?: Array<[number, number]>
+  /** li items emitted so far by this ol (the ordered index base). */
+  count?: number
+  /** li carries a checkbox task state (from an input type=checkbox inside). */
+  task?: boolean
+  done?: boolean
+  /** This container's own blocks (document-order pre-merge). */
+  own?: SemBlock[]
+  /** Merged blocks of inner containers, in pre-order. */
+  kids?: SemBlock[]
+}
+
+const LIST_CONTAINERS = new Set(['ul', 'ol', 'dl'])
+const ITEM_CONTAINERS = new Set(['li', 'dt', 'dd'])
+
+function roman(n: number, upper: boolean): string {
+  const table: Array<[number, string]> = [
+    [1000, 'm'], [900, 'cm'], [500, 'd'], [400, 'cd'], [100, 'c'], [90, 'xc'],
+    [50, 'l'], [40, 'xl'], [10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i'],
+  ]
+  let out = ''
+  for (const [value, sym] of table) {
+    while (n >= value) {
+      out += sym
+      n -= value
+    }
+  }
+  return upper ? out.toUpperCase() : out
+}
+
+/** `1.`-style display label per the ol's type attr (1/a/A/i/I), index 1-based. */
+function orderedLabel(type: string, index: number): string {
+  if (type === 'a') return `${String.fromCharCode(97 + ((index - 1) % 26))}.`
+  if (type === 'A') return `${String.fromCharCode(65 + ((index - 1) % 26))}.`
+  if (type === 'i') return `${roman(Math.max(1, index), false)}.`
+  if (type === 'I') return `${roman(Math.max(1, index), true)}.`
+  return `${index}.`
+}
+
+/** Removes already-captured inner spans (absolute coords, `base` = slice start). */
+function subtractSpans(
+  slice: string,
+  spans: ReadonlyArray<[number, number]>,
+  base: number,
+): string {
+  if (spans.length === 0) return slice
+  const rel = spans
+    .map(
+      ([from, to]) =>
+        [Math.max(0, from - base), Math.min(slice.length, to - base)] as [number, number],
+    )
+    .filter(([from, to]) => to > from)
+    .sort((a, b) => a[0] - b[0])
+  let out = ''
+  let cursor = 0
+  for (const [from, to] of rel) {
+    if (from < cursor) continue
+    out += slice.slice(cursor, from) + ' '
+    cursor = Math.max(cursor, to)
+  }
+  return out + slice.slice(cursor)
+}
 
 function parseSeedAttr(value: string | undefined): number | null {
   if (value === undefined) return null
@@ -461,21 +529,96 @@ export function parseSemText(text: string): ParsedSemText | null {
       (top.raw ?? '') +
       sanitize(text.slice(from, to)).replace(/\\([<>"']|$)/g, '$1')
   }
-  const captureContainer = (container: TextContainer, to: number): void => {
+  const captureContainer = (container: TextContainer, at: number, to: number): void => {
+    // Record spans of every implicitly-closed inner container (and this one)
+    // into their parents, so a parent's own capture never re-draws inner text
+    // (nested lists/paragraphs inside an li emit their own blocks).
+    for (let j = containers.length - 1; j >= at; j--) {
+      const span: [number, number] = [containers[j]!.start, to]
+      if (j > 0) {
+        const parent = containers[j - 1]!
+        parent.consumed ??= []
+        parent.consumed.push(span)
+      }
+    }
+    // Pre-order block merge: inner containers close first, so each container
+    // collects its own block + its children's merged blocks and hands the
+    // result up on close — the final order is parent-then-children in
+    // document order, never inside-out.
+    const close = (): void => {
+      const merged = [...(container.own ?? []), ...(container.kids ?? [])]
+      if (merged.length === 0) return
+      if (at > 0) {
+        const parent = containers[at - 1]!
+        parent.kids = [...(parent.kids ?? []), ...merged]
+        return
+      }
+      const top = stack[stack.length - 1]
+      if (top === undefined) return
+      const blocks: SemBlock[] = (top.blocks ??= [])
+      for (const block of merged) {
+        if (blocks.length >= MAX_BLOCKS) return
+        blocks.push(block)
+      }
+    }
     const top = stack[stack.length - 1]
     if (top === undefined) return
-    const inner = text
-      .slice(container.start, to)
+    if (container.name === 'ul' || container.name === 'ol' || container.name === 'dl') {
+      close()
+      return
+    }
+    const inner = subtractSpans(
+      text.slice(container.start, to),
+      container.consumed ?? [],
+      container.start,
+    )
       .replace(COMMENT_BLOCK, ' ')
       .replace(TAG_LIKE, ' ')
     const clean = collapseWhitespace(sanitize(inner))
-    if (clean === '') return
-    const blocks: SemBlock[] = (top.blocks ??= [])
-    if (blocks.length >= MAX_BLOCKS) return
     const heading = HEADING_NAME.exec(container.name)
-    if (heading !== null) blocks.push({ kind: 'heading', level: Number(heading[1]), text: clean })
-    else if (container.name === 'blockquote') blocks.push({ kind: 'quote', text: clean })
-    else blocks.push({ kind: 'text', text: clean })
+    if (clean !== '') {
+      const own: SemBlock[] = (container.own ??= [])
+      if (heading !== null) own.push({ kind: 'heading', level: Number(heading[1]), text: clean })
+      else if (container.name === 'blockquote') own.push({ kind: 'quote', text: clean })
+      else if (container.name === 'li') {
+        // List item: bullet/number/task from the enclosing structure (v0.6.1).
+        let lists = 0
+        for (let s = 0; s < at; s++) {
+          const n = containers[s]!.name
+          if (n === 'ul' || n === 'ol') lists++
+        }
+        const parent = at > 0 ? containers[at - 1]! : undefined
+        const parentIsList = parent !== undefined && (parent.name === 'ul' || parent.name === 'ol')
+        const depth = Math.max(0, parentIsList ? lists - 1 : lists)
+        const authoredTask =
+          container.task === true ||
+          /task/.test(container.attrs?.['class'] ?? '') ||
+          container.attrs?.['data-task'] !== undefined
+        if (authoredTask) {
+          own.push({ kind: 'task-item', text: clean, done: container.done === true, depth })
+        } else if (parentIsList && parent.name === 'ol') {
+          parent.count = (parent.count ?? 0) + 1
+          const start = parseSeedAttr(parent.attrs?.['start']) ?? 1
+          const type = parent.attrs?.['type'] ?? '1'
+          own.push({
+            kind: 'list-item-ordered',
+            text: clean,
+            label: orderedLabel(type, Math.max(1, start) + parent.count - 1),
+            depth,
+          })
+        } else {
+          own.push({
+            kind: 'list-item',
+            text: clean,
+            bullet: depth === 0 ? '•' : depth === 1 ? '◦' : '▪',
+            depth,
+          })
+        }
+      } else if (container.name === 'dt') own.push({ kind: 'term', text: clean })
+      else if (container.name === 'dd') own.push({ kind: 'definition', text: clean })
+      else own.push({ kind: 'text', text: clean })
+    }
+    close()
   }
 
   while (i < text.length) {
@@ -531,14 +674,34 @@ export function parseSemText(text: string): ParsedSemText | null {
           }
         }
         if (at >= 0) {
-          captureContainer(containers[at]!, i)
+          captureContainer(containers[at]!, at, i)
           containers.length = at
         }
       } else if (
         !selfClosing &&
-        (name === 'p' || name === 'blockquote' || HEADING_NAME.test(name))
+        (name === 'p' ||
+          name === 'blockquote' ||
+          HEADING_NAME.test(name) ||
+          LIST_CONTAINERS.has(name) ||
+          ITEM_CONTAINERS.has(name))
       ) {
-        containers.push({ name, start: end })
+        containers.push(
+          name === 'ol' || name === 'li'
+            ? { name, start: end, attrs: parseAttrs(attrSrcOf(src)) }
+            : { name, start: end },
+        )
+      } else if (!closing && name === 'input') {
+        // Task-list checkbox: mark the nearest enclosing li as a task item.
+        const attrs = parseAttrs(attrSrcOf(src))
+        if ((attrs['type'] ?? '').toLowerCase() === 'checkbox') {
+          for (let s = containers.length - 1; s >= 0; s--) {
+            if (containers[s]!.name === 'li') {
+              containers[s]!.task = true
+              containers[s]!.done = attrs['checked'] !== undefined
+              break
+            }
+          }
+        }
       } else if (name === 'br' && !closing) {
         // `<br>` variants are hard row breaks in boxed prose — record a line
         // break in the raw capture so finalizeNode's per-line collapse keeps

@@ -2,12 +2,12 @@
 <html lang="en" data-sem-theme="minimal-tech-light">
 <head>
 <meta charset="utf-8">
-<title>SemText mod render reference — v0.6.0 vocabulary audit</title>
+<title>SemText mod render reference — v0.6.1 vocabulary audit</title>
 </head>
 <body>
 <sem-enhanced-document>
 
-<sem-tldr>*Every tag the semtext pane knows, how each one parses, glyphs, and renders across the view modes, plus the defect ledger.* Reference for the Claude Code pane at mods/semtext (v0.6.0). Screens live in tui-screens.html; design rationale in tui-design.html.</sem-tldr>
+<sem-tldr>*Every tag the semtext pane knows, how each one parses, glyphs, and renders across the view modes, plus the defect ledger.* Reference for the Claude Code pane at mods/semtext (v0.6.1). Screens live in tui-screens.html; design rationale in tui-design.html.</sem-tldr>
 
 <sem-section>
 <h2>1 How the pane reads a document</h2>
@@ -34,6 +34,7 @@
 | sem-procedure sem-howto sem-runbook sem-workflow sem-plan sem-tsg sem-tsgs | 🧭 | framed numbered steps (→), title badge; overflow (+N steps) | always drawn | consumed (direct sem-step) |
 | sem-step | → | one text row per step | always drawn | leaf only |
 | sem-fact | ❍ | one text row | always drawn | leaf only |
+| HTML lists (ul/ol/li/dl/dt/dd) | (structure) | list blocks inside the containing card: •/◦/▪ bullets by depth, ordered 1./a./i. labels (start/type attrs, right-aligned 3-char gutter), ☐/☑ tasks, bold dl terms + indented defs; rows hang-indent | always drawn | captured as list blocks (v0.6.1) |
 | sem-source sem-reader sem-kb sem-data-source sem-reference sem-references sem-api-call | ◫ / 📖 | framed body, badge = glyph + tag name | always drawn | consumed (flattened body) |
 | sem-section sem-summary sem-tldr sem-conclusion | § | card — title in the frame header (bold), blocks and children as nested frames inside | open | consumed (drawn inside the frame) |
 | npl-mindread npl-thought npl-block npl-ref npl-hormones npl-intent npl-agent npl-directive npl-section npl-rubric npl-critique npl-declaration npl-example npl-flag npl-flags npl-mode npl-mood npl-poa npl-vos npl-artifact npl-cot | per-tag (◆ ◇ ▣ ↗ ≈ → Ⓐ ➤ ☰ ◈ ⚑ ❝ ✦ ⚐ ▧ ⋇ ➤ ◍ ⬢ ⋯) | card — framed body of own text; attrs shown in header (first 3) | open unless collapsed attr | consumed (drawn inside the frame) |
@@ -117,19 +118,28 @@
 | Headings never drawn | h1–h6 inside sem elements had no presentation (blocks captured but rows absent in card view) | heading rules: h1 ══ and h2 ── full width, h3 ┄ under the text, h4–h6 bold (h5/h6 dim), blank row above, section titles in the frame header |
 </sem-table>
 
+<h3>Fixed in v0.6.1</h3>
+<sem-table label="v0.6.1 fixes">
+| Defect | Was | Fix |
+| --- | --- | --- |
+| Lists rendered as loose text | ul/ol/li/dl markup was skipped by the parser; items appeared as flat collapsed prose with no bullets, numbers, checkboxes or indentation | captured as structured list blocks: bullets •/◦/▪ by depth, ordered labels from start/type (1./a./i., right-aligned gutter), ☐/☑ task items (checkbox input or task-list class), bold dl terms + indented definitions, hanging continuation rows |
+| Nested list items double-drew | an li containing a nested list re-captured the inner items' text in its own body | inner spans are subtracted from the parent capture; blocks merge in document pre-order (parent item, then its nested items) |
+| Procedure steps = direct children only | sem-step nested in sub-groups missed | steps collect from all descendants (document order) |
+| sem-list drew generic only | the sem-list element's inner lists had no structure | its HTML lists capture as blocks and draw as real lists inside the generic card |
+</sem-table>
+
 <h3>Open defects (documented, not fixed)</h3>
 <sem-table label="Open defects">
 | Defect | Impact | Why deferred |
 | --- | --- | --- |
-| Procedure steps = direct children only | sem-step nested in sub-groups missed | spec does not define step grouping yet |
-| v0.8 vocabulary without TUI render | sem-list, sem-break, sem-progress, sem-chronology, sem-threat-model, sem-rubric, sem-eval, sem-mockup, sem-philosophy, sem-browser, sem-site-tree, sem-file-tree, sem-data-*, sem-alternatives/variant, agent-kit-*, semext-* render generic head + text | interactive/JS chrome cannot be reproduced in a TUI by design; generic flow keeps text visible |
+| v0.8 vocabulary without TUI render | sem-break, sem-progress, sem-chronology, sem-threat-model, sem-rubric, sem-eval, sem-mockup, sem-philosophy, sem-browser, sem-site-tree, sem-file-tree, sem-data-*, sem-alternatives/variant, agent-kit-*, semext-* render generic head + text | interactive/JS chrome cannot be reproduced in a TUI by design; generic flow keeps text visible |
 | Markdown fences and `##` headings are not parsed | a top-level ``` fence or markdown heading outside any element is dropped (inside an open element it lands in the body text) | parser-level feature, pre-v0.6; docs are sem-* HTML by spec |
 | Gap capture inside open p containers dropped | prose between an unclosed p and a sem element is lost | rare in practice |
 | Emoji glyphs are double-width | 📌 🃏 👁 🗂 misalign box borders by one cell in most terminals | cosmetic; would need a width-aware glyph set or emoji-free outline glyphs |
 </sem-table>
 </sem-section>
 
-<sem-summary>This reference describes the pane exactly as of v0.6.0: two render roles, framed cards for every element kind nested inside their parents (the header row is the toggle), flat Trinity friction sections, flat unclosed note/step/fact siblings, word-boundary prose wrap with real line breaks, counted cuts at capture and at the budget. When adding an element kind: one glyphOf mapping, one RENDERERS entry, and an expandedRoleOf decision (flow plans children below, card draws them inside the frame). The defect ledger above is the backlog; fixed rows cite the v0.5–v0.6 releases.</sem-summary>
+<sem-summary>This reference describes the pane exactly as of v0.6.1: two render roles, framed cards for every element kind nested inside their parents (the header row is the toggle), flat Trinity friction sections, flat unclosed note/step/fact siblings, word-boundary prose wrap with real line breaks, counted cuts at capture and at the budget. When adding an element kind: one glyphOf mapping, one RENDERERS entry, and an expandedRoleOf decision (flow plans children below, card draws them inside the frame). The defect ledger above is the backlog; fixed rows cite the v0.5–v0.6.1 releases.</sem-summary>
 
 </sem-enhanced-document>
 </body>
