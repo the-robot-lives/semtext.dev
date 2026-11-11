@@ -14,4 +14,4 @@ Build a one-page static website for **semtext.dev**.
 3. Visual style: modern robot/AI-flavored, clean, responsive (mobile-first), system font stack.
 4. Branding: this site is part of The Robot Lives portfolio.
 5. Links: header AND footer link to `https://therobotlives.com` (anchor text exactly "The Robot Lives"); footer adds "Part of The Robot Lives portfolio".
-6. Commit the finished site on `develop` (PRs target `develop`; `main` is CI/CD-only — never push `main` by hand).
+6. Commit the finished site on `develop` (PRs target `develop`; `main` is release-triggered — merging to `main` kicks off CI/CD (build → bump-chart → ArgoCD sync); promotions land via stage→main PRs).

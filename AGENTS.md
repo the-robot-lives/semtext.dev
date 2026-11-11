@@ -5,7 +5,7 @@ Static Next.js landing page (`web/`, `output: 'export'`). No backend.
 ## Branch policy
 
 - Default branch: `develop`. Every PR targets `develop`.
-- `main` is CI/CD-only: automation performs all merges into `main`. Never merge to or push `main` by hand.
+- `main` is release-triggered: a merge into `main` triggers CI/CD (image build → `bump-chart` → ArgoCD sync). Promotions land via `stage` → `main` PRs per the monorepo merge matrix.
 - All work happens on worktrees; never work directly on a shared checkout of `develop`.
 
 ## Deploy

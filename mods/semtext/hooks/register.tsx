@@ -8,7 +8,9 @@ import {
   backToOutline,
   breadcrumbOf,
   buildQuizOptions,
+  cardKeys,
   collapseWhitespace,
+  expandedPlan,
   factLine,
   firstWords,
   flipCard,
@@ -20,7 +22,9 @@ import {
   promptFor,
   sanitize,
   setActiveView,
+  setAllExpanded,
   setExpanded,
+  setOutlineMode,
   startQuiz,
   truncateCell,
   truncateSummary,
@@ -784,7 +788,8 @@ export const register: Register = on => {
     return next({ ...e, props: { ...e.props, output: annotated } })
   })
 
-  // The pane: outline / section / quiz runner, one mode at a time.
+  // The pane: expanded document view (default), compact outline, section
+  // focus and the quiz runner — one mode at a time.
   on('ui.render', { component: 'Pane', requestId: PANE_ID }, async ($, e) => {
     const { Box, Text, Button } = $.ui.resolve(e)
     const doc = await read($, DOC)
@@ -801,6 +806,8 @@ export const register: Register = on => {
     const width = Math.max(20, e.props.bodyColumns ?? e.viewport?.columns ?? FALLBACK_COLUMNS)
     const room = Math.max(6, (e.viewport?.rows ?? 24) - 3)
     const rows = outlineTree(doc.tree)
+    const cards = cardKeys(doc.tree)
+    const anyShut = cards.some(key => viewer.expanded[key] === false)
     const ctx: RenderCtx = {
       el: { Box, Text, Button },
       viewer,
@@ -814,9 +821,42 @@ export const register: Register = on => {
       },
     }
 
+    // The overview toggle: compact outline <-> expanded view, plus
+    // expand-all / collapse-all over the card keys. Shown on both overviews.
+    const viewToggleRow = (): RenderElement => (
+      <Box flexDirection="row" gap={1}>
+        <Button
+          key="view:mode"
+          plain
+          dimColor
+          onPress={() => {
+            void update($, VIEWER, v =>
+              setOutlineMode(v, v.mode === 'expanded' ? 'outline' : 'expanded'),
+            )
+          }}
+        >
+          {viewer.mode === 'expanded'
+            ? `${GLYPHS.toggle.open} compact outline`
+            : `${GLYPHS.toggle.shut} expanded view`}
+        </Button>
+        <Button
+          key="view:cards"
+          plain
+          dimColor
+          onPress={() => {
+            void update($, VIEWER, v => setAllExpanded(v, cards, anyShut))
+          }}
+        >
+          {anyShut
+            ? `${GLYPHS.toggle.shut} expand all`
+            : `${GLYPHS.toggle.open} collapse all`}
+        </Button>
+      </Box>
+    )
+
     const outlineView = (): RenderElement => {
       const unknown = doc.unknownElements
-      const body = rows.slice(0, Math.max(1, room - 3))
+      const body = rows.slice(0, Math.max(1, room - 4))
       const selected = viewer.focusedSection ?? body[0]?.key
       return (
         <Box flexDirection="column">
@@ -833,6 +873,7 @@ export const register: Register = on => {
               {`${GLYPHS.cross} ${unknown.length} unknown: ${unknown.slice(0, 4).join(', ')}`}
             </Text>
           )}
+          {viewToggleRow()}
           {body.map(row => (
             <Button
               key={`sec:${row.key}`}
@@ -849,6 +890,88 @@ export const register: Register = on => {
           {rows.length > body.length && (
             <Text dimColor>{`${GLYPHS.more} (+${rows.length - body.length})`}</Text>
           )}
+        </Box>
+      )
+    }
+
+    // The expanded document view (default): the whole outline tree top-to-
+    // bottom, every row followed by its content inline — section prose and
+    // unknown-tag text as dim text rows, cards through their renderers
+    // (default-open). Rows stay clickable to focus; the row budget applies.
+    const expandedView = (): RenderElement => {
+      const unknown = doc.unknownElements
+      const units = expandedPlan(doc.tree)
+      const budget = Math.max(1, room - 4) // source + stats + unknown? + toggle
+      const ectx: RenderCtx = { ...ctx, budget, spent: { rows: 0 } }
+      const parts: RenderElement[] = []
+      let hidden = 0
+      for (const unit of units) {
+        const left = budget - ectx.spent.rows
+        if (left <= 0) {
+          hidden++
+          continue
+        }
+        if (unit.role === 'row') {
+          parts.push(
+            <Button
+              key={`sec:${unit.key}`}
+              plain
+              dimColor={unit.row.depth > 0}
+              onPress={() => {
+                void update($, VIEWER, v => focusSection(v, unit.key))
+              }}
+            >
+              {`${unit.row.prefix}${unit.row.glyph} ${unit.row.label}`}
+              {unit.row.count > 0 && <Text dimColor>{` (${unit.row.count})`}</Text>}
+            </Button>,
+          )
+          ectx.spent.rows += 1
+        } else if (unit.role === 'text') {
+          if (unit.block !== undefined) {
+            ectx.spent.rows += pushBlock(parts, unit.block, left, unit.indent)
+          } else {
+            const lines = wrapLines(
+              sanitize(unit.text),
+              Math.max(8, width - unit.indent.length - 2),
+              left,
+            )
+            ectx.spent.rows += lines.length
+            lines.forEach((line, i) => {
+              parts.push(
+                <Text key={`t:${unit.key}.${i}`} dimColor>
+                  {`${unit.indent}${line}`}
+                </Text>,
+              )
+            })
+          }
+        } else {
+          const render = RENDERERS[unit.node.tag] ?? RENDERERS['*']!
+          const sub: RenderCtx = { ...ectx, wkey: unit.key, showBody: false }
+          const drawn = render(unit.node, sub)
+          parts.push(
+            <Box key={`w:${unit.key}`} flexDirection="column">
+              {drawn}
+            </Box>,
+          )
+        }
+      }
+      return (
+        <Box flexDirection="column">
+          <Text>{`${GLYPHS.kind.source} ${sanitize(doc.fileName ?? doc.source)}`}</Text>
+          <Text dimColor>
+            {unknown.length === 0
+              ? `${GLYPHS.kind.section} ${doc.elementCount} elements · ${GLYPHS.check} all elements known`
+              : `${GLYPHS.kind.section} ${doc.elementCount} elements`}
+          </Text>
+          {unknown.length > 0 && (
+            <Text color="warning">
+              {`${GLYPHS.cross} ${unknown.length} unknown: ${unknown.slice(0, 4).join(', ')}`}
+            </Text>
+          )}
+          {viewToggleRow()}
+          {parts.length === 0 && <Text dimColor>(empty document)</Text>}
+          {parts}
+          {hidden > 0 && <Text dimColor>{`${GLYPHS.more} (+${hidden} rows hidden)`}</Text>}
         </Box>
       )
     }
@@ -897,17 +1020,27 @@ export const register: Register = on => {
     )
 
     // Blocks: headings (`##` dim marker), blockquotes (`▌`), paragraphs plain.
-    // Returns the number of rows actually drawn.
-    const pushBlock = (parts: RenderElement[], block: SemBlock, budget: number): number => {
+    // `indent` shifts every drawn line right (the expanded view nests content
+    // under its tree branch). Returns the number of rows actually drawn.
+    const pushBlock = (
+      parts: RenderElement[],
+      block: SemBlock,
+      budget: number,
+      indent = '',
+    ): number => {
       if (budget <= 0) return 0
       const cellWidth = Math.max(8, width - 2)
       const draw = (marker: string, text: string, dim: boolean, weight?: 'semibold'): number => {
-        const lines = wrapLines(sanitize(text), Math.max(4, cellWidth - marker.length), budget)
+        const lines = wrapLines(
+          sanitize(text),
+          Math.max(4, cellWidth - marker.length - indent.length),
+          budget,
+        )
         lines.forEach((line, i) => {
           parts.push(
             i === 0 && marker !== '' ? (
               <Text key={`b${parts.length}-${i}`} dimColor={dim} weight={weight}>
-                <Text dimColor>{marker}</Text>
+                <Text dimColor>{`${indent}${marker}`}</Text>
                 {line}
               </Text>
             ) : (
@@ -916,7 +1049,9 @@ export const register: Register = on => {
                 dimColor={dim}
                 weight={i === 0 ? weight : undefined}
               >
-                {marker !== '' && i > 0 ? `${' '.repeat(marker.length)}${line}` : line}
+                {i > 0
+                  ? `${indent}${marker !== '' ? `${' '.repeat(marker.length)}` : ''}${line}`
+                  : `${indent}${marker}${line}`}
               </Text>
             ),
           )
@@ -936,7 +1071,9 @@ export const register: Register = on => {
     const sectionView = (): RenderElement => {
       const key = viewer.focusedSection ?? ''
       const node = nodeAt(doc.tree, key)
-      if (node === undefined) return outlineView()
+      if (node === undefined) {
+        return viewer.outlineMode === 'outline' ? outlineView() : expandedView()
+      }
       let used = 1 // the breadcrumb row
       const budget = Math.max(1, room - 2)
       const parts: RenderElement[] = []
@@ -1007,7 +1144,9 @@ export const register: Register = on => {
       const setNode =
         viewer.activeFactSet === null ? undefined : nodeAt(doc.tree, viewer.activeFactSet)
       const content = setNode?.content
-      if (content === undefined || content.kind !== 'facts') return outlineView()
+      if (content === undefined || content.kind !== 'facts') {
+        return viewer.outlineMode === 'outline' ? outlineView() : expandedView()
+      }
       const items = content.items
       const n = items.length
       const isQuiz = viewer.factSetKind === 'quiz'
@@ -1168,7 +1307,8 @@ export const register: Register = on => {
 
     if (viewer.mode === 'section') return sectionView()
     if (viewer.mode === 'quiz') return quizView()
-    return outlineView()
+    if (viewer.mode === 'outline') return outlineView()
+    return expandedView()
   })
 
   // The band above the prompt while a document is active.
