@@ -173,6 +173,12 @@ jobs:
       # hologram's JS assets under ITS deps dir — point it at ours.
       - name: Link tobor-kit deps
         run: ln -sfn "$PWD/deps" "$TOBOR_KIT_HOLOGRAM_PATH/deps"
+      # claude_examples_test shells out to bin/semtext-validate.mjs, which
+      # imports happy-dom from the ROOT package.json. Hologram's own npm
+      # install only happens later, at test boot, so the validator has no
+      # node_modules to import from until we install the root deps here.
+      - name: Install root npm deps (semtext-validate)
+        run: npm ci
       - id: compile
         run: mix compile
       # Alias: ecto.create → liquibase.update → ecto.migrate → test. --cover
