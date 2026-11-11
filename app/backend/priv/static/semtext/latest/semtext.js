@@ -186,8 +186,10 @@ export async function retry<T>(fn: () => Promise<T>, n: number, backoffMs = 250)
  *                   wraps into <pre><code>; plain single-line text is the
  *                   inline form (CSS chip, no restructure)
  *   lists           sem-list markdown lines -> real <ul>/<ol>/<li>
- *                   (2-space indent = one nesting level)
- *   mdTables        sem-table pipe-table text -> real <table> (form B);
+ *                   (2-space indent = one nesting level); item text
+ *                   carries inline sugar (appendInline): `code`, **bold**
+ *   mdTables        sem-table pipe-table text -> real <table> (form B),
+ *                   cell text through the same appendInline sugar;
  *                   an already-upgraded element is cloned and reconnected
  *                   so the Lit enhance re-runs over real rows
  *   highlightMirror <sem-highlight> gains the .sem-highlight class so the
@@ -260,6 +262,72 @@ export async function retry<T>(fn: () => Promise<T>, n: number, backoffMs = 250)
     });
   }
 
+  /* Inline sugar shared by sem-list items and sem-table (form B) cells:
+     `code` -> <code>, **bold** -> <strong>; everything else is literal
+     text. Code-span rule matches sem-md (src/md/parse.ts): the closing
+     backtick run must be exactly as long as the opening one, and a
+     one-space pad inside the span is stripped. Strong content must be
+     non-empty and free of edge spaces (same flanking rule). Nodes are
+     built as DOM — never innerHTML — so literal `<` stays a character.
+     Single `*text*` emphasis is left to the emphasis() pass, which
+     already skips <code>. Unclosed markers stay literal. */
+  function appendInline(el, text) {
+    var i = 0;
+    var plainStart = 0;
+    function flush(end) {
+      if (end > plainStart) el.appendChild(document.createTextNode(text.slice(plainStart, end)));
+    }
+    while (i < text.length) {
+      var c = text.charAt(i);
+      if (c === '`') {
+        var run = 0;
+        while (text.charAt(i + run) === '`') run++;
+        var j = i + run;
+        var closer = -1;
+        while (j < text.length) {
+          if (text.charAt(j) === '`') {
+            var k = 0;
+            while (text.charAt(j + k) === '`') k++;
+            if (k === run) { closer = j; break; }
+            j += k;
+          } else {
+            j++;
+          }
+        }
+        if (closer !== -1) {
+          flush(i);
+          var codeText = text.slice(i + run, closer);
+          if (codeText.length > 2 && codeText.charAt(0) === ' ' &&
+            codeText.charAt(codeText.length - 1) === ' ') codeText = codeText.slice(1, -1);
+          var code = document.createElement('code');
+          code.textContent = codeText;
+          el.appendChild(code);
+          i = closer + run;
+          plainStart = i;
+          continue;
+        }
+        i += run; /* unclosed backtick run: literal */
+        continue;
+      }
+      if (c === '*' && text.charAt(i + 1) === '*') {
+        var end = text.indexOf('**', i + 2);
+        if (end > i + 2 && !/^\s|\s$/.test(text.slice(i + 2, end))) {
+          flush(i);
+          var strong = document.createElement('strong');
+          appendInline(strong, text.slice(i + 2, end));
+          el.appendChild(strong);
+          i = end + 2;
+          plainStart = i;
+          continue;
+        }
+        i += 2; /* unclosed / empty / edge-spaced: literal */
+        continue;
+      }
+      i++;
+    }
+    flush(text.length);
+  }
+
   /* --- sem-list: markdown-style lines -> real list --- */
 
   function parseListLines(text) {
@@ -297,7 +365,7 @@ export async function retry<T>(fn: () => Promise<T>, n: number, backoffMs = 250)
         continue;
       }
       var li = document.createElement('li');
-      li.textContent = items[i].text;
+      appendInline(li, items[i].text);
       list.appendChild(li);
       i++;
     }
@@ -361,7 +429,7 @@ export async function retry<T>(fn: () => Promise<T>, n: number, backoffMs = 250)
     parsed.rows[0].forEach(function (cell, idx) {
       var th = document.createElement('th');
       th.setAttribute('scope', 'col');
-      th.textContent = cell;
+      appendInline(th, cell);
       if (parsed.align && parsed.align[idx]) th.style.textAlign = parsed.align[idx];
       headRow.appendChild(th);
     });
@@ -372,7 +440,7 @@ export async function retry<T>(fn: () => Promise<T>, n: number, backoffMs = 250)
       var tr = document.createElement('tr');
       parsed.rows[i].forEach(function (cell, idx) {
         var td = document.createElement('td');
-        td.textContent = cell;
+        appendInline(td, cell);
         if (parsed.align && parsed.align[idx]) td.style.textAlign = parsed.align[idx];
         tr.appendChild(td);
       });
