@@ -436,6 +436,38 @@ if (!dry) {
   execFileSync(process.execPath, [MAP_SCRIPT], { stdio: 'inherit' });
 }
 
+// ----------------------------- mirror into the live Hologram app + parity --
+// The deployed app serves app/backend/priv/static/semtext (the Next web/ tree
+// is legacy). One sync writes BOTH and proves they match — the old manual
+// rsync let the two drift (0.9.4 vs 0.9.5). Parity is asserted alias→app for
+// every file; a mismatch fails the sync loudly.
+const appSemtext = resolve(webRoot, '..', 'app', 'backend', 'priv', 'static', 'semtext');
+if (existsSync(resolve(webRoot, '..', 'app', 'backend'))) {
+  plan.push('mirror app/backend/priv/static/semtext (live app) from the web tree');
+  if (!dry) {
+    cpSync(pub, appSemtext, { recursive: true, force: true });
+    const walk = (dir, base = dir) =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const p = join(dir, e.name);
+        return e.isDirectory() ? walk(p, base) : [relative(base, p)];
+      });
+    const mismatches = [];
+    for (const rel of walk(pub)) {
+      const a = join(pub, rel);
+      const b = join(appSemtext, rel);
+      if (!existsSync(b) || sha256(a) !== sha256(b)) mismatches.push(rel);
+    }
+    if (mismatches.length > 0) {
+      throw new Error(
+        `app-backend parity FAILED for ${mismatches.length} file(s): ${mismatches.slice(0, 5).join(', ')}`,
+      );
+    }
+    plan.push('parity ok — app/backend/priv/static/semtext matches the web tree');
+  }
+} else {
+  plan.push('skip   app/backend mirror (no app/backend in this checkout)');
+}
+
 console.log(
   `sync-bundles: version ${version} (stable ${index.stable ?? '—'}, latest ${index.latest ?? '—'}) ${dry ? 'DRY RUN — nothing written\n' : ''}${plan.join('\n')}`,
 );

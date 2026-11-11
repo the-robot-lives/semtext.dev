@@ -1,9 +1,15 @@
 # semtext.dev
 
-SemText — consolidated product repo. One nginx image: Next.js landing
-(`landing/`, `output: 'export'`) at `/` and the SemText showcase
-(`site/`, `demo/`, `spec/` built from the format code at the root) under
-`/site/`, `/demo/`, `/spec/`. No backend.
+SemText — consolidated product repo. The deployed site is the **Elixir
+Phoenix + Hologram** app under `app/backend` (landing, `/showcase/*`,
+`/reference`, `/demo`, `/spec`), served by the `app/helm/semtext` chart.
+The SemText format/runtime source lives in the `npl-enhanced-content/`
+subtree; built bundles are vendored into `app/backend/priv/static/semtext/`
+(the live tree) and `web/public/semtext/` (legacy). `web/` is the old
+Next.js site (`landing/` + `site/`), kept for now but not the deployed
+stack — retirement is an open owner decision. `mods/semtext` is a Claude
+Code mod. Sync bundles with `web/scripts/sync-bundles.mjs --from <dist>`
+(writes both vendored trees and asserts parity).
 
 ## Branch policy
 
