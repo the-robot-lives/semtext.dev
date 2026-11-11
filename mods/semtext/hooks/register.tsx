@@ -7,8 +7,10 @@ import {
   RENDERERS,
   backToOutline,
   breadcrumbOf,
+  blockRows,
   buildQuizOptions,
   cardKeys,
+  collapseLines,
   collapseWhitespace,
   expandedPlan,
   factLine,
@@ -337,7 +339,10 @@ function contentFor(
       return { kind: 'reveal', summary, body: full, collapsed: node.attrs['collapsed'] !== undefined }
     }
     case 'sem-note': {
-      if (node.attrs['collapsed'] === undefined || full === '') return undefined
+      // v0.6: every note is a card (default-open with its body inline), so
+      // the content captures regardless of the `collapsed` attribute — the
+      // attribute only biases the default toggle state, it never hides text.
+      if (full === '') return undefined
       return {
         kind: 'note',
         collapsed: true,
@@ -399,18 +404,26 @@ function contentFor(
 function finalizeNode(node: ParseNode): void {
   const childRaws = node.children.map(child => (child as ParseNode).raw ?? '')
   for (const child of node.children) finalizeNode(child as ParseNode)
-  const raw = node.raw ?? ''
-  const direct = collapseWhitespace(raw)
+  const direct = collapseLines(node.raw ?? '')
   const childText = node.children
     .map(child => child.text ?? '')
     .filter(text => text !== '')
-    .join(' ')
-  const full = collapseWhitespace(`${direct} ${childText}`)
+    .join('\n')
+  const full = collapseLines(
+    childText === '' ? direct : direct === '' ? childText : `${direct}\n${childText}`,
+  )
   // An NPL block card draws its own prose; its element children render as
   // their own rows (expandedPlan), so their text stays out of the body here
-  // — never drawn twice.
-  node.text = (NPL_ELEMENTS.has(node.tag) ? direct : full).slice(0, MAX_TEXT)
-  node.content = contentFor(node, full, raw, childRaws)
+  // — never drawn twice. The cap is visible: a cut body records how many
+  // characters were dropped so the pane can show `… (+N chars)`.
+  const body = NPL_ELEMENTS.has(node.tag) ? direct : full
+  if (body.length > MAX_TEXT) {
+    node.text = body.slice(0, MAX_TEXT)
+    node.truncated = body.length - MAX_TEXT
+  } else {
+    node.text = body
+  }
+  node.content = contentFor(node, full, node.raw ?? '', childRaws)
   delete node.raw
   delete node.inheritedSeed
 }
@@ -442,10 +455,11 @@ export function parseSemText(text: string): ParsedSemText | null {
     // Markdown-escaped tag markers (`\<WEDGE\>`) leak their backslash into
     // the gap text; strip the escape. The backslash before an opening `<`
     // always sits at the very end of the gap slice (the tag starts the next
-    // slice), so `$` must count as an escape position too.
+    // slice), so `$` must count as an escape position too. Quotes round the
+    // set out — escaped `\"` at a body's end leaked a stray backslash.
     top.raw =
       (top.raw ?? '') +
-      sanitize(text.slice(from, to)).replace(/\\([<>]|$)/g, '$1')
+      sanitize(text.slice(from, to)).replace(/\\([<>"']|$)/g, '$1')
   }
   const captureContainer = (container: TextContainer, to: number): void => {
     const top = stack[stack.length - 1]
@@ -525,6 +539,12 @@ export function parseSemText(text: string): ParsedSemText | null {
         (name === 'p' || name === 'blockquote' || HEADING_NAME.test(name))
       ) {
         containers.push({ name, start: end })
+      } else if (name === 'br' && !closing) {
+        // `<br>` variants are hard row breaks in boxed prose — record a line
+        // break in the raw capture so finalizeNode's per-line collapse keeps
+        // the split (literal newlines already land in gap slices verbatim).
+        const top = stack[stack.length - 1]
+        if (top !== undefined && containers.length === 0) top.raw += '\n'
       }
       i = end
       continue
@@ -765,41 +785,6 @@ export function nodeAt(tree: readonly SemTextNode[], key: string): SemTextNode |
   return node
 }
 
-const INTERACTIVE: ReadonlySet<SemNodeContent['kind']> = new Set([
-  'facts',
-  'reveal',
-  'note',
-  'views',
-  'properties',
-  'table',
-  'code',
-])
-
-type Widget = { key: string; node: SemTextNode }
-
-/**
- * Card descendants of `root` (interactive content or an NPL-family block),
- * keyed by outline row key — the section view draws each through the render
- * registry after the focused node's own render.
- */
-function widgetsIn(root: SemTextNode, baseKey: string): Widget[] {
-  const out: Widget[] = []
-  const walk = (nodes: readonly SemTextNode[], prefix: string): void => {
-    for (let i = 0; i < nodes.length && out.length < MAX_WIDGETS; i++) {
-      const node = nodes[i]!
-      const key = `${prefix}${i}`
-      if (
-        (node.content !== undefined && INTERACTIVE.has(node.content.kind)) ||
-        NPL_ELEMENTS.has(node.tag)
-      ) {
-        out.push({ key, node })
-      }
-      walk(node.children, `${key}.`)
-    }
-  }
-  walk(root.children, `${baseKey}.`)
-  return out
-}
 
 // --- the mod ---
 
@@ -881,6 +866,7 @@ export const register: Register = on => {
       el: { Box, Text, Button },
       viewer,
       width,
+      inset: 0,
       wkey: '',
       budget: room,
       spent: { rows: 0 },
@@ -913,7 +899,11 @@ export const register: Register = on => {
           plain
           dimColor
           onPress={() => {
-            void update($, VIEWER, v => setAllExpanded(v, cards, anyShut))
+            // Collapse-all IS the compact outline (and expand-all returns to
+            // the streamlined expanded view) — one view, two zoom levels.
+            void update($, VIEWER, v =>
+              setOutlineMode(setAllExpanded(v, cards, anyShut), anyShut ? 'expanded' : 'outline'),
+            )
           }}
         >
           {anyShut
@@ -963,19 +953,19 @@ export const register: Register = on => {
       )
     }
 
-    // The expanded document view (default): the whole outline tree top-to-
-    // bottom, every row followed by its content inline — section prose and
-    // unknown-tag text as dim text rows, cards through their renderers
-    // (default-open). Rows stay clickable to focus; the row budget applies.
-    const expandedView = (): RenderElement => {
-      const unknown = doc.unknownElements
-      const units = expandedPlan(doc.tree)
-      const budget = Math.max(1, room - 4) // source + stats + unknown? + toggle
-      const ectx: RenderCtx = { ...ctx, budget, spent: { rows: 0 } }
-      const parts: RenderElement[] = []
+    // The shared content drawer: plan units -> elements under a row budget.
+    // Cards render through the registry (the card header replaces the outline
+    // row, children draw inside the frame); flow rows stay pressable to
+    // focus, their blocks draw bold + rules, their text indents 2 per depth.
+    const drawUnits = (
+      units: ReturnType<typeof expandedPlan>,
+      ectx: RenderCtx,
+      parts: RenderElement[],
+    ): number => {
       let hidden = 0
+      let drewContent = false
       for (const unit of units) {
-        const left = budget - ectx.spent.rows
+        const left = ectx.budget - ectx.spent.rows
         if (left <= 0) {
           hidden++
           continue
@@ -985,7 +975,7 @@ export const register: Register = on => {
             <Button
               key={`sec:${unit.key}`}
               plain
-              dimColor={unit.row.depth > 0}
+              dimColor
               onPress={() => {
                 void update($, VIEWER, v => focusSection(v, unit.key))
               }}
@@ -995,23 +985,58 @@ export const register: Register = on => {
             </Button>,
           )
           ectx.spent.rows += 1
+          drewContent = true
         } else if (unit.role === 'text') {
+          const cellW = Math.max(8, width - unit.indent.length - 2)
           if (unit.block !== undefined) {
-            ectx.spent.rows += pushBlock(parts, unit.block, left, unit.indent)
+            // One blank row above a heading that isn't the first drawn row.
+            const blank =
+              unit.block.kind === 'heading' && drewContent && left > 1
+                ? 1
+                : 0
+            if (blank === 1) {
+              parts.push(<Text key={`t:${unit.key}.blank`}>{' '}</Text>)
+              ectx.spent.rows += 1
+            }
+            const rows = blockRows(unit.block, cellW, Math.max(1, left - blank))
+            rows.forEach((row, i) => {
+              parts.push(
+                <Text
+                  key={`t:${unit.key}.${i}`}
+                  bold={row.bold}
+                  dimColor={row.dim ?? false}
+                >
+                  {row.text === '' ? ' ' : `${unit.indent}${row.text}`}
+                </Text>,
+              )
+            })
+            ectx.spent.rows += rows.length
+            drewContent = true
           } else {
-            const lines = wrapLines(
-              sanitize(unit.text),
-              Math.max(8, width - unit.indent.length - 2),
-              left,
-            )
+            // Boxed-prose line rule for flow leaf text too: literal newlines
+            // (and captured `<br>` breaks) split rows, blanks collapse.
+            const segments = sanitize(unit.text)
+              .split('\n')
+              .map(seg => seg.trim())
+            while (segments.length > 0 && segments[0] === '') segments.shift()
+            while (segments.length > 0 && segments[segments.length - 1] === '') segments.pop()
+            const lines: string[] = []
+            segments.forEach(seg => {
+              if (seg === '') {
+                if (lines.length > 0 && lines[lines.length - 1] !== '') lines.push('')
+                return
+              }
+              lines.push(...wrapLines(seg, cellW, Math.max(1, left - lines.length)))
+            })
             ectx.spent.rows += lines.length
             lines.forEach((line, i) => {
               parts.push(
                 <Text key={`t:${unit.key}.${i}`} dimColor>
-                  {`${unit.indent}${line}`}
+                  {line === '' ? ' ' : `${unit.indent}${line}`}
                 </Text>,
               )
             })
+            drewContent = drewContent || lines.length > 0
           }
         } else {
           const render = RENDERERS[unit.node.tag] ?? RENDERERS['*']!
@@ -1022,8 +1047,22 @@ export const register: Register = on => {
               {drawn}
             </Box>,
           )
+          drewContent = true
         }
       }
+      return hidden
+    }
+
+    // The streamlined expanded view (default): the whole document top-to-
+    // bottom — every section, note and NPL block as a framed card with its
+    // children nested inside; flow rows keep their press-to-focus. Collapse
+    // all and the compact outline remains.
+    const expandedView = (): RenderElement => {
+      const unknown = doc.unknownElements
+      const budget = Math.max(1, room - 4) // source + stats + unknown? + toggle
+      const ectx: RenderCtx = { ...ctx, inset: 0, budget, spent: { rows: 0 } }
+      const parts: RenderElement[] = []
+      const hidden = drawUnits(expandedPlan(doc.tree), ectx, parts)
       return (
         <Box flexDirection="column">
           <Text>{`${GLYPHS.kind.source} ${sanitize(doc.fileName ?? doc.source)}`}</Text>
@@ -1088,63 +1127,17 @@ export const register: Register = on => {
       </Box>
     )
 
-    // Blocks: headings (`##` dim marker), blockquotes (`▌`), paragraphs plain.
-    // `indent` shifts every drawn line right (the expanded view nests content
-    // under its tree branch). Returns the number of rows actually drawn.
-    const pushBlock = (
-      parts: RenderElement[],
-      block: SemBlock,
-      budget: number,
-      indent = '',
-    ): number => {
-      if (budget <= 0) return 0
-      const cellWidth = Math.max(8, width - 2)
-      const draw = (marker: string, text: string, dim: boolean, weight?: 'semibold'): number => {
-        const lines = wrapLines(
-          sanitize(text),
-          Math.max(4, cellWidth - marker.length - indent.length),
-          budget,
-        )
-        lines.forEach((line, i) => {
-          parts.push(
-            i === 0 && marker !== '' ? (
-              <Text key={`b${parts.length}-${i}`} dimColor={dim} weight={weight}>
-                <Text dimColor>{`${indent}${marker}`}</Text>
-                {line}
-              </Text>
-            ) : (
-              <Text
-                key={`b${parts.length}-${i}`}
-                dimColor={dim}
-                weight={i === 0 ? weight : undefined}
-              >
-                {i > 0
-                  ? `${indent}${marker !== '' ? `${' '.repeat(marker.length)}` : ''}${line}`
-                  : `${indent}${marker}${line}`}
-              </Text>
-            ),
-          )
-        })
-        return lines.length
-      }
-      if (block.kind === 'heading') {
-        const mark = `${'#'.repeat(Math.min(6, Math.max(1, block.level)))} `
-        return draw(mark, block.text, false, block.level <= 2 ? 'semibold' : undefined)
-      }
-      if (block.kind === 'quote') {
-        return draw(`${GLYPHS.quote} `, block.text, true)
-      }
-      return draw('', block.text, false)
-    }
-
+    // Section focus: the same streamlined drawer scoped to the focused
+    // element's subtree (document key paths, so card toggles keep working),
+    // with a breadcrumb and prev/next nav on top.
     const sectionView = (): RenderElement => {
       const key = viewer.focusedSection ?? ''
       const node = nodeAt(doc.tree, key)
       if (node === undefined) {
         return viewer.outlineMode === 'outline' ? outlineView() : expandedView()
       }
-      let used = 1 // the breadcrumb row
       const budget = Math.max(1, room - 2)
+      const ectx: RenderCtx = { ...ctx, inset: 0, budget, spent: { rows: 0 } }
       const parts: RenderElement[] = []
 
       // Breadcrumb: source › ancestors (dim) › leaf.
@@ -1166,44 +1159,20 @@ export const register: Register = on => {
           {`${GLYPHS.crumb} ${truncateCell(leaf, Math.max(8, width - 4))}`}
         </Text>,
       )
-      parts.push(
+      const crumbBox = (
         <Box key="crumb" flexDirection="row">
           {crumbs}
-        </Box>,
+        </Box>
       )
 
-      // Headings / paragraphs / blockquotes captured inside the element.
-      for (const block of node.blocks ?? []) {
-        if (used >= budget) break
-        used += pushBlock(parts, block, budget - used)
-      }
-
-      // The element's own content, then interactive descendants — both
-      // through the render registry. `spent` is shared; only the delta
-      // between calls counts against the budget.
-      const renderWith = (widgetKey: string, target: SemTextNode, showBody: boolean): void => {
-        if (used >= budget) return
-        const render = RENDERERS[target.tag] ?? RENDERERS['*']!
-        const before = ctx.spent.rows
-        const sub: RenderCtx = { ...ctx, wkey: widgetKey, budget: budget - used, showBody }
-        const drawn = render(target, sub)
-        used += ctx.spent.rows - before
-        parts.push(
-          <Box key={`w:${widgetKey}`} flexDirection="column">
-            {drawn}
-          </Box>,
-        )
-      }
-      renderWith(key, node, (node.blocks ?? []).length === 0 && node.content === undefined)
-      for (const widget of widgetsIn(node, key)) {
-        if (used >= budget) break
-        renderWith(widget.key, widget.node, false)
-      }
+      const hidden = drawUnits(expandedPlan([node], 8, key), ectx, parts)
 
       return (
         <Box flexDirection="column">
-          {parts.length === 1 ? <Text dimColor>(no content captured)</Text> : parts}
-          {used >= budget && <Text dimColor>{GLYPHS.more}</Text>}
+          {crumbBox}
+          {parts.length === 0 && <Text dimColor>(no content captured)</Text>}
+          {parts}
+          {hidden > 0 && <Text dimColor>{`${GLYPHS.more} (+${hidden} rows hidden)`}</Text>}
           {navRow()}
         </Box>
       )
