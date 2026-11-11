@@ -3,7 +3,7 @@
  * and the literal authored markup.
  *
  * Spec: spec/schema/sem-source.md. The markup comes from the snapshot the
- * fallback CORE takes before any handler runs (`src/fallback/source.ts`,
+ * fallback CORE takes before any handler runs (`src/vanilla/source.ts`,
  * a DOM clone of the children inside a `template.sem-source-raw`); this
  * module only builds the chrome and, on first request, a fence holding one
  * class-form `sem-code` enhanced by the same `enhanceCodeElement` as any
@@ -39,9 +39,8 @@ function clean(nodes: DocumentFragment): string {
   const tpl = document.createElement('template');
   tpl.content.appendChild(nodes.cloneNode(true));
   const root = tpl.content;
-  root.querySelectorAll('[data-sem-upgraded], [data-sem-fallback]').forEach((e) => {
+  root.querySelectorAll('[data-sem-upgraded]').forEach((e) => {
     e.removeAttribute('data-sem-upgraded');
-    e.removeAttribute('data-sem-fallback');
   });
   const keep: string[] = [];
   // Sentinel: a C0 control (U+0001–U+001F) absent from the text; bounded
@@ -61,6 +60,13 @@ function clean(nodes: DocumentFragment): string {
   while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
   let indent = Infinity;
   lines.forEach((l) => {
+    // A line holding only a sentinel is the placeholder for verbatim
+    // preformatted content: pre lines are authored flush-left, so the
+    // placeholder sits at column 0 and must not drive the common indent.
+    // The sentinel payload is the keep-index digits only.
+    const bare = l.trim();
+    if (bare.length > 2 * mark.length && bare.startsWith(mark) && bare.endsWith(mark)
+      && /^\d+$/.test(bare.slice(mark.length, -mark.length))) return;
     if (l.trim()) indent = Math.min(indent, l.match(/^[ \t]*/)![0].length);
   });
   return lines.map((l) => l.slice(indent < Infinity ? indent : 0)).join('\n')
@@ -73,7 +79,7 @@ export function enhanceSourceElement(el: Element): void {
   const snap = el.querySelector<HTMLTemplateElement>(':scope > template.sem-source-raw');
   // No core snapshot (reading bundle alone): best effort, chrome and all —
   // clone the live children now (a DOM clone, still never parsed text).
-  if (!snap) warn('sem-source: no snapshot (load semtext-fallback.js before the reading bundle); showing the live DOM');
+  if (!snap) warn('sem-source: no core snapshot (load semtext.js first); showing the live DOM');
   let raw: DocumentFragment;
   if (snap) {
     raw = snap.content;
@@ -122,7 +128,7 @@ export function enhanceSourceElement(el: Element): void {
     fence.appendChild(code);
     el.appendChild(fence);
     enhanceCodeElement(code);
-    code.setAttribute('data-sem-fallback', '');
+    code.setAttribute('data-sem-upgraded', '');
   };
   const mode = (m: string): void => {
     if (m == 'source') build();

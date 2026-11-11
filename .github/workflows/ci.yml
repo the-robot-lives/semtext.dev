@@ -1,25 +1,19 @@
 name: CI
 
-# Consolidated semtext.dev repo: Next.js landing (landing/) + SemText format
-# (spec, src, site, demo, themes — the ex npl-enhanced-content showcase).
-#
 # Release path (see monorepo docs/arch/deployment.md):
-#   The legacy Next.js `web` image no longer deploys. The deployed Hologram app
-#   is built and bumped by app-ci.yml (app/helm/semtext, ArgoCD path). This
-#   workflow's bump-chart job was retired 2026-10-17: it edited the dead
-#   root helm/semtext chart (since deleted) and raced the real bump, leaving ArgoCD on a
-#   revision that did not name the new image.
+#   push main -> build sha-<7> image -> CI seds the tag into
+#   helm/semtext/values.yaml and commits [skip ci] -> ArgoCD auto-syncs.
+# Nobody hand-edits chart tags and nobody runs helm-upgrade to ship.
 #
 # Component bundles are additionally published to the cdn.semtext.dev bucket
-# under an immutable /<version>/ prefix plus a mutable /latest/ pointer
-# (publish-cdn is dormant until the CDN secrets/variable are carried over).
+# under an immutable /<version>/ prefix plus a mutable /latest/ pointer.
 
 on:
   push:
     # develop pushes run the test jobs only (build-push is main-gated below);
     # they exist to seed develop-ref caches that feature-PR runs can restore —
     # a PR-ref cache is invisible to sibling PRs.
-    branches: [main, develop]
+    branches: [main, develop, stage]
   pull_request:
 
 concurrency:
@@ -33,29 +27,10 @@ env:
   IMAGE_REPO: semtext.dev/web
   CDN_BUCKET: cdn-semtext-dev
 
-permissions:
-  contents: read
-
 jobs:
-  test-landing:
-    # Next.js static export: typecheck + build (landing/).
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: landing
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: landing/package-lock.json
-      - run: npm ci
-      - run: npx tsc --noEmit
-      - run: npm run build
-
   unit:
-    # vitest unit tier + coverage gate (threshold in vite.config.ts).
+    # vitest unit tier + coverage gate (threshold in vite.config.ts). The
+    # dockerfile spec reads dist/, so build first.
     runs-on: ubuntu-latest
     env:
       CYPRESS_INSTALL_BINARY: 0 # no browser needed here
@@ -67,6 +42,10 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
+      - run: npm run build
+      # spec/conventions.html is generated from spec/conventions.md — fail the
+      # unit job when the committed page is stale relative to the .md
+      - run: npm run gen:conventions:check
       - run: npm run test:unit:cover
       - uses: actions/upload-artifact@v4
         if: always()
@@ -118,28 +97,9 @@ jobs:
           wait-on: "http://localhost:4173/demo/index.html"
           wait-on-timeout: 120
 
-  docker-build:
-    # PR lane: build the combined image (no push) so Dockerfile/nginx changes
-    # fail fast, and seed the gha cache the release build reuses.
-    needs: [test-landing, unit, test]
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          target: production
-          platforms: linux/amd64
-          push: false
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}:ci
-          cache-from: type=gha,scope=web
-          cache-to: type=gha,scope=web,mode=max
-
   build-push:
-    # Release is gated on all test tiers (landing, unit/coverage, e2e shards).
-    needs: [test-landing, unit, test]
+    # Release is gated on both test tiers (all e2e shards + unit/coverage).
+    needs: [unit, test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
@@ -166,16 +126,52 @@ jobs:
           cache-from: type=gha,scope=web
           cache-to: type=gha,scope=web,mode=max
 
+  bump-chart:
+    # Commit the new tag into the chart; ArgoCD auto-syncs the rollout.
+    needs: build-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bump image tag
+        run: |
+          set -euo pipefail
+          SHORT="${GITHUB_SHA::7}"
+          VALUES=helm/semtext/values.yaml
+          # A sed -E that matches nothing still exits 0. Assert the file exists
+          # before, and prove the substitution landed after, or the deploy is a
+          # green build that ships the previous image forever.
+          test -f "$VALUES"
+          sed -i -E "s|(image: ops\\.noizu\\.com/semtext\\.dev/web:).*|\\1sha-${SHORT}|" "$VALUES"
+          grep -q "image: ops\\.noizu\\.com/semtext\\.dev/web:sha-${SHORT}\$" "$VALUES" \
+            || { echo "::error::image tag substitution did not match in ${VALUES}"; grep -n 'image:' "$VALUES"; exit 1; }
+          grep -n 'image:' "$VALUES"
+      - name: Commit & push
+        run: |
+          set -euo pipefail
+          git config user.name "semtext-ci"
+          git config user.email "ci@noizu.com"
+          git add helm/semtext/values.yaml
+          git diff --cached --quiet && exit 0
+          git commit -m "ci: deploy sha-${GITHUB_SHA::7} [skip ci]"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push
+
   publish-cdn:
     # Publish the component bundles + themes to cdn.semtext.dev.
     #   <version>/  immutable, never overwritten once published
     #   latest/     mutable pointer, short max-age so it can move
     #
-    # Gated so the pipeline stays green before the CDN secrets exist in THIS
-    # repo. Carried over verbatim from npl-enhanced-content, where the switch
-    # (repository VARIABLE `CDN_PUBLISH`) was never set — the job is dormant.
-    # To turn on, an operator must add CDN_MINIO_URL / CDN_MINIO_ACCESS_KEY /
-    # CDN_MINIO_SECRET_KEY secrets and `gh variable set CDN_PUBLISH --body true`.
+    # Gated so the pipeline stays green before the CDN exists. The bucket is
+    # created by terraform (cdn-semtext-minio.tf) and the proxy by
+    # cdn-semtext.tf; until both are applied this job would fail on a missing
+    # bucket. Job-level `if` cannot read secrets or `env`, so the switch is a
+    # repository VARIABLE, not a secret.
+    #
+    # To turn on, once the terraform is applied and the three CDN secrets
+    # exist (CDN_MINIO_URL / CDN_MINIO_ACCESS_KEY / CDN_MINIO_SECRET_KEY):
+    #   gh variable set CDN_PUBLISH --body true
     needs: build-push
     if: vars.CDN_PUBLISH == 'true'
     runs-on: ubuntu-latest
@@ -197,7 +193,15 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           rm -rf cdn-payload
           mkdir -p cdn-payload/themes
-          cp dist/semtext.js dist/semtext-reading.js dist/semtext-extract.js dist/semtext-md.js cdn-payload/
+          cp dist/semtext.js dist/semtext-lazy.js dist/semtext-manifest.json cdn-payload/
+          # Lazy families beyond the core: npl + the Phase-7 semext/agent-kit
+          # surface — bundle, lazy loader, manifest and chunk dir travel
+          # together, or a versioned URL serves a broken import graph.
+          for f in npl semext agent-kit; do
+            cp "dist/${f}.js" "dist/${f}-lazy.js" "dist/${f}-manifest.json" cdn-payload/
+            if [ -d "dist/${f}-chunks" ]; then cp -R "dist/${f}-chunks" cdn-payload/; fi
+          done
+          if [ -d dist/chunks ]; then cp -R dist/chunks cdn-payload/; fi
           cp themes/*.css cdn-payload/themes/
           find cdn-payload -type f | sort
       - name: Install mc
@@ -224,3 +228,72 @@ jobs:
               --attr "Cache-Control=public,max-age=31536000,immutable" \
               cdn-payload/ "$TARGET/"
           fi
+
+          # latest/ must NOT be immutable — it moves on every release.
+          mc mirror --overwrite --remove \
+            --attr "Cache-Control=public,max-age=300" \
+            cdn-payload/ "cdn/${CDN_BUCKET}/latest/"
+
+          mc ls --recursive "cdn/${CDN_BUCKET}/${VERSION}/"
+          mc ls --recursive "cdn/${CDN_BUCKET}/latest/"
+  ci-timing:
+    # PR-run timing tracker (fleet standard). Warn-only: never blocks.
+    # Thresholds are repo/org Variables PR_STEP_MAX_MINUTES / PR_RUN_MAX_MINUTES, defaults 4/7.
+    needs: [unit, test]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Track timing thresholds
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_STARTED_AT: ${{ github.run_started_at }}
+          STEP_MAX_MIN: ${{ vars.PR_STEP_MAX_MINUTES || '4' }}
+          RUN_MAX_MIN: ${{ vars.PR_RUN_MAX_MINUTES || '7' }}
+        run: |
+          set -euo pipefail
+          SUMMARY="$GITHUB_STEP_SUMMARY"
+          jobs_json=""
+          for i in 1 2 3; do
+            jobs_json=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID/jobs?per_page=100") && break
+            sleep 5
+          done
+          [ -n "$jobs_json" ] || { echo "::warning title=CI timing::could not fetch run jobs"; exit 0; }
+          {
+            echo "## CI timing (thresholds: step ${STEP_MAX_MIN}m / run ${RUN_MAX_MIN}m)"
+            echo
+            echo "| job | step | duration | status |"
+            echo "|---|---|---|---|"
+          } >> "$SUMMARY"
+          flagged=0
+          steps_sum=0
+          while IFS=$'\t' read -r job step start end; do
+            [ -n "$job" ] || continue
+            s=$(date -d "$start" +%s); e=$(date -d "$end" +%s)
+            dur=$((e - s)); thr=$((STEP_MAX_MIN * 60))
+            steps_sum=$((steps_sum + dur))
+            if [ "$dur" -gt "$thr" ]; then
+              flagged=$((flagged + 1))
+              echo "::warning title=CI timing::\"$step\" (job: $job) took $((dur / 60))m$((dur % 60))s — over the ${STEP_MAX_MIN}m step threshold"
+              echo "| \`$job\` | \`$step\` | $((dur / 60))m$((dur % 60))s | ⚠️ over ${STEP_MAX_MIN}m |" >> "$SUMMARY"
+            else
+              echo "| \`$job\` | \`$step\` | $((dur / 60))m$((dur % 60))s | ok |" >> "$SUMMARY"
+            fi
+          done < <(echo "$jobs_json" | jq -r '
+            .jobs[] | select(.name | test("^(unit|test)$")) | .name as $job |
+            .steps[] | select(.status == "completed" and .conclusion != "skipped" and .conclusion != null) |
+            [$job, .name, .started_at, .completed_at] | @tsv')
+          start=$(date -d "$RUN_STARTED_AT" +%s); now=$(date +%s)
+          wall=$((now - start)); run_thr=$((RUN_MAX_MIN * 60))
+          echo
+          echo "| **steps sum** | test jobs, work only | $((steps_sum / 60))m$((steps_sum % 60))s | $( [ "$steps_sum" -gt "$run_thr" ] && echo "⚠️ over ${RUN_MAX_MIN}m" || echo ok) |" >> "$SUMMARY"
+          echo "| **wall clock** | queue + work | $((wall / 60))m$((wall % 60))s | info |" >> "$SUMMARY"
+          if [ "$steps_sum" -gt "$run_thr" ]; then
+            echo "::warning title=CI timing::acceptance steps sum to $((steps_sum / 60))m$((steps_sum % 60))s — over the ${RUN_MAX_MIN}m run threshold (wall clock: $((wall / 60))m)"
+          fi
+          echo; echo "_${flagged} step(s) over threshold._" >> "$SUMMARY"

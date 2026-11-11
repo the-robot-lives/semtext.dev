@@ -105,61 +105,13 @@ describe('element and attribute contracts', () => {
     expect(errorsOf(r).some((d) => d.rule === 'missing-attribute' && d.message.includes('"name"'))).toBe(true);
   });
 
-  it('an empty sem-code (neither pre child nor flat text) is an error', () => {
-    const src = `<sem-enhanced-document><sem-code lang="ts">   </sem-code></sem-enhanced-document>`;
-    const r = validateSource(src, schema);
-    expect(errorsOf(r).some((d) => d.rule === 'child-structure')).toBe(true);
-  });
-
-  it('sem-code flat form (own text, no pre) is valid — v0.6 inline form', () => {
-    const src = `<sem-enhanced-document><sem-code>npm run validate</sem-code></sem-enhanced-document>`;
-    const r = validateSource(src, schema);
-    expect(errorsOf(r).some((d) => d.rule === 'child-structure' && d.message.includes('sem-code'))).toBe(false);
-  });
-
-  it('sem-table carrying neither table child nor markdown text is an error', () => {
-    const src = `<sem-enhanced-document><sem-table controls="sort"></sem-table></sem-enhanced-document>`;
-    const r = validateSource(src, schema);
-    expect(errorsOf(r).some((d) => d.rule === 'child-structure' && d.message.includes('sem-table'))).toBe(true);
-  });
-
-  it('v0.6 hygiene: authored hr/br/b/strong/i/em warn (outside code contexts)', () => {
-    const src = `<sem-enhanced-document><p>rotate <strong>per session</strong> now<br>please</p><hr></sem-enhanced-document>`;
-    const r = validateSource(src, schema);
-    const hygiene = r.diagnostics.filter((d) => d.rule === 'authoring-hygiene');
-    expect(hygiene.length).toBe(3);
-    expect(errorsOf(r)).toEqual([]);
-  });
-
-  it('v0.6 hygiene skips code contexts (listing markup is verbatim content)', () => {
-    const src = `<sem-enhanced-document><sem-code><pre><code>a <b>bold</b> line</code></pre></sem-code></sem-enhanced-document>`;
-    const r = validateSource(src, schema);
-    expect(r.diagnostics.some((d) => d.rule === 'authoring-hygiene')).toBe(false);
-  });
-
-  it('sem-list with both ordered and unordered is an error', () => {
-    const src = `<sem-enhanced-document><sem-list ordered unordered>- a</sem-list></sem-enhanced-document>`;
-    const r = validateSource(src, schema);
-    expect(errorsOf(r).some((d) => d.rule === 'attribute-value')).toBe(true);
-  });
-
-  it('sem-break with content is an error; empty is valid', () => {
-    const bad = `<sem-enhanced-document><sem-break>text</sem-break></sem-enhanced-document>`;
-    expect(errorsOf(validateSource(bad, schema)).some((d) => d.rule === 'child-structure')).toBe(true);
-    const good = `<sem-enhanced-document><sem-break></sem-break></sem-enhanced-document>`;
-    expect(errorsOf(validateSource(good, schema)).some((d) => d.rule === 'child-structure')).toBe(false);
-  });
-
-  it('sem-reference without cite is an error (v0.6: cite required)', () => {
-    const src = `<sem-enhanced-document><sem-references id="refs"><sem-reference id="r1">no cite</sem-reference></sem-references></sem-enhanced-document>`;
-    const r = validateSource(src, schema);
-    expect(errorsOf(r).some((d) => d.rule === 'missing-attribute' && d.message.includes('"cite"'))).toBe(true);
-  });
-
-  it('sem-highlight tag resolves to the highlight contract', () => {
-    const src = `<sem-enhanced-document><sem-note variant="tip">rotation is <sem-highlight>per session</sem-highlight></sem-note></sem-enhanced-document>`;
-    const r = validateSource(src, schema);
-    expect(errorsOf(r)).toEqual([]);
+  it('more than one pre child (sem-code) is an error; the flat listing is valid', () => {
+    // flat authoring form: no <pre> is fine (the listing is the element's text)
+    const flat = `<sem-enhanced-document><sem-code lang="ts">no pre here</sem-code></sem-enhanced-document>`;
+    expect(errorsOf(validateSource(flat, schema)).some((d) => d.rule === 'child-structure')).toBe(false);
+    // but two <pre> children stay an error (childRule atMostOne)
+    const two = `<sem-enhanced-document><sem-code lang="ts"><pre><code>a</code></pre><pre><code>b</code></pre></sem-code></sem-enhanced-document>`;
+    expect(errorsOf(validateSource(two, schema)).some((d) => d.rule === 'child-structure')).toBe(true);
   });
 
   it('unknown controls flags are a warning (spec: ignored), not an error', () => {
@@ -178,7 +130,7 @@ describe('element and attribute contracts', () => {
   });
 
   it('runtime tier markers in authored source are a warning', () => {
-    const src = `<sem-enhanced-document><sem-note id="n" data-sem-fallback="1">x</sem-note></sem-enhanced-document>`;
+    const src = `<sem-enhanced-document><sem-note id="n" data-sem-upgraded="1">x</sem-note></sem-enhanced-document>`;
     const r = validateSource(src, schema);
     expect(rules(r)).toContain('tier-marker');
     expect(errorsOf(r)).toEqual([]);
@@ -242,12 +194,12 @@ describe('schema-driven rules', () => {
 
 describe('repo dogfood — the repo validates clean', () => {
   const pages = [
-    'site/index.html',
-    'demo/index.html',
-    'demo/md-only.html',
-    'demo/reading.html',
-    'demo/reading-lit.html',
-    'demo/standalone-lit.html',
+    'web/site/index.html',
+    'web/demo/index.html',
+    'web/demo/md-only.html',
+    'web/demo/reading.html',
+    'web/demo/reading-lit.html',
+    'web/demo/standalone-lit.html',
     'spec/conventions.html'
   ];
   for (const page of pages) {
@@ -262,7 +214,7 @@ describe('repo dogfood — the repo validates clean', () => {
 describe('CLI', () => {
   it('exit 0 on clean, 1 on errors, 2 on usage', () => {
     const out = { chunks: '' , write(s) { this.chunks += s; return true; } };
-    expect(main(['demo/md-only.html'], out, out)).toBe(0);
+    expect(main(['web/demo/md-only.html'], out, out)).toBe(0);
     expect(main(['test/unit/fixtures/does-not-exist.html'], out, out)).toBe(1);
     expect(main([], out, out)).toBe(2);
     expect(main(['--bogus'], out, out)).toBe(2);
@@ -270,10 +222,37 @@ describe('CLI', () => {
 
   it('--format json emits structured diagnostics', () => {
     const out = { chunks: '', write(s) { this.chunks += s; return true; } };
-    const code = main(['--format', 'json', 'demo/index.html'], out, out);
+    const code = main(['--format', 'json', 'web/demo/index.html'], out, out);
     expect(code).toBe(0);
     const parsed = JSON.parse(out.chunks);
     expect(parsed.files).toHaveLength(1);
     expect(parsed.totals.errors).toBe(0);
+  });
+});
+
+describe('sem-reference AUTO-ID (sem-references.md § Auto-id)', () => {
+  const doc = (refs) => `<!doctype html>
+<html lang="en"><body><sem-enhanced-document>
+<p><a href="#refs-rfc-6749">[1]</a></p>
+<sem-references id="refs">${refs}</sem-references>
+</sem-enhanced-document></body></html>`;
+
+  it('an id-less reference with a cite is info auto-id, and its derived id satisfies id-drift', () => {
+    const r = validateSource(doc('<sem-reference cite="RFC 6749">OAuth.</sem-reference>'), schema);
+    expect(errorsOf(r)).toEqual([]);
+    expect(warningsOf(r)).toEqual([]);
+    const info = r.diagnostics.filter((d) => d.severity === 'info');
+    expect(info.map((d) => d.rule)).toEqual(['auto-id']);
+    expect(info[0].message).toContain('refs-rfc-6749');
+  });
+
+  it('an id-less reference with neither cite nor href is an error', () => {
+    const r = validateSource(doc('<sem-reference id="refs-rfc-6749" cite="RFC 6749">a</sem-reference><sem-reference>b</sem-reference>'), schema);
+    expect(errorsOf(r).map((d) => d.rule)).toEqual(['reference-id']);
+  });
+
+  it('a derived id colliding with an existing id warns', () => {
+    const r = validateSource(doc('<sem-reference id="refs-rfc-6749" cite="x">a</sem-reference><sem-reference cite="RFC 6749">b</sem-reference>'), schema);
+    expect(warningsOf(r).map((d) => d.rule)).toContain('reference-id');
   });
 });

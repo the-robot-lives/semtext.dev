@@ -20,6 +20,8 @@
 import { deriveSummary } from '../shared/summary.js';
 import { normalizeMd } from '../shared/mdsource.js';
 import { parseMarks } from '../shared/marks.js';
+import { trimTrailingWs } from '../shared/trim.js';
+import { deriveReferenceId } from '../shared/reference-id.js';
 
 /** One extracted record. Shape is normative; see spec/extraction.md §2. */
 export interface SemRecord {
@@ -72,10 +74,21 @@ const RECORD_TYPES = [
   'sem-code',
   'sem-references',
   'sem-reference',
+  // component-eval item 9 (spec/schema/sem-component.md,
+  // spec/schema/sem-see-also.md): the inventory card mints a component
+  // record (the manifest vocabulary, labels split); the related-reference
+  // entry mints a see-also record pointing at its target.
+  'sem-component',
+  'sem-see-also',
   // R/W2 (spec/schema/sem-table.md); sem-reader is chrome and is NOT here
   'sem-table',
   // R/W2.2 (spec/schema/sem-md.md)
-  'sem-md'
+  'sem-md',
+  // reference definitions (spec/schema/sem-tag-def.md, sem-api-call.md):
+  // the container mints the record; its row children
+  // (sem-tag-attr / sem-api-param) are captured INSIDE it, never mint
+  'sem-tag-def',
+  'sem-api-call'
 ] as const;
 
 /**
@@ -107,6 +120,8 @@ const CHROME_CLASSES = [
   'sem-references-backlinks',
   'sem-references-link',
   'sem-popover',
+  // sem-procedure: the enhanced progress line ("2 of 4 done") is derived
+  'sem-procedure-meta',
   // R/W2
   'sem-reader-chrome',
   'sem-reader-outline',
@@ -118,12 +133,42 @@ const CHROME_CLASSES = [
   // it) and the core's template snapshot are never content
   'sem-source-chrome',
   'sem-source-fence',
+  // reference-definition cards (sem-tag-def / sem-api-call Lit render):
+  // the generated header row, table and children chips are chrome; the
+  // description prose stays content
+  'sem-tagdef-head',
+  'sem-tagdef-table',
+  'sem-tagdef-children',
+  'sem-tagdef-source',
+  'sem-apicall-head',
+  'sem-apicall-table',
+  'sem-apicall-groups',
+  'sem-apicall-source',
   'sem-source-raw',
   // sem-md: the toggle/copy chrome, the rendered body and the raw fence
   // (the sem-code inside it included) are never content
   'sem-md-chrome',
   'sem-md-body',
-  'sem-md-raw'
+  'sem-md-raw',
+  // interactive containers: the workflow branch (built from the step's
+  // if-no ATTRIBUTE) and the tree chrome are generated — the record is the
+  // authored content only
+  'sem-step-branch',
+  'sem-step-branch-toggle',
+  'sem-step-branch-label',
+  'sem-step-branch-body',
+  'sem-tree-chrome',
+  'sem-tree-toggle',
+  'sem-tree-label',
+  'sem-file-tree-view',
+  'sem-tree-view-row',
+  // agent-kit-* components: EVERY fabricated node sits inside one
+  // `agent-kit-chrome` container (src/lit/agent-kit/chrome.ts), and the
+  // cached-embed base renders its snapshot enrichment into
+  // `sem-cached-embed-chrome` — both are chrome whole, so JS-off
+  // extraction equals JS-on (the authored inner content is the record)
+  'agent-kit-chrome',
+  'sem-cached-embed-chrome'
 ];
 
 /** Highlight / cloze markers, in every authoring and runtime form. */
@@ -232,6 +277,13 @@ type SkipFn = (el: Element) => boolean;
  * Concatenate the text of `el`, descending through inline markup but
  * skipping any element `skip` rejects. Raw concatenation preserves the
  * authored spacing; `norm` collapses it afterwards.
+ *
+ * Script elements are never prose: a `script[type="application/json"]`
+ * child is a cached-embed's DATA (snapshot for the upgraded element, per
+ * spec/schema/semtext.schema.json `cachedEmbed`), and executable scripts
+ * are behavior — none of it is record text. The scripts-stripped .nojs
+ * artifacts agree by construction, keeping the §8 invariant exact for
+ * documents that embed snapshots.
  */
 function collectText(el: Element, skip: SkipFn): string {
   let out = '';
@@ -242,7 +294,7 @@ function collectText(el: Element, skip: SkipFn): string {
       out += n.nodeValue || '';
     } else if (n.nodeType === 1) {
       const child = n as Element;
-      if (skip(child)) continue;
+      if (skip(child) || child.tagName === 'SCRIPT') continue;
       out += collectText(child, skip);
     }
   }
@@ -386,20 +438,20 @@ function buildNote(el: Element): Payload {
 function buildFact(el: Element): Payload {
   let statement = partText(el, 'sem-statement', 'statement');
   let conclusion = partText(el, 'sem-conclusion', 'conclusion');
-  const distractors: string[] = [];
-  const ds = parts(el, 'sem-distractor', 'sem-distractor');
+  const incorrectStatements: string[] = [];
+  const ds = parts(el, 'incorrect-statement', 'incorrect-statement');
   for (let i = 0; i < ds.length; i++) {
-    distractors.push(norm(collectText(ds[i], isChrome)));
+    incorrectStatements.push(norm(collectText(ds[i], isChrome)));
   }
 
   if (statement === null && conclusion === null) {
-    // Compact form: `statement :: conclusion`, distractors excluded.
+    // Compact form: `statement :: conclusion`, incorrect statements excluded.
     const raw = norm(
       collectText(el, function (child) {
         return (
           isChrome(child) ||
-          hasClass(child, 'sem-distractor') ||
-          tagOf(child) === 'sem-distractor'
+          hasClass(child, 'incorrect-statement') ||
+          tagOf(child) === 'incorrect-statement'
         );
       })
     );
@@ -415,7 +467,7 @@ function buildFact(el: Element): Payload {
   const fields: Record<string, unknown> = {
     statement: statement || '',
     conclusion: conclusion || '',
-    distractors: distractors,
+    incorrectStatements: incorrectStatements,
     highlights: highlightsIn(el)
   };
   const text = conclusion ? statement + ' :: ' + conclusion : statement || '';
@@ -503,10 +555,16 @@ function buildEvent(el: Element): Payload {
 function buildCode(el: Element): Payload {
   // `source` is VERBATIM — the one field whose whitespace is content
   // (spec/schema/sem-code.md, machine contract). Line-wrapping spans and
-  // <mark> are read through; chrome is skipped.
+  // <mark> are read through; chrome is skipped. The flat authoring form
+  // (no `<pre>` child — the listing is the element's own text) is read
+  // off the host itself; a host that renders no listing yields "".
   const pre = el.querySelector('pre');
   const code = pre ? pre.querySelector('code') || pre : null;
-  const source = code ? collectText(code, isChrome) : '';
+  // Flat form: the same two structural trims the runtime's adopt applies
+  // (one leading newline after the open tag, trailing whitespace before
+  // the close tag) so authored and enhanced `source` agree byte-for-byte.
+  const flat = code ? null : trimTrailingWs(collectText(el, isChrome).replace(/^\n/, ''));
+  const source = code ? collectText(code, isChrome) : flat ?? '';
   const lines = source === '' ? 0 : source.split('\n').length;
   return {
     fields: {
@@ -540,6 +598,47 @@ function buildReference(el: Element): Payload {
       cite: param(el, 'cite') || '',
       ordinal: ordinalAmongSiblings(el, 'sem-reference')
     },
+    text: prose(el)
+  };
+}
+
+/** The component card's manifest vocabulary (spec/schema/sem-component.md). */
+function labelList(el: Element): string[] {
+  const raw = param(el, 'labels');
+  if (!raw) return [];
+  const out: string[] = [];
+  const pieces = raw.split(/[\s,]+/);
+  for (let i = 0; i < pieces.length; i++) {
+    const t = pieces[i].trim();
+    if (t) out.push(t);
+  }
+  return out;
+}
+
+function buildComponent(el: Element): Payload {
+  return {
+    fields: {
+      tag: param(el, 'tag') || '',
+      name: param(el, 'name') || '',
+      source: param(el, 'source') || '',
+      type: param(el, 'type') || '',
+      status: param(el, 'status') || '',
+      labels: labelList(el)
+    },
+    // The authored children are the description (the JS-off record).
+    text: prose(el)
+  };
+}
+
+function buildSeeAlso(el: Element): Payload {
+  return {
+    fields: {
+      reference: param(el, 'reference') || 'section',
+      target: param(el, 'target') || '',
+      preview: param(el, 'preview') || 'tldr',
+      insertAs: param(el, 'insert-as') || 'link'
+    },
+    // The authored children are the label.
     text: prose(el)
   };
 }
@@ -579,6 +678,65 @@ function buildTable(el: Element): Payload {
   return { fields: { caption: caption, columns: columns, rows: rows }, text: caption };
 }
 
+/** The prose of a definition container, skipping its row children. */
+function descProse(el: Element, rowSel: string): string {
+  return norm(collectText(el, (n) => proseSkip(n) || n.matches(rowSel)));
+}
+
+/** One sem-tag-attr / sem-api-param row as a plain record. */
+function buildParamRow(el: Element, inKey: string | null): Record<string, unknown> {
+  const row: Record<string, unknown> = { name: norm(param(el, 'name') || '') };
+  const inValue = inKey === null ? null : param(el, inKey);
+  if (inValue !== null) row.in = inValue;
+  const type = param(el, 'type');
+  if (type !== null) row.type = type;
+  row.required = hasParam(el, 'required');
+  const dflt = param(el, 'default');
+  if (dflt !== null) row.default = dflt;
+  const allowed = param(el, 'allowed');
+  if (allowed !== null) {
+    row.allowed = allowed.split(',').map((v) => v.trim()).filter(Boolean);
+  }
+  row.description = prose(el);
+  return row;
+}
+
+const DEF_ROWS = 'sem-tag-attr, .sem-tag-attr';
+const API_ROWS = 'sem-api-param, .sem-api-param';
+
+function buildTagDef(el: Element): Payload {
+  const tag = norm(param(el, 'tag') || '');
+  const name = norm(param(el, 'name') || '');
+  const fields: Record<string, unknown> = {
+    tag: tag,
+    name: name || tag,
+    attributes: parts(el, 'sem-tag-attr', 'sem-tag-attr').map((a) => buildParamRow(a, null))
+  };
+  const group = param(el, 'group');
+  if (group !== null) fields.group = group;
+  const children = (param(el, 'children') || '').trim();
+  if (children) fields.children = children.split(/[\s,]+/).filter(Boolean);
+  const desc = descProse(el, DEF_ROWS);
+  const label = name && name !== tag ? tag + ' (' + name + ')' : tag;
+  return { fields: fields, text: label ? label + ' — ' + desc : desc };
+}
+
+function buildApiCall(el: Element): Payload {
+  const name = norm(param(el, 'name') || '');
+  const method = (param(el, 'method') || 'GET').trim().toUpperCase();
+  const endpoint = norm(param(el, 'endpoint') || '');
+  const fields: Record<string, unknown> = {
+    name: name,
+    method: method,
+    endpoint: endpoint,
+    params: parts(el, 'sem-api-param', 'sem-api-param').map((a) => buildParamRow(a, 'in'))
+  };
+  const status = param(el, 'status');
+  if (status !== null) fields.status = status;
+  const desc = descProse(el, API_ROWS);
+  return { fields: fields, text: name + ' — ' + method + ' ' + endpoint + (desc ? ' — ' + desc : '') };
+}
+
 function buildContainer(el: Element): Payload {
   return { fields: {}, text: '' };
 }
@@ -613,8 +771,16 @@ function payloadFor(type: string, el: Element): Payload {
       return buildCode(el);
     case 'sem-reference':
       return buildReference(el);
+    case 'sem-component':
+      return buildComponent(el);
+    case 'sem-see-also':
+      return buildSeeAlso(el);
     case 'sem-md':
       return buildMd(el);
+    case 'sem-tag-def':
+      return buildTagDef(el);
+    case 'sem-api-call':
+      return buildApiCall(el);
     case 'sem-table':
       return buildTable(el);
     case 'sem-facts':
@@ -642,13 +808,39 @@ function rootElement(root: Document | Element): Element | null {
 }
 
 /**
- * Extract the canonical record array from a document or a root element,
- * in document order. Pure: the DOM is not modified.
+ * One extracted record paired with the element that minted it.
+ *
+ * `SemRecord` is deliberately address-free (spec/extraction.md): tools that
+ * need the source element — agent outline/expand, editor splicing — use
+ * `extractRecordPairs`, which carries the element alongside the exact same
+ * records in the exact same order. The record shape itself never grows an
+ * element reference.
  */
-export function extractRecords(root: Document | Element): SemRecord[] {
+export interface RecordPair {
+  el: Element;
+  record: SemRecord;
+}
+
+/**
+ * Extract records paired with their minting elements, in document order.
+ * Same purity guarantee as `extractRecords`: the DOM is not modified.
+ */
+export function extractRecordPairs(root: Document | Element): RecordPair[] {
   const start = rootElement(root);
-  const out: SemRecord[] = [];
-  if (!start) return out;
+  const pairs: RecordPair[] = [];
+  if (!start) return pairs;
+
+  // Authored identity only: the views enhancer mints panel ids for aria
+  // wiring and marks them (runtime state is always data-*); a minted id
+  // must never surface as a record id or JS-on extraction diverges from
+  // the authored page.
+  // sem-reference is the one exception: its AUTO-ID is a pure function of
+  // authored attributes (shared/reference-id.ts), so both tiers derive the
+  // same id — the authored id when present, else <block>-<slug(cite)>.
+  function authoredId(el: Element): string | null {
+    if (recordType(el) === 'sem-reference') return deriveReferenceId(el);
+    return el.hasAttribute('data-sem-minted-id') ? null : el.getAttribute('id');
+  }
 
   function visit(el: Element, parentIndex: number | null): void {
     if (isChrome(el)) return;
@@ -660,16 +852,16 @@ export function extractRecords(root: Document | Element): SemRecord[] {
       const payload = payloadFor(type, el);
       const record: SemRecord = {
         type: type,
-        id: el.getAttribute('id'),
+        id: authoredId(el),
         kind: param(el, 'kind'),
         tags: tagList(el),
         audience: param(el, 'audience'),
         parent: parentIndex,
         fields: payload.fields,
         text: payload.text,
-        sourceOrder: out.length
+        sourceOrder: pairs.length
       };
-      out.push(record);
+      pairs.push({ el: el, record: record });
       index = record.sourceOrder;
     }
 
@@ -684,7 +876,17 @@ export function extractRecords(root: Document | Element): SemRecord[] {
     const kids = start.children;
     for (let i = 0; i < kids.length; i++) visit(kids[i], null);
   }
-  return out;
+  return pairs;
+}
+
+/**
+ * Extract the canonical record array from a document or a root element,
+ * in document order. Pure: the DOM is not modified.
+ */
+export function extractRecords(root: Document | Element): SemRecord[] {
+  return extractRecordPairs(root).map(function (p) {
+    return p.record;
+  });
 }
 
 /* ------------------------------------------------------------------ *
@@ -695,8 +897,12 @@ function depthOf(records: SemRecord[], record: SemRecord): number {
   let d = 0;
   let p = record.parent;
   while (p !== null && d < 32) {
+    // A parent outside the given array (a subset render, one standalone
+    // record) simply stops the walk: depth is best-effort there.
+    const up = records[p];
+    if (!up) break;
     d++;
-    p = records[p].parent;
+    p = up.parent;
   }
   return d;
 }
@@ -713,7 +919,7 @@ function annotate(record: SemRecord): string {
 const TEXTUAL_FIELDS: Record<string, string[]> = {
   'sem-agent': ['bio', 'instructions'],
   'sem-note': ['variant'],
-  'sem-fact': ['distractors'],
+  'sem-fact': ['incorrectStatements'],
   'sem-detail': ['highlights'],
   'sem-step': ['status'],
   'sem-progress': ['rawValue'],
@@ -724,7 +930,9 @@ const TEXTUAL_FIELDS: Record<string, string[]> = {
   'sem-code': ['lang', 'filename'],
   'sem-reference': ['href', 'cite'],
   'sem-table': ['columns'],
-  'sem-md': []
+  'sem-md': [],
+  'sem-tag-def': ['group', 'children'],
+  'sem-api-call': ['method', 'endpoint', 'status']
 };
 
 /**

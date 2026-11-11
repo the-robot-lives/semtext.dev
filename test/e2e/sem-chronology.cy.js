@@ -1,8 +1,8 @@
 // BDD spec — sem-chronology / sem-event · source: spec/schema/sem-chronology.md
 //
 // Feature: an ordered, dated event list renders as a CSS-only timeline in
-//          both authoring forms, with no script and no tier marker
-//   Scenario: authored roles, DOM order, no tier marker (class form)
+//          both authoring forms, with no script claim and no marker
+//   Scenario: authored roles, DOM order, no upgrade marker (class form)
 //   Scenario: date label — <time> child wins, else attr(data-when)
 //   Scenario: status glyph beside colour
 //   Scenario: view-as="list" drops the rail, keeps every event
@@ -12,10 +12,8 @@
 const cs = (el, pseudo) => el.ownerDocument.defaultView.getComputedStyle(el, pseudo);
 
 function assertChronology(root) {
-  it('authored roles and DOM order; no tier marker', () => {
+  it('authored roles and DOM order, untouched by the runtime', () => {
     cy.get(root + '#history').should('have.attr', 'role', 'list');
-    cy.get(root + '#history').should('not.have.attr', 'data-sem-fallback');
-    cy.get(root + '#history').should('not.have.attr', 'data-sem-upgraded');
     cy.get(root + '#history > *').should('have.length', 3).each(($e) => {
       cy.wrap($e).should('have.attr', 'role', 'listitem');
       cy.wrap($e).should('be.visible');
@@ -58,16 +56,22 @@ describe('sem-chronology', () => {
   describe('class form — /demo/reading.html', () => {
     beforeEach(() => cy.visit('/demo/reading.html'));
     assertChronology('.sem-chronology');
+    it('class form is never claimed (custom elements upgrade tags only)', () => {
+      cy.get('.sem-chronology#history').should('not.have.attr', 'data-sem-upgraded');
+    });
   });
 
-  describe('element form — /demo/reading-lit.html (CSS-only, no custom element)', () => {
+  describe('element form — /demo/reading-lit.html (CSS-only render, claim stub)', () => {
     beforeEach(() => cy.visit('/demo/reading-lit.html'));
-    it('defines no custom element for a CSS-only family', () => {
+    it('registers a claim stub — every element answers customElements.get', () => {
       cy.window().then((win) => {
-        expect(win.customElements.get('sem-chronology')).to.equal(undefined);
+        expect(win.customElements.get('sem-chronology')).to.be.a('function');
       });
     });
     assertChronology('sem-chronology');
+    it('the claim stub marks the element (no render rewrite)', () => {
+      cy.get('sem-chronology#history').should('have.attr', 'data-sem-upgraded');
+    });
   });
 
   describe('JS-off — /demo/reading.nojs.html', () => {

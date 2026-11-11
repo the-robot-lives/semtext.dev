@@ -1,7 +1,0 @@
-node_modules/
-.parity/
-cypress/videos/
-cypress/screenshots/
-cypress/downloads/
-cypress/parity-snap/.out/
-.cucumber-cache/
