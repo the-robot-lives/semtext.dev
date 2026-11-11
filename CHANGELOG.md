@@ -2,6 +2,10 @@
 
 ## 2026-11-11
 
+- feat(sem-shell): the landing view tabs run the real demos + the lazy chunks finally ship. `try_views.ex` switches the three shell tabs from the dead `/demo/scripts/*.txt` (one bare line the parser treated as a comment) to the bundle's named demos `landing-code` / `landing-tui` / `landing-cli`; `landing-bootstrap.js` injects the shell bundle only when the try section nears the viewport (IntersectionObserver, 300px rootMargin) and appends an honest note per panel on a failed load instead of the old "once the bundle lands" placeholder; `/showcase/sem-shell/` carries a live `<sem-shell start-script="landing-cli">` beside the source example and its stale "this site does not carry that bundle" / "two plugins" copy is corrected (three plugins + ten lazy packages; footer repo URL → the-robot-lives). `sync-bundles.mjs` gains `copyRootGlob` so the shell's dist-root lazy chunks (`nano-app.js`, `semtext-pkg-*.js`, `worker-*.js`) travel with the bundle — they were never vendored, so every package command and nano failed live; a new `static_assets_test` case guards every manifest file + all ten package chunks + the wasm worker. Re-synced the shell family + `_vocabulary.css` into both vendored trees (root alias / stable / latest) from npl-enhanced-content develop 865e4c1 (nano ES #91, quiet boot #92, keyboard exit #94, one live region #97, unique ids #98, lazy first-use #100, stop control #101, menu/tab ARIA #102). Old Next `web/` tree keeps its file-based scripts (retirement deferred).
+
+## 2026-11-11
+
 - ci(app): App CI test job installs root npm deps (`npm ci`) — `bin/semtext-validate.mjs` (claude_examples_test) imports happy-dom from the root package.json; #234 shipped the validator test without the runner installing it (PR ran red, landed anyway) and every App CI run since fails there (first main run after #234 = release #238, build-push skipped, no deploy); npm ci before mix test
 ## 2026-11-11
 
