@@ -12,6 +12,7 @@ import {
   cardKeys,
   collapseLines,
   collapseWhitespace,
+  decodeEntities,
   expandedPlan,
   factLine,
   firstWords,
@@ -162,6 +163,7 @@ const KNOWN_ELEMENTS: ReadonlySet<string> = new Set([
   'sem-file-tree',
   'sem-guard-rail',
   'sem-guard-rails',
+  'sem-highlight',
   'sem-howto',
   'sem-kb',
   'sem-list',
@@ -279,6 +281,8 @@ const HEADING_NAME = /^h([1-6])$/
 type ParseNode = SemTextNode & {
   raw?: string
   inheritedSeed?: number | null
+  /** `<caption>` text of a sem-table (routed out of the row capture). */
+  caption?: string
 }
 
 type TextContainer = {
@@ -302,6 +306,64 @@ type TextContainer = {
 
 const LIST_CONTAINERS = new Set(['ul', 'ol', 'dl'])
 const ITEM_CONTAINERS = new Set(['li', 'dt', 'dd'])
+
+/**
+ * Inline-tag family → visible pair delimiters (schema `highlight`: tag
+ * aliases `highlight`/`sem-highlight`, class alias span/div.sem-highlight;
+ * plus the plain-HTML inline tags prose carries). The gap-capture writes the
+ * delimiters straight into the text stream; container captures decode the
+ * original markup via decodeInlineMarks. render.tsx pairs them into styled
+ * spans (highlight cyan, strong bold, em italic, code green, struck dim) so
+ * the TUI colors and weights the emphasis like the web renderer.
+ */
+const INLINE_MARKS: Readonly<Record<string, readonly [string, string]>> = {
+  highlight: ['⟦', '⟧'],
+  'sem-highlight': ['⟦', '⟧'],
+  mark: ['⟦', '⟧'],
+  strong: ['**', '**'],
+  b: ['**', '**'],
+  em: ['*', '*'],
+  i: ['*', '*'],
+  code: ['`', '`'],
+  del: ['~~', '~~'],
+  s: ['~~', '~~'],
+  strike: ['~~', '~~'],
+}
+const INLINE_TAG_RE =
+  /<(\/)?(span|div|highlight|sem-highlight|mark|strong|b|em|i|code|del|s|strike)\b([^>]*)>/gi
+
+/**
+ * Container captures slice the ORIGINAL source, so inline tags arrive as
+ * literal markup — decode them into the pair delimiters. Other span/div
+ * wrappers are dropped (their text stays); a `</span>` only emits the close
+ * delimiter when an unpaired sem-highlight span opened before it.
+ */
+function decodeInlineMarks(value: string): string {
+  let out = ''
+  let last = 0
+  const highlightSpans: boolean[] = []
+  for (const tag of value.matchAll(INLINE_TAG_RE)) {
+    out += value.slice(last, tag.index)
+    last = tag.index + tag[0].length
+    const closing = tag[1] === '/'
+    const name = tag[2]!.toLowerCase()
+    if (name === 'span' || name === 'div') {
+      if (!closing && /sem-highlight/.test(tag[3] ?? '')) {
+        out += '⟦'
+        highlightSpans.push(true)
+      } else if (closing && highlightSpans.pop() === true) {
+        out += '⟧'
+      }
+      continue
+    }
+    const pair = INLINE_MARKS[name]
+    if (pair === undefined) continue
+    out += closing ? pair[1] : pair[0]
+  }
+  out += value.slice(last)
+  return out
+}
+
 
 function roman(n: number, upper: boolean): string {
   const table: Array<[number, string]> = [
@@ -454,10 +516,18 @@ function contentFor(
         MAX_TABLE_ROWS,
       )
       if (rows.length === 0) return undefined
-      return { kind: 'table', rows }
+      const caption =
+        node.caption !== undefined && collapseWhitespace(node.caption) !== ''
+          ? collapseWhitespace(node.caption)
+          : undefined
+      return caption !== undefined ? { kind: 'table', rows, caption } : { kind: 'table', rows }
     }
     case 'sem-code': {
-      const source = [raw.trim(), ...childRaws.map(line => line.trim())]
+      // Verbatim: entities decode (`&lt;` in source means a literal `<`).
+      const source = [
+        decodeEntities(raw.trim()),
+        ...childRaws.map(line => decodeEntities(line.trim())),
+      ]
         .filter(part => part !== '')
         .join('\n')
       const body = source.split('\n').slice(0, MAX_CODE_LINES).join('\n')
@@ -515,6 +585,9 @@ export function parseSemText(text: string): ParsedSemText | null {
   let stored = 0
   let line = 1
   let i = 0
+  // An open `<caption>` routes gap text into the owning sem-table node's
+  // caption (instead of the row capture) until `</caption>` closes it.
+  let captionNode: ParseNode | null = null
 
   const captureGap = (from: number, to: number): void => {
     if (to <= from) return
@@ -525,9 +598,9 @@ export function parseSemText(text: string): ParsedSemText | null {
     // always sits at the very end of the gap slice (the tag starts the next
     // slice), so `$` must count as an escape position too. Quotes round the
     // set out — escaped `\"` at a body's end leaked a stray backslash.
-    top.raw =
-      (top.raw ?? '') +
-      sanitize(text.slice(from, to)).replace(/\\([<>"']|$)/g, '$1')
+    const piece = sanitize(text.slice(from, to)).replace(/\\([<>"']|$)/g, '$1')
+    if (captionNode !== null) captionNode.caption = (captionNode.caption ?? '') + piece
+    else top.raw = (top.raw ?? '') + piece
   }
   const captureContainer = (container: TextContainer, at: number, to: number): void => {
     // Record spans of every implicitly-closed inner container (and this one)
@@ -571,10 +644,13 @@ export function parseSemText(text: string): ParsedSemText | null {
       text.slice(container.start, to),
       container.consumed ?? [],
       container.start,
+    ).replace(COMMENT_BLOCK, ' ')
+    // Inline tags become pair delimiters BEFORE the generic tag strip, so
+    // the emphasis survives; leftover markup (fallback table tr/td…) still
+    // blanks to a space.
+    const clean = collapseWhitespace(
+      decodeInlineMarks(sanitize(inner)).replace(TAG_LIKE, ' '),
     )
-      .replace(COMMENT_BLOCK, ' ')
-      .replace(TAG_LIKE, ' ')
-    const clean = collapseWhitespace(sanitize(inner))
     const heading = HEADING_NAME.exec(container.name)
     if (clean !== '') {
       const own: SemBlock[] = (container.own ??= [])
@@ -665,6 +741,27 @@ export function parseSemText(text: string): ParsedSemText | null {
       continue
     }
     if (!name.startsWith('sem-') && !NPL_ELEMENTS.has(name)) {
+      // Inline emphasis family: write the pair delimiters into the raw
+      // capture (container slices decode their own markup below).
+      const pair = INLINE_MARKS[name]
+      if (pair !== undefined) {
+        const top = stack[stack.length - 1]
+        if (top !== undefined && containers.length === 0) {
+          if (closing) top.raw += pair[1]
+          else if (!selfClosing) top.raw += pair[0]
+        }
+        i = end
+        continue
+      }
+      if (name === 'caption') {
+        // Caption text routes into the owning sem-table node (captureGap),
+        // so the row capture never sees it and the grid can draw it as the
+        // table's header.
+        if (closing) captionNode = null
+        else if (!selfClosing && stack.length > 0) captionNode = stack[stack.length - 1]!
+        i = end
+        continue
+      }
       if (closing) {
         let at = -1
         for (let s = containers.length - 1; s >= 0; s--) {
@@ -706,8 +803,12 @@ export function parseSemText(text: string): ParsedSemText | null {
         // `<br>` variants are hard row breaks in boxed prose — record a line
         // break in the raw capture so finalizeNode's per-line collapse keeps
         // the split (literal newlines already land in gap slices verbatim).
+        // Inside a sem-table a br breaks WITHIN the cell, not the row: the
+        // ⏎ sentinel rides inside the cell text and the grid splits on it.
         const top = stack[stack.length - 1]
-        if (top !== undefined && containers.length === 0) top.raw += '\n'
+        if (top !== undefined && containers.length === 0) {
+          top.raw += top.tag === 'sem-table' ? '⏎' : '\n'
+        }
       }
       i = end
       continue
