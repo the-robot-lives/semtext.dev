@@ -75,8 +75,9 @@ sem-enhanced-document, sem-agent, sem-audiences, sem-note, sem-facts, sem-fact,
 sem-details, sem-detail, sem-procedure, sem-step, sem-properties, sem-property,
 sem-views, sem-view, sem-reveal, sem-progress, sem-quota-meter, sem-question, sem-option,
 sem-chronology, sem-event, sem-code, sem-references, sem-reference, sem-reader, sem-table, sem-source, sem-md,
-sem-data-visualizer, sem-data-source, sem-tldr,
-sem-agent > :is(name, bio, instructions), sem-fact > :is(statement, conclusion, incorrect-statement) { display: block; }
+sem-data-visualizer, sem-data-source, sem-tldr, sem-enhanced-document > agent,
+sem-agent > :is(name, bio, instructions), sem-enhanced-document > agent > :is(name, bio, instructions),
+sem-fact > :is(statement, conclusion, incorrect-statement) { display: block; }
 /* The audience fallback hides with the native attribute; keep it winning
    over the block rule above for element forms — and in every scope: doc
    panes ([data-sem-theme] roots without a sem-enhanced-document wrapper)
@@ -96,12 +97,13 @@ sem-agent > :is(name, bio, instructions), sem-fact > :is(statement, conclusion, 
 .sem-target { outline: 2px solid var(--sem-accent); outline-offset: 4px; border-radius: 8px;
   transition: outline-color .6s; }
 
-/* metadata */
-:is(sem-agent, .sem-agent) { border: 1px solid var(--sem-border); border-radius: 12px;
+/* metadata — `sem-enhanced-document > agent` is the bare-tag form of the
+   same card (spec: bare `<agent>` metadata children); extraction unchanged. */
+:is(sem-agent, .sem-agent, sem-enhanced-document > agent) { border: 1px solid var(--sem-border); border-radius: 12px;
   padding: 1rem; margin: 1.5rem 0; background: var(--sem-surface); }
-:is(sem-agent, .sem-agent) :is(name, .sem-agent-name) { font-weight: 600; }
-:is(sem-agent, .sem-agent) :is(bio, .sem-agent-bio) { color: var(--sem-muted); margin: .25rem 0; }
-:is(sem-agent, .sem-agent) :is(instructions, .sem-agent-instructions) { font-size: .875rem; margin: .25rem 0 0; }
+:is(sem-agent, .sem-agent, sem-enhanced-document > agent) :is(name, .sem-agent-name) { font-weight: 600; }
+:is(sem-agent, .sem-agent, sem-enhanced-document > agent) :is(bio, .sem-agent-bio) { color: var(--sem-muted); margin: .25rem 0; }
+:is(sem-agent, .sem-agent, sem-enhanced-document > agent) :is(instructions, .sem-agent-instructions) { font-size: .875rem; margin: .25rem 0 0; }
 
 /* audiences — profile declarations render as a muted metadata strip */
 :is(sem-audiences, .sem-audiences) { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center;
