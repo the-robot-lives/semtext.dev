@@ -12,7 +12,7 @@ import { defineConfig } from 'vite';
  *
  * `vite preview` serves `dist/` as the web root, which is why the cypress
  * baseUrl resolves `/demo/index.html` to `dist/demo/index.html` — the BUILT
- * page, not the marker source in `web/demo/`.
+ * page, not the marker source in `demo/`.
  */
 export default defineConfig({
   build: { outDir: 'dist', target: 'es2022' },
@@ -28,6 +28,15 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**', 'scripts/**', 'bin/**'],
+      // Hand-run bundle-sync tooling relocated from web/scripts/ when web/
+      // was retired (2026-11-11). It was never in the measured surface
+      // (web/ is not included above) and has no unit specs — keep it out so
+      // the relocation does not dilute the coverage ratchet.
+      exclude: [
+        'scripts/sync-bundles.mjs',
+        'scripts/build-bundle-map.mjs',
+        'scripts/gen-build-info.mjs',
+      ],
       reporter: ['text-summary', 'html', 'json-summary'],
       reportsDirectory: 'coverage',
       thresholds: { lines: 16 }

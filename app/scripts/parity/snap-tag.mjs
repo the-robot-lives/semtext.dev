@@ -3,9 +3,9 @@
 /*
  * snap-tag.mjs — render-snapshot driver for ONE route, against EITHER side
  * of the semtext.dev replatform (Next.js landing-preview site or the
- * Hologram app). Port of web/scripts/snap/snap-tag.mjs (same discovery
- * contract, same capture guarantees); route-parameterized so it snapshots
- * any page, not only /reference/<tag>/.
+ * Hologram app). Port of the retired web/scripts/snap/snap-tag.mjs (same
+ * discovery contract, same capture guarantees); route-parameterized so it
+ * snapshots any page, not only /reference/<tag>/.
  *
  *   node scripts/parity/snap-tag.mjs --base <url> --route <path> [--tag <slug>] [--dist <dir>] [--out <dir>]
  *   node scripts/parity/snap-tag.mjs --base <url> --tag highlight

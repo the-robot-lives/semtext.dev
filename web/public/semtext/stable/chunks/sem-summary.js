@@ -1,1 +1,0 @@
-import{S as r}from"./base-BKd1N4qP.js";import{S as a}from"./callout-l3Mx3GiU.js";import{p as e}from"./attr-EimdvHQb.js";import"./lit-element-DWovE5T-.js";class t extends a{calloutLabel(){const m=e(this,"kind");return m?"Summary · "+m:"Summary"}}r.register("sem-summary",t);

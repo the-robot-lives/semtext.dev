@@ -6,8 +6,8 @@
     "BDD + snapshot Cypress harness for the semtext.dev Elixir replatform",
     "(parity-harness lane). The site under test is the Hologram app at",
     "PARITY_APP_BASE (default http://127.0.0.1:4100); the Next.js source of",
-    "truth is never launched from here. Versions mirror the landing-preview",
-    "web/package.json devDependencies so the shared Cypress binary cache is",
+    "truth is never launched from here. Versions mirrored the retired Next",
+    "site's web/package.json devDependencies so the shared Cypress binary cache is",
     "reused. npm ci once; cypress.run is also used programmatically by",
     "scripts/parity/snap-tag.mjs."
   ],

@@ -4,9 +4,6 @@
 **/node_modules
 landing/.next
 landing/out
-web/.next
-web/out
-web/cypress
 dist
 coverage
 test/screenshots

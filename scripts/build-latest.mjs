@@ -1,7 +1,7 @@
 /**
  * build-latest — assemble the consolidated v0.6 `latest` bundle.
  *
- * Emits, to every surface serving static assets:
+ * Emits, to the vendored bundle tree (app/backend/priv/static/semtext/):
  *   <out>/semtext.css   vocabulary base + _default + v0.6 additions + ALL
  *                       five themes (each scoped under
  *                       html[data-sem-theme="<slug>"]; default = tokens on
@@ -13,16 +13,17 @@
  *   <out>/themes/*.css  the per-theme token files (for pinned documents)
  *
  * The vocabulary base is the SYNCED 0.9.4 vocabulary
- * (web/public/semtext/themes/_vocabulary.css, refreshed by sync-bundles),
- * not the stale root themes/ copy — the v0.6 layer (_v06.css + themes +
- * runtime/semtext-v06.js) is authored to layer additively on top of it.
+ * (app/backend/priv/static/semtext/themes/_vocabulary.css, refreshed by
+ * sync-bundles), not the stale root themes/ copy — the v0.6 layer
+ * (_v06.css + themes + runtime/semtext-v06.js) is authored to layer
+ * additively on top of it.
  *
- * Outputs: web/public/semtext/latest/ and
- * app/backend/priv/static/semtext/latest/. The rest of each latest/
- * directory (chunks, lazy, manifests — the sync-bundles.mjs output) is
- * left untouched; re-running sync-bundles.mjs overwrites semtext.css /
- * semtext.js with the plain 0.9.4 sync, so re-run this script after any
- * such sync.
+ * Output: app/backend/priv/static/semtext/latest/ (the one vendored tree;
+ * the legacy web/public/semtext/ output was retired with web/ 2026-11-11).
+ * The rest of the latest/ directory (chunks, lazy, manifests — the
+ * sync-bundles.mjs output) is left untouched; re-running sync-bundles.mjs
+ * overwrites semtext.css / semtext.js with the plain 0.9.4 sync, so re-run
+ * this script after any such sync.
  *
  * Usage: node scripts/build-latest.mjs
  */
@@ -33,18 +34,18 @@ import { dirname, resolve } from 'node:path';
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '..');
 
-const VENDORED = resolve(repo, 'app/backend/priv/static/semtext/v0.9.4/semtext.js');
-const VERSION_SOURCE = resolve(repo, 'web/public/semtext/VERSION.md');
+const SEMTEXT = 'app/backend/priv/static/semtext';
+const VENDORED = resolve(repo, SEMTEXT, 'v0.9.4/semtext.js');
+const VERSION_SOURCE = resolve(repo, SEMTEXT, 'VERSION.md');
 const OUTS = [
-  resolve(repo, 'web/public/semtext/latest'),
-  resolve(repo, 'app/backend/priv/static/semtext/latest'),
+  resolve(repo, SEMTEXT, 'latest'),
 ];
 
 // [source path, name under <out>/themes/]. The vocabulary base is the
 // synced 0.9.4 vocabulary so the layer tracks future sync-bundles
 // refreshes; every other part is this repo's v0.6 layer.
 const CSS_PARTS = [
-  ['web/public/semtext/themes/_vocabulary.css', '_vocabulary.css'],
+  [`${SEMTEXT}/themes/_vocabulary.css`, '_vocabulary.css'],
   ['themes/_default.css', '_default.css'],
   ['themes/_v06.css', '_v06.css'],
   ['themes/minimal-tech-light.css', 'minimal-tech-light.css'],
@@ -63,15 +64,15 @@ const banner = (title, note) => `/* SemText — ${title}
 `;
 
 // VERSION.md — the provenance note for the /semtext/ tree is composed by
-// web/scripts/sync-bundles.mjs and committed at web/public/semtext/
-// VERSION.md; its "v0.6 assembly" paragraph already documents this
-// script's output, so the latest/ mirrors carry the note verbatim. The
+// scripts/sync-bundles.mjs and committed at app/backend/priv/static/
+// semtext/VERSION.md; its "v0.6 assembly" paragraph already documents this
+// script's output, so the latest/ mirror carries the note verbatim. The
 // file must pre-exist (run sync-bundles first): this script never
 // invents sync provenance it did not perform.
 function versionMd() {
   if (!existsSync(VERSION_SOURCE)) {
     throw new Error(
-      `missing ${VERSION_SOURCE} — run web/scripts/sync-bundles.mjs first`,
+      `missing ${VERSION_SOURCE} — run scripts/sync-bundles.mjs first`,
     );
   }
   return readFileSync(VERSION_SOURCE, 'utf8');

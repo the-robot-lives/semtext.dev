@@ -4,16 +4,23 @@
  * (app/backend/priv/data/docs/search-tags.json) from the same sources of
  * truth the compile-time reference modules use:
  *
- *   <web>/data/elements.json                       — generated inventory
- *   <web>/data/reference-glossary.ts               — hand-authored supplement
- *   <web>/data/reference-buckets.ts                — editorial buckets (id/label/description/names)
+ *   data/elements.json                       — generated inventory
+ *   data/reference-glossary.ts               — hand-authored supplement
+ *   data/reference-buckets.ts                — editorial buckets (id/label/description/names)
  *   app/backend/priv/data/description-overrides.json — plain-language copy layer
+ *
+ * (data/ is the repo-root reference source dir, relocated from the retired
+ * web/data/ 2026-11-11.)
  *
  * The overrides are applied HERE (same rule as Semtext.Reference.Tags):
  * a tag without an override entry fails the run — new elements must ship
  * plain-language copy, not stale generated prose.
  *
- * Usage:  node app/scripts/gen-search-tags.mjs --web <path-to-web-dir>
+ * Usage:  node app/scripts/gen-search-tags.mjs [--data <data-dir>]
+ *         node app/scripts/gen-search-tags.mjs --web <dir-containing-data>
+ *
+ * --data defaults to this checkout's data/. --web is the legacy alias (a
+ * directory CONTAINING data/) kept for old invocations.
  *
  * Long-term this file retires once SearchIndex reads the compile-time
  * Semtext.Reference.* modules directly (see its moduledoc); until then
@@ -25,16 +32,18 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
 const args = process.argv.slice(2);
-const webFlag = args.indexOf("--web");
-if (webFlag === -1 || !args[webFlag + 1]) {
-  console.error("usage: node gen-search-tags.mjs --web <path-to-web-dir>");
-  process.exit(3);
-}
-const web = resolve(args[webFlag + 1]);
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+// --data points at the reference source dir directly; --web is the legacy
+// alias (a dir CONTAINING data/). Default: this checkout's data/.
+const dataFlag = args.indexOf("--data");
+const webFlag = args.indexOf("--web");
+let dataDir;
+if (dataFlag !== -1 && args[dataFlag + 1]) dataDir = resolve(args[dataFlag + 1]);
+else if (webFlag !== -1 && args[webFlag + 1]) dataDir = join(resolve(args[webFlag + 1]), "data");
+else dataDir = join(repoRoot, "data");
 const backend = join(repoRoot, "app", "backend");
 
-const elements = JSON.parse(readFileSync(join(web, "data", "elements.json"), "utf8"));
+const elements = JSON.parse(readFileSync(join(dataDir, "elements.json"), "utf8"));
 const overridesPath = join(backend, "priv", "data", "description-overrides.json");
 const overrides = JSON.parse(readFileSync(overridesPath, "utf8")).overrides;
 
@@ -53,12 +62,12 @@ const applyOverride = (t) => {
   };
 };
 
-const { GLOSSARY_TAGS } = await import(`file://${join(web, "data", "reference-glossary.ts")}`);
+const { GLOSSARY_TAGS } = await import(`file://${join(dataDir, "reference-glossary.ts")}`);
 
 // reference-buckets.ts imports via the "@/" alias; bare Node cannot resolve
 // it — same temp-dir rewrite as gen-reference.mjs.
 const tmpData = mkdtempSync(join(tmpdir(), "gensearch-"));
-cpSync(join(web, "data"), join(tmpData, "data"), { recursive: true });
+cpSync(dataDir, join(tmpData, "data"), { recursive: true });
 for (const f of readdirSync(join(tmpData, "data"))) {
   if (f.endsWith(".ts")) {
     const p = join(tmpData, "data", f);

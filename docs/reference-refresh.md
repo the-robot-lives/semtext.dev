@@ -3,20 +3,29 @@
 The `/reference` section of the Hologram app (`app/backend`) is built from
 compile-time data under `app/backend/priv/data/`. Generated files are never
 hand-edited; hand-authored overlays are mandatory per tag and fail the build
-when a tag is missing.
+when a tag is missing. The reference **source** data lives at the repo root
+in `data/` (relocated from the retired `web/data/` 2026-11-11): the
+generated `elements.json` / `bundles.json` plus the hand-authored
+`reference-*.ts` overlays.
 
 | File | Kind | Owner |
 |---|---|---|
-| `elements.json`, `bundles.json` | generated upstream (`npl-enhanced-content`) | `mix semtext.gen_reference --web <web>` copies them |
-| `example-variants.json` | converted from `web/data/reference-example-variants.ts` | `mix semtext.gen_reference` |
+| `elements.json`, `bundles.json` | generated upstream (`npl-enhanced-content`) | `mix semtext.gen_reference --web .` copies them from `data/` |
+| `example-variants.json` | converted from `data/reference-example-variants.ts` | `mix semtext.gen_reference` |
 | `description-overrides.json` | hand-authored plain-language copy, **mandatory per tag** | edit by hand |
 | `claude-examples.json` | per-tag "SemText — Claude example", **mandatory per tag** | hand (`"source": "hand"`) + seeder (`"source": "seed"`) |
 
 ## Steps
 
 1. Pull the upstream subtree / vendor bump (bundles come from upstream
-   `npl-enhanced-content` `develop`, never from the subtree copy).
-2. `cd app/backend && mix semtext.gen_reference --web <landing-preview/web> --seed-claude-examples`
+   `npl-enhanced-content` `develop`, never from the subtree copy). Sync the
+   vendored bundle tree first: `node scripts/sync-bundles.mjs --from <dist>`
+   (regenerates `data/bundles.json`).
+2. `cd app/backend && mix semtext.gen_reference --web . --seed-claude-examples`
+   - `--web` takes a directory CONTAINING `data/`; `.` (the repo root) is the
+     normal value now that the source data lives at `data/`. The underlying
+     `app/scripts/gen-reference.mjs` also accepts `--data <dir>` and defaults
+     to the repo `data/` when run directly;
    - refreshes `elements.json`, `bundles.json`, `example-variants.json`, `glossary.ex`, `buckets.ex`;
    - re-seeds every `"source": "seed"` entry of `claude-examples.json` from the
      new spec examples (normalised to the sem-text-author conventions) and

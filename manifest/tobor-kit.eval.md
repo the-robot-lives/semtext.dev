@@ -1,7 +1,7 @@
 # Eval prompt — tobor-kit web component review
 
 Program: SemText web-component evaluation · rubric_version **v1**.
-Rubric (authoritative, do not restate): `$SEMTEXT_ROOT/web/public/spec/web-component-evaluator.sem.html`
+Rubric (authoritative, do not restate): `$SEMTEXT_ROOT/spec/web-component-evaluator.sem.html`
 
 ## Role and goal
 
@@ -16,7 +16,7 @@ component + one branch slice + one venue. You read; you never fix.
 | :--- | :--- |
 | `$TOBOR_KIT_ROOT` | tobor-kit checkout root. Unset or missing ⇒ fail fast with a usage error; never guess a path. |
 | manifest slice | `$TOBOR_KIT_ROOT/components/manifest.yaml` — locate the entry whose `tag` matches the component under grade. That slice is the entire grading target. |
-| rubric | `$SEMTEXT_ROOT/web/public/spec/web-component-evaluator.sem.html` (rendered or source — the authored text is the record). |
+| rubric | `$SEMTEXT_ROOT/spec/web-component-evaluator.sem.html` (rendered or source — the authored text is the record). |
 | `$REVIEW_OUTPUT` | The run file the fragment is appended to. Default: `$TOBOR_KIT_ROOT/components/review.yaml`. |
 | `$RUN_ID`, `$BRANCH`, `$VENUE` | Fragment fields: opaque run id; branch enum `prod\|stage\|dev\|oob`; venue enum `evalnomi\|subagent\|script`. |
 
@@ -77,7 +77,7 @@ component + one branch slice + one venue. You read; you never fix.
 <bio>Machine contract for the tobor-kit lane of the SemText web-component evaluation program.</bio>
 <instructions>
 target: $TOBOR_KIT_ROOT (tobor-kit checkout root; fail fast if unset).
-rubric: $SEMTEXT_ROOT/web/public/spec/web-component-evaluator.sem.html — rubric_version v1, eight dimensions, weights sum 100.
+rubric: $SEMTEXT_ROOT/spec/web-component-evaluator.sem.html — rubric_version v1, eight dimensions, weights sum 100.
 manifest: $TOBOR_KIT_ROOT/components/manifest.yaml is the read-only grading inventory; grade only the tag named for this run; never edit it.
 surface-contract: $TOBOR_KIT_ROOT/web/registry.yaml (tags, attrs, aliases, slots, classes, cy_prefix/cy, events) — declared surface wins over code claims.
 output: one review fragment per the rubric #fragment schema (tag, run, branch [prod|stage|dev|oob], venue [evalnomi|subagent|script], grade, score 0-100, rubric_version v1, summary, findings[{severity: info|minor|major|blocker, note}]) appended to $REVIEW_OUTPUT (default $TOBOR_KIT_ROOT/components/review.yaml).

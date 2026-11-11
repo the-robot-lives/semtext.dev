@@ -2,11 +2,12 @@
 /*
  * gen-reference.mjs — P0 refresh path for the reference data (design v2 §2.3).
  *
- * Sources of truth (read-only):
- *   <web>/data/elements.json                  — generated from spec/schema/*.md
- *   <web>/data/bundles.json                   — generated from public/semtext/*
- *   <web>/data/reference-example-variants.ts  — hand-authored variants
- *   <web>/data/reference-glossary.ts          — hand-authored 8-tag supplement
+ * Sources of truth (read-only, repo-root data/ — relocated from the
+ * retired web/data/ 2026-11-11):
+ *   data/elements.json                  — generated from spec/schema/*.md
+ *   data/bundles.json                   — generated from the vendored semtext tree
+ *   data/reference-example-variants.ts  — hand-authored variants
+ *   data/reference-glossary.ts          — hand-authored 8-tag supplement
  *
  * Outputs (written into this repo):
  *   app/backend/priv/data/elements.json           (byte copy)
@@ -15,7 +16,12 @@
  *   app/backend/lib/semtext/reference/glossary.ex (generated module)
  *   app/backend/lib/semtext/reference/buckets.ex  (generated module)
  *
- * Usage:  node app/scripts/gen-reference.mjs --web <path-to-landing-preview/web>
+ * Usage:  node app/scripts/gen-reference.mjs [--data <data-dir>]
+ *         node app/scripts/gen-reference.mjs --web <dir-containing-data>
+ *
+ * --data defaults to this checkout's data/. --web is the legacy alias (a
+ * directory CONTAINING data/, e.g. an old web/ checkout) kept so
+ * `mix semtext.gen_reference --web …` still works.
  *
  * The Elixir side (`Semtext.Reference.*`) compile-time-loads these outputs;
  * a `mix semtext.gen_reference` task shells this script. After a re-sync the
@@ -34,13 +40,16 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
 const args = process.argv.slice(2);
-const webFlag = args.indexOf("--web");
-if (webFlag === -1 || !args[webFlag + 1]) {
-  console.error("usage: node gen-reference.mjs --web <path-to-landing-preview/web>");
-  process.exit(3);
-}
-const web = resolve(args[webFlag + 1]);
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+// Reference source data lives at <repo>/data/ (relocated from the retired
+// web/data/). --data points at that dir directly; --web is the legacy alias
+// (a dir CONTAINING data/) kept for `mix semtext.gen_reference --web …`.
+const dataFlag = args.indexOf("--data");
+const webFlag = args.indexOf("--web");
+let dataDir;
+if (dataFlag !== -1 && args[dataFlag + 1]) dataDir = resolve(args[dataFlag + 1]);
+else if (webFlag !== -1 && args[webFlag + 1]) dataDir = join(resolve(args[webFlag + 1]), "data");
+else dataDir = join(repoRoot, "data");
 const backend = join(repoRoot, "app", "backend");
 const privData = join(backend, "priv", "data");
 const glossaryEx = join(backend, "lib", "semtext", "reference", "glossary.ex");
@@ -48,13 +57,13 @@ const glossaryEx = join(backend, "lib", "semtext", "reference", "glossary.ex");
 // ————— JSON copies (byte-for-byte) —————
 
 mkdirSync(privData, { recursive: true });
-writeFileSync(join(privData, "elements.json"), readFileSync(join(web, "data", "elements.json")));
-writeFileSync(join(privData, "bundles.json"), readFileSync(join(web, "data", "bundles.json")));
+writeFileSync(join(privData, "elements.json"), readFileSync(join(dataDir, "elements.json")));
+writeFileSync(join(privData, "bundles.json"), readFileSync(join(dataDir, "bundles.json")));
 
 // ————— variants TS -> JSON —————
 // Node's native type stripping imports the TS module directly; the file's
 // only non-JS syntax is the interface + the type annotation, both erasable.
-const { EXAMPLE_VARIANTS } = await import(`file://${join(web, "data", "reference-example-variants.ts")}`);
+const { EXAMPLE_VARIANTS } = await import(`file://${join(dataDir, "reference-example-variants.ts")}`);
 writeFileSync(
   join(privData, "example-variants.json"),
   JSON.stringify(EXAMPLE_VARIANTS, null, 2) + "\n",
@@ -62,7 +71,7 @@ writeFileSync(
 
 // ————— glossary TS -> Elixir module —————
 
-const { GLOSSARY_TAGS } = await import(`file://${join(web, "data", "reference-glossary.ts")}`);
+const { GLOSSARY_TAGS } = await import(`file://${join(dataDir, "reference-glossary.ts")}`);
 
 const elixirString = (s) => JSON.stringify(s); // JSON string escaping is Elixir-compatible
 
@@ -162,7 +171,7 @@ writeFileSync(glossaryEx, module_source);
 // already resolved (tags attached), so the emission is a straight dump.
 
 const tmpData = mkdtempSync(join(tmpdir(), "genref-"));
-cpSync(join(web, "data"), join(tmpData, "data"), { recursive: true });
+cpSync(dataDir, join(tmpData, "data"), { recursive: true });
 
 for (const f of readdirSync(join(tmpData, "data"))) {
   if (f.endsWith(".ts")) {

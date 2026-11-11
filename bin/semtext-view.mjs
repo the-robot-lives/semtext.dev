@@ -15,10 +15,10 @@
  *   - `.html` input is served as authored; if it references no SemText
  *     bundle, the vendored `/semtext/latest/` tags are injected after <head>.
  *   - `--serve` mounts a tiny static server where `/semtext/*` maps to the
- *     vendored bundle (`web/public/semtext/` in a checkout, `dist/` in an
- *     installed package) and the document — plus its sibling assets — is
- *     served from its own directory, so root-absolute references like
- *     `/semtext/latest/semtext.js` just work.
+ *     vendored bundle (`app/backend/priv/static/semtext/` in a checkout,
+ *     `dist/` in an installed package) and the document — plus its sibling
+ *     assets — is served from its own directory, so root-absolute
+ *     references like `/semtext/latest/semtext.js` just work.
  *   - Without `--serve`, the assembled HTML goes to stdout (pipe-friendly);
  *     logs go to stderr.
  */
@@ -59,7 +59,7 @@ OPTIONS:
   --version, -v       Show version.
 
 EXAMPLES:
-  semtext-view web/public/spec/web-component-evaluator.sem.html --serve
+  semtext-view spec/web-component-evaluator.sem.html --serve
   semtext-view manifest/tobor-kit.eval.md
   semtext-view notes.md --serve --port 4321
 `;
@@ -98,12 +98,12 @@ function parseArgs(argv) {
 // ─── Bundle resolution ──────────────────────────────────────────────────────
 
 /**
- * Vendored bundle root: a checkout serves web/public/semtext/ (versioned
- * trees + latest/ alias, never rebuilt here); an installed package serves
- * the shipped dist/ build. Returns {root, kind} or null.
+ * Vendored bundle root: a checkout serves app/backend/priv/static/semtext/
+ * (versioned trees + latest/ alias, never rebuilt here); an installed
+ * package serves the shipped dist/ build. Returns {root, kind} or null.
  */
 function resolveBundleDir() {
-  const vendored = path.join(PKG_ROOT, "web", "public", "semtext");
+  const vendored = path.join(PKG_ROOT, "app", "backend", "priv", "static", "semtext");
   if (fs.existsSync(path.join(vendored, "latest", "semtext.js"))) {
     return { root: vendored, kind: "vendored" };
   }
@@ -352,7 +352,7 @@ function main() {
 
   const bundle = resolveBundleDir();
   if (!bundle) {
-    log("warning: no SemText bundle found (expected web/public/semtext/ in a checkout, or dist/ after npm run build)");
+    log("warning: no SemText bundle found (expected app/backend/priv/static/semtext/ in a checkout, or dist/ after npm run build)");
   }
   startServer(inputPath, html, bundle, parsed.port);
 }

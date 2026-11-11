@@ -4,17 +4,20 @@
 
 **Repo:** https://github.com/the-robot-lives/semtext.dev
 
-Stub repo for the semtext.dev domain — reserved, no application yet.
+The SemText product repo — format source, vendored runtime bundles, and the
+deployed Hologram app for semtext.dev.
 
 Part of the [The Robot Lives](https://therobotlives.com) portfolio.
 
 ## What
 
-The consolidated SemText product repo: the Next.js landing (`landing/`), the
-format code + showcase (`site/`, `demo/`, `spec/`, `src/`, `themes/`), and the
-hydrated Hologram application under `app/` (Phoenix backend `:semtext` serving
-`semtext.dev` and `proposals.semtext.dev` via one image). CI builds
-`sha-*` images; the chart lives at `app/helm/semtext`.
+The consolidated SemText product repo: the format code + showcase
+(`site/`, `demo/`, `spec/`, `src/`, `themes/`), the reference source data
+(`data/`), and the hydrated Hologram application under `app/` (Phoenix
+backend `:semtext` serving `semtext.dev` and `proposals.semtext.dev`). The
+deployed site is the Hologram app; CI (`app-ci.yml`) builds `sha-*` images
+and the chart lives at `app/helm/semtext`. The legacy Next.js `web/` site
+and its root `Dockerfile`/`nginx.conf` image were retired 2026-11-11.
 
 ## Why
 
@@ -36,7 +39,7 @@ fallback, accessibility, docs, tests, convention fit, CSS-variable theming,
 packaging — on a 100-point scale mapped to letter grades (A ≥ 90 … F < 50).
 
 - **Rubric** (SemText document, `rubric_version` v1):
-  `web/public/spec/web-component-evaluator.sem.html` — dimensions, criteria,
+  `spec/web-component-evaluator.sem.html` — dimensions, criteria,
   review-fragment schema, and the manifest/review rendering example.
 - **Eval prompts**: `manifest/tobor-kit.eval.md` and
   `manifest/styleguide-eval.md` — one per source repo; each grades one
@@ -58,9 +61,9 @@ Anything authored as `.sem.html` for this program must pass
 with the vendored bundle so elements actually display:
 
 - **Serve** (interactive): `node bin/semtext-view.mjs <file> --serve [--port N]`
-  — mounts `/semtext/*` from `web/public/semtext/` (the vendored bundle is
-  served, never rebuilt), the document plus its sibling assets from its own
-  directory, and prints the full clickable `http://127.0.0.1:PORT/<file>` URL.
+  — mounts `/semtext/*` from `app/backend/priv/static/semtext/` (the vendored
+  bundle is served, never rebuilt), the document plus its sibling assets from
+  its own directory, and prints the full clickable `http://127.0.0.1:PORT/<file>` URL.
 - **Stdout** (default): `node bin/semtext-view.mjs <file>` — prints the
   assembled HTML to stdout; pipe-friendly.
 - **Markdown input**: wrapped in a minimal `<sem-md>` scaffold page (title
@@ -80,9 +83,11 @@ This repo now holds BOTH halves of semtext.dev:
   SHA fd4a166, PR #48 merge). Layout change on import: npl's `web/site`
   and `web/demo` are now root-level `site/` and `demo/`.
 
-One image serves everything: landing at `/`, showcase under `/site/`,
-`/demo/`, `/spec/` (root `Dockerfile` + `nginx.conf`). The Hologram app's chart is `app/helm/semtext` (the legacy root `helm/semtext`
-Next.js chart was deleted 2026-10-17). `app-ci.yml` builds
-`ops.noizu.com/semtext.dev/app:sha-*` and commits the chart tag bump;
-ArgoCD auto-syncs (never helm-upgrade for release). The npl-enhanced-content
-repo remains the historical record; it is not deleted.
+The deployed site is the Hologram app: `app-ci.yml` builds
+`ops.noizu.com/semtext.dev/app:sha-*` from `app/backend/Dockerfile` and
+commits the `app/helm/semtext` chart tag bump; ArgoCD auto-syncs (never
+helm-upgrade for release). The legacy root `Dockerfile` + `nginx.conf`
+Next.js image (and the root `helm/semtext` chart, deleted 2026-10-17) are
+gone — `web/` was retired 2026-11-11, its sync tooling moved to `scripts/`
+and its reference source data to `data/`. The npl-enhanced-content repo
+remains the historical record; it is not deleted.

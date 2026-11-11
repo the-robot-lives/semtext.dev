@@ -1,6 +1,9 @@
 # semtext.dev
 
-Static Next.js landing page (`web/`, `output: 'export'`). No backend.
+SemText product repo. The deployed site is the Elixir Phoenix + Hologram
+app under `app/backend` (chart `app/helm/semtext`). The legacy Next.js
+`web/` site was retired 2026-11-11; the SemText format code + showcase
+live at the root (`src/`, `site/`, `demo/`, `spec/`, `themes/`).
 
 ## Branch policy
 

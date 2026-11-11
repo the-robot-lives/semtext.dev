@@ -179,7 +179,7 @@ const sources = readdirSync(resolve(root, 'demo'))
   .sort();
 
 if (sources.length === 0) {
-  console.error('✗ no web/demo/*.html sources found');
+  console.error('✗ no demo/*.html sources found');
   process.exit(1);
 }
 

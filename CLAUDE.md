@@ -4,12 +4,12 @@ SemText — consolidated product repo. The deployed site is the **Elixir
 Phoenix + Hologram** app under `app/backend` (landing, `/showcase/*`,
 `/reference`, `/demo`, `/spec`), served by the `app/helm/semtext` chart.
 The SemText format/runtime source lives in the `npl-enhanced-content/`
-subtree; built bundles are vendored into `app/backend/priv/static/semtext/`
-(the live tree) and `web/public/semtext/` (legacy). `web/` is the old
-Next.js site (`landing/` + `site/`), kept for now but not the deployed
-stack — retirement is an open owner decision. `mods/semtext` is a Claude
-Code mod. Sync bundles with `web/scripts/sync-bundles.mjs --from <dist>`
-(writes both vendored trees and asserts parity).
+subtree; built bundles are vendored into the ONE bundle tree,
+`app/backend/priv/static/semtext/`. The legacy Next.js `web/` site was
+retired 2026-11-11 (owner-approved): its sync tooling now lives in
+`scripts/` and its reference source data in `data/`. `mods/semtext` is a
+Claude Code mod. Sync bundles with `scripts/sync-bundles.mjs --from <dist>`
+(writes the vendored tree and regenerates `data/bundles.json`).
 
 ## Branch policy
 

@@ -1,7 +1,7 @@
 # Eval prompt — styleguide web component review
 
 Program: SemText web-component evaluation · rubric_version **v1**.
-Rubric (authoritative, do not restate): `$SEMTEXT_ROOT/web/public/spec/web-component-evaluator.sem.html`
+Rubric (authoritative, do not restate): `$SEMTEXT_ROOT/spec/web-component-evaluator.sem.html`
 
 ## Role and goal
 
@@ -18,7 +18,7 @@ itself. You read; you never fix.
 | :--- | :--- |
 | `$STYLEGUIDE_ROOT` | Styleguide repo checkout root (`the-robot-lives/styleguide`; the Next.js app lives under `app/`). Unset or missing ⇒ fail fast with a usage error; never guess a path. |
 | manifest slice | `$STYLEGUIDE_ROOT/components/manifest.yaml` — locate the entry whose `tag` matches the component under grade. That slice is the entire grading target. |
-| rubric | `$SEMTEXT_ROOT/web/public/spec/web-component-evaluator.sem.html` (rendered or source — the authored text is the record). |
+| rubric | `$SEMTEXT_ROOT/spec/web-component-evaluator.sem.html` (rendered or source — the authored text is the record). |
 | `$REVIEW_OUTPUT` | The run file the fragment is appended to. Default: `$STYLEGUIDE_ROOT/components/review.yaml`. |
 | `$RUN_ID`, `$BRANCH`, `$VENUE` | Fragment fields: opaque run id; branch enum `prod\|stage\|dev\|oob`; venue enum `evalnomi\|subagent\|script`. |
 
@@ -91,7 +91,7 @@ itself. You read; you never fix.
 <bio>Machine contract for the styleguide lane of the SemText web-component evaluation program.</bio>
 <instructions>
 target: $STYLEGUIDE_ROOT (the-robot-lives/styleguide checkout root; the Next.js app is under app/; fail fast if unset).
-rubric: $SEMTEXT_ROOT/web/public/spec/web-component-evaluator.sem.html — rubric_version v1, eight dimensions, weights sum 100.
+rubric: $SEMTEXT_ROOT/spec/web-component-evaluator.sem.html — rubric_version v1, eight dimensions, weights sum 100.
 manifest: $STYLEGUIDE_ROOT/components/manifest.yaml is the read-only grading inventory; grade only the tag named for this run; never edit it.
 slice: app/src/app (App Router incl. components catalog + section/[name]) + app/src/components (pkg/ first-party, sections/, demos/) + app/src/lib (css-gen, jsx-gen); app/src/config/theme-*/style-guide.*.yaml + branding.yaml and the css-gen generated design-system CSS for the theme system.
 output: one review fragment per the rubric #fragment schema (tag, run, branch [prod|stage|dev|oob], venue [evalnomi|subagent|script], grade, score 0-100, rubric_version v1, summary, findings[{severity: info|minor|major|blocker, note}]) appended to $REVIEW_OUTPUT (default $STYLEGUIDE_ROOT/components/review.yaml).

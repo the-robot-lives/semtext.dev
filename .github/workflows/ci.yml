@@ -1,14 +1,17 @@
 name: CI
 
-# Consolidated semtext.dev repo: Next.js landing (landing/) + SemText format
-# (spec, src, site, demo, themes — the ex npl-enhanced-content showcase).
+# Consolidated semtext.dev repo: the SemText format (spec, src, site, demo,
+# themes — the ex npl-enhanced-content showcase) + the Claude Code mod.
 #
 # Release path (see monorepo docs/arch/deployment.md):
-#   The legacy Next.js `web` image no longer deploys. The deployed Hologram app
-#   is built and bumped by app-ci.yml (app/helm/semtext, ArgoCD path). This
-#   workflow's bump-chart job was retired 2026-10-17: it edited the dead
-#   root helm/semtext chart (since deleted) and raced the real bump, leaving ArgoCD on a
-#   revision that did not name the new image.
+#   The deployed Hologram app is built and bumped by app-ci.yml
+#   (app/helm/semtext, ArgoCD path). The legacy Next.js `web` image pipeline
+#   (test-landing / docker-build / build-push, IMAGE_REPO semtext.dev/web)
+#   was retired 2026-11-11 together with the web/ tree and the root
+#   Dockerfile/nginx.conf — this workflow no longer builds any image.
+#   The earlier bump-chart job was retired 2026-10-17: it edited the dead
+#   root helm/semtext chart (since deleted) and raced the real bump, leaving
+#   ArgoCD on a revision that did not name the new image.
 #
 # Component bundles are additionally published to the cdn.semtext.dev bucket
 # under an immutable /<version>/ prefix plus a mutable /latest/ pointer
@@ -16,44 +19,25 @@ name: CI
 
 on:
   push:
-    # develop pushes run the test jobs only (build-push is main-gated below);
-    # they exist to seed develop-ref caches that feature-PR runs can restore —
-    # a PR-ref cache is invisible to sibling PRs.
+    # develop pushes run the test jobs; they exist to seed develop-ref
+    # caches that feature-PR runs can restore — a PR-ref cache is invisible
+    # to sibling PRs.
     branches: [main, develop]
   pull_request:
 
 concurrency:
   group: ci-${{ github.ref }}
-  # Supersede stale PR runs only. A release push to main must never be
-  # cancelled mid build-push / bump-chart.
+  # Supersede stale PR runs only. A push to main must never be cancelled
+  # mid publish-cdn.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  REGISTRY: ops.noizu.com
-  IMAGE_REPO: semtext.dev/web
   CDN_BUCKET: cdn-semtext-dev
 
 permissions:
   contents: read
 
 jobs:
-  test-landing:
-    # Next.js static export: typecheck + build (landing/).
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: landing
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: landing/package-lock.json
-      - run: npm ci
-      - run: npx tsc --noEmit
-      - run: npm run build
-
   unit:
     # vitest unit tier — plain run in the PR/develop fast lane (~3.5s).
     # The coverage gate (threshold ratchet in vite.config.ts) runs nightly;
@@ -96,55 +80,6 @@ jobs:
   # cypress anywhere); scripts/cypress-shard.mjs stays available to re-shard
   # by hand. Root cause + remediation: docs/TEST-HEALTH.md.
 
-  docker-build:
-    # PR lane: build the combined image (no push) so Dockerfile/nginx changes
-    # fail fast, and seed the gha cache the release build reuses.
-    needs: [test-landing, unit, mod]
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          target: production
-          platforms: linux/amd64
-          push: false
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}:ci
-          cache-from: type=gha,scope=web
-          cache-to: type=gha,scope=web,mode=max
-
-  build-push:
-    # Release is gated on the fast tiers (landing, unit, mod); the cypress e2e
-    # tier runs nightly only (see the note above + docs/TEST-HEALTH.md).
-    needs: [test-landing, unit, mod]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    outputs:
-      short: ${{ steps.sha.outputs.short }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.REGISTRY_USER }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-      - name: Short SHA
-        id: sha
-        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-      - name: Build & push web
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          target: production
-          platforms: linux/amd64
-          push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}:sha-${{ steps.sha.outputs.short }}
-          cache-from: type=gha,scope=web
-          cache-to: type=gha,scope=web,mode=max
-
   publish-cdn:
     # Publish the component bundles + themes to cdn.semtext.dev.
     #   <version>/  immutable, never overwritten once published
@@ -155,7 +90,10 @@ jobs:
     # (repository VARIABLE `CDN_PUBLISH`) was never set — the job is dormant.
     # To turn on, an operator must add CDN_MINIO_URL / CDN_MINIO_ACCESS_KEY /
     # CDN_MINIO_SECRET_KEY secrets and `gh variable set CDN_PUBLISH --body true`.
-    needs: build-push
+    #
+    # Builds the bundles from the root npm build (independent of any image);
+    # gated on unit only since the web-image build-push job was retired.
+    needs: [unit]
     if: vars.CDN_PUBLISH == 'true'
     runs-on: ubuntu-latest
     steps:
