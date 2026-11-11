@@ -565,3 +565,162 @@ figure.code-window.is-live .ref-actions {
 .ref-all-desc {
   min-width: 22rem;
 }
+
+/* ————— reference cards: SemText — Claude example + custom render —————
+   ClaudeExample component. The code block is a real <pre><code>; line
+   numbers are CSS counters, so copy, CSS-off reading and screen readers
+   get clean source. JS-only controls (.ref-claude-js-only) are hidden for
+   zero-JS readers via the `scripting` media feature (a <noscript> style
+   would go live under Hologram's DOM patching). */
+
+@media (scripting: none) {
+  .ref-claude-js-only {
+    display: none !important;
+  }
+}
+
+.ref-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ref-card .ref-card-link {
+  text-decoration: none;
+}
+
+.ref-card .ref-card-link:hover .ref-card-name,
+.ref-card .ref-card-link:focus-visible .ref-card-name {
+  color: #e2e8f0;
+  text-decoration: underline;
+}
+
+.ref-claude {
+  color-scheme: dark;
+  margin: 0.7rem 0 0;
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  background: #0b1220;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ref-claude-chrome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid #334155;
+  background: #0a101c;
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.ref-claude-title {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  letter-spacing: 0.04em;
+  color: #cbd5e1;
+}
+
+.ref-claude-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: auto;
+}
+
+/* the generic pills are display:none until a code-window goes live;
+   inside the Claude block they show whenever they are rendered */
+.ref-claude .ref-view-pills {
+  display: flex;
+}
+
+.ref-claude .ref-action,
+.ref-claude .ref-view-pill,
+.ref-renders-switch .ref-action {
+  color: #cbd5e1;
+}
+
+.ref-claude .ref-action:focus-visible,
+.ref-claude .ref-view-pill:focus-visible,
+.ref-renders-switch .ref-action:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
+}
+
+.ref-claude-toggle[aria-expanded="true"],
+.ref-renders-switch .ref-action[aria-pressed="true"] {
+  color: #a78bfa;
+  border-color: #5b21b6;
+  background: rgba(124, 58, 237, 0.16);
+}
+
+.ref-claude-code {
+  margin: 0;
+  padding: 0.6rem 0.75rem 0.7rem 0;
+  overflow-x: auto;
+  max-height: 22rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+  counter-reset: claude-line;
+  tab-size: 2;
+}
+
+.ref-claude-code code {
+  font: inherit;
+  background: none;
+}
+
+.ref-claude-line {
+  counter-increment: claude-line;
+}
+
+.ref-claude-line::before {
+  content: counter(claude-line);
+  display: inline-block;
+  width: 2.2rem;
+  margin-right: 0.8rem;
+  text-align: right;
+  color: #8291a7;
+  user-select: none;
+}
+
+.ref-claude-pane {
+  border-top: 1px dashed #334155;
+  overflow-x: auto;
+}
+
+.ref-claude-note {
+  margin: 0;
+  padding: 0 0.9rem 0.7rem;
+  color: #8291a7;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.ref-claude-shell:empty {
+  display: none;
+}
+
+/* view modes: both (code + render), code only, render only */
+.ref-claude.is-code .ref-claude-render { display: none; }
+.ref-claude.is-render .ref-claude-code { display: none; }
+.ref-claude.is-render .ref-claude-pane { border-top: 0; }
+
+.ref-renders-switch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ref-renders-hint {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
