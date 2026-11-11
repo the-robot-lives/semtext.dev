@@ -1,1 +1,1 @@
-import{S as m}from"./base-BKd1N4qP.js";import"./lit-element-DWovE5T-.js";class e extends m{}m.register("sem-summary",e);
+import{S as r}from"./base-BKd1N4qP.js";import{S as a}from"./callout-l3Mx3GiU.js";import{p as e}from"./attr-EimdvHQb.js";import"./lit-element-DWovE5T-.js";class t extends a{calloutLabel(){const m=e(this,"kind");return m?"Summary · "+m:"Summary"}}r.register("sem-summary",t);

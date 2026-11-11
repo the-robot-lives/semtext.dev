@@ -47,110 +47,118 @@ defmodule Semtext.Reference.Buckets do
 
     def bucket_defs do
       [
-      Norm.bucket_def("document", "Document & structure",
-        description: "The root wrapper, reading chrome, audience declarations and document-level metadata that frame a SemText document.",
-        names: [
-          "sem-enhanced-document",
-          "sem-reader",
-          "sem-audiences",
-          "sem-profile",
-          "agent"
-        ]
-      ),
-      Norm.bucket_def("prose", "Prose & code",
-        description: "Content blocks beyond plain HTML — Markdown bodies, callouts, skim blocks and source listings with provenance.",
-        names: [
-          "sem-md",
-          "sem-note",
-          "sem-tldr",
-          "sem-code",
-          "sem-browser"
-        ]
-      ),
-      Norm.bucket_def("disclosure", "Disclosure & views",
-        description: "The same content under different reading interactions — occluded detail, Q→A reveal, markup flip, perspective tabs.",
-        names: [
-          "sem-details",
-          "sem-detail",
-          "highlight",
-          "sem-reveal",
-          "sem-source",
-          "sem-views",
-          "sem-view"
-        ]
-      ),
-      Norm.bucket_def("recall", "Facts & recall",
-        description: "Assertable statement/conclusion pairs — the citable unit — with the quiz candidates and distractors built on them.",
-        names: [
-          "sem-facts",
-          "sem-fact",
-          "statement",
-          "conclusion",
-          "incorrect-statement",
-          "sem-question",
-          "sem-option"
-        ]
-      ),
-      Norm.bucket_def("data", "Data & tables",
-        description: "Authored tables, site/file trees, and the data-visualizer's named buckets, joins and editable queries.",
-        names: [
-          "sem-table",
-          "sem-site-tree",
-          "sem-file-tree",
-          "sem-data-visualizer",
-          "sem-data-source",
-          "sem-data-join",
-          "sem-data-query"
-        ]
-      ),
-      Norm.bucket_def("sequence", "Sequences & progress",
-        description: "Ordered, status-annotated content — timelines, procedures, verified workflows and completion meters.",
-        names: [
-          "sem-chronology",
-          "sem-event",
-          "sem-procedure",
-          "sem-workflow",
-          "sem-step",
-          "sem-progress"
-        ]
-      ),
-      Norm.bucket_def("knowledge", "Knowledge & documents",
-        description: "Whole-document containers for a named genre — how-tos, runbooks, KBs, FAQs, changelogs, guard-rails, plans, requirements, rubrics, evals, philosophies, summaries, threat models and mockups — each a self-describing wrapper with its own metadata and sections.",
-        names: [
-          "sem-howto",
-          "sem-kb",
-          "sem-runbook",
-          "sem-faqs",
-          "sem-faq",
-          "sem-tsgs",
-          "sem-tsg",
-          "sem-changelogs",
-          "sem-changelog",
-          "sem-guard-rails",
-          "sem-guard-rail",
-          "sem-plan",
-          "sem-requirement",
-          "sem-rubric",
-          "sem-eval",
-          "sem-philosophy",
-          "sem-summary",
-          "sem-threat-model",
-          "sem-mockup"
-        ]
-      ),
-      Norm.bucket_def("definitions", "Definitions & citations",
-        description: "Closed key/value assertions, the numbered works the prose cites, and the self-describing vocabulary cards (tag/attribute/API definitions).",
-        names: [
-          "sem-properties",
-          "sem-property",
-          "sem-references",
-          "sem-reference",
-          "sem-tag-def",
-          "sem-tag-attr",
-          "sem-api-call",
-          "sem-api-param"
-        ]
-      )
+        Norm.bucket_def("document", "Document & structure",
+          description:
+            "The root wrapper, reading chrome, audience declarations and document-level metadata that frame a SemText document.",
+          names: [
+            "sem-enhanced-document",
+            "sem-reader",
+            "sem-audiences",
+            "sem-profile",
+            "agent"
+          ]
+        ),
+        Norm.bucket_def("prose", "Prose & code",
+          description:
+            "Content blocks beyond plain HTML — Markdown bodies, callouts, skim blocks and source listings with provenance.",
+          names: [
+            "sem-md",
+            "sem-note",
+            "sem-tldr",
+            "sem-code",
+            "sem-browser"
+          ]
+        ),
+        Norm.bucket_def("disclosure", "Disclosure & views",
+          description:
+            "The same content under different reading interactions — occluded detail, Q→A reveal, markup flip, perspective tabs.",
+          names: [
+            "sem-details",
+            "sem-detail",
+            "highlight",
+            "sem-reveal",
+            "sem-source",
+            "sem-views",
+            "sem-view"
+          ]
+        ),
+        Norm.bucket_def("recall", "Facts & recall",
+          description:
+            "Assertable statement/conclusion pairs — the citable unit — with the quiz candidates and distractors built on them.",
+          names: [
+            "sem-facts",
+            "sem-fact",
+            "statement",
+            "conclusion",
+            "incorrect-statement",
+            "sem-question",
+            "sem-option"
+          ]
+        ),
+        Norm.bucket_def("data", "Data & tables",
+          description:
+            "Authored tables, site/file trees, and the data-visualizer's named buckets, joins and editable queries.",
+          names: [
+            "sem-table",
+            "sem-site-tree",
+            "sem-file-tree",
+            "sem-data-visualizer",
+            "sem-data-source",
+            "sem-data-join",
+            "sem-data-query"
+          ]
+        ),
+        Norm.bucket_def("sequence", "Sequences & progress",
+          description:
+            "Ordered, status-annotated content — timelines, procedures, verified workflows and completion meters.",
+          names: [
+            "sem-chronology",
+            "sem-event",
+            "sem-procedure",
+            "sem-workflow",
+            "sem-step",
+            "sem-progress"
+          ]
+        ),
+        Norm.bucket_def("knowledge", "Knowledge & documents",
+          description:
+            "Whole-document containers for a named genre — how-tos, runbooks, KBs, FAQs, changelogs, guard-rails, plans, requirements, rubrics, evals, philosophies, summaries, threat models and mockups — each a self-describing wrapper with its own metadata and sections.",
+          names: [
+            "sem-howto",
+            "sem-kb",
+            "sem-runbook",
+            "sem-faqs",
+            "sem-faq",
+            "sem-tsgs",
+            "sem-tsg",
+            "sem-changelogs",
+            "sem-changelog",
+            "sem-guard-rails",
+            "sem-guard-rail",
+            "sem-plan",
+            "sem-requirement",
+            "sem-rubric",
+            "sem-eval",
+            "sem-philosophy",
+            "sem-summary",
+            "sem-threat-model",
+            "sem-mockup"
+          ]
+        ),
+        Norm.bucket_def("definitions", "Definitions & citations",
+          description:
+            "Closed key/value assertions, the numbered works the prose cites, and the self-describing vocabulary cards (tag/attribute/API definitions).",
+          names: [
+            "sem-properties",
+            "sem-property",
+            "sem-references",
+            "sem-reference",
+            "sem-tag-def",
+            "sem-tag-attr",
+            "sem-api-call",
+            "sem-api-param"
+          ]
+        )
       ]
     end
 
@@ -161,7 +169,7 @@ defmodule Semtext.Reference.Buckets do
       Enum.each(all_names, fn name ->
         unless Map.has_key?(by_name, name) do
           raise ArgumentError,
-            "reference-buckets: \"#{name}\" is not a SemText tag in the inventory — rename or drop it"
+                "reference-buckets: \"#{name}\" is not a SemText tag in the inventory — rename or drop it"
         end
       end)
 
@@ -169,7 +177,7 @@ defmodule Semtext.Reference.Buckets do
 
       if dupes != [] do
         raise ArgumentError,
-          "reference-buckets: #{Enum.map_join(Enum.uniq(dupes), ", ", &"\"#{&1}\"")} assigned to two buckets"
+              "reference-buckets: #{Enum.map_join(Enum.uniq(dupes), ", ", &"\"#{&1}\"")} assigned to two buckets"
       end
 
       buckets =
@@ -187,7 +195,7 @@ defmodule Semtext.Reference.Buckets do
 
       if uncovered != [] do
         raise ArgumentError,
-          "reference-buckets: SemText tags with no bucket: #{Enum.map_join(uncovered, ", ", & &1.name)}"
+              "reference-buckets: SemText tags with no bucket: #{Enum.map_join(uncovered, ", ", & &1.name)}"
       end
 
       buckets
