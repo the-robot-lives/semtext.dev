@@ -7,12 +7,12 @@
  *                       html[data-sem-theme="<slug>"]; default = tokens on
  *                       html:not([data-sem-theme]))
  *   <out>/semtext.js    the vendored runtime (app/backend/priv/static/
- *                       semtext/v0.9.4/semtext.js, COPIED VERBATIM — never
+ *                       semtext/v0.9.6/semtext.js, COPIED VERBATIM — never
  *                       edited) + runtime/semtext-v06.js (this repo's
  *                       extension layer)
  *   <out>/themes/*.css  the per-theme token files (for pinned documents)
  *
- * The vocabulary base is the SYNCED 0.9.4 vocabulary
+ * The vocabulary base is the SYNCED 0.9.6 vocabulary
  * (app/backend/priv/static/semtext/themes/_vocabulary.css, refreshed by
  * sync-bundles), not the stale root themes/ copy — the v0.6 layer
  * (_v06.css + themes + runtime/semtext-v06.js) is authored to layer
@@ -22,7 +22,7 @@
  * the legacy web/public/semtext/ output was retired with web/ 2026-11-11).
  * The rest of the latest/ directory (chunks, lazy, manifests — the
  * sync-bundles.mjs output) is left untouched; re-running sync-bundles.mjs
- * overwrites semtext.css / semtext.js with the plain 0.9.4 sync, so re-run
+ * overwrites semtext.css / semtext.js with the plain 0.9.6 sync, so re-run
  * this script after any such sync.
  *
  * Usage: node scripts/build-latest.mjs
@@ -35,14 +35,14 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '..');
 
 const SEMTEXT = 'app/backend/priv/static/semtext';
-const VENDORED = resolve(repo, SEMTEXT, 'v0.9.4/semtext.js');
+const VENDORED = resolve(repo, SEMTEXT, 'v0.9.6/semtext.js');
 const VERSION_SOURCE = resolve(repo, SEMTEXT, 'VERSION.md');
 const OUTS = [
   resolve(repo, SEMTEXT, 'latest'),
 ];
 
 // [source path, name under <out>/themes/]. The vocabulary base is the
-// synced 0.9.4 vocabulary so the layer tracks future sync-bundles
+// synced 0.9.6 vocabulary so the layer tracks future sync-bundles
 // refreshes; every other part is this repo's v0.6 layer.
 const CSS_PARTS = [
   [`${SEMTEXT}/themes/_vocabulary.css`, '_vocabulary.css'],
@@ -83,13 +83,13 @@ for (const [src] of CSS_PARTS) {
 }
 
 const css = banner('consolidated stylesheet (latest)',
-  '0.9.4 vocabulary base, default theme, v0.6 structural additions, and all five themes.') +
+  '0.9.6 vocabulary base, default theme, v0.6 structural additions, and all five themes.') +
   CSS_PARTS.map(([src]) => readFileSync(resolve(repo, src), 'utf8').trim()).join('\n\n') + '\n';
 
 const vendored = readFileSync(VENDORED, 'utf8');
 const extension = readFileSync(resolve(repo, 'runtime/semtext-v06.js'), 'utf8');
 const js = banner('runtime bundle (latest)',
-  `vendored runtime v0.9.4 (verbatim) + semtext.dev v0.6 extension layer (global SemTextV06, v${'0.6'}).`) +
+  `vendored runtime v0.9.6 (verbatim) + semtext.dev v0.6 extension layer (global SemTextV06, v${'0.6'}).`) +
   vendored.trimEnd() + '\n\n' + extension + '\n';
 
 for (const out of OUTS) {
