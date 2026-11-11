@@ -9,6 +9,11 @@ export type SemTextNode = {
    */
   text?: string
   /**
+   * Characters of `text` cut by the capture cap (visible `… (+N chars)` in
+   * the pane) — 0/undefined when the body fit whole.
+   */
+  truncated?: number
+  /**
    * Structured capture for the interactive vocabulary (facts/reveal/note/
    * views/properties/table/code) once the element closed at parse.
    */

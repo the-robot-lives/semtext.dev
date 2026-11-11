@@ -2,17 +2,18 @@
 <html lang="en" data-sem-theme="minimal-tech-light">
 <head>
 <meta charset="utf-8">
-<title>SemText mod render reference — v0.5.2 vocabulary audit</title>
+<title>SemText mod render reference — v0.6.0 vocabulary audit</title>
 </head>
 <body>
 <sem-enhanced-document>
 
-<sem-tldr>*Every tag the semtext pane knows, how each one parses, glyphs, and renders across the four view modes, plus the defect ledger.* Reference for the Claude Code pane at mods/semtext (v0.5.2). Screens live in tui-screens.html; design rationale in tui-design.html.</sem-tldr>
+<sem-tldr>*Every tag the semtext pane knows, how each one parses, glyphs, and renders across the view modes, plus the defect ledger.* Reference for the Claude Code pane at mods/semtext (v0.6.0). Screens live in tui-screens.html; design rationale in tui-design.html.</sem-tldr>
 
 <sem-section>
 <h2>1 How the pane reads a document</h2>
 <p>The parser (hooks/register.tsx parseSemText) walks raw text, lowercases tag names, and builds a tree of SemTextNode (tag, attrs, children, collapsed text, captured content, captured p/heading blocks). Detection fires on any sem-*, npl-*, or Trinity marker tag — markdown-escaped spellings like &lt;WEDGE&gt; included.</p>
-<p>Three render roles decide what appears in the expanded view: *heading* (the outline row is the render; children always plan below), *flow* (row plus captured blocks or leaf text; children always plan below), *card* (a dedicated renderer draws the body; children are consumed — except npl cards, whose children re-plan below the card since v0.5).</p>
+<p>Two render roles decide what appears in the expanded view (v0.6): *flow* (row plus captured blocks or leaf text, indented; children always plan below) and *card* (a dedicated renderer draws the framed card; children are consumed *into the frame* and draw as nested cards inside it — box-model nesting, a 2-column inset per depth). The old *heading* role is gone: sections are cards whose title lives in the frame header, so nothing renders as a bare heading row any more.</p>
+<p>Since v0.6 every framed card shares one builder: the header row is the toggle (`┌ ▾ badge ───┐` open, `┌ ▸ badge · N lines ───┐` shut), there is no standalone hide row, and shutting a card collapses its whole subtree. Prose bodies are boxed and honor `br` variants and literal newlines as row breaks (blank lines collapse); node text caps at MAX_TEXT with a visible `… (+N chars)` marker.</p>
 <p>The parser applies implied end tags inside the NPL family — a friction marker opening closes the still-open marker, and an npl tag closes an earlier open of its own name — plus same-name implied end for the loose leaves sem-note, sem-step and sem-fact (back-to-back unclosed notes/steps/facts render as siblings, never one swallowed body). Same-name nesting for every other sem-* name (nested sem-section) stays legal. This is the fix for Trinity markers being emitted unclosed.</p>
 </sem-section>
 
@@ -23,7 +24,7 @@
 <sem-table label="Render registry — sem-* families">
 | Tags | Glyph | Expanded view | Default | Children |
 | --- | --- | --- | --- | --- |
-| sem-note | 📌 (⚠ when kind/variant=warning) | card — framed body, hide button; one-line toggle row when shut | open | consumed |
+| sem-note | 📌 (⚠ when kind/variant=warning) | card — framed body; header row is the toggle (no hide row since v0.6) | open | consumed (drawn inside the frame) |
 | sem-reveal sem-detail sem-details | 💡 | card — summary row; body as dim wrapped rows when open | open unless collapsed attr | consumed |
 | sem-facts sem-faq sem-faqs sem-question | ❓ (🃏 for flashcards) | list: inline item lines; quiz/flashcards: run button | list unless view-as | consumed (sem-fact items) |
 | sem-table | ▦ | caption row then box-drawn table, header bold, body dim | always drawn | consumed (raw rows) |
@@ -34,13 +35,13 @@
 | sem-step | → | one text row per step | always drawn | leaf only |
 | sem-fact | ❍ | one text row | always drawn | leaf only |
 | sem-source sem-reader sem-kb sem-data-source sem-reference sem-references sem-api-call | ◫ / 📖 | framed body, badge = glyph + tag name | always drawn | consumed (flattened body) |
-| sem-section sem-summary sem-tldr sem-conclusion | § | heading row only; blocks and children plan below | heading role | planned |
-| npl-mindread npl-thought npl-block npl-ref npl-hormones npl-intent npl-agent npl-directive npl-section npl-rubric npl-critique npl-declaration npl-example npl-flag npl-flags npl-mode npl-mood npl-poa npl-vos npl-artifact npl-cot | per-tag (◆ ◇ ▣ ↗ ≈ → Ⓐ ➤ ☰ ◈ ⚑ ❝ ✦ ⚐ ▧ ⋇ ➤ ◍ ⬢ ⋯) | card — framed body of own text, hide button; attrs shown in header (first 3) | open unless collapsed attr | re-planned below the card (v0.5) |
-| wedge shadow critic weego | ▲ ▼ ✕ ◎ | same block renderer; name uppercased in header | open; flat siblings via implied end | re-planned below the card (v0.5) |
+| sem-section sem-summary sem-tldr sem-conclusion | § | card — title in the frame header (bold), blocks and children as nested frames inside | open | consumed (drawn inside the frame) |
+| npl-mindread npl-thought npl-block npl-ref npl-hormones npl-intent npl-agent npl-directive npl-section npl-rubric npl-critique npl-declaration npl-example npl-flag npl-flags npl-mode npl-mood npl-poa npl-vos npl-artifact npl-cot | per-tag (◆ ◇ ▣ ↗ ≈ → Ⓐ ➤ ☰ ◈ ⚑ ❝ ✦ ⚐ ▧ ⋇ ➤ ◍ ⬢ ⋯) | card — framed body of own text; attrs shown in header (first 3) | open unless collapsed attr | consumed (drawn inside the frame) |
+| wedge shadow critic weego | ▲ ▼ ✕ ◎ | same block renderer; name uppercased in header | open; flat siblings via implied end | consumed (drawn inside the frame) |
 | anything else (unknown tags, sem-enhanced-document, sem-break, sem-list, …) | · | flow — row plus captured blocks or leaf text; never dropped | always drawn | planned |
 </sem-table>
 
-<sem-reveal summary="Capture rules — when a card has real content vs falls back">Content capture happens per tag in contentFor: sem-facts needs at least one sem-fact child; sem-reveal needs non-empty body; sem-note captures only when authored with the collapsed attribute (otherwise it renders as flow with its leaf text); sem-views needs a sem-view child; sem-properties needs a sem-property child; sem-table takes raw pipe/tab/plain rows capped at 10 (markdown delimiter rows are dropped since v0.5); sem-code takes the raw body capped at 40 lines. A renderer that finds no captured content falls back to the generic head — in the expanded view that node re-plans as flow, so its text still shows under its own row.</sem-reveal>
+<sem-reveal summary="Capture rules — when a card has real content vs falls back">Content capture happens per tag in contentFor: sem-facts needs at least one sem-fact child; sem-reveal needs non-empty body; sem-note captures whenever its body is non-empty (v0.6 — every note is a card; the collapsed attribute only biases the default toggle state); sem-views needs a sem-view child; sem-properties needs a sem-property child; sem-table takes raw pipe/tab/plain rows capped at 10 (markdown delimiter rows are dropped since v0.5); sem-code takes the raw body capped at 40 lines. A renderer that finds no captured content falls back to a dim head row inside a frame — text stays visible either way.</sem-reveal>
 
 <sem-reveal summary="Trinity marker notes — what actually arrives in a response">Real answers emit the friction phase as markdown-escaped, unclosed markers: &lt;WEDGE&gt; body … &lt;SHADOW&gt; body … The parser lowercases names, tolerates the backslash-escaped form (the &gt; sits inside the tag src, the escape backslash is stripped from captured bodies), and the implied-end rule keeps the four markers flat siblings so each gets its own outline row and card. npl-mindread and friends normally arrive closed; an unclosed one now also renders as its own card instead of being consumed by its parent.</sem-reveal>
 </sem-section>
@@ -48,12 +49,12 @@
 <sem-section>
 <h2>3 View modes and navigation</h2>
 <sem-list>
-- Expanded view (default): source row, stats row (element count, unknown check), toggle row, then the whole outline tree top-to-bottom with each row's content inline under its tree branch (spines kept, branch glyphs blanked as indent).
-- Compact outline: same source/stats/toggle header, then bare tree rows (glyph + label + child count) — every row click-to-focus.
-- Section focus: breadcrumb (source › ancestors › leaf), captured blocks (## headings, ▌ quotes, paragraphs), the node's own render, then interactive/npl descendants through the registry, then nav row ◂ outline · ◂ prev · ▸ next.
+- Expanded view (default): source row, stats row (element count, unknown check), toggle row, then the whole document top-to-bottom as framed cards nested inside their parents (2-column inset per depth, no tree gutters).
+- Compact outline: produced by collapse-all (the toggle's ▾ collapse all switches to it); bare tree rows (glyph + label + child count) — every row click-to-focus; expand-all returns to the expanded view.
+- Section focus: the same expanded renderer scoped to the subtree — breadcrumb (source › ancestors › leaf), then the identical frames with document-relative keys (toggles keep working), then nav row ◂ outline · ◂ prev · ▸ next.
 - Quiz/flashcards runner: meter ▰▱ position/total (quiz adds score), prompt, ▢ a)–d) options with ✓/✗ grading and next, or 🃏 flip (hotkey f) for flashcards; end state shows set complete.
-- Toggle row: compact outline ↔ expanded view, plus collapse-all/expand-all over every card key.
-- Width: pane body columns, falling back to viewport columns, then a 72-column assumption; prose rows wrap at word boundaries and every row still ends in … on a code-point basis when a cut happens.
+- Toggle row: expanded view ↔ compact outline via collapse-all/expand-all over every card key.
+- Width: pane body columns, falling back to viewport columns, then a 72-column assumption; prose rows wrap at word boundaries and every row still ends in … on a code-point basis when a cut happens; below 30 columns frames degrade to a left rule plus indent.
 </sem-list>
 </sem-section>
 
@@ -63,12 +64,11 @@
 <sem-table label="Capture caps">
 | Cap | Value | Effect |
 | --- | --- | --- |
-| MAX_TEXT | 4000 chars per node | bodies silently cut (no ellipsis marker) — open defect |
+| MAX_TEXT | 4000 chars per node | cut bodies keep a visible `… (+N chars)` marker on the card (v0.6 — was a silent cut) |
 | MAX_CODE_LINES | 40 lines | sem-code body cap, frame hides the rest with a count |
 | MAX_TABLE_ROWS | 10 rows | drawn table hides overflow with (+N rows) |
 | MAX_BLOCKS | 32 | p/heading captures per node |
 | MAX_FACT_ITEMS | 50 | quiz/flashcard items per set |
-| MAX_WIDGETS | 10 | interactive descendants drawn per section focus |
 | wrap width | pane width − indent | prose wraps at word boundaries (indent preserved; break whitespace consumed); tokens wider than the width and code/pre bodies hard-cut, tables truncate cells (v0.5.2) |
 </sem-table>
 </sem-section>
@@ -105,19 +105,31 @@
 | wrapLines cuts mid-word | long prose splits anywhere inside the width (the reported case cut "first pass" inside "first") | word-boundary wrap for prose: each row breaks after the last whole word that fits, break whitespace is consumed, leading indentation survives; only tokens wider than the width hard-cut, and code/pre bodies pass the char mode so source lines never reflow (tables truncate cells and never reach wrapLines); width still counts code points, so double-width emoji behave exactly as before |
 </sem-table>
 
+<h3>Fixed in v0.6</h3>
+<sem-table label="v0.6.0 fixes">
+| Defect | Was | Fix |
+| --- | --- | --- |
+| Orphan hide rows; no toggle on framed cards | a standalone `▸ hide` row above some cards (one orphaned), others with no control at all | the header row IS the toggle on every framed card kind (`┌ ▾/▸ badge · N lines ───┐`); hide rows removed everywhere |
+| Flat nesting (user report) | child cards drew as flat rows after the parent; depth unreadable | box-model nesting: children draw inside the parent frame with a 2-column inset per depth; parent toggle collapses the subtree; under 30 columns a left-rule fallback keeps text |
+| MAX_TEXT cut without marker | bodies over 4000 chars ended silently | finalizeNode records the cut; the card shows a visible `… (+N chars)` marker |
+| Prose line breaks lost | `br` variants and literal newlines collapsed into one wrapped blob | capture keeps breaks (br records a newline, per-line collapse); boxed prose splits rows and collapses blanks; pre/code stays verbatim |
+| Trailing escape backslash leak | a body ending in `\"` kept the stray `\` in the drawn frame | gap capture strips escapes before end-of-slice too |
+| Headings never drawn | h1–h6 inside sem elements had no presentation (blocks captured but rows absent in card view) | heading rules: h1 ══ and h2 ── full width, h3 ┄ under the text, h4–h6 bold (h5/h6 dim), blank row above, section titles in the frame header |
+</sem-table>
+
 <h3>Open defects (documented, not fixed)</h3>
 <sem-table label="Open defects">
 | Defect | Impact | Why deferred |
 | --- | --- | --- |
-| MAX_TEXT cut without marker | bodies over 4000 chars end silently | needs an ellipsis contract change |
 | Procedure steps = direct children only | sem-step nested in sub-groups missed | spec does not define step grouping yet |
 | v0.8 vocabulary without TUI render | sem-list, sem-break, sem-progress, sem-chronology, sem-threat-model, sem-rubric, sem-eval, sem-mockup, sem-philosophy, sem-browser, sem-site-tree, sem-file-tree, sem-data-*, sem-alternatives/variant, agent-kit-*, semext-* render generic head + text | interactive/JS chrome cannot be reproduced in a TUI by design; generic flow keeps text visible |
+| Markdown fences and `##` headings are not parsed | a top-level ``` fence or markdown heading outside any element is dropped (inside an open element it lands in the body text) | parser-level feature, pre-v0.6; docs are sem-* HTML by spec |
 | Gap capture inside open p containers dropped | prose between an unclosed p and a sem element is lost | rare in practice |
 | Emoji glyphs are double-width | 📌 🃏 👁 🗂 misalign box borders by one cell in most terminals | cosmetic; would need a width-aware glyph set or emoji-free outline glyphs |
 </sem-table>
 </sem-section>
 
-<sem-summary>This reference describes the pane exactly as of v0.5.2: three render roles, one registry entry per tag family, flat Trinity friction sections, flat unclosed note/step/fact siblings, word-boundary prose wrap, children never silently dropped. When adding an element kind: one glyphOf mapping, one RENDERERS entry, and — if its children should stay visible — an expandedRoleOf decision. The defect ledger above is the backlog; fixed rows cite the v0.5–v0.5.2 releases.</sem-summary>
+<sem-summary>This reference describes the pane exactly as of v0.6.0: two render roles, framed cards for every element kind nested inside their parents (the header row is the toggle), flat Trinity friction sections, flat unclosed note/step/fact siblings, word-boundary prose wrap with real line breaks, counted cuts at capture and at the budget. When adding an element kind: one glyphOf mapping, one RENDERERS entry, and an expandedRoleOf decision (flow plans children below, card draws them inside the frame). The defect ledger above is the backlog; fixed rows cite the v0.5–v0.6 releases.</sem-summary>
 
 </sem-enhanced-document>
 </body>
