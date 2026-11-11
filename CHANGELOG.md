@@ -2,8 +2,8 @@
 
 ## 2026-11-11
 
-- mod(semtext) v0.4.0: expanded outline default (#224) — the semtext-outline pane opens in the expanded document view (whole outline tree top-to-bottom, every node's content inline under its tree branch via the existing renderers: cards default open, unknown tags keep name+text through the generic flow, section rows keep titles and stay click-to-focus), compact outline + expand/collapse-all toggles at the top, focus's `◂ outline` returns to the active overview; npl-* cards honor `collapsed`; pure `expandedPlan`/`expandedRoleOf`/`cardKeys` in render.tsx; 32 mod tests green.
-- chore: remove stale `claude-mods/` copy — pre-NPL duplicate of the live `mods/semtext` mod; nothing references it live (repo grep clean outside CHANGELOG history, no CI/package.json/marketplace dependencies, `~/.claude` dev-mods symlink resolves to `mods/semtext`) (#225)
+- mod(semtext) v0.4.0: expanded outline default (#224) — the semtext-outline pane opens in the expanded document view (whole outline tree top-to-bottom, every node's content inline under its tree branch via the existing renderers: cards default open, unknown tags keep name+text through the generic flow, section rows keep titles and stay click-to-focus), compact outline + expand/collapse-all toggles at the top, focus's `◂ outline` returns to the active overview; npl-* cards honor `collapsed`; pure `expandedPlan`/`expandedRoleOf`/`cardKeys` in render.tsx; 32 mod tests green. → stage (#226) → main (#227)
+- chore: remove stale `claude-mods/` copy — pre-NPL duplicate of the live `mods/semtext` mod; nothing references it live (repo grep clean outside CHANGELOG history, no CI/package.json/marketplace dependencies, `~/.claude` dev-mods symlink resolves to `mods/semtext`) (#225) → stage (#226) → main (#227)
 
 ## 2026-10-28
 
