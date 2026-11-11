@@ -53,22 +53,24 @@ defmodule Semtext.Reference.Glossary do
   @tags [
     Norm.tag("sem-enhanced-document", "spec/conventions.md",
       summary: "Required root wrapper; delimits extraction scope.",
-      description: "Exactly one per document when the vocabulary is used. Plain HTML inside stays ordinary HTML; extraction scopes to the wrapper when present, otherwise to <body>.",
+      description:
+        "Exactly one per document when the vocabulary is used. Plain HTML inside stays ordinary HTML; extraction scopes to the wrapper when present, otherwise to <body>.",
       attributes: [
         Norm.attr("role", "landmark, e.g. \"main\""),
         Norm.attr("audience", "document default reader profile"),
         Norm.attr("id · kind · tags", "global attributes")
       ],
       example: ~S"""
-<sem-enhanced-document>
-  <h1 data-kind="title">Auth notes</h1>
-  <sem-note variant="tip">Ordinary HTML and sem-* elements mix freely inside.</sem-note>
-</sem-enhanced-document>
+      <sem-enhanced-document>
+      <h1 data-kind="title">Auth notes</h1>
+      <sem-note variant="tip">Ordinary HTML and sem-* elements mix freely inside.</sem-note>
+      </sem-enhanced-document>
       """
     ),
     Norm.tag("agent", "spec/conventions.md",
       summary: "Document-level metadata aimed at a model: name, bio, instructions.",
-      description: "The tag form is bare <agent> (Appendix A maps it to div.sem-agent); extraction names the record type sem-agent. Inert to the browser, a record to the extractor.",
+      description:
+        "The tag form is bare <agent> (Appendix A maps it to div.sem-agent); extraction names the record type sem-agent. Inert to the browser, a record to the extractor.",
       attributes: [
         Norm.attr("name", "bare semantic child — the agent's name"),
         Norm.attr("bio", "bare semantic child — one-line persona"),
@@ -76,70 +78,74 @@ defmodule Semtext.Reference.Glossary do
         Norm.attr("id · kind · tags", "global attributes")
       ],
       example: ~S"""
-<agent>
-  <name>SemText Guide</name>
-  <bio>Answers questions about SemText from the facts on the page.</bio>
-  <instructions>Answer only from sem-fact records; cite ids.</instructions>
-</agent>
+      <agent>
+      <name>SemText Guide</name>
+      <bio>Answers questions about SemText from the facts on the page.</bio>
+      <instructions>Answer only from sem-fact records; cite ids.</instructions>
+      </agent>
       """
     ),
     Norm.tag("statement", "spec/schema/sem-facts.md",
       summary: "Fact part — the prompt side of a sem-fact.",
       description: "Bare semantic child of sem-fact; any inline content.",
       example: ~S"""
-<sem-fact id="g-f-oidc" kind="concept">
-  <statement>OIDC tokens travel in the Authorization header</statement>
-  <conclusion>Resource servers validate the bearer token on every call.</conclusion>
-</sem-fact>
+      <sem-fact id="g-f-oidc" kind="concept">
+      <statement>OIDC tokens travel in the Authorization header</statement>
+      <conclusion>Resource servers validate the bearer token on every call.</conclusion>
+      </sem-fact>
       """
     ),
     Norm.tag("conclusion", "spec/schema/sem-facts.md",
       summary: "Fact part — the citable takeaway extraction returns.",
-      description: "Bare semantic child of sem-fact; any inline content. Conclusions are verbatim-citable assertions; distractors never are.",
+      description:
+        "Bare semantic child of sem-fact; any inline content. Conclusions are verbatim-citable assertions; distractors never are.",
       example: ~S"""
-<sem-fact id="g-f-oidc2" kind="concept">
-  <statement>OIDC tokens travel in the Authorization header</statement>
-  <conclusion>Resource servers validate the bearer token on every call.</conclusion>
-</sem-fact>
+      <sem-fact id="g-f-oidc2" kind="concept">
+      <statement>OIDC tokens travel in the Authorization header</statement>
+      <conclusion>Resource servers validate the bearer token on every call.</conclusion>
+      </sem-fact>
       """
     ),
     Norm.tag("incorrect-statement", "spec/schema/sem-facts.md",
       summary: "Explicit wrong candidate for quiz view; never extracted as a claim.",
-      description: "Child of sem-fact; quiz view only. Up to 3 distractors win over sibling conclusions when the quiz builds its options; with scripts off they render labelled, hidden by nothing.",
+      description:
+        "Child of sem-fact; quiz view only. Up to 3 distractors win over sibling conclusions when the quiz builds its options; with scripts off they render labelled, hidden by nothing.",
       example: ~S"""
-<sem-fact id="g-f-storage" kind="anti-pattern">
-  <statement>JWTs belong in memory or httpOnly cookies</statement>
-  <conclusion>localStorage is readable by any script on the page.</conclusion>
-  <incorrect-statement>localStorage is fine if the token is short-lived.</incorrect-statement>
-</sem-fact>
+      <sem-fact id="g-f-storage" kind="anti-pattern">
+      <statement>JWTs belong in memory or httpOnly cookies</statement>
+      <conclusion>localStorage is readable by any script on the page.</conclusion>
+      <incorrect-statement>localStorage is fine if the token is short-lived.</incorrect-statement>
+      </sem-fact>
       """
     ),
     Norm.tag("sem-question", "spec/conventions.md",
       summary: "Quiz block (Tier 1 demo element).",
-      description: "Children: a prompt and sem-option candidates. Tier-1 demo element — no tier ships a handler yet, and the validator's schema does not know it yet.",
+      description:
+        "Children: a prompt and sem-option candidates. Tier-1 demo element — no tier ships a handler yet, and the validator's schema does not know it yet.",
       attributes: [
         Norm.attr("type", "\"mc\" — multiple choice")
       ],
       example: ~S"""
-<sem-question type="mc">
-  <p data-kind="prompt">Which header carries the OIDC token?</p>
-  <sem-option correct>Authorization</sem-option>
-  <sem-option>Cookie</sem-option>
-</sem-question>
+      <sem-question type="mc">
+      <p data-kind="prompt">Which header carries the OIDC token?</p>
+      <sem-option correct>Authorization</sem-option>
+      <sem-option>Cookie</sem-option>
+      </sem-question>
       """
     ),
     Norm.tag("sem-option", "spec/conventions.md",
       summary: "Quiz answer candidate; correct marks the right one.",
-      description: "Sugar: ✅ / ✗ prefixes mark correct / distractor options. Tier-1 demo element — the validator's schema does not know it yet.",
+      description:
+        "Sugar: ✅ / ✗ prefixes mark correct / distractor options. Tier-1 demo element — the validator's schema does not know it yet.",
       attributes: [
         Norm.attr("correct", "flag — the right answer")
       ],
       example: ~S"""
-<sem-question type="mc">
-  <p data-kind="prompt">Which header carries the OIDC token?</p>
-  <sem-option correct>Authorization</sem-option>
-  <sem-option>Cookie</sem-option>
-</sem-question>
+      <sem-question type="mc">
+      <p data-kind="prompt">Which header carries the OIDC token?</p>
+      <sem-option correct>Authorization</sem-option>
+      <sem-option>Cookie</sem-option>
+      </sem-question>
       """
     )
   ]
