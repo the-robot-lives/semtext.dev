@@ -2,6 +2,71 @@
 
 ## 2026-11-11
 
+- **focus: nested markdown renders once.** `semtext focus --format md` on a
+  document with nested headings emitted every child section twice — the
+  flattened parent entry rendered its whole-subtree `raw` span, then each
+  child rendered again (a 13-section playbook doc came out ≈522 lines, two
+  byte-identical copies). The focus doc assembly now slices each section's
+  raw to its OWN span (stops at the first child heading); json contract
+  unchanged (14 sections stay 14). `outline` text also miscounted markdown
+  nesting ("12 nested" for 13 children): markdown `blocks` is self-excluded
+  while the shared renderer assumed the XHTML self-included convention —
+  both CLIs now pass the convention through. (+6 regression tests; full
+  unit suite green.) (#99)
+
+- **shell 1.3 — lazy packages load on first use, not at boot (#100).**
+  `createLazyPackage` no longer starts the `semtext-pkg-<pkg>.js` chunk
+  import at module evaluation: the first non-help invocation of a
+  package command kicks it (one shared in-flight promise per package),
+  awaits it, and runs the real spec in the same call — `echo '{}' | jq .`
+  now resolves cold in one line with real jq output; the
+  "still loading — try again" hint is gone. Superseded names (the
+  mountPackages safety net) run the base command immediately and kick
+  the same load in the background — pipe semantics unchanged; failed
+  loads keep the honest per-chunk error (stub path, exit 1) and a
+  once-per-name note over the base (wrapper path). The supersede
+  wrapper now forwards Promises from both the package spec and the
+  base — the same silent-drop truncation the shell-v3 round fixed in
+  the lazy stub wrapper (CORE-V2 async commands).
+  `mountPackages` takes an injectable package list so tests drive the
+  exact wrapper.
+
+- **visible demo stop control + no focus theft (WCAG 2.2.2 / 2.4.3).**
+  While a scripted demo runs, the top-right slot shows a `stop demo`
+  button and an "Esc to take over" hint (new `demoRunning` state drives
+  it; `stopDemo()` stops boot playback or the start-script autostart);
+  when idle the slot is the replay button as before. Ending a demo —
+  playback stop, app exit, TUI close — now re-focuses the prompt ONLY
+  when the reader is already inside the shell (`refocusIfEngaged()`),
+  so a demo finishing off-focus no longer yanks the page back or pops
+  a soft keyboard. (+3 unit tests; the fetch-flow replay test waits for
+  the demo to end before clicking replay.)
+
+- **unique prompt-input ids per element.** `id="sem-shell-input"` /
+  `for="sem-shell-input"` were fixed literals, so the landing's three
+  shells shared one id (broken label association, ambiguous lookups).
+  Each instance now gets `sem-shell-input-<n>` from a module sequence;
+  the label's `for` follows. (+1 unit test: three shells, three ids.)
+
+- **one accessible transcript, author labels kept (WCAG).** Once JS paint
+  is up the DOM mirror is the single `role=log` live region: `#setPaint`
+  sets `aria-hidden` on `.sem-shell-transcript` for both paint values and
+  the CSS stands it down under `[data-paint]` (no-JS keeps the authored
+  transcript readable); the mirror's nested `aria-live` div is gone (it
+  made screen readers announce every line twice). The host gets
+  `role="region"` and a default name only when the author gave none —
+  `applyAccessibleDefaults()` is a protected hook so `<sem-shell>`'s
+  default no longer loses to the base class's write order. (+4 unit tests.)
+
+- **keyboard trap removed — the shell is always escapable (WCAG 2.1.2).**
+  Tab on an empty prompt line and Shift+Tab keep their native focus
+  meaning (the hidden input surface now honours the discipline's verdict
+  for Tab instead of blanket-consuming every key); the hidden canvas input
+  is `tabindex=-1` (never an invisible tab stop); F6 exits a live
+  full-screen app cleanly through `AppRunner.requestExit()` (exit 0, the
+  app's own teardown path — distinct from Ctrl+C's interrupt/130) and
+  keeps its browser focus-panes meaning in prompt mode. (+5 unit tests.)
+
 - **quiet boot — one clean `shell ready` line, no CDN-refusal demo.**
   The shell's first paint collapses the 14 per-plugin/per-package mount
   lines + hint into a single `shell ready — N plugins, M packages, K
@@ -47,7 +112,7 @@
   `web/demo/auto-id-renders.html` + e2e `sem-reference-auto-id.cy.js`;
   unit suites for slug/auto-id/numbering/renders/validator.
   `elements.json` regenerated. Bundle budget 173 → 175 KB (measured
-  174.8 raw / 54.0 gzipped, was 172.1 / 53.2).
+  174.8 raw / 54.0 gzipped, was 172.1 / 53.2). — → stage (#95), → main (#96) (main tree-identical to develop; no back-merge needed)
 - **`semtext focus` + `.sem.md` support: purpose-driven collapse lands in
   the agent toolkit and both CLIs.** New `.sem.md` parser
   (`src/agent/markdown-sections.ts`, re-exported through the agent
