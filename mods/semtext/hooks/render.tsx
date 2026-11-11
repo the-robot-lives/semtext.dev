@@ -319,6 +319,22 @@ export const GLYPHS = {
     shadow: '▼',
     critic: '✕',
     weego: '◎',
+    // The spec's wider NPL family (sem-text v0.8 §npl): one glyph per tag,
+    // kept to the same geometric/dingbat register as the rest of the pane.
+    agent: 'Ⓐ',
+    directive: '➤',
+    section: '☰',
+    rubric: '◈',
+    critique: '⚑',
+    declaration: '❝',
+    example: '✦',
+    flag: '⚐',
+    mode: '▧',
+    mood: '⋇',
+    poa: '➤',
+    vos: '◍',
+    artifact: '⬢',
+    cot: '⋯',
   },
   tree: { branch: '├──', last: '└──', spine: '│', blank: ' ' },
   crumb: '›',
@@ -354,7 +370,8 @@ export const cpLen = (value: string): number => Array.from(value).length
 
 /** Which vocabulary glyph names `node`'s kind. */
 export function glyphOf(node: SemTextNode): string {
-  if (node.tag === 'sem-note' && (node.attrs['kind'] ?? node.attrs['data-kind']) === 'warning') {
+  const kind = node.attrs['kind'] ?? node.attrs['data-kind'] ?? node.attrs['variant']
+  if (node.tag === 'sem-note' && kind === 'warning') {
     return GLYPHS.kind.warning
   }
   const byTag: Record<string, string> = {
@@ -371,6 +388,7 @@ export function glyphOf(node: SemTextNode): string {
     'sem-step': GLYPHS.kind.step,
     'sem-table': GLYPHS.kind.table,
     'sem-code': GLYPHS.kind.code,
+    'sem-md': GLYPHS.kind.code,
     'sem-facts': GLYPHS.kind.facts,
     'sem-faq': GLYPHS.kind.facts,
     'sem-faqs': GLYPHS.kind.facts,
@@ -403,6 +421,21 @@ export function glyphOf(node: SemTextNode): string {
   'npl-ref': GLYPHS.npl.ref,
   'npl-hormones': GLYPHS.npl.hormones,
   'npl-intent': GLYPHS.npl.intent,
+  'npl-agent': GLYPHS.npl.agent,
+  'npl-directive': GLYPHS.npl.directive,
+  'npl-section': GLYPHS.npl.section,
+  'npl-rubric': GLYPHS.npl.rubric,
+  'npl-critique': GLYPHS.npl.critique,
+  'npl-declaration': GLYPHS.npl.declaration,
+  'npl-example': GLYPHS.npl.example,
+  'npl-flag': GLYPHS.npl.flag,
+  'npl-flags': GLYPHS.npl.flag,
+  'npl-mode': GLYPHS.npl.mode,
+  'npl-mood': GLYPHS.npl.mood,
+  'npl-poa': GLYPHS.npl.poa,
+  'npl-vos': GLYPHS.npl.vos,
+  'npl-artifact': GLYPHS.npl.artifact,
+  'npl-cot': GLYPHS.npl.cot,
   wedge: GLYPHS.npl.wedge,
   shadow: GLYPHS.npl.shadow,
   critic: GLYPHS.npl.critic,
@@ -484,7 +517,14 @@ export function meterLine(
     : base
 }
 
-/** Cells of a textual table row: pipe- or tab-delimited, else one cell. */
+/** A markdown delimiter cell: `---`, `:---`, `---:`, `:---:`. */
+const DELIM_CELL = /^:?-+:?$/
+
+/**
+ * Cells of a textual table row: pipe- or tab-delimited, else one cell.
+ * Markdown delimiter rows (`| --- | :---: |`) are separator decoration, not
+ * data — dropped, so a pipe table's body starts at its first real row.
+ */
 export function tableCells(rows: readonly string[]): string[][] {
   const out: string[][] = []
   for (const raw of rows) {
@@ -501,6 +541,7 @@ export function tableCells(rows: readonly string[]): string[][] {
       cells = cells.slice(0, -1)
     }
     if (cells.every(cell => cell === '')) continue
+    if (cells.every(cell => DELIM_CELL.test(cell))) continue
     out.push(cells)
   }
   return out
@@ -783,7 +824,8 @@ const noteRenderer: ElementRenderer = (node, ctx) => {
   const content = node.content
   if (content?.kind !== 'note') return genericRenderer(node, ctx)
   const { Box, Button } = ctx.el
-  const warn = (node.attrs['kind'] ?? node.attrs['data-kind']) === 'warning'
+  const warn =
+    (node.attrs['kind'] ?? node.attrs['data-kind'] ?? node.attrs['variant']) === 'warning'
   const glyph = warn ? GLYPHS.kind.warning : GLYPHS.kind.note
   // Notes default open in v0.4: the expanded view shows bodies inline; an
   // explicit hide toggle (expanded[key] === false) still collapses.
@@ -1180,16 +1222,36 @@ export const RENDERERS: Record<string, ElementRenderer> = {
   'sem-runbook': procedureRenderer,
   'sem-workflow': procedureRenderer,
   'sem-plan': procedureRenderer,
+  'sem-tsg': procedureRenderer,
+  'sem-tsgs': procedureRenderer,
   'sem-source': sourceRenderer,
   'sem-reader': sourceRenderer,
   'sem-data-source': sourceRenderer,
   'sem-reference': sourceRenderer,
+  'sem-references': sourceRenderer,
+  'sem-api-call': sourceRenderer,
+  'sem-kb': sourceRenderer,
   'npl-mindread': renderNplBlock,
   'npl-thought': renderNplBlock,
   'npl-block': renderNplBlock,
   'npl-ref': renderNplBlock,
   'npl-hormones': renderNplBlock,
   'npl-intent': renderNplBlock,
+  'npl-agent': renderNplBlock,
+  'npl-directive': renderNplBlock,
+  'npl-section': renderNplBlock,
+  'npl-rubric': renderNplBlock,
+  'npl-critique': renderNplBlock,
+  'npl-declaration': renderNplBlock,
+  'npl-example': renderNplBlock,
+  'npl-flag': renderNplBlock,
+  'npl-flags': renderNplBlock,
+  'npl-mode': renderNplBlock,
+  'npl-mood': renderNplBlock,
+  'npl-poa': renderNplBlock,
+  'npl-vos': renderNplBlock,
+  'npl-artifact': renderNplBlock,
+  'npl-cot': renderNplBlock,
   wedge: renderNplBlock,
   shadow: renderNplBlock,
   critic: renderNplBlock,
@@ -1237,7 +1299,8 @@ export function expandedRoleOf(node: SemTextNode): ExpandedRole {
  * inline under that row — captured blocks (with their markers) or a flow
  * leaf's own text; unknown tags land here, so their text is never dropped.
  * 'card': the node defers to its RENDERERS entry (default-open in v0.4);
- * its children are consumed by the renderer and never re-planned.
+ * its children are consumed by the renderer and never re-planned — except
+ * npl-block cards, whose children re-plan below the card.
  */
 export type ExpandedUnit =
   | { role: 'row'; key: string; row: OutlineRow }
@@ -1262,12 +1325,15 @@ export function indentOf(prefix: string): string {
  * The expanded view's full content plan: every outline row top-to-bottom,
  * each followed by its content — section prose and unknown-tag text as text
  * rows, note/reveal/facts/table/code/properties/views/procedure/source/npl
- * nodes as cards. Pure; the pane maps units to elements under its row
- * budget (renderer spend is only known at draw time).
+ * nodes as cards. Card renderers consume their children (they feed the
+ * captured content), except the npl block renderer, which draws only the
+ * node's own text — its blocks and element children plan below the card.
+ * Pure; the pane maps units to elements under its row budget (renderer
+ * spend is only known at draw time).
  */
 export function expandedPlan(tree: readonly SemTextNode[], maxDepth = 8): ExpandedUnit[] {
   const units: ExpandedUnit[] = []
-  const walk = (
+  const walkNodes = (
     nodes: readonly SemTextNode[],
     depth: number,
     base: string,
@@ -1292,11 +1358,14 @@ export function expandedPlan(tree: readonly SemTextNode[], maxDepth = 8): Expand
       const role = expandedRoleOf(node)
       if (role === 'card') {
         units.push({ role: 'card', key, depth, indent: indentOf(prefix), node })
-        return // the renderer consumes the children
-      }
-      const blocks = node.blocks ?? []
-      if (blocks.length > 0) {
-        blocks.forEach((block, b) => {
+        // A card renderer normally consumes the node's children (they feed
+        // its captured content). The npl block renderer draws only the node's
+        // own text, so its captured blocks and element children still plan
+        // below the card — a nested or unclosed sibling is never swallowed
+        // by its parent card.
+        const render = RENDERERS[node.tag] ?? RENDERERS['*']!
+        if (render !== renderNplBlock) return
+        ;(node.blocks ?? []).forEach((block, b) => {
           units.push({
             role: 'text',
             key: `${key}#b${b}`,
@@ -1306,20 +1375,34 @@ export function expandedPlan(tree: readonly SemTextNode[], maxDepth = 8): Expand
             block,
           })
         })
-      } else if (node.children.length === 0 && (node.text ?? '') !== '') {
-        // A leaf without captured content (plain tldr/summary text, unknown
-        // tags, note-less notes): its own text sits inline under the row.
-        units.push({
-          role: 'text',
-          key: `${key}#leaf`,
-          depth: depth + 1,
-          indent: indentOf(prefix),
-          text: node.text ?? '',
-        })
+      } else {
+        const blocks = node.blocks ?? []
+        if (blocks.length > 0) {
+          blocks.forEach((block, b) => {
+            units.push({
+              role: 'text',
+              key: `${key}#b${b}`,
+              depth: depth + 1,
+              indent: indentOf(prefix),
+              text: block.text,
+              block,
+            })
+          })
+        } else if (node.children.length === 0 && (node.text ?? '') !== '') {
+          // A leaf without captured content (plain tldr/summary text, unknown
+          // tags, note-less notes): its own text sits inline under the row.
+          units.push({
+            role: 'text',
+            key: `${key}#leaf`,
+            depth: depth + 1,
+            indent: indentOf(prefix),
+            text: node.text ?? '',
+          })
+        }
       }
-      if (depth < maxDepth) walk(node.children, depth + 1, `${key}.`, [...ancestors, isLast])
+      if (depth < maxDepth) walkNodes(node.children, depth + 1, `${key}.`, [...ancestors, isLast])
     })
   }
-  walk(tree, 0, '', [])
+  walkNodes(tree, 0, '', [])
   return units
 }
