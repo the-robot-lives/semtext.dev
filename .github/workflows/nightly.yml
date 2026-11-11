@@ -7,6 +7,14 @@ name: Nightly
 # rebuilds the image on main nightly with the SAME buildx cache scope as
 # ci.yml's build-push (scope=web) but never pushes, keeping the main-ref
 # cache warm. It also runs the full unit + e2e suite (unsharded) against main.
+#
+# The cypress step is explicit (no cypress-io/github-action@v6 anywhere):
+# that action died "Socket closed before the connection was established"
+# ~15ms into its wait-on from 2026-10-20 (101 consecutive failures, zero
+# specs executed — action plumbing, not the product). The explicit runner
+# below starts `npm run serve` in the background, polls the wait-on URL with
+# a plain node fetch loop, then runs `npx cypress run --e2e` in the foreground
+# so its exit code gates the job. Root cause + shard notes: docs/TEST-HEALTH.md.
 
 on:
   schedule:
@@ -21,6 +29,19 @@ permissions:
   contents: read
 
 jobs:
+  mod:
+    # Mod tier, same lane as ci.yml's PR/develop gate (no model calls, no
+    # credentials — see docs/TEST-HEALTH.md). Duplicated here so a nightly
+    # CLI/toolchain drift is caught even for PRs that skipped the gate.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g @anthropic-ai/claude-code@2.1.322
+      - run: claude plugin test mods/semtext
+
   full-suite:
     runs-on: ubuntu-latest
     steps:
@@ -30,12 +51,19 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
+      # setup-node caches ~/.npm only; the cypress binary npm ci installs
+      # lives in ~/.cache/Cypress. CYPRESS_INSTALL_BINARY must stay UNSET
+      # here (this job runs e2e) — the unit/mod lanes set it to 0 instead.
       - uses: actions/cache@v4
         with:
           path: ~/.cache/Cypress
           key: ${{ runner.os }}-cypress-${{ hashFiles('package-lock.json') }}
           restore-keys: ${{ runner.os }}-cypress-
       - run: npm ci
+      # build:strict = build.mjs --strict-budget: a bundle over its ROADMAP
+      # budget fails the run here. Local `npm run build` stays lenient so an
+      # in-progress size creep never silently blocks local work — CI is where
+      # the gate closes.
       - run: npm run build:strict
       - run: npm run test:unit:cover
       - uses: actions/upload-artifact@v4
@@ -44,13 +72,40 @@ jobs:
           name: nightly-unit-coverage
           path: coverage/
           retention-days: 14
-      - name: Cypress e2e (full)
-        uses: cypress-io/github-action@v6
-        with:
-          install: false
-          start: npm run serve
-          wait-on: "http://localhost:4173/demo/index.html"
-          wait-on-timeout: 120
+      - name: Start preview server
+        run: |
+          nohup npm run serve >/tmp/serve.log 2>&1 &
+          echo "serve pid $!"
+      - name: Wait for preview server
+        # wait-on replacement: poll the same URL the old action used, node's
+        # built-in fetch, 1s ticks, 120s cap. Fails the job (not the specs)
+        # if the server never answers.
+        run: |
+          node -e '
+            const url = "http://localhost:4173/demo/index.html";
+            const deadline = Date.now() + 120000;
+            (async () => {
+              for (;;) {
+                try {
+                  const res = await fetch(url);
+                  if (res.ok) { console.log("preview up:", res.status); return; }
+                  console.log("preview answered", res.status);
+                } catch (e) {
+                  console.log("preview not ready:", e.message);
+                }
+                if (Date.now() > deadline) {
+                  console.error("preview server never served " + url);
+                  process.exit(1);
+                }
+                await new Promise((r) => setTimeout(r, 1000));
+              }
+            })();
+          '
+      - name: Cypress e2e (full, unsharded)
+        run: npx cypress run --e2e
+      - name: Preview server log
+        if: failure()
+        run: cat /tmp/serve.log || true
 
   warm-docker-cache:
     runs-on: ubuntu-latest

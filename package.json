@@ -26,10 +26,13 @@
     "semtext-view": "bin/semtext-view.mjs"
   },
   "scripts": {
+    "//scripts": "test:mod runs the Claude Code mod suite (needs the `claude` CLI on PATH, NO credentials — the mod tests never call a model). test:smoke is the two fast cypress e2e specs, opt-in local/nightly-extra only — never a PR gate. Tiers + where CI runs each: docs/TEST-HEALTH.md.",
     "build": "node scripts/build.mjs && node scripts/build-standalone.mjs",
     "build:strict": "node scripts/build.mjs --strict-budget && node scripts/build-standalone.mjs",
     "test": "cypress run --e2e",
     "test:open": "cypress open --e2e",
+    "test:smoke": "cypress run --e2e --spec test/e2e/standalone-lit.cy.js,test/e2e/agent-surface.cy.js",
+    "test:mod": "claude plugin test mods/semtext",
     "test:unit": "vitest run",
     "test:unit:cover": "vitest run --coverage",
     "validate": "node bin/semtext-validate.mjs \"site/**/*.html\" \"demo/**/*.html\" \"spec/*.html\"",
