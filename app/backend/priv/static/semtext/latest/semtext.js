@@ -1,3 +1,6 @@
+/* SemText — runtime bundle (latest)
+   Assembled by scripts/build-latest.mjs (spec v0.6). vendored runtime v0.9.6 (verbatim) + semtext.dev v0.6 extension layer (global SemTextV06, v0.6).
+   Do not hand-edit: change the sources and rebuild. */
 var SemText=(function(h){"use strict";var Ot=typeof document<"u"?document.currentScript:null;/**
  * @license
  * Copyright 2019 Google LLC
@@ -163,3 +166,424 @@ export async function retry<T>(fn: () => Promise<T>, n: number, backoffMs = 250)
 `)}return No(t,n).join(`
 `)}}}function Ad(t,e){const n=[];for(const s of Array.from(t.children)){const r=Je(s,{cols:e.cols});r&&n.push(...r.split(`
 `))}return n}const Lo="pre.sem-tui",Mt="data-sem-tui-active";function vd(t){const e=t.getAttribute("render-mode");if(e==="tui"||e==="rich")return e;if(t.hasAttribute("tui")){const n=t.getAttribute("tui");return n==="rich"||n==="off"||n==="false"?"rich":"tui"}return null}function Vn(t){const e=vd(t);if(e)return e;let n=t.parentElement;for(;n;){if(n.localName==="sem-tui")return n.getAttribute("data-mode")==="rich"?"rich":"tui";n=n.parentElement}return"rich"}function _o(t){let e=t.parentElement;for(;e;){if(e.localName==="sem-tui"){const n=parseInt(e.getAttribute("cols")||"",10);return Number.isFinite(n)?Math.min(500,Math.max(20,n)):80}e=e.parentElement}return 80}function Mo(t){let e=t.parentElement;for(;e;){const n=e.localName;if(!zn.has(n)&&n.startsWith("sem-")&&Vn(e)==="tui")return!0;e=e.parentElement}return!1}function Ro(t){const e=t.getAttribute("id");return`${t.localName}${e?" #"+e:""} — terminal text view`}function Oo(t,e){let n=t.querySelector(":scope > "+Lo);n||(n=document.createElement("pre"),n.className="sem-tui",n.setAttribute("part","tui"),t.appendChild(n)),t.hasAttribute(Mt)||t.setAttribute(Mt,""),n.textContent!==e&&(n.textContent=e),n.getAttribute("aria-label")!==Ro(t)&&n.setAttribute("aria-label",Ro(t))}function Io(t){if(!t.hasAttribute(Mt))return;t.removeAttribute(Mt);const e=t.querySelector(":scope > "+Lo);e&&e.remove()}const Po=new WeakSet,Gn=new Set;function wd(t){return Je(t,{cols:_o(t)})}function Rt(t=document){if(t.readyState!=="loading")for(const e of Array.from(t.getElementsByTagName("*"))){const n=e.localName;if(!n.startsWith("sem-")||zn.has(n))continue;if(Vn(e)==="rich"||Mo(e)){Io(e);continue}Oo(e,wd(e))}}function Ed(t){t.readyState!=="loading"&&(Gn.has(t)||(Gn.add(t),queueMicrotask(()=>{Gn.delete(t),Rt(t)})))}function Cd(t=document){if(Po.has(t))return;Po.add(t);const e=()=>Ed(t);t.readyState==="loading"?t.addEventListener("DOMContentLoaded",()=>Rt(t),{once:!0}):queueMicrotask(()=>Rt(t)),new MutationObserver(e).observe(t,{childList:!0,subtree:!0}),new MutationObserver(e).observe(t.documentElement,{attributes:!0,attributeFilter:["render-mode","tui","data-mode","cols","theme"],subtree:!0}),t.addEventListener("sem-render-mode-change",e,!0)}const Do=["view-as","variant","name","active","summary","value","label","key"],Sd=Do.map(t=>"["+t+"]").join(",");function jo(t){t.querySelectorAll(Sd).forEach(e=>{if(e.tagName.slice(0,4)==="SEM-")for(const n of Do)e.hasAttribute(n)&&!e.hasAttribute("data-"+n)&&e.setAttribute("data-"+n,e.getAttribute(n))})}function Uo(t){t.querySelectorAll(I("facts")+":not([data-sem-upgraded])").forEach(e=>{const n=e.getAttribute("data-view-as");if(n!=="flashcards"&&n!=="quiz")return;const s=Array.from(e.querySelectorAll(I("fact")));s.length!==0&&(e.setAttribute("data-sem-upgraded",""),Ks(e,s,n))})}function Bo(t){t.querySelectorAll(I("details")+'[data-view-as="quiz"]:not([data-sem-upgraded])').forEach(e=>{e.querySelectorAll(se("highlight")).forEach(n=>{const s=document.createElement("span");s.className="sem-occluded",s.textContent=n.textContent,s.setAttribute("role","button"),s.setAttribute("tabindex","0"),s.setAttribute("aria-label","reveal");const r=()=>{s.className="sem-highlight sem-revealed",s.removeAttribute("role"),s.removeAttribute("tabindex"),s.removeAttribute("aria-label")};s.addEventListener("click",r),s.addEventListener("keydown",i=>{(i.key==="Enter"||i.key===" ")&&(i.preventDefault(),r())}),n.replaceWith(s)}),e.setAttribute("data-sem-upgraded","")})}function Fo(t){t.querySelectorAll(I("note")+"[collapsed]:not([data-sem-upgraded])").forEach(e=>{let n=e.querySelector(".sem-note-body");if(!n){if(!e.firstChild)return;for(n=document.createElement("div"),n.className="sem-note-body";e.firstChild;)n.appendChild(e.firstChild);e.appendChild(n)}e.setAttribute("data-sem-upgraded","");const s=document.createElement("div");s.className="sem-note-summary",s.textContent=(n.textContent||"").trim().split(/\s+/).slice(0,10).join(" ")+" …",e.insertBefore(s,n),s.addEventListener("click",()=>{e.removeAttribute("collapsed"),s.remove()})})}function Ho(t){t.querySelectorAll(I("properties")).forEach(e=>{const n={};e.querySelectorAll(I("property")).forEach(s=>{const r=s.getAttribute("data-key")??s.getAttribute("key");r!==null&&(n[r]&&console.warn('sem-properties: duplicate key "'+r+'"'),n[r]=!0)})})}const Wo=I("view");function zo(t){t.querySelectorAll(I("views")+"[id]").forEach(e=>{const n=Array.from(e.querySelectorAll(Wo));if(!n.length||e.querySelector(":scope > .sem-views-tabs"))return;e.setAttribute("data-sem-upgraded",""),e.hasAttribute("role")||e.setAttribute("role","region"),e.hasAttribute("aria-label")||e.setAttribute("aria-label",e.id);const s=n.filter(u=>u.hasAttribute("data-active"));s.length>1&&(console.warn(`[semtext] <sem-views id="${e.id}">: ${s.length} views carry active; first wins.`),s.slice(1).forEach(u=>u.removeAttribute("data-active"))),s.length||n[0].setAttribute("data-active","");let r=Math.max(0,n.findIndex(u=>u.hasAttribute("data-active")));const i=n.map(u=>u.id||(u.getAttribute("data-name")||"").toLowerCase()),o=document.createElement("div");o.className="sem-views-tabs",o.setAttribute("role","tablist");const a=[],c=u=>`${e.id}-tab-${u+1}`;n.forEach((u,f)=>{u.id||(u.id=`${e.id}-view-${f+1}`,u.setAttribute("data-sem-minted-id","")),u.setAttribute("role","tabpanel"),u.setAttribute("aria-labelledby",c(f));const m=document.createElement("button");m.type="button",m.id=c(f),m.setAttribute("role","tab"),m.textContent=u.getAttribute("data-name")||`View ${f+1}`,m.setAttribute("aria-selected",String(f===r)),m.setAttribute("aria-controls",u.id),m.tabIndex=f===r?0:-1,m.addEventListener("click",()=>{l(f)}),m.addEventListener("keydown",p=>{const g=n.length-1;p.key==="ArrowRight"&&(p.preventDefault(),l(r===g?0:r+1,!0)),p.key==="ArrowLeft"&&(p.preventDefault(),l(r===0?g:r-1,!0)),p.key==="Home"&&(p.preventDefault(),l(0,!0)),p.key==="End"&&(p.preventDefault(),l(g,!0))}),a.push(m),o.appendChild(m)}),e.insertBefore(o,e.firstChild);function l(u,f,m){const p=r;r=u,n.forEach((w,v)=>{v===u?w.setAttribute("data-active",""):w.removeAttribute("data-active")}),a.forEach((w,v)=>{w.setAttribute("aria-selected",String(v===u)),w.tabIndex=v===u?0:-1});const g=n[u];m||Ra(e.id,i[u]),g.dispatchEvent(new CustomEvent("sem-navigate",{bubbles:!0,detail:{id:e.id,name:g.getAttribute("data-name"),index:u}}));const A=p!==u&&n[p].contains(document.activeElement);(f||A)&&a[u].focus()}function d(){const u=e.id+"/",f=Kt().find(g=>g.startsWith(u));if(!f)return;const m=f.slice(u.length),p=n.findIndex(g=>g.id===m||(g.getAttribute("data-name")||"").toLowerCase()===m);p>=0&&p!==r&&l(p)}window.addEventListener("hashchange",d),e.addEventListener("sem-activate",u=>{const f=u.target instanceof Element?u.target.closest(Wo):null,m=f?n.indexOf(f):-1;m>=0&&m!==r&&l(m,!1,!0)}),d()})}function Vo(t){t.querySelectorAll(I("reveal")+":not([data-sem-upgraded])").forEach(e=>{const n=document.createElement("details");e.hasAttribute("open")&&n.setAttribute("open","");const s=document.createElement("summary");s.textContent=e.getAttribute("data-summary")||ot(B(e.textContent)),n.appendChild(s);const r=document.createElement("div");for(r.className="sem-reveal-body";e.firstChild;)r.appendChild(e.firstChild);n.appendChild(r),e.appendChild(n),e.setAttribute("data-sem-upgraded","")})}function Go(t){t.querySelectorAll(I("progress")+"[data-value]").forEach(e=>{if(e.querySelector(".sem-progress-track"))return;const n=parseFloat(e.getAttribute("data-value")),s=Math.min(1,Math.max(0,isNaN(n)?0:n)),r=e.getAttribute("data-label")||"progress",i=Math.round(s*100);e.textContent=r+" :: "+i+"%",e.setAttribute("data-sem-upgraded","");const o=document.createElement("span");o.className="sem-progress-track";const a=document.createElement("span");a.className="sem-progress-fill",a.style.width=i+"%",o.appendChild(a),e.appendChild(o)})}const Kn="sem-enhanced-document, .sem-enhanced-document",Ko=new WeakSet;let Yo=!1,Yn;function Zo(t){const e=document.documentElement,n=t===document,s=n||t.querySelector("sem-audiences, .sem-audiences")===null?document:t,r=n?document.querySelector(Kn):t.querySelector(Kn)??document.querySelector(Kn);n&&Yn===void 0&&(Yn=e.getAttribute("data-audience"));const i=()=>{const o=r&&(r.getAttribute("data-audience")||r.getAttribute("audience"))||(n?Yn:e.getAttribute("data-audience")),a=Yt("sem-audience")||o||null;a?e.setAttribute("data-audience",a):e.removeAttribute("data-audience");const c=zt(s);t.querySelectorAll("[data-audience], [audience]").forEach(l=>{if(l===e||l===r)return;const d=l.getAttribute("data-audience")??l.getAttribute("audience");l.toggleAttribute("hidden",!Wt(d,a,c))})};(n?!Yo:!Ko.has(t))&&(n?Yo=!0:Ko.add(t),window.addEventListener("hashchange",i)),i()}const Qo=I("view"),Zn=I("reveal"),kd=I("source")+'[data-view-as="source"]',xd=I("note")+"[collapsed], "+Qo+":not([data-active]), "+I("facts")+"[data-sem-upgraded] > "+I("fact")+":not(.sem-current)";let Jo=0;function $d(t){try{return decodeURIComponent(t)}catch{return t}}function Nd(t){const[e,n]=t.split("/").map($d),s=document.getElementById(e);if(!s||n===void 0)return s;const r=document.getElementById(n);return r&&s.contains(r)?r:Array.from(s.querySelectorAll(Qo)).find(i=>(i.getAttribute("data-name")||"").toLowerCase()===n.toLowerCase())||null}function Xo(){const t=Kt();if(t.length===0){Xe=!0;return}for(const e of t){const n=Nd(e);if(!n)continue;const s=[];for(let i=n;i;i=i.parentElement)s.unshift(i);s.forEach(i=>{if(i.matches(Zn)){const a=i.querySelector(":scope > details");a?a.setAttribute("open",""):i.querySelector(":scope > button.sem-reveal-control")?.click()}if(i.matches(kd)){const a=i.querySelector(':scope > .sem-source-chrome [data-act="html"]');a?a.click():i.setAttribute("data-view-as","html")}if(!i.matches(xd))return;const o=i.querySelector(":scope > .sem-note-summary");o?o.click():i.hasAttribute("collapsed")?i.removeAttribute("collapsed"):i.dispatchEvent(new CustomEvent("sem-activate",{bubbles:!0}))});const r=typeof matchMedia=="function"&&matchMedia("(prefers-reduced-motion: reduce)").matches;n.scrollIntoView({block:"start",behavior:r?"auto":"smooth"}),document.querySelectorAll(".sem-target").forEach(i=>i.classList.remove("sem-target")),clearTimeout(Jo),n.classList.add("sem-target"),Jo=window.setTimeout(()=>n.classList.remove("sem-target"),1500),Xe=!0;return}}let Qn=!1,Xe=!1,ea=0;function Jn(){window.clearTimeout(ea),ea=window.setTimeout(()=>{if(!Xe){if(document.readyState==="loading"){Jn();return}Xo()}},60)}function Xn(){!Qn||Xe||Jn()}function ta(t){if(t!==document||Qn)return;Qn=!0,window.addEventListener("hashchange",()=>{Xe=!1,Xo()}),Jn();let e=[];window.addEventListener("beforeprint",()=>{e=Array.from(document.querySelectorAll(Zn+" > details:not([open])")),e.forEach(n=>n.setAttribute("open","")),document.querySelectorAll(Zn+":not([data-revealed]) > button.sem-reveal-control").forEach(n=>n.click())}),window.addEventListener("afterprint",()=>{e.forEach(n=>n.removeAttribute("open")),e=[]})}const Td=[jr,jo,Uo,Bo,Fo,Ho,zo,Vo,Go,Zo,ta];function es(t=document){t===document&&document.documentElement.setAttribute("data-sem-upgraded","");for(const e of Td)e(t)}function na(t){t.querySelectorAll(El).forEach(e=>{e.hasAttribute("data-sem-upgraded")||(Sn(e),e.querySelector(":scope > .sem-md-chrome")&&e.setAttribute("data-sem-upgraded",""))})}function ts(t=document){na(t)}const le=t=>t.hasAttribute("data-sem-upgraded");function qd(t){t.querySelectorAll(Qc).forEach(e=>{le(e)||(ve(e),e.querySelector(":scope > .sem-code-chrome")&&e.setAttribute("data-sem-upgraded",""))})}function Ld(t){t.querySelectorAll(el).forEach(e=>{le(e)||(dn(e),e.setAttribute("data-sem-upgraded",""))})}function _d(t){t.querySelectorAll(sl).forEach(e=>{le(e)||mn(e)&&e.setAttribute("data-sem-upgraded","")})}function Md(t){t.querySelectorAll(ml).forEach(e=>{le(e)||(yn(e),e.querySelector(":scope > .sem-table-chrome")&&e.setAttribute("data-sem-upgraded",""))})}function Rd(t){t.querySelectorAll(Ir).forEach(e=>{le(e)||(An(e),e.querySelector(":scope > .sem-source-chrome")&&e.setAttribute("data-sem-upgraded",""))})}function Od(t){t.querySelectorAll(Uu).forEach(e=>{le(e)||(On(e),e.querySelector(":scope > "+Ye+" > :is(.sem-data-body, .sem-data-error, .sem-data-pending)")&&e.setAttribute("data-sem-upgraded",""))})}function Id(t){t.querySelectorAll(mr).forEach(e=>{le(e)||(ln(e),e.setAttribute("data-sem-upgraded",""))}),t===document&&Mc()}function Pd(t){t.querySelectorAll(ol).forEach(e=>{le(e)||(bn(e),e.querySelector(":scope > .sem-reader-chrome")&&e.setAttribute("data-sem-upgraded",""))})}const Dd=[qd,Ld,_d,Md,Od,Id,Rd,Pd];function ns(t=document){t===document&&document.documentElement.setAttribute("data-sem-upgraded","");for(const e of Dd)e(t)}function sa(){es(document),ts(document),ns(document),Xn()}let ss=0;function jd(){ss||(ss=window.setTimeout(()=>{ss=0,es(document),ts(document),ns(document),Xn()},50))}return typeof document<"u"&&(document.readyState==="loading"?document.addEventListener("DOMContentLoaded",sa,{once:!0}):sa(),Cd(document),typeof MutationObserver<"u"&&document.documentElement&&new MutationObserver(e=>{for(const n of e)if(n.addedNodes.length>0){jd();return}}).observe(document.documentElement,{childList:!0,subtree:!0})),h.AGENTONOMI_ORIGIN=He,h.BindableElement=Se,h.DEFAULT_PROVIDER_ID=Bn,h.DEFAULT_REFRESH_MS=Xr,h.PROVIDERS=Un,h.SEM_BROWSER_TAG=$l,h.SemApiCall=wr,h.SemArtifactCard=no,h.SemBrowser=Jr,h.SemChangelog=ko,h.SemChangelogs=So,h.SemCode=Cr,h.SemComponent=sr,h.SemDataVisualizer=to,h.SemDetails=tr,h.SemElement=b,h.SemEval=bo,h.SemFacts=Zs,h.SemFaq=Co,h.SemFaqs=Eo,h.SemFileTree=ki,h.SemGuardRail=fo,h.SemGuardRails=mo,h.SemHowto=co,h.SemKb=oo,h.SemMd=Yr,h.SemMockup=ho,h.SemNote=Vs,h.SemOption=Xs,h.SemPhilosophy=go,h.SemPlan=Ao,h.SemProcedure=$i,h.SemProgress=xi,h.SemProperties=$r,h.SemProviderPicker=ro,h.SemQuestion=Js,h.SemQuotaMeter=Ze,h.SemReader=_r,h.SemReference=xr,h.SemReferences=kr,h.SemRequirement=lo,h.SemReveal=nr,h.SemRubric=po,h.SemRunbook=ao,h.SemSeeAlso=pr,h.SemSiteTree=Si,h.SemSource=Ur,h.SemStep=Ni,h.SemSummary=yo,h.SemTable=Or,h.SemTagDef=yr,h.SemThreatModel=uo,h.SemTldr=Qr,h.SemTsg=wo,h.SemTsgs=vo,h.SemTui=xo,h.SemWorkflow=Ai,h.TOKEN_KEY=Et,h.attachBind=gi,h.bareSegments=Kt,h.buildAuthorizeUrl=ri,h.buildClosure=ws,h.clearToken=si,h.closeModalShell=mt,h.closureFor=zt,h.consumeBindHash=ii,h.deriveReferenceId=Xt,h.deriveSummary=ot,h.disposeReaderElement=Lr,h.elementTokens=Ta,h.enhanceAttrs=jo,h.enhanceAudience=Zo,h.enhanceCodeElement=ve,h.enhanceCore=es,h.enhanceDataVisualizerElement=On,h.enhanceDetails=Bo,h.enhanceFacts=Uo,h.enhanceGlossaryElement=mn,h.enhanceMd=na,h.enhanceMdDocument=ts,h.enhanceMdElement=Sn,h.enhanceNote=Fo,h.enhanceProgress=Go,h.enhanceProperties=Ho,h.enhanceReaderElement=bn,h.enhanceReading=ns,h.enhanceReferencesElement=dn,h.enhanceReveal=Vo,h.enhanceSeeAlsoElement=ln,h.enhanceSource=jr,h.enhanceSourceElement=An,h.enhanceTableElement=yn,h.enhanceTarget=ta,h.enhanceViews=zo,h.extractRecords=Ws,h.extractText=fc,h.fetchBindJson=ai,h.getParam=Yt,h.hasTuiRenderingAncestor=Mo,h.hashSegments=Pe,h.hydrateFor=kn,h.hydratePlan=di,h.hydrateProgress=li,h.inferSchema=ft,h.isPollKind=ti,h.loadToken=ni,h.matches=Wt,h.modalShellOpenFor=lr,h.mountTui=Oo,h.mulberry32=Es,h.nearestTuiCols=_o,h.normalizeMd=Qt,h.openModalShell=on,h.parseBind=ei,h.parseBlocks=wt,h.parseGfmTable=dr,h.parseProfiles=Ht,h.parseStepModels=Wl,h.parseTokens=Ie,h.parseViews=Ue,h.randomFor=Vt,h.readLocal=$s,h.referenceId=_s,h.referenceSlug=Ls,h.removeLocal=Oa,h.renderBindState=oe,h.renderElementAsText=Je,h.renderRecordsAsText=zs,h.requestBindToken=oi,h.rescanRenderModes=Rt,h.resetSeeAlsoLatch=Rc,h.resolveRenderMode=Vn,h.resolveSeed=ks,h.resolveView=ht,h.safeUrl=vn,h.sanitizeMarkup=fi,h.setParam=te,h.settleTarget=Xn,h.shuffle=it,h.stopBind=bi,h.storeToken=St,h.unmountTui=Io,h.visibleColumns=Be,h.warn=U,h.writeLocal=Ns,Object.defineProperty(h,Symbol.toStringTag,{value:"Module"}),h})({});
+
+/**
+ * SemText v0.6 extension layer — semtext.dev authoring forms.
+ *
+ * Appended to the vendored runtime in the consolidated
+ * `semtext/latest/semtext.js` bundle (scripts/build-latest.mjs). The
+ * vendored IIFE (`SemText`) is untouched; this layer defines a separate
+ * global, `SemTextV06`, and upgrades the v0.6 authoring forms into the
+ * real markup the rest of the runtime (and the vocabulary CSS) already
+ * understands. Contracts: spec/schema/sem-list.md, sem-table.md (form B),
+ * sem-code.md (flat form), sem-references.md (AUTO-ID rule),
+ * conventions.md §3 (*text* sugar).
+ *
+ * Transforms (idempotent; each container stamped `data-sem-v06`):
+ *   refIds          sem-reference auto ids  = block id (default `refs`)
+ *                   + '-' + slug(cite)      (pure function, sem-references.md)
+ *   flatCode        sem-code without an authored <pre>: decorated or
+ *                   multi-line text wraps into <pre><code>; plain
+ *                   single-line text is the inline chip (CSS chip) —
+ *                   block chrome a prior enhance pass built is unwrapped
+ *                   back to the flat text, and the chip state leaves a
+ *                   later enhance pass nothing to do
+ *   lists           sem-list markdown lines -> real <ul>/<ol>/<li>
+ *                   (2-space indent = one nesting level); item text
+ *                   carries inline sugar (appendInline): `code`, **bold**
+ *   mdTables        sem-table pipe-table text -> real <table> (form B),
+ *                   cell text through the same appendInline sugar;
+ *                   an already-upgraded element is cloned and reconnected
+ *                   so the Lit enhance re-runs over real rows
+ *   highlightMirror <sem-highlight> gains the .sem-highlight class so the
+ *                   vocabulary + occlusion handlers key on one spelling
+ *   emphasis        *text* -> <em> in prose text nodes; never inside
+ *                   pre/code/sem-code/sem-md/sem-source/script/style
+ *
+ * JS-off behaviour is the contract, not a fallback: every form reads as
+ * pre-wrapped text and extracts unchanged without this file.
+ */
+(function () {
+  'use strict';
+  if (window.SemTextV06) return;
+
+  var VERSION = '0.6';
+  var MARK = 'data-sem-v06';
+  var SKIP_FOR_EMPHASIS =
+    'pre, code, sem-code, script, style, template, textarea, sem-md, sem-source, .sem-source-fence';
+
+  function all(root, selector) {
+    return Array.prototype.slice.call(root.querySelectorAll(selector));
+  }
+
+  function scope() {
+    return document.querySelector('sem-enhanced-document, .sem-enhanced-document') || document.body;
+  }
+
+  /* AUTO-ID slug (sem-references.md): lowercase, non-alphanumeric runs to
+     one '-', trim leading/trailing dashes. */
+  function slug(s) {
+    return String(s)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  function refIds(root) {
+    all(root, 'sem-reference, .sem-reference').forEach(function (el) {
+      if (el.id) return;
+      var cite = el.getAttribute('cite') || el.getAttribute('data-cite') ||
+        el.getAttribute('href') || el.getAttribute('data-href') || '';
+      if (!cite) return;
+      var block = el.closest('sem-references, .sem-references');
+      var base = (block && (block.getAttribute('id') || block.getAttribute('data-id'))) || 'refs';
+      var id = base + '-' + slug(cite);
+      if (!document.getElementById(id)) el.id = id;
+    });
+  }
+
+  /* Structural trims (sem-code.md): one leading newline directly after
+     the open tag and the trailing whitespace before the close tag are
+     authoring layout; interior whitespace stays byte-identical. */
+  function trimListing(text) {
+    return String(text).replace(/^[^\S\n]*\n+/, '').replace(/\s+$/, '');
+  }
+
+  /* The listing text regardless of enhance state. Once the reading
+     bundle adopts the flat text into <pre><code>, the element's own
+     textContent is chrome-polluted (control button labels), so read the
+     adopted <code> instead. */
+  function listingText(el) {
+    var pre = el.querySelector(':scope > pre');
+    if (pre) return (pre.querySelector('code') || pre).textContent || '';
+    return el.textContent || '';
+  }
+
+  /* Single-line flat with none of filename/lang/mark/controls = inline
+     chip (sem-code.md, inline chip clause): no chrome, no <pre>, no copy
+     control — the element's own text IS the listing. The reading
+     bundle's Lit upgrade routinely lands before this layer (deferred
+     bundles: define() upgrades the element, our run() beats only the
+     update microtask — and after it the enhance has already blocked the
+     flat text), so the chip state has to cover both orders:
+
+       - chrome already built -> unwrap it back to the flat text;
+       - chrome not built yet -> leave one inert <template> child and no
+         <pre>, which makes the bundle's enhance a no-op (it adopts flat
+         text only over an element with no children, and bails once there
+         is no <pre> to enhance).
+
+     A <template> keeps its content in a separate fragment: no text, no
+     layout, invisible to querySelector('pre') — extraction and the chip
+     render are untouched, and literal `<` stays a character because the
+     listing goes back as a text node, never markup. */
+  function restoreInline(el) {
+    var chrome = el.querySelector(':scope > .sem-code-chrome');
+    var pre = el.querySelector(':scope > pre');
+    var text = trimListing(pre ? listingText(el) : (el.textContent || ''));
+    if (chrome) chrome.remove();
+    el.textContent = '';
+    el.appendChild(document.createTextNode(text));
+    el.appendChild(document.createElement('template'));
+  }
+
+  function flatCode(root) {
+    all(root, 'sem-code, .sem-code').forEach(function (el) {
+      if (el.hasAttribute(MARK)) return;
+      var decorated = ['filename', 'lang', 'mark', 'controls'].some(function (a) {
+        return el.hasAttribute(a) || el.hasAttribute('data-' + a);
+      });
+      var text = listingText(el);
+      var multiline = /\n[^\s]/.test(trimListing(text));
+      if (!decorated && !multiline) {
+        restoreInline(el);
+        el.setAttribute(MARK, 'inline');
+        return;
+      }
+      if (el.querySelector('pre')) { el.setAttribute(MARK, 'block'); return; }
+      var pre = document.createElement('pre');
+      var code = document.createElement('code');
+      code.textContent = trimListing(text);
+      pre.appendChild(code);
+      el.textContent = '';
+      el.appendChild(pre);
+      el.setAttribute(MARK, 'block');
+    });
+  }
+
+  /* Inline sugar shared by sem-list items and sem-table (form B) cells:
+     `code` -> <code>, **bold** -> <strong>; everything else is literal
+     text. Code-span rule matches sem-md (src/md/parse.ts): the closing
+     backtick run must be exactly as long as the opening one, and a
+     one-space pad inside the span is stripped. Strong content must be
+     non-empty and free of edge spaces (same flanking rule). Nodes are
+     built as DOM — never innerHTML — so literal `<` stays a character.
+     Single `*text*` emphasis is left to the emphasis() pass, which
+     already skips <code>. Unclosed markers stay literal. */
+  function appendInline(el, text) {
+    var i = 0;
+    var plainStart = 0;
+    function flush(end) {
+      if (end > plainStart) el.appendChild(document.createTextNode(text.slice(plainStart, end)));
+    }
+    while (i < text.length) {
+      var c = text.charAt(i);
+      if (c === '`') {
+        var run = 0;
+        while (text.charAt(i + run) === '`') run++;
+        var j = i + run;
+        var closer = -1;
+        while (j < text.length) {
+          if (text.charAt(j) === '`') {
+            var k = 0;
+            while (text.charAt(j + k) === '`') k++;
+            if (k === run) { closer = j; break; }
+            j += k;
+          } else {
+            j++;
+          }
+        }
+        if (closer !== -1) {
+          flush(i);
+          var codeText = text.slice(i + run, closer);
+          if (codeText.length > 2 && codeText.charAt(0) === ' ' &&
+            codeText.charAt(codeText.length - 1) === ' ') codeText = codeText.slice(1, -1);
+          var code = document.createElement('code');
+          code.textContent = codeText;
+          el.appendChild(code);
+          i = closer + run;
+          plainStart = i;
+          continue;
+        }
+        i += run; /* unclosed backtick run: literal */
+        continue;
+      }
+      if (c === '*' && text.charAt(i + 1) === '*') {
+        var end = text.indexOf('**', i + 2);
+        if (end > i + 2 && !/^\s|\s$/.test(text.slice(i + 2, end))) {
+          flush(i);
+          var strong = document.createElement('strong');
+          appendInline(strong, text.slice(i + 2, end));
+          el.appendChild(strong);
+          i = end + 2;
+          plainStart = i;
+          continue;
+        }
+        i += 2; /* unclosed / empty / edge-spaced: literal */
+        continue;
+      }
+      i++;
+    }
+    flush(text.length);
+  }
+
+  /* --- sem-list: markdown-style lines -> real list --- */
+
+  function parseListLines(text) {
+    var items = [];
+    var ulRe = /^[-*]\s+(.*)$/;
+    var olRe = /^\d+[.)]\s+(.*)$/;
+    text.split(/\r?\n/).forEach(function (line) {
+      if (!line.trim()) return;
+      var indent = (line.match(/^ */) || [''])[0].length;
+      var body = line.slice(indent);
+      var m;
+      if ((m = ulRe.exec(body))) {
+        items.push({ depth: Math.floor(indent / 2), type: 'ul', text: m[1] });
+      } else if ((m = olRe.exec(body))) {
+        items.push({ depth: Math.floor(indent / 2), type: 'ol', text: m[1] });
+      } else if (items.length) {
+        items[items.length - 1].text += ' ' + body;
+      } else {
+        items.push({ depth: 0, type: 'ul', text: body });
+      }
+    });
+    return items;
+  }
+
+  function buildList(items, start, forceType) {
+    var type = forceType || items[start].type;
+    var list = document.createElement(type);
+    var i = start;
+    var baseDepth = items[start].depth;
+    while (i < items.length && items[i].depth >= baseDepth) {
+      if (items[i].depth > baseDepth && list.lastElementChild) {
+        var sub = buildList(items, i, null);
+        list.lastElementChild.appendChild(sub.list);
+        i = sub.next;
+        continue;
+      }
+      var li = document.createElement('li');
+      appendInline(li, items[i].text);
+      list.appendChild(li);
+      i++;
+    }
+    return { list: list, next: i };
+  }
+
+  function lists(root) {
+    all(root, 'sem-list, .sem-list').forEach(function (el) {
+      if (el.hasAttribute(MARK)) return;
+      if (el.querySelector('ul, ol')) { el.setAttribute(MARK, 'native'); return; }
+      var items = parseListLines(el.textContent);
+      if (!items.length) { el.setAttribute(MARK, 'empty'); return; }
+      var orderedRoot = el.hasAttribute('ordered') || el.hasAttribute('data-ordered');
+      el.textContent = '';
+      el.appendChild(buildList(items, 0, orderedRoot ? 'ol' : null).list);
+      el.setAttribute(MARK, 'list');
+    });
+  }
+
+  /* --- sem-table form B: pipe-table text -> real <table> --- */
+
+  function splitRow(line) {
+    return line.replace(/^\|/, '').replace(/\|$/, '')
+      .split('|').map(function (c) { return c.trim(); });
+  }
+
+  function isDelimiter(cells) {
+    return cells.length > 0 && cells.every(function (c) { return /^:?-{2,}:?$/.test(c); });
+  }
+
+  function parsePipeRows(text) {
+    var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); })
+      .filter(function (l) {
+        return l.charAt(0) === '|' && l.indexOf('|', 1) !== -1 && l.charAt(l.length - 1) === '|';
+      });
+    if (lines.length < 2) return null;
+    var align = null;
+    var start = 0;
+    if (isDelimiter(splitRow(lines[1]))) {
+      align = splitRow(lines[1]).map(function (c) {
+        var l = c.charAt(0) === ':';
+        var r = c.charAt(c.length - 1) === ':';
+        return l && r ? 'center' : l ? 'left' : r ? 'right' : '';
+      });
+      start = 2;
+    }
+    var rows = [splitRow(lines[0])];
+    for (var i = start; i < lines.length; i++) rows.push(splitRow(lines[i]));
+    return { rows: rows, align: align };
+  }
+
+  function buildTable(parsed, label) {
+    var table = document.createElement('table');
+    if (label) {
+      var caption = document.createElement('caption');
+      caption.textContent = label;
+      table.appendChild(caption);
+    }
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    parsed.rows[0].forEach(function (cell, idx) {
+      var th = document.createElement('th');
+      th.setAttribute('scope', 'col');
+      appendInline(th, cell);
+      if (parsed.align && parsed.align[idx]) th.style.textAlign = parsed.align[idx];
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    for (var i = 1; i < parsed.rows.length; i++) {
+      var tr = document.createElement('tr');
+      parsed.rows[i].forEach(function (cell, idx) {
+        var td = document.createElement('td');
+        appendInline(td, cell);
+        if (parsed.align && parsed.align[idx]) td.style.textAlign = parsed.align[idx];
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    return table;
+  }
+
+  function mdTables(root) {
+    all(root, 'sem-table, .sem-table').forEach(function (el) {
+      if (el.hasAttribute(MARK)) return;
+      if (el.querySelector('table')) { el.setAttribute(MARK, 'native'); return; }
+      var parsed = parsePipeRows(el.textContent);
+      if (!parsed) { el.setAttribute(MARK, 'skip'); return; }
+      var table = buildTable(parsed, el.getAttribute('label') || el.getAttribute('data-label'));
+      if (el.hasAttribute('data-sem-upgraded')) {
+        /* Lit already enhanced the (table-less) element: swap in a clone
+           carrying the rendered table so connectedCallback re-runs and the
+           chrome attaches to real rows. */
+        var clone = el.cloneNode(false);
+        clone.setAttribute(MARK, 'table');
+        clone.appendChild(table);
+        el.parentNode.replaceChild(clone, el);
+      } else {
+        el.textContent = '';
+        el.insertBefore(table, el.firstChild);
+        el.setAttribute(MARK, 'table');
+      }
+    });
+  }
+
+  /* --- sem-highlight -> .sem-highlight class mirror --- */
+
+  function highlightMirror(root) {
+    all(root, 'sem-highlight').forEach(function (el) {
+      el.classList.add('sem-highlight');
+    });
+  }
+
+  /* --- *text* emphasis sugar (conventions.md §3) --- */
+
+  function emphasis(root) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        var parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (parent.closest && parent.closest(SKIP_FOR_EMPHASIS)) return NodeFilter.FILTER_REJECT;
+        if (node.nodeValue.indexOf('*') === -1) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    var re = /(^|[^\\*])\*([^*\n]+)\*(?!\*)/g;
+    nodes.forEach(function (node) {
+      var text = node.nodeValue;
+      re.lastIndex = 0;
+      if (!re.test(text)) return;
+      re.lastIndex = 0;
+      var frag = document.createDocumentFragment();
+      var last = 0;
+      var m;
+      while ((m = re.exec(text)) !== null) {
+        frag.appendChild(document.createTextNode(text.slice(last, m.index) + m[1]));
+        var em = document.createElement('em');
+        em.textContent = m[2];
+        frag.appendChild(em);
+        last = m.index + m[0].length;
+      }
+      frag.appendChild(document.createTextNode(text.slice(last)));
+      node.parentNode.replaceChild(frag, node);
+    });
+  }
+
+  function runAll() {
+    var root = scope();
+    if (!root) return;
+    refIds(root);
+    flatCode(root);
+    lists(root);
+    mdTables(root);
+    highlightMirror(root);
+    emphasis(root);
+  }
+
+  function run() { runAll(); }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runAll);
+  } else {
+    runAll();
+  }
+
+  window.SemTextV06 = { run: run, version: VERSION };
+})();
+

@@ -367,7 +367,8 @@ non-matching elements; JS-off everything shows; fail-open on unknown tokens.
 
 **agent** -- document-level metadata (bare semantic tag, no `sem-` prefix).
 Documented in [SS1 Document skeleton](#1-document-skeleton) above. Children:
-`<name>`, `<bio>`, `<instructions>`. Machine-facing, unstyled. Future metadata
+`<name>`, `<bio>`, `<instructions>`. Renders as the agent card (identical
+styling to `sem-agent`); machine extraction is unchanged. Future metadata
 children (`org`, `context`, `audience`) will follow the same bare-tag pattern.
 
 ### Prose & code
