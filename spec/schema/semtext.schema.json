@@ -15,13 +15,17 @@
         "description": "Exactly one per document when the document uses the SemText vocabulary; plain HTML without vocabulary is not a SemText document (conventions.md §1).",
         "requiredWhenVocabularyPresent": true
       },
-      "tierMarkers": {
+      "idDrift": {
+      "severity": "warning",
+      "description": "Authored in-document fragment references (a[href^='#'], sem-see-also section/component targets) must resolve to an id in the same document. Deep-link grammar examples (values containing '=' or '&') and the listed demo hrefs are exempt.",
+      "skipHrefs": ["#sem-audience=operator", "#x-deploy/argocd"]
+    },
+    "tierMarkers": {
         "attributes": [
-          "data-sem-fallback",
           "data-sem-upgraded"
         ],
         "severity": "warning",
-        "description": "Runtime-written markers (conventions.md §4; data-sem-fallback is the retired v0.6 fallback tier — authored occurrences are always a stale export)."
+        "description": "Runtime-written marker (conventions.md §4); authored occurrences suggest a stale export or a hand-edited render."
       },
       "generatedChrome": {
         "severity": "warning",
@@ -46,7 +50,8 @@
           "sem-md-chrome",
           "sem-md-body",
           "sem-md-raw",
-          "sem-md-status"
+          "sem-md-status",
+          "sem-procedure-meta"
         ]
       },
       "childRules": [
@@ -95,6 +100,19 @@
       "aria-valuetext"
     ],
     "globalAttributes": {
+      "render-mode": {
+        "type": "token",
+        "values": [
+          "tui",
+          "rich"
+        ],
+        "elementDefined": true,
+        "source": "spec/schema/sem-tui.md"
+      },
+      "tui": {
+        "type": "flag",
+        "source": "spec/schema/sem-tui.md"
+      },
       "kind": {
         "type": "token"
       },
@@ -191,63 +209,30 @@
       "container": {
         "description": "A block container that groups authored children: `label` names the group (rendered as generated chrome), `open` keeps a collapsible container expanded. Children are element-specific — declare them locally.",
         "attributes": {
-          "label": {
-            "type": "token"
-          },
-          "open": {
-            "type": "flag"
-          }
+          "label": { "type": "token" },
+          "open": { "type": "flag" }
         }
       },
       "reference": {
         "description": "A pointer to an upstream record: the org/project/key/id quartet identifies it; nothing is fetched — the element renders whatever its contract says the pointer means.",
         "attributes": {
-          "org": {
-            "type": "token"
-          },
-          "project": {
-            "type": "token"
-          },
-          "key": {
-            "type": "token"
-          },
-          "id": {
-            "type": "token"
-          }
+          "org": { "type": "token" },
+          "project": { "type": "token" },
+          "key": { "type": "token" },
+          "id": { "type": "token" }
         }
       },
       "cachedEmbed": {
         "description": "A cached embed of upstream content: the authored inner content IS the record (extraction reads it, never the network). `endpoint` names the refresh source, `fixtures` (optional) marks a fixture-backed dev source, `last-refreshed` stamps the last sync, `status` is the authored freshness token consumers may rely on with JS off (conventions §4: no script reads status — its consumers are no-script CSS rules).",
         "attributes": {
-          "org": {
-            "type": "token"
-          },
-          "project": {
-            "type": "token"
-          },
-          "key": {
-            "type": "token"
-          },
-          "id": {
-            "type": "token"
-          },
-          "endpoint": {
-            "type": "token"
-          },
-          "fixtures": {
-            "type": "token"
-          },
-          "last-refreshed": {
-            "type": "token"
-          },
-          "status": {
-            "type": "token",
-            "values": [
-              "fresh",
-              "stale",
-              "error"
-            ]
-          }
+          "org": { "type": "token" },
+          "project": { "type": "token" },
+          "key": { "type": "token" },
+          "id": { "type": "token" },
+          "endpoint": { "type": "token" },
+          "fixtures": { "type": "token" },
+          "last-refreshed": { "type": "token" },
+          "status": { "type": "token", "values": ["fresh", "stale", "error"] }
         }
       }
     }
@@ -355,22 +340,59 @@
         }
       }
     },
-    "sem-thought": {
-      "source": "spec/schema/sem-thought.md",
-      "record": false,
+    "sem-component": {
+      "source": "spec/schema/sem-component.md",
+      "record": true,
+      "extends": "container",
       "attributes": {
-        "type": {
+        "tag": {
           "type": "token",
-          "values": [
-            "observation",
-            "reflection",
-            "assumption",
-            "mind-read",
-            "tangent",
-            "concern"
-          ],
-          "severityOnUnknown": "warning",
-          "note": "unknown type degrades to plain text on upgrade (sem-thought.md); display-only, mints no record"
+          "required": true
+        },
+        "name": {
+          "type": "text"
+        },
+        "source": {
+          "type": "text"
+        },
+        "type": {
+          "type": "text"
+        },
+        "status": {
+          "type": "token",
+          "values": ["planned", "wip", "live", "deprecated"],
+          "default": null
+        },
+        "labels": {
+          "type": "flaglist"
+        }
+      }
+    },
+    "sem-see-also": {
+      "source": "spec/schema/sem-see-also.md",
+      "record": true,
+      "attributes": {
+        "reference": {
+          "type": "token",
+          "values": ["section", "component", "file"],
+          "default": "section"
+        },
+        "target": {
+          "type": "text",
+          "required": true
+        },
+        "preview": {
+          "type": "token",
+          "values": ["tldr", "file"],
+          "default": "tldr"
+        },
+        "insert-as": {
+          "type": "token",
+          "values": ["link", "inline"],
+          "default": "link"
+        },
+        "href": {
+          "type": "text"
         }
       }
     },
@@ -378,6 +400,29 @@
       "source": "spec/schema/sem-tldr.md",
       "record": true,
       "attributes": {}
+    },
+    "sem-tui": {
+      "source": "spec/schema/sem-tui.md",
+      "record": false,
+      "attributes": {
+        "cols": {
+          "type": "number",
+          "default": "80"
+        },
+        "theme": {
+          "type": "token",
+          "values": [
+            "dark",
+            "light",
+            "amber",
+            "green"
+          ],
+          "default": "dark"
+        },
+        "toggle": {
+          "type": "flag"
+        }
+      }
     },
     "sem-facts": {
       "source": "spec/schema/sem-facts.md",
@@ -404,10 +449,9 @@
         "id": {}
       },
       "children": [
+        "statement",
         "conclusion",
-        "incorrect-statement",
-        "sem-distractor",
-        "statement"
+        "incorrect-statement"
       ],
       "childRules": [
         {
@@ -461,10 +505,6 @@
       "classAliases": [
         "span.sem-highlight",
         "div.sem-highlight"
-      ],
-      "tagAliases": [
-        "sem-highlight",
-        "highlight"
       ]
     },
     "sem-details": {
@@ -654,83 +694,7 @@
           "severity": "error",
           "description": "the listing's <pre> — authored directly, or minted by the element when the listing is authored flat (no <pre>); more than one is an error"
         }
-      ],
-      "childForm": "pre-or-flat"
-    },
-    "sem-component": {
-      "source": "spec/schema/sem-component.md",
-      "record": true,
-      "attributes": {
-        "tag": {
-          "required": true,
-          "type": "token",
-          "note": "the component's manifest.yaml tag; the card's key"
-        },
-        "name": {},
-        "source": {
-          "note": "path of the component's implementation file, as in the manifest"
-        },
-        "type": {
-          "type": "text",
-          "note": "free text in upstream's contract (manifest type vocabulary); rendered as the card's type chip"
-        },
-        "status": {
-          "type": "token",
-          "values": [
-            "planned",
-            "wip",
-            "live",
-            "deprecated"
-          ],
-          "severityOnUnknown": "error",
-          "note": "manifest status vocabulary; rendered as the card's status chip"
-        },
-        "labels": {
-          "type": "flaglist"
-        }
-      }
-    },
-    "sem-see-also": {
-      "source": "spec/schema/sem-see-also.md",
-      "record": true,
-      "attributes": {
-        "reference": {
-          "type": "token",
-          "values": [
-            "section",
-            "component",
-            "file"
-          ],
-          "default": "section",
-          "severityOnUnknown": "warning",
-          "note": "what kind of target `target` names"
-        },
-        "target": {
-          "required": true,
-          "note": "the target's address: an id or #id (section/component) or a file path (file); the dangling-fragment check resolves section/component targets against authored ids"
-        },
-        "href": {
-          "note": "optional explicit URL for the View-all affordance, overriding the target-derived link"
-        },
-        "preview": {
-          "type": "token",
-          "values": [
-            "tldr",
-            "file"
-          ],
-          "default": "tldr",
-          "severityOnUnknown": "warning"
-        },
-        "insert-as": {
-          "type": "token",
-          "values": [
-            "link",
-            "inline"
-          ],
-          "default": "link",
-          "severityOnUnknown": "warning"
-        }
-      }
+      ]
     },
     "sem-references": {
       "source": "spec/schema/sem-references.md",
@@ -749,14 +713,10 @@
       "record": true,
       "attributes": {
         "id": {
-          "required": true
+          "note": "optional since 0.9.6: absent = AUTO-ID <block-id>-<slug(cite)> (sem-references.md § Auto-id); the validator reports info auto-id"
         },
-        "href": {
-          "note": "compat alias of cite (sem-references.md v0.6); warn when authored without cite"
-        },
-        "cite": {
-          "required": true
-        }
+        "href": {},
+        "cite": {}
       }
     },
     "sem-source": {
@@ -848,7 +808,13 @@
           "type": "flag"
         }
       },
-      "childForm": "table-or-markdown"
+      "childRules": [
+        {
+          "rule": "exactlyOne",
+          "selector": "table",
+          "severity": "error"
+        }
+      ]
     },
     "sem-data-visualizer": {
       "source": "spec/data-visualizer.md",
@@ -1276,16 +1242,13 @@
         "tags"
       ]
     },
+
     "sem-workflow": {
       "source": "spec/schema/sem-workflow.md",
       "record": true,
       "attributes": {
-        "duration": {
-          "type": "token"
-        },
-        "label": {
-          "type": "token"
-        }
+        "duration": { "type": "token" },
+        "label": { "type": "token" }
       },
       "children": [
         "sem-step"
@@ -1294,28 +1257,13 @@
         "sem-step": {
           "description": "The sem-step contract, as authored inside a workflow: the workflow-context parameters (action/description/gate/check/if-no/output) are per-parent, so sem-procedure steps are untouched. The shared status catalog still applies.",
           "attributes": {
-            "action": {
-              "type": "token",
-              "required": true
-            },
-            "description": {
-              "type": "token"
-            },
-            "gate": {
-              "type": "token"
-            },
-            "check": {
-              "type": "token"
-            },
-            "if-no": {
-              "type": "token"
-            },
-            "if_no": {
-              "type": "token"
-            },
-            "output": {
-              "type": "token"
-            }
+            "action": { "type": "token", "required": true },
+            "description": { "type": "token" },
+            "gate": { "type": "token" },
+            "check": { "type": "token" },
+            "if-no": { "type": "token" },
+            "if_no": { "type": "token" },
+            "output": { "type": "token" }
           }
         }
       }
@@ -1327,10 +1275,7 @@
       "attributes": {
         "mode": {
           "type": "token",
-          "values": [
-            "structured",
-            "text"
-          ],
+          "values": ["structured", "text"],
           "default": "structured"
         }
       },
@@ -1341,10 +1286,7 @@
         "node": {
           "description": "A tree entry as authored inside a site tree: path is required in tree context (a bare node elsewhere is an unknown-attribute warning).",
           "attributes": {
-            "path": {
-              "type": "token",
-              "required": true
-            }
+            "path": { "type": "token", "required": true }
           }
         }
       }
@@ -1356,10 +1298,7 @@
       "attributes": {
         "mode": {
           "type": "token",
-          "values": [
-            "structured",
-            "text"
-          ],
+          "values": ["structured", "text"],
           "default": "structured"
         }
       },
@@ -1370,10 +1309,7 @@
         "node": {
           "description": "A tree entry as authored inside a file tree: path is required in tree context; mode=text carries no node children at all (the authored pre is the record).",
           "attributes": {
-            "path": {
-              "type": "token",
-              "required": true
-            }
+            "path": { "type": "token", "required": true }
           }
         }
       }
@@ -1381,14 +1317,8 @@
     "node": {
       "source": "spec/schema/sem-site-tree.md",
       "record": false,
-      "partOf": [
-        "sem-site-tree",
-        "sem-file-tree",
-        "node"
-      ],
-      "classAliases": [
-        "div.sem-node"
-      ],
+      "partOf": ["sem-site-tree", "sem-file-tree", "node"],
+      "classAliases": ["div.sem-node"],
       "attributes": {
         "kind": {
           "type": "token",
@@ -1403,13 +1333,8 @@
         "node": {
           "description": "A node nested inside another node — the same tree-node form, one level deeper.",
           "attributes": {
-            "path": {
-              "type": "token",
-              "required": true
-            },
-            "label": {
-              "type": "token"
-            },
+            "path": { "type": "token", "required": true },
+            "label": { "type": "token" },
             "kind": {
               "type": "token",
               "values": [
@@ -1422,18 +1347,15 @@
         }
       }
     },
+
     "semext-annotate": {
       "description": "Visitor comment threads, service-backed: the ONE semext element with a client live read (anonymous-read, text-only rendering of untrusted comment bodies). Snapshot mode renders the authored thread record; live mode fetches <endpoint>/threads?site&page once, no credentials, and falls back to the authored view on failure.",
       "source": "spec/schema/semext/annotate.md",
       "record": true,
       "extends": "cachedEmbed",
       "attributes": {
-        "site": {
-          "type": "token"
-        },
-        "page": {
-          "type": "token"
-        }
+        "site": { "type": "token" },
+        "page": { "type": "token" }
       }
     },
     "semext-docptr": {
@@ -1442,18 +1364,10 @@
       "record": true,
       "extends": "cachedEmbed",
       "attributes": {
-        "marker": {
-          "type": "token"
-        },
-        "uuid": {
-          "type": "token"
-        },
-        "token": {
-          "type": "token"
-        },
-        "file": {
-          "type": "token"
-        }
+        "marker": { "type": "token" },
+        "uuid": { "type": "token" },
+        "token": { "type": "token" },
+        "file": { "type": "token" }
       }
     },
     "semext-media-prompt": {
@@ -1462,15 +1376,9 @@
       "record": true,
       "extends": "cachedEmbed",
       "attributes": {
-        "model": {
-          "type": "token"
-        },
-        "aspect": {
-          "type": "token"
-        },
-        "assets-dir": {
-          "type": "token"
-        }
+        "model": { "type": "token" },
+        "aspect": { "type": "token" },
+        "assets-dir": { "type": "token" }
       }
     },
     "semext-sig-logs": {
@@ -1479,15 +1387,9 @@
       "record": true,
       "extends": "cachedEmbed",
       "attributes": {
-        "query": {
-          "type": "token"
-        },
-        "range": {
-          "type": "token"
-        },
-        "env": {
-          "type": "token"
-        }
+        "query": { "type": "token" },
+        "range": { "type": "token" },
+        "env": { "type": "token" }
       }
     },
     "semext-sig-metrics": {
@@ -1496,15 +1398,9 @@
       "record": true,
       "extends": "cachedEmbed",
       "attributes": {
-        "query": {
-          "type": "token"
-        },
-        "range": {
-          "type": "token"
-        },
-        "env": {
-          "type": "token"
-        }
+        "query": { "type": "token" },
+        "range": { "type": "token" },
+        "env": { "type": "token" }
       }
     },
     "semext-sig-synthetic-monitor": {
@@ -1513,12 +1409,8 @@
       "record": true,
       "extends": "cachedEmbed",
       "attributes": {
-        "monitor": {
-          "type": "token"
-        },
-        "env": {
-          "type": "token"
-        }
+        "monitor": { "type": "token" },
+        "env": { "type": "token" }
       }
     },
     "semext-sig-traces": {
@@ -1527,15 +1419,9 @@
       "record": true,
       "extends": "cachedEmbed",
       "attributes": {
-        "query": {
-          "type": "token"
-        },
-        "range": {
-          "type": "token"
-        },
-        "env": {
-          "type": "token"
-        }
+        "query": { "type": "token" },
+        "range": { "type": "token" },
+        "env": { "type": "token" }
       }
     },
     "semext-styleguide-theme": {
@@ -1544,12 +1430,8 @@
       "record": true,
       "extends": "cachedEmbed",
       "attributes": {
-        "theme": {
-          "type": "token"
-        },
-        "src": {
-          "type": "token"
-        }
+        "theme": { "type": "token" },
+        "src": { "type": "token" }
       }
     },
     "semext-styleguide-themes": {
@@ -1916,12 +1798,12 @@
       "source": "spec/schema/agent-kit/tickets.md",
       "record": false,
       "partOf": [
-        "agent-kit-issue",
-        "agent-kit-epic",
-        "agent-kit-bug",
-        "agent-kit-user-story",
-        "agent-kit-task",
-        "agent-kit-sub-task"
+      "agent-kit-issue",
+      "agent-kit-epic",
+      "agent-kit-bug",
+      "agent-kit-user-story",
+      "agent-kit-task",
+      "agent-kit-sub-task"
       ],
       "classAliases": [
         "div.agent-kit-last-updated",
@@ -1932,12 +1814,12 @@
       "source": "spec/schema/agent-kit/tickets.md",
       "record": false,
       "partOf": [
-        "agent-kit-issue",
-        "agent-kit-epic",
-        "agent-kit-bug",
-        "agent-kit-user-story",
-        "agent-kit-task",
-        "agent-kit-sub-task"
+      "agent-kit-issue",
+      "agent-kit-epic",
+      "agent-kit-bug",
+      "agent-kit-user-story",
+      "agent-kit-task",
+      "agent-kit-sub-task"
       ],
       "classAliases": [
         "div.agent-kit-title",
@@ -1948,14 +1830,14 @@
       "source": "spec/schema/agent-kit/tickets.md",
       "record": false,
       "partOf": [
-        "agent-kit-issue",
-        "agent-kit-epic",
-        "agent-kit-bug",
-        "agent-kit-user-story",
-        "agent-kit-task",
-        "agent-kit-sub-task",
-        "agent-kit-organization",
-        "agent-kit-project"
+      "agent-kit-issue",
+      "agent-kit-epic",
+      "agent-kit-bug",
+      "agent-kit-user-story",
+      "agent-kit-task",
+      "agent-kit-sub-task",
+      "agent-kit-organization",
+      "agent-kit-project"
       ],
       "classAliases": [
         "div.agent-kit-description",
@@ -1966,12 +1848,12 @@
       "source": "spec/schema/agent-kit/tickets.md",
       "record": false,
       "partOf": [
-        "agent-kit-issue",
-        "agent-kit-epic",
-        "agent-kit-bug",
-        "agent-kit-user-story",
-        "agent-kit-task",
-        "agent-kit-sub-task"
+      "agent-kit-issue",
+      "agent-kit-epic",
+      "agent-kit-bug",
+      "agent-kit-user-story",
+      "agent-kit-task",
+      "agent-kit-sub-task"
       ],
       "classAliases": [
         "div.agent-kit-state",
@@ -1982,12 +1864,12 @@
       "source": "spec/schema/agent-kit/tickets.md",
       "record": false,
       "partOf": [
-        "agent-kit-issue",
-        "agent-kit-epic",
-        "agent-kit-bug",
-        "agent-kit-user-story",
-        "agent-kit-task",
-        "agent-kit-sub-task"
+      "agent-kit-issue",
+      "agent-kit-epic",
+      "agent-kit-bug",
+      "agent-kit-user-story",
+      "agent-kit-task",
+      "agent-kit-sub-task"
       ],
       "classAliases": [
         "div.agent-kit-labels",
@@ -2080,8 +1962,8 @@
       "source": "spec/schema/agent-kit/personas.md",
       "record": false,
       "partOf": [
-        "agent-kit-user-persona",
-        "agent-kit-agent-persona"
+      "agent-kit-user-persona",
+      "agent-kit-agent-persona"
       ],
       "classAliases": [
         "div.agent-kit-persona-name",
@@ -2092,8 +1974,8 @@
       "source": "spec/schema/agent-kit/personas.md",
       "record": false,
       "partOf": [
-        "agent-kit-user-persona",
-        "agent-kit-agent-persona"
+      "agent-kit-user-persona",
+      "agent-kit-agent-persona"
       ],
       "classAliases": [
         "div.agent-kit-persona-role",
@@ -2104,8 +1986,8 @@
       "source": "spec/schema/agent-kit/personas.md",
       "record": false,
       "partOf": [
-        "agent-kit-user-persona",
-        "agent-kit-agent-persona"
+      "agent-kit-user-persona",
+      "agent-kit-agent-persona"
       ],
       "classAliases": [
         "div.agent-kit-persona-bio",
@@ -2116,8 +1998,8 @@
       "source": "spec/schema/agent-kit/personas.md",
       "record": false,
       "partOf": [
-        "agent-kit-user-persona",
-        "agent-kit-agent-persona"
+      "agent-kit-user-persona",
+      "agent-kit-agent-persona"
       ],
       "classAliases": [
         "div.agent-kit-persona-metadata",
@@ -2178,7 +2060,7 @@
       "source": "spec/schema/agent-kit/acceptance-criteria.md",
       "record": false,
       "partOf": [
-        "agent-kit-criterion"
+      "agent-kit-criterion"
       ],
       "classAliases": [
         "div.agent-kit-given",
@@ -2189,7 +2071,7 @@
       "source": "spec/schema/agent-kit/acceptance-criteria.md",
       "record": false,
       "partOf": [
-        "agent-kit-criterion"
+      "agent-kit-criterion"
       ],
       "classAliases": [
         "div.agent-kit-when",
@@ -2200,7 +2082,7 @@
       "source": "spec/schema/agent-kit/acceptance-criteria.md",
       "record": false,
       "partOf": [
-        "agent-kit-criterion"
+      "agent-kit-criterion"
       ],
       "classAliases": [
         "div.agent-kit-then",
@@ -2211,7 +2093,7 @@
       "source": "spec/schema/agent-kit/custom-assert.md",
       "record": false,
       "partOf": [
-        "agent-kit-custom-assert"
+      "agent-kit-custom-assert"
       ],
       "classAliases": [
         "div.agent-kit-assert-expr",
@@ -2222,7 +2104,7 @@
       "source": "spec/schema/agent-kit/custom-assert.md",
       "record": false,
       "partOf": [
-        "agent-kit-custom-assert"
+      "agent-kit-custom-assert"
       ],
       "classAliases": [
         "div.agent-kit-assert-expect",
@@ -2241,7 +2123,7 @@
       "source": "spec/schema/agent-kit/board.md",
       "record": false,
       "partOf": [
-        "agent-kit-board"
+      "agent-kit-board"
       ],
       "attributes": {
         "heading": {
@@ -2312,8 +2194,8 @@
       "source": "spec/schema/agent-kit/reference-cards.md",
       "record": false,
       "partOf": [
-        "agent-kit-organization",
-        "agent-kit-project"
+      "agent-kit-organization",
+      "agent-kit-project"
       ],
       "classAliases": [
         "div.agent-kit-name",
@@ -2333,7 +2215,7 @@
       "source": "spec/schema/agent-kit/chatroom.md",
       "record": false,
       "partOf": [
-        "agent-kit-chatroom"
+      "agent-kit-chatroom"
       ],
       "classAliases": [
         "div.agent-kit-chatroom-name",
@@ -2344,7 +2226,7 @@
       "source": "spec/schema/agent-kit/chatroom.md",
       "record": false,
       "partOf": [
-        "agent-kit-chatroom"
+      "agent-kit-chatroom"
       ],
       "attributes": {
         "author": {
@@ -2352,10 +2234,7 @@
         },
         "role": {
           "type": "token",
-          "values": [
-            "user",
-            "assistant"
-          ]
+          "values": ["user", "assistant"]
         },
         "at": {
           "type": "token"
@@ -2396,12 +2275,7 @@
       "attributes": {
         "type": {
           "type": "token",
-          "values": [
-            "markdown",
-            "json",
-            "diff",
-            "code"
-          ]
+          "values": ["markdown", "json", "diff", "code"]
         },
         "language": {
           "type": "token"
@@ -2425,12 +2299,7 @@
       "attributes": {
         "verdict": {
           "type": "token",
-          "values": [
-            "approve",
-            "request-changes",
-            "comment",
-            "pending"
-          ]
+          "values": ["approve", "request-changes", "comment", "pending"]
         }
       },
       "children": [
@@ -2441,7 +2310,7 @@
       "source": "spec/schema/agent-kit/asset.md",
       "record": false,
       "partOf": [
-        "agent-kit-asset"
+      "agent-kit-asset"
       ],
       "classAliases": [
         "div.agent-kit-caption",
@@ -2452,7 +2321,7 @@
       "source": "spec/schema/agent-kit/artifact.md",
       "record": false,
       "partOf": [
-        "agent-kit-artifact"
+      "agent-kit-artifact"
       ],
       "classAliases": [
         "div.agent-kit-artifact-content",
@@ -2463,7 +2332,7 @@
       "source": "spec/schema/agent-kit/review.md",
       "record": false,
       "partOf": [
-        "agent-kit-review"
+      "agent-kit-review"
       ],
       "attributes": {
         "author": {
@@ -2526,7 +2395,7 @@
       "source": "spec/schema/agent-kit/test-suite.md",
       "record": false,
       "partOf": [
-        "agent-kit-test-suite"
+      "agent-kit-test-suite"
       ],
       "attributes": {
         "passed": {
@@ -2545,7 +2414,7 @@
       "source": "spec/schema/agent-kit/test-case.md",
       "record": false,
       "partOf": [
-        "agent-kit-test-case"
+      "agent-kit-test-case"
       ],
       "classAliases": [
         "div.agent-kit-step",
@@ -2556,46 +2425,12 @@
       "source": "spec/schema/agent-kit/test-case.md",
       "record": false,
       "partOf": [
-        "agent-kit-test-case"
+      "agent-kit-test-case"
       ],
       "classAliases": [
         "div.agent-kit-expected",
         "span.agent-kit-expected"
       ]
-    },
-    "sem-break": {
-      "source": "spec/schema/sem-break.md",
-      "record": false,
-      "attributes": {}
-    },
-    "sem-list": {
-      "source": "spec/schema/sem-list.md",
-      "record": false,
-      "attributes": {
-        "ordered": {
-          "type": "flag"
-        },
-        "unordered": {
-          "type": "flag"
-        }
-      }
-    },
-    "sem-section": {
-      "source": "spec/schema/sem-section.md",
-      "record": false,
-      "attributes": {}
-    },
-    "sem-distractor": {
-      "source": "spec/schema/sem-facts.md",
-      "record": false,
-      "partOf": [
-        "sem-fact"
-      ],
-      "classAliases": [
-        "div.sem-distractor",
-        "span.sem-distractor"
-      ]
     }
-  },
-  "$comment": "Hand-merged root contract: upstream npl-enhanced-content @ 6ebbb00 (v0.7 — 121 defs, x-semtext.defPresets) plus parent v0.6-only contracts kept from this file on develop (defs sem-break/sem-list/sem-section/sem-distractor; childForm on sem-table + sem-code; tagAliases on highlight). The subtree copy (npl-enhanced-content/spec/schema/semtext.schema.json) stays pure upstream; this root file is the validator+tests contract."
+  }
 }

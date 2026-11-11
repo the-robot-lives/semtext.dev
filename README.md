@@ -1,88 +1,220 @@
-# semtext.dev
+<!-- 〚📁:𓖞𓑢𔅌𓔚〛 README :: Repo-root entry: what SemText is, the one-bundle surface, install/build/test quickstart, spec and docs links. -->
+# npl-enhanced-content (SemText)
 
-<!-- 〚📁:4f8efb43-74a1-50c0-89b4-26a47cf95dd8〛 README.md :: Repo entry point — SemText product repo: landing, format code, Hologram app (app/), proposals pipeline. -->
+**Repo:** https://github.com/noizu-labs-ml/npl-enhanced-content
 
-**Repo:** https://github.com/the-robot-lives/semtext.dev
+SemText — XHTML-first semantic markup: one document that reads as a styled interactive page, a structural record for LLMs, and plain text in a terminal. One Lit bundle (`dist/semtext.js`) + its stylesheet + themes; with JavaScript off the document degrades to plain prose. Zero React.
 
-Stub repo for the semtext.dev domain — reserved, no application yet.
+```html
+<sem-enhanced-document>
+  <sem-note variant="warning">Refresh tokens rotate per use.</sem-note>
+  <sem-facts view-as="flashcards">
+    <sem-fact id="f-jwt" kind="concept">
+      <statement>JWTs rotate per session</statement>
+      <conclusion>Short-lived access; the refresh grant issues a new pair.</conclusion>
+    </sem-fact>
+  </sem-facts>
+  <sem-procedure kind="runbook" role="list">
+    <sem-step role="listitem" status="done">provision the secret</sem-step>
+    <sem-step role="listitem" status="current">cut the release</sem-step>
+  </sem-procedure>
+</sem-enhanced-document>
+```
 
-Part of the [The Robot Lives](https://therobotlives.com) portfolio.
+The vocabulary is **custom elements with bare attributes** (`view-as`, `status`, `kind`, `key`); `<sem-enhanced-document>` is the required root wrapper (conventions §1). Record **parts** are deliberately unprefixed children — `<statement>`, `<conclusion>`, `<highlight>` — because they only ever occur inside a `sem-*` record. The older `div.sem-*` + `data-*` spelling is a compatibility alias every tier still accepts — see `spec/conventions.md` Appendix A.
 
 ## What
 
-The consolidated SemText product repo: the Next.js landing (`landing/`), the
-format code + showcase (`site/`, `demo/`, `spec/`, `src/`, `themes/`), and the
-hydrated Hologram application under `app/` (Phoenix backend `:semtext` serving
-`semtext.dev` and `proposals.semtext.dev` via one image). CI builds
-`sha-*` images; the chart lives at `app/helm/semtext`.
+The NPL ecosystem's rich-content spec plus its JavaScript artifacts (`package` name: `semtext`):
+
+- **`spec/`** — normative format specs: conventions (`.md`/`.html`), extraction rules, and `spec/schema/` (Tier-0 schemas).
+- **`src/`** — one classic-IIFE artifact, `dist/semtext.js` (`semtext/lit`, global `SemText`): the Lit custom elements, the vanilla handlers, and extraction (`SemText.extractRecords` / `SemText.extractText`), all exporting nothing — consume as `<script src>`/CDN or side-effect ESM import. `dist/semtext.css` + `themes/*` ship as raw CSS.
+- **`web/`** — demo + site; **`test/`** — Cypress e2e + support; **`docs/`** — PROJ-ARCH/LAYOUT/SCHEMA docs with `.summary.md` digests.
+
+There is deliberately no `.` export — ROADMAP debt D9: dropping it removes the false promise of an importable root rather than papering over it.
 
 ## Why
 
-Home of the SemText format — spec, vocabulary, validators, bundles, showcase,
-and the proposal pipeline that feeds new elements (GitHub Discussions sync,
-moderation). Infra (DNS, TLS, ArgoCD app) lives in `trl-infra`.
+NPL content was plain text; agents and humans need the same document to serve both. SemText makes XHTML the canonical form: LLMs read structure, browsers render styled interactive content via Lit islands, and terminal/plain-text consumers get a graceful reduction — one source, three readings, no React runtime.
 
 ## Getting Started
 
-Landing/showcase: root `package.json` scripts + `node bin/semtext-view.mjs`
-for rendering documents. Hologram app: `cd app && make init && make build &&
-make run` (see `app/README.md`).
+```bash
+npm install
+npm run build           # scripts/build.mjs + build-standalone.mjs → dist/
+npm run build:strict    # build with strict size budget
+npm run test:unit       # vitest
+npm test                # cypress e2e (run AFTER npm run build — tests run against dist/demo/, not web/demo/ markers)
+npm run serve           # vite preview on :4173
+```
 
-## Web Component Evaluation
+## How It Works
 
-A rubric-driven program that grades web components (tobor-kit, the styleguide
-frontend) on eight weighted dimensions — API clarity, rendering + zero-JS
-fallback, accessibility, docs, tests, convention fit, CSS-variable theming,
-packaging — on a 100-point scale mapped to letter grades (A ≥ 90 … F < 50).
+- Author XHTML using the SemText conventions/spec; the one bundle (`semtext/lit` → `dist/semtext.js`) registers custom elements and runs the vanilla handlers that progressively enhance it in the browser, and pulls the plain-text/structural reduction via `SemText.extractRecords` / `SemText.extractText`. With the script absent, the document reads as plain prose.
+- Top-level directories are domains: `spec/`, `src/` (`lit/`, `vanilla/`, `reading/`, `md/`, `extract/`, `shared/`), `themes/` (kept top-level as a subpath export + CDN asset), `web/`, `test/`, `scripts/`, `docs/`.
+- Builds enforce a size budget (`build:strict`); theme CSS doubles as a CDN asset.
 
-- **Rubric** (SemText document, `rubric_version` v1):
-  `web/public/spec/web-component-evaluator.sem.html` — dimensions, criteria,
-  review-fragment schema, and the manifest/review rendering example.
-- **Eval prompts**: `manifest/tobor-kit.eval.md` and
-  `manifest/styleguide-eval.md` — one per source repo; each grades one
-  component per run and appends one YAML review fragment to the run file
-  (default `components/review.yaml` in the evaluated repo).
-- **Manifest**: each evaluated repo holds `components/manifest.yaml` — the
-  read-only inventory of gradeable component tags. Graders never edit it.
-- **Venues**: `evalnomi` (hosted eval lane), `subagent` (delegated reviewer),
-  `script` (deterministic checks). **Branches**: `prod` (origin/main),
-  `stage`, `dev` (develop), `oob` (experiments; findings never gate the
-  listed slices).
+## Agent toolkit (`semtext-agent`)
 
-Anything authored as `.sem.html` for this program must pass
-`node bin/semtext-validate.mjs <file>` from the repo root.
+Machine tooling over the extraction contract (§8 of `spec/conventions.md`):
+agents read and edit the **authored XHTML** — never a markdown lossy copy —
+through one CLI that is also an importable module (`dist/semtext-agent.js`,
+global `SemTextAgent`; `./agent` subpath export). Every command accepts
+`--json`; compact human text is the default. Requires `npm run build` first.
+`write` and `edit` always validate against `spec/schema/semtext.schema.json`
+and refuse to write on errors.
 
-### Viewing documents — `semtext-view`
+```bash
+node bin/semtext-agent.mjs <command> <file> [args] [--json]
+```
 
-`node bin/semtext-view.mjs <file.html | file.md>` renders a SemText document
-with the vendored bundle so elements actually display:
+| command | purpose | example |
+|---|---|---|
+| `outline <file> [--depth N]` | one stable id per block, nested, no bodies | `semtext-agent outline web/demo/index.html --depth 2` |
+| `expand <file> <id> [--format xhtml]` | lazy expansion of one block by id | `semtext-agent expand web/demo/index.html x-sec-procedure-status-runbook` |
+| `filter <file>` | select blocks by type/id/kind/tag/attr/audience/selector (AND) | `semtext-agent filter web/demo/index.html --kind runbook --audience operator` |
+| `search <file> <query> [--regex] [--attrs]` | full-text or attribute search, ids + short context | `semtext-agent search web/demo/index.html PKCE` |
+| `write` | markdown (or SemText fragment) in → validated SemText XHTML out | `echo 'note' \| semtext-agent write --format md --id n-new` |
+| `edit <file> --id <id> --content X [--mode outer]` | surgical single-block replacement; bytes outside untouched | `semtext-agent edit page.html --id n-tip --content 'New text' --in-place` |
+| `xslt <file> <stylesheet>` | XSLT transform of the serialized document | `semtext-agent xslt page.html facts.xsl` |
 
-- **Serve** (interactive): `node bin/semtext-view.mjs <file> --serve [--port N]`
-  — mounts `/semtext/*` from `web/public/semtext/` (the vendored bundle is
-  served, never rebuilt), the document plus its sibling assets from its own
-  directory, and prints the full clickable `http://127.0.0.1:PORT/<file>` URL.
-- **Stdout** (default): `node bin/semtext-view.mjs <file>` — prints the
-  assembled HTML to stdout; pipe-friendly.
-- **Markdown input**: wrapped in a minimal `<sem-md>` scaffold page (title
-  from the filename) and served identically — e.g. view the eval prompts in
-  `manifest/` without hand-writing a shell page.
+Details agents should know:
 
-## Consolidation (2026-10-13)
+- **ids** — authored `id`s are used verbatim; blocks without one get a
+  deterministic minted id (`x-<type>-<slug>`) in both `outline` and `edit`.
+- **audience** — `filter --audience <profile>` resolves `sem-profile`
+  `implies` chains and `!negations`; unqualified content is always visible.
+- **fragments** — `write` output is validated in its embedding context
+  (wrapped in `<sem-enhanced-document>` when the fragment carries no root).
+- **edit** — replaces one block's inner HTML (`--mode inner`, default) or the
+  whole element (`--mode outer`) by scanning the source; everything outside
+  the block is byte-identical. Add `--in-place` to write back, `--out FILE`
+  otherwise.
+- **xslt** — prefers the pure-JS `xslt-processor` (optional peer dep),
+  falls back to the `xsltproc` binary. The class form (`div class="sem-fact"`)
+  and the tag form (`<sem-fact>`) are both real elements after
+  serialization; select with `//*[contains(concat(' ',normalize-space(@class),' '),' sem-fact ')]`
+  or `//sem-fact` accordingly.
 
-This repo now holds BOTH halves of semtext.dev:
+Importable core (no DOM environment needed until you pass one). The bundle is
+an IIFE, so in Node evaluate it and take the global it defines (in a browser,
+a plain `<script src>` is enough):
 
-- `landing/` — the Next.js landing (static export, `output: "export"`),
-  from the `feat/landing-semtext-rewrite` revamp.
-- `site/`, `demo/`, `spec/`, `src/`, `themes/`, `bin/`, `scripts/`, `test/`,
-  root `package.json` — the SemText format code (format source, bundles,
-  demos, standalone spec pages, validators, e2e suite), imported verbatim
-  from **noizu-labs-ml/npl-enhanced-content @ 0d8a708** (main; content
-  SHA fd4a166, PR #48 merge). Layout change on import: npl's `web/site`
-  and `web/demo` are now root-level `site/` and `demo/`.
+```js
+import { readFileSync } from 'node:fs';
+const SemTextAgent = new Function(
+  readFileSync('./dist/semtext-agent.js', 'utf8') + ';return SemTextAgent;',
+)();
+const doc = new Window().document; // parse your file…
+SemTextAgent.outline(doc.body, 2);      // → OutlineNode[] (compact; no bodies)
+SemTextAgent.expand(doc.body, 'f-jwt'); // → text for one block
+```
 
-One image serves everything: landing at `/`, showcase under `/site/`,
-`/demo/`, `/spec/` (root `Dockerfile` + `nginx.conf`). The Hologram app's chart is `app/helm/semtext` (the legacy root `helm/semtext`
-Next.js chart was deleted 2026-10-17). `app-ci.yml` builds
-`ops.noizu.com/semtext.dev/app:sha-*` and commits the chart tag bump;
-ArgoCD auto-syncs (never helm-upgrade for release). The npl-enhanced-content
-repo remains the historical record; it is not deleted.
+## Command line (`semtext`) — pipes and the terminal
+
+`bin/semtext.mjs` is the user-facing front end: pipe-friendly commands plus an
+interactive browser. Every pipe command reads a document from a file or stdin
+(`-`), writes data to stdout only, and never prompts. Exit codes follow the
+grep convention — **0** ok, **1** usage or parse error, **2** no matches —
+with errors on stderr only. (The agent CLI's contract differs: 1 domain
+error, 2 usage; its `--json` shapes are depended on, so the two are
+deliberately not merged.)
+
+```console
+$ # the headline pipe: pick records, render them as plain text
+$ semtext filter --type sem-facts doc.html | semtext format --text
+
+$ # filter by attribute or free text; emit normalised XHTML by default
+$ semtext filter --attr data-variant=warning doc.html
+$ semtext filter --text "device flow" doc.html --json | jq '.[].id'
+
+$ # heading tree, whole-document formats, one block in full
+$ semtext outline doc.html | head -20
+$ semtext view doc.html            # plain text (== `semtext format --text`)
+$ semtext format doc.html > normalised.html
+$ semtext expand doc.html f-jwt
+```
+
+`--json` on `outline` / `filter` / `expand` / `format` emits machine-readable
+records. Read a document from stdin with `-`
+(`cat doc.html | semtext outline -`).
+
+### Terminal browser
+
+```console
+$ semtext tui doc.html
+```
+
+Keyboard only: **arrows / j / k** move · **Enter** expand or collapse ·
+**/** search — type, Enter jumps to the first hit and closes the prompt
+(**n** cycles matches, Esc cancels) · **r** raw source of the current
+element · **q** quit. The browser runs entirely in the
+terminal (alternate screen, no dependencies beyond Node's stdlib) and
+restores the terminal on quit or error. Without a TTY it refuses to start
+with a stderr note and exit code 1.
+
+## Authoring refresh (`semtext-refresh`)
+
+`npm run refresh -- <subcommand> [options] <file-or-glob>...` keeps
+service-backed snapshots inside a document up to date. Work happens only
+inside **cache regions** — pairs of HTML comments:
+
+```html
+<!-- semtext:cache:start agent-kit-issue AKIT-001 -->
+<agent-kit-issue ... last-refreshed="2026-10-18T00:00:00Z"> ... </agent-kit-issue>
+<!-- semtext:cache:end -->
+```
+
+The splicer is pure and offset-based: bytes outside the markers (authored
+prose, everything else) are preserved bit-identically, `--check` compares
+timestamp-normalized bodies (a `last-refreshed`-only change is not drift),
+and malformed markers — start without end, orphan end, nested start,
+unknown vocabulary tag, duplicate key — exit 1 without writing. Seed a
+hand-authored document with `--seed`: it wraps authored snapshot-root
+elements (the cachedEmbed-backed vocabulary — child parts like titles are
+not region candidates) of the subcommand's family in fresh markers (end
+marker right after the element's authored snapshot content) and never
+talks to the network.
+
+Subcommands (adapters are lazy and fail-soft — a region without
+credentials or with an unreachable service SKIPs, it never aborts the
+file):
+
+| Subcommand | Regions it owns | Behavior |
+|---|---|---|
+| `agentkit` | `agent-kit-*` | `AGENTONI_MCP_API_KEY` set → key-for-token exchange (in memory) + snapshot fetch; unset ⇒ `skipped(no-credentials)` |
+| `docptr` | `semext-docptr` | shells to a local `doc-pointer` CLI when on PATH, else `skipped(docptr-cli-not-found)` |
+| `styleguide` | `semext-styleguide-themes` | reads `@noizu/styleguide` tokens when the package is resolvable, else `skipped(styleguide-unavailable)` |
+| `annotate` | `semext-annotate` | GETs the public threads endpoint for the region's `site`/`page` (`SEMTEXT_ANNOTATE_ENDPOINT` overrides the base); non-2xx ⇒ `skipped(annotate-<code>)` |
+| `media` | `*.media.prompt` keys | validates + canonicalizes the prompt YAML in place — no network |
+| `all` | each of the above | routes every region to its adapter |
+
+Flags: `--check` (drift detection: exit 1 + one line, never writes) ·
+`--seed` (author initial regions; no adapter traffic) · `--json` (machine
+output with per-region status). Every region reports
+`region <file>:<tag>:<key> → refreshed|unchanged|drift|skipped(<reason>)`.
+Exit codes: 0 clean / no drift · 1 drift or errors · 2 usage error.
+
+## Docs
+
+`docs/PROJ-ARCH.md`, `docs/PROJ-LAYOUT.md`, `docs/PROJ-SCHEMA.md` (digests alongside); normative specs in `spec/`.
+
+## Analytics (GA4)
+
+Analytics are off by default. The measurement id is a **deploy-time** value, not
+a build-time one: `index.html` ships an inert `<!-- GA_MEASUREMENT_ID_SNIPPET -->`
+marker, and `docker/20-ga-measurement-id.sh` (run by nginx's stock
+`/docker-entrypoint.d/` hook on every container start) regenerates the served
+page from a pristine template in the image.
+
+- `GA_MEASUREMENT_ID` set to a `[A-Za-z0-9_-]+` id → the gtag snippet is injected.
+- unset, empty, or malformed → the marker line is dropped entirely: no script
+  tag, no partial tag, no comment, no JS.
+
+Enable it via the chart value:
+
+```yaml
+gaMeasurementId: "G-XXXXXXXXXX"   # helm/<chart>/values.yaml, default ""
+```
+
+Flipping it is a redeploy of the same image — no rebuild.

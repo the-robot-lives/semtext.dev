@@ -1,68 +1,105 @@
 # Schema — `sem-see-also`
 
-A related-reference entry: ONE target this document already contains (a
-section or a `sem-component` card) or a file beside it, offered as a link
-with a hover preview, a click-to-open modal, and a "View all" affordance
-into a new tab. Rubric cross-references are the motivating surface
-(item 9); the shared modal shell (shared/modal.ts) was factored out of
-the data-visualizer Expand viewer for exactly this element.
+A related-reference affordance: names ONE related target — a section of
+this document, a component card, or a file — and renders a link with
+three affordances on the shared reading surfaces: hover/focus preview
+(the shared popover, the glossary surface), click-to-modal (the shared
+modal shell factored out of sem-data-visualizer in 0.9.5), and a
+"View all" affordance opening the target in a new tab.
 
 Changes here precede spec changes precede code.
 
 ## Scope semantics
 
-The authored children are the label (and the JS-off record: the target
-reference as plain text when the script is off). The upgrade wraps the
-label in the link anchor, appends the View-all affordance, and wires the
-preview + modal — idempotent on chrome markers, so the Lit component and
-the bundle scan may run in either order.
+One see-also per related target. The authored children are the LABEL —
+and, with the script off, the whole record: the target reference as
+plain text plus its affordances can't exist, so JS-off shows the authored
+label inline and nothing else. With the script on, the label becomes the
+link text (originals hidden by the upgraded hide-rule; extraction keeps
+reading them). Targets are resolved AT READ TIME against the document;
+a dangling target warns and still renders the link shell (the doc may be
+a fragment of a larger site).
 
 ## Authoring form
 
 ```html
-<sem-see-also id="sa-bands" reference="section" target="#bands">Score bands</sem-see-also>
+<!-- section of this document -->
+<sem-see-also reference="section" target="#bands">
+  Score-to-grade bands — the table the total maps through.
+</sem-see-also>
 
-<sem-see-also id="sa-waitlist" reference="component" target="noizu-waitlist">Waitlist card</sem-see-also>
+<!-- component card by manifest tag -->
+<sem-see-also reference="component" target="noizu-waitlist"
+  preview="tldr">Waitlist intake flow</sem-see-also>
 
-<sem-see-also id="sa-manifest" reference="file" target="components/manifest.yaml" preview="file">The manifest</sem-see-also>
+<!-- file, described by the authored text -->
+<sem-see-also reference="file" target="src/reading/see-also.ts"
+  preview="file">The wiring for this element.</sem-see-also>
+
+<!-- embedded in place instead of link chrome -->
+<sem-see-also reference="section" target="#dv-review-store"
+  insert-as="inline">Full component inventory</sem-see-also>
 ```
 
-Class-form alias (Appendix A): `<div class="sem-see-also">…</div>`.
+Class-form alias (Appendix A): `<div class="sem-see-also" …>…</div>`.
 
-## Attributes
+Parameters:
 
-| attr | form | notes |
-|---|---|---|
-| `reference` | token, default `section` | what `target` names: `section` (an id), `component` (a manifest tag resolved against `sem-component` cards), `file` (a path) |
-| `target` | required text | the address: id/`#id`, component tag, or file path |
-| `href` | text | optional explicit View-all URL overriding the target-derived link |
-| `preview` | token, default `tldr` | `tldr` clones the target's summary (its `sem-tldr`, else heading + first paragraph; a component card's head); `file` shows the authored text as the description of the named path |
-| `insert-as` | token, default `link` | `link` renders the anchor row; `inline` embeds the target's content in place (authored children stay as the label) |
+- `reference` — token `section | component | file` (default
+  `section`). What kind of thing `target` names, and therefore how the
+  link resolves: `section` → `getElementById` (leading `#` optional),
+  `component` → `sem-component[tag=target]` then id lookup, `file` →
+  never resolved in-document; `href` becomes the target path itself.
+- `target` — REQUIRED text. The id/`#id`, component tag, or file path.
+  Validator cross-checks section/component targets against ids present
+  in the same document (id-drift check, warning severity).
+- `preview` — token `tldr | file` (default `tldr`). Hover content:
+  `tldr` clones the target's `sem-tldr`, else its heading + first
+  paragraph (a component card's head); `file` shows the authored label
+  text plus the target path.
+- `insert-as` — token `link | inline` (default `link`). `inline` embeds
+  a CLONE of the target in place (label stays as the heading); skip the
+  link chrome entirely.
+- `href` — optional explicit URL overriding the resolved one (external
+  docs, a path the validator can't check). §8 safety rule applies; the
+  View-all affordance and the modal's deep target use it.
 
-## Behavior
+## Rendered form
 
-- **Hover/focus** — a preview in the shared popover (`sem-popover`, the
-  glossary surface; WCAG 1.4.13 dismissible/hoverable).
-- **Click** — the target opens in the shared modal shell
-  (`role="dialog"`, Escape, focus trap); a CLONE, so the document never
-  moves. Never intercepts modified clicks (cmd/ctrl/shift) — those are
-  the user's navigation.
-- **View all (`↗`)** — `target="_blank"`; the escape hatch for real
-  context. The preview and modal never hide this navigation.
-- **Deep link** — `#ref=<see-also-id>` (the `&`-joined hash form,
-  alongside `#dv=`) opens the named entry's modal once per page load.
+Enhanced (link mode): an inline link (`sem-see-also-link`, labelled by
+the authored children) with `aria-haspopup="dialog"`; hover/focus opens
+the shared popover; click opens the shared modal shell — a CLONE of the
+target (ids/roles stripped via `cloneContent`, interactive descendants
+inert), Esc/close returns focus to the link; a small "View all"
+(`sem-see-also-view`, `target="_blank" rel="noopener"`) follows the
+link. Enhanced (inline mode): a dashed inset box carrying the clone.
+JS-off: the authored label as plain flow text — no chrome, no hidden
+content.
 
-A `reference="section"|"component"` target that resolves to nothing
-warns (`dangling-fragment` in the validator; console at runtime).
+Deep link: `#ref=<id-of-a-see-also>` (the `src/data/deeplink.ts`
+grammar, alongside `#dv=`) opens that see-also's modal once per page
+load. The `ref` key rides the same `&`-joined hash as `dv`/`bucket`.
 
-## Extraction
+## Events
 
-`buildSeeAlso` fields: `reference`, `target`, `preview`, `insert-as`;
-`text` is the authored label.
+None emitted. Modal open/close is the shared shell's own state
+(`data-sem-ref-open` flag on the modal container); no public events.
 
-## Tests
+## A11y contract
 
-BDD: hover `test/e2e/sem-see-also-hover.cy.js`, modal
-`test/e2e/sem-see-also-modal.cy.js`, deep link
-`test/e2e/sem-see-also-deep-link.cy.js` (upstream); BDD feature files
-under `web/cypress/` cover the rubric integration.
+The link is a real anchor with `aria-haspopup="dialog"`; the preview is
+WCAG 2.2 SC 1.4.13 (dismissible, hoverable, persistent) via the shared
+popover; the modal is `role="dialog"` + `aria-modal` with a focus trap
+and focus return (shared shell contract). "View all" is `target="_blank"`
+with `rel="noopener"` and visible text. JS-off loses only the
+affordances, never the label.
+
+## Machine contract
+
+`record: true` with the target metadata as attributes: extraction
+returns the authored label; graders read `reference`/`target` to map a
+document's cross-reference graph. Section/component targets MUST resolve
+in-document (warning when they don't — same severity tier as unknown
+attributes). Contract per conventions §8. BDD source of truth for
+`test/e2e/sem-see-also-hover.cy.js`, `sem-see-also-modal.cy.js`,
+`sem-see-also-deep-link.cy.js`.
