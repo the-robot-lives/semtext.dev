@@ -1,0 +1,1 @@
+function t(e){return(e||"").replace(/\s+/g," ").trim()}function s(e){if(e.length<=60)return e;const n=e.slice(0,60),r=n.lastIndexOf(" ");return(r>0?n.slice(0,r):n).replace(/[\s,;:.—-]+$/,"")}export{s as d,t as n};

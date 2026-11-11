@@ -16,55 +16,67 @@ function K(e, t) {
   const r = j(e.name), s = /* @__PURE__ */ new Map(), n = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Map();
   for (const a of e.commands)
     a.man !== void 0 && d.set(a.name, a.man);
-  let i = !1, h = !1, m = null;
-  const b = () => (m ??= t().then(
+  let l = !1, p = !1, m = null;
+  const T = () => (m ??= t().then(
     (a) => {
       for (const o of a.commands) s.set(o.name, o);
-      for (const [o, u] of Object.entries(a.manPages ?? {})) n.set(o, u);
-      return i = !0, !0;
+      for (const [o, i] of Object.entries(a.manPages ?? {})) n.set(o, i);
+      return l = !0, !0;
     },
-    () => (h = !0, !1)
-  ), m), k = (a) => {
+    () => (p = !0, !1)
+  ), m), O = (a) => {
     const o = () => s.get(a.name);
     return {
       name: a.name,
       // Help/completion surfaces read the stub's line — never the chunk.
       usage: a.usage,
-      run(u) {
+      run(i) {
         const g = o();
         if (g !== void 0)
-          return g.run(u);
-        if (Y(u.args)) {
-          u.out(a.usage);
+          return g.run(i);
+        if (Y(i.args)) {
+          i.out(a.usage);
           return;
         }
-        return b().then((T) => {
-          if (!T) {
-            u.err(`${a.name}: package chunk failed to load (${r})`), u.exit(1);
+        i.err(`loading ${e.name}…`);
+        const k = i.err, S = i.exit;
+        let f = !1, c = !1;
+        const b = () => {
+          i.err = k, i.exit = S, c || S(f ? 1 : 0);
+        };
+        return T().then((v) => {
+          if (!v) {
+            i.err(`${a.name}: package chunk failed to load (${r})`), i.exit(1);
             return;
           }
-          const S = o();
-          if (S === void 0) {
-            u.err(`${a.name}: package chunk ${r} does not provide it`), u.exit(70);
+          const H = o();
+          if (H === void 0) {
+            i.err(`${a.name}: package chunk ${r} does not provide it`), i.exit(70);
             return;
           }
-          return S.run(u);
+          return i.err = (L) => {
+            f = !0, k(L);
+          }, i.exit = (L) => {
+            c = !0, S(L);
+          }, Promise.resolve(H.run(i)).then(b, (L) => {
+            throw b(), L;
+          });
         });
       },
-      complete(u) {
-        return o()?.complete?.(u) ?? [];
+      complete(i) {
+        return o()?.complete?.(i) ?? [];
       },
-      app(u) {
-        return o()?.app?.(u) ?? null;
+      app(i) {
+        return o()?.app?.(i) ?? null;
       }
     };
   };
   return {
     name: e.name,
-    commands: e.commands.map(k),
-    ensure: b,
-    loaded: () => i,
-    state: () => i ? "resident" : h ? "failed" : "loading",
+    commands: e.commands.map(O),
+    ensure: T,
+    loaded: () => l,
+    state: () => l ? "resident" : p ? "failed" : "loading",
     manNames: () => /* @__PURE__ */ new Set([...n.keys(), ...d.keys()]),
     manPage: (a) => n.get(a) ?? d.get(a) ?? null,
     supersedes: new Set(e.supersedes ?? [])
@@ -113,35 +125,35 @@ const _ = {
   ]
 };
 K(_, () => V("net"));
-class R extends Error {
+class E extends Error {
   constructor(t, r) {
     super(r), this.name = "NetError", this.kind = t;
   }
 }
-let L = {};
-function fe(e) {
-  L = { ...L, ...e };
-}
-function pe() {
-  L = {};
+let R = {};
+function pe(e) {
+  R = { ...R, ...e };
 }
 function me() {
-  return L;
+  R = {};
 }
-function C(e) {
+function we() {
+  return R;
+}
+function F(e) {
   let t;
   try {
     t = new URL(e);
   } catch {
-    throw new R("url", `URL rejected: '${e}' is not a valid URL`);
+    throw new E("url", `URL rejected: '${e}' is not a valid URL`);
   }
   if (t.protocol !== "http:" && t.protocol !== "https:")
-    throw new R("url", `URL rejected: unsupported scheme '${t.protocol.replace(/:$/, "")}' (the net commands speak http and https only)`);
-  const r = L.allow;
+    throw new E("url", `URL rejected: unsupported scheme '${t.protocol.replace(/:$/, "")}' (the net commands speak http and https only)`);
+  const r = R.allow;
   if (r) {
     const s = r(t);
     if (s !== !0)
-      throw new R("blocked", `request to '${e}' blocked by the shell's network allowlist` + (typeof s == "string" && s !== "" ? ` (${s})` : ""));
+      throw new E("blocked", `request to '${e}' blocked by the shell's network allowlist` + (typeof s == "string" && s !== "" ? ` (${s})` : ""));
   }
   return t;
 }
@@ -157,9 +169,9 @@ function Z(e) {
       }
     t.send(e.body ?? null);
   } catch {
-    throw new R("network", M);
+    throw new E("network", M);
   }
-  if (t.status === 0) throw new R("network", M);
+  if (t.status === 0) throw new E("network", M);
   const r = {};
   for (const s of t.getAllResponseHeaders().split(`\r
 `)) {
@@ -175,21 +187,21 @@ function Z(e) {
   };
 }
 function Q() {
-  return L.transport !== void 0 ? L.transport : ee();
+  return R.transport !== void 0 ? R.transport : ee();
 }
 function ee() {
   return typeof XMLHttpRequest > "u" ? null : Z;
 }
-function z() {
-  return L.transportAsync !== void 0 ? L.transportAsync : null;
+function X() {
+  return R.transportAsync !== void 0 ? R.transportAsync : R.transport !== void 0 ? null : typeof fetch == "function" ? te : null;
 }
-async function we(e) {
+async function te(e) {
   let t;
   try {
     const n = new Headers();
-    for (const [d, i] of Object.entries(e.headers))
+    for (const [d, l] of Object.entries(e.headers))
       try {
-        n.set(d, i);
+        n.set(d, l);
       } catch {
       }
     t = await fetch(e.url, {
@@ -200,7 +212,7 @@ async function we(e) {
       credentials: "omit"
     });
   } catch {
-    throw new R(
+    throw new E(
       "network",
       "the request failed before a response was returned (fetch rejects on network/CORS/mixed-content failures; the browser hides the exact cause)"
     );
@@ -223,26 +235,26 @@ async function we(e) {
     url: t.url || e.url
   };
 }
-function G(e) {
+function z(e) {
   const t = Q();
   if (t === null)
-    throw new R(
+    throw new E(
       "unsupported",
       "no network transport in this environment (the built-in one needs XMLHttpRequest; tests and embedders install one with configureNet({ transport }))"
     );
   return t(e);
 }
-function W(e) {
+function G(e) {
   return new TextEncoder().encode(e).length;
 }
-function te(e) {
+function re(e) {
   const t = new TextEncoder().encode(e);
   let r = "";
   for (const s of t) r += String.fromCharCode(s);
   return `Basic ${btoa(r)}`;
 }
-const x = (e) => _.commands.find((t) => t.name === e).usage;
-function X(e, t) {
+const P = (e) => _.commands.find((t) => t.name === e).usage;
+function W(e, t) {
   const r = [];
   let s = !1;
   for (const n of e) {
@@ -257,7 +269,7 @@ function X(e, t) {
   }
   return r;
 }
-function A(e, t) {
+function $(e, t) {
   if (t === "") return;
   const r = t.split(`
 `);
@@ -268,18 +280,18 @@ function A(e, t) {
 function J(e) {
   return `HTTP/1.1 ${e.status}${e.statusText ? " " + e.statusText : ""}`;
 }
-function $(e) {
+function N(e) {
   return Object.keys(e).sort().map((t) => `${t}: ${e[t]}`);
 }
-function re(e) {
-  return C(e.url), G(e);
+function ne(e) {
+  return F(e.url), z(e);
 }
-function F(e) {
-  C(e.url);
-  const t = z();
-  return t === null ? G(e) : t(e);
+function I(e) {
+  F(e.url);
+  const t = X();
+  return t === null ? z(e) : t(e);
 }
-function N(e) {
+function C(e) {
   switch (e.kind) {
     case "url":
       return 3;
@@ -289,29 +301,29 @@ function N(e) {
       return 1;
   }
 }
-function U(e) {
-  return e instanceof R ? e : new R("network", String(e));
+function A(e) {
+  return e instanceof E ? e : new E("network", String(e));
 }
-const E = (e, t, r) => e ? `\x1B[${t}m${r}\x1B[0m` : r;
-function ne(e, t) {
+const x = (e, t, r) => e ? `\x1B[${t}m${r}\x1B[0m` : r;
+function se(e, t) {
   return t ? e.replace(
     /("(?:\\.|[^"\\])*")(\s*:)?|\b(true|false|null)\b|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
-    (r, s, n, d, i) => s !== void 0 ? n !== void 0 ? E(!0, 36, s) + n : E(!0, 32, s) : d !== void 0 ? E(!0, 35, d) : i !== void 0 ? E(!0, 33, i) : r
+    (r, s, n, d, l) => s !== void 0 ? n !== void 0 ? x(!0, 36, s) + n : x(!0, 32, s) : d !== void 0 ? x(!0, 35, d) : l !== void 0 ? x(!0, 33, l) : r
   ) : e;
 }
 function D(e, t, r) {
   if (e.includes("json") || /^[[{]/.test(t.trim()))
     try {
-      return ne(JSON.stringify(JSON.parse(t), null, 2), r);
+      return se(JSON.stringify(JSON.parse(t), null, 2), r);
     } catch {
     }
   return t;
 }
-const se = [
-  x("curl"),
+const oe = [
+  P("curl"),
   "",
-  "Transfer a URL over HTTP. Requests run on a synchronous transport:",
-  "the shell blocks until the response arrives (like foreground curl),",
+  "Transfer a URL over HTTP. Requests run on fetch (sync XHR fallback):",
+  "the shell awaits the response (like foreground curl),",
   "and the body can be piped or redirected like any command output.",
   "",
   "  -s              silent (no error messages)",
@@ -342,57 +354,57 @@ const se = [
 function B(e) {
   return (t) => e.filter((r) => r.startsWith(t.word));
 }
-const oe = {
+const ae = {
   name: "curl",
-  usage: x("curl"),
+  usage: P("curl"),
   complete: B(["-s", "-S", "-f", "-i", "-I", "-L", "-X", "-H", "-d", "--data-binary", "-u", "-o", "-O", "-w", "--help"]),
   run(e) {
-    const t = X(e.args, "XHdouw");
-    let r = !1, s = !1, n = !1, d = !1, i = !1, h = null, m = null, b = null, k = !1, a = null;
-    const o = [], u = [], g = [];
-    let T = !1;
-    for (let l = 0; l < t.length; l++) {
-      const c = t[l];
-      if (c === "--help" || c === "-h") {
-        for (const w of se) e.out(w);
+    const t = W(e.args, "XHdouw");
+    let r = !1, s = !1, n = !1, d = !1, l = !1, p = null, m = null, T = null, O = !1, a = null;
+    const o = [], i = [], g = [];
+    let k = !1;
+    for (let u = 0; u < t.length; u++) {
+      const h = t[u];
+      if (h === "--help" || h === "-h") {
+        for (const w of oe) e.out(w);
         e.exit(0);
         return;
       }
-      if (!T && c === "--") {
-        T = !0;
+      if (!k && h === "--") {
+        k = !0;
         continue;
       }
-      if (!T && (c === "--data-binary" || c.startsWith("--data-binary="))) {
-        const w = c.startsWith("--data-binary=") ? c.slice(14) : t[++l];
+      if (!k && (h === "--data-binary" || h.startsWith("--data-binary="))) {
+        const w = h.startsWith("--data-binary=") ? h.slice(14) : t[++u];
         if (w === void 0) {
           e.err("curl: option --data-binary: requires parameter"), e.exit(2);
           return;
         }
-        u.push(w);
+        i.push(w);
         continue;
       }
-      if (!T && c.startsWith("-") && c !== "-") {
-        if ({ "-X": !0, "-H": !0, "-d": !0, "-u": !0, "-o": !0, "-w": !0 }[c] !== void 0) {
-          const y = t[++l];
+      if (!k && h.startsWith("-") && h !== "-") {
+        if ({ "-X": !0, "-H": !0, "-d": !0, "-u": !0, "-o": !0, "-w": !0 }[h] !== void 0) {
+          const y = t[++u];
           if (y === void 0) {
-            e.err(`curl: option ${c}: requires parameter`), e.exit(2);
+            e.err(`curl: option ${h}: requires parameter`), e.exit(2);
             return;
           }
-          switch (c) {
+          switch (h) {
             case "-X":
-              h = y.toUpperCase();
+              p = y.toUpperCase();
               break;
             case "-H":
               o.push(y);
               break;
             case "-d":
-              u.push(y);
+              i.push(y);
               break;
             case "-u":
               m = y;
               break;
             case "-o":
-              b = y;
+              T = y;
               break;
             case "-w":
               a = y;
@@ -400,7 +412,7 @@ const oe = {
           }
           continue;
         }
-        for (const y of c.slice(1))
+        for (const y of h.slice(1))
           switch (y) {
             case "s":
               r = !0;
@@ -415,13 +427,13 @@ const oe = {
               d = !0;
               break;
             case "I":
-              i = !0, d = !0;
+              l = !0, d = !0;
               break;
             case "L":
               break;
             // accepted; the transport always follows redirects
             case "O":
-              k = !0;
+              O = !0;
               break;
             default:
               e.err(`curl: option -${y}: is unknown`), e.err("curl: try 'curl --help' for more information"), e.exit(2);
@@ -429,7 +441,7 @@ const oe = {
           }
         continue;
       }
-      g.push(c);
+      g.push(h);
     }
     if (g.length === 0) {
       e.err("curl: no URL specified"), e.err("curl: try 'curl --help' for more information"), e.exit(2);
@@ -439,121 +451,121 @@ const oe = {
       e.err("curl: only one URL per invocation is supported by this build"), e.exit(2);
       return;
     }
-    if (b !== null && k) {
+    if (T !== null && O) {
       e.err("curl: only one of -o and -O is allowed"), e.exit(2);
       return;
     }
-    const S = g[0], p = {};
-    let f = !1, v = !1;
-    for (const l of o) {
-      const c = l.indexOf(":");
-      if (c < 0) {
-        if (l.endsWith(";")) {
-          p[l.slice(0, -1)] = "";
+    const S = g[0], f = {};
+    let c = !1, b = !1;
+    for (const u of o) {
+      const h = u.indexOf(":");
+      if (h < 0) {
+        if (u.endsWith(";")) {
+          f[u.slice(0, -1)] = "";
           continue;
         }
-        e.err(`curl: bad --header syntax (want 'Name: value'): '${l}'`), e.exit(2);
+        e.err(`curl: bad --header syntax (want 'Name: value'): '${u}'`), e.exit(2);
         return;
       }
-      const w = l.slice(0, c);
-      let y = l.slice(c + 1);
-      y.startsWith(" ") && (y = y.slice(1)), w.toLowerCase() === "content-type" && (f = !0), w.toLowerCase() === "authorization" && (v = !0), p[w] = y;
+      const w = u.slice(0, h);
+      let y = u.slice(h + 1);
+      y.startsWith(" ") && (y = y.slice(1)), w.toLowerCase() === "content-type" && (c = !0), w.toLowerCase() === "authorization" && (b = !0), f[w] = y;
     }
     if (m !== null) {
       if (m.indexOf(":") < 0) {
         e.err("curl: --user needs USER:PASS (interactive password prompting is not supported)"), e.exit(2);
         return;
       }
-      v || (p.Authorization = te(m));
+      b || (f.Authorization = re(m));
     }
-    const O = u.length > 0 ? u.join("&") : null;
-    O !== null && !f && (p["Content-Type"] = "application/x-www-form-urlencoded");
-    const H = h ?? (i ? "HEAD" : O !== null ? "POST" : "GET"), I = (l) => {
-      const c = U(l);
-      (!r || s) && e.err(`curl: ${c.message}`), e.exit(N(c));
-    }, q = (l) => {
-      if (n && l.status >= 400) {
-        (!r || s) && e.err(`curl: (22) The requested URL returned error: ${l.status}${l.statusText ? " " + l.statusText : ""}`), e.exit(22);
+    const v = i.length > 0 ? i.join("&") : null;
+    v !== null && !c && (f["Content-Type"] = "application/x-www-form-urlencoded");
+    const H = p ?? (l ? "HEAD" : v !== null ? "POST" : "GET"), L = (u) => {
+      const h = A(u);
+      (!r || s) && e.err(`curl: ${h.message}`), e.exit(C(h));
+    }, q = (u) => {
+      if (n && u.status >= 400) {
+        (!r || s) && e.err(`curl: (22) The requested URL returned error: ${u.status}${u.statusText ? " " + u.statusText : ""}`), e.exit(22);
         return;
       }
       if (d) {
-        e.out(J(l));
-        for (const c of $(l.headers)) e.out(c);
-        i || e.out("");
+        e.out(J(u));
+        for (const h of N(u.headers)) e.out(h);
+        l || e.out("");
       }
-      if (!i) {
-        const c = (w) => {
+      if (!l) {
+        const h = (w) => {
           try {
-            return e.vfs.mountFile(e.vfs.resolve(e.state.cwd, w), l.bodyText), !0;
+            return e.vfs.mountFile(e.vfs.resolve(e.state.cwd, w), u.bodyText), !0;
           } catch (y) {
             return e.err(`curl: ${w}: ${y instanceof Error ? y.message : String(y)}`), e.exit(23), !1;
           }
         };
-        if (b === "-")
-          A(e, l.bodyText);
-        else if (b !== null) {
-          if (!c(b)) return;
-        } else if (k) {
+        if (T === "-")
+          $(e, u.bodyText);
+        else if (T !== null) {
+          if (!h(T)) return;
+        } else if (O) {
           let w;
           try {
-            w = decodeURIComponent(new URL(l.url).pathname.split("/").filter(Boolean).pop() ?? "") || "index.html";
+            w = decodeURIComponent(new URL(u.url).pathname.split("/").filter(Boolean).pop() ?? "") || "index.html";
           } catch {
             w = "index.html";
           }
-          if (!c(w)) return;
+          if (!h(w)) return;
         } else
-          A(e, l.bodyText);
+          $(e, u.bodyText);
       }
       if (a !== null) {
-        const c = a.replace(/\\n/g, `
+        const h = a.replace(/\\n/g, `
 `).replace(/\\t/g, "	").replace(/%\{(\w+)\}/g, (w, y) => {
           switch (y) {
             case "http_code":
             case "response_code":
-              return String(l.status);
+              return String(u.status);
             case "url_effective":
-              return l.url;
+              return u.url;
             case "size_download":
-              return String(W(l.bodyText));
+              return String(G(u.bodyText));
             case "content_type":
-              return l.headers["content-type"] ?? "";
+              return u.headers["content-type"] ?? "";
             default:
               return w;
           }
         });
-        for (const w of c.split(`
+        for (const w of h.split(`
 `))
           w !== "" && e.out(w);
       }
       e.exit(0);
     };
-    let P;
+    let U;
     try {
-      P = F({ method: H, url: S, headers: p, body: O });
-    } catch (l) {
-      I(l);
+      U = I({ method: H, url: S, headers: f, body: v });
+    } catch (u) {
+      L(u);
       return;
     }
-    if (P instanceof Promise) return P.then(q, I);
-    q(P);
+    if (U instanceof Promise) return U.then(q, L);
+    q(U);
   }
-}, ae = () => {
+}, ie = () => {
   const e = /* @__PURE__ */ new Date(), t = (r) => String(r).padStart(2, "0");
   return `${e.getFullYear()}-${t(e.getMonth() + 1)}-${t(e.getDate())} ${t(e.getHours())}:${t(e.getMinutes())}:${t(e.getSeconds())}`;
-}, ie = {
+}, le = {
   name: "wget",
-  usage: x("wget"),
+  usage: P("wget"),
   complete: B(["-q", "-O", "--help"]),
   run(e) {
-    const t = X(e.args, "O");
+    const t = W(e.args, "O");
     let r = !1, s = null;
     const n = [];
     let d = !1;
     for (let a = 0; a < t.length; a++) {
       const o = t[a];
       if (o === "--help" || o === "-h") {
-        for (const u of [
-          x("wget"),
+        for (const i of [
+          P("wget"),
           "",
           "Download each URL into the VFS. Log lines go to stderr (like GNU",
           "wget), so `wget -O- URL | grep …` pipes only the body.",
@@ -565,7 +577,7 @@ const oe = {
           "The default filename is the URL path basename (index.html when it",
           "ends in / or is empty). Exit codes: 0 ok · 1 usage/blocked ·",
           "4 network/CORS/transport · 8 server error 4xx/5xx (nothing saved)."
-        ]) e.out(u);
+        ]) e.out(i);
         e.exit(0);
         return;
       }
@@ -594,18 +606,18 @@ const oe = {
       e.err("wget: missing URL"), e.err("Usage: wget [-q] [-O FILE] URL..."), e.exit(1);
       return;
     }
-    const i = (a) => {
+    const l = (a) => {
       r || e.err(a);
     };
-    let h = 0;
+    let p = 0;
     const m = (a, o) => {
       if (o.status >= 400) {
-        i(`wget: ERROR ${o.status}: ${o.statusText || "error"}.`), h = 8;
+        l(`wget: ERROR ${o.status}: ${o.statusText || "error"}.`), p = 8;
         return;
       }
-      const u = W(o.bodyText);
-      if (i(`--${ae()}--  ${a}`), s === "-") {
-        A(e, o.bodyText);
+      const i = G(o.bodyText);
+      if (l(`--${ie()}--  ${a}`), s === "-") {
+        $(e, o.bodyText);
         return;
       }
       let g = s;
@@ -615,42 +627,42 @@ const oe = {
         } catch {
           g = "index.html";
         }
-      i(`Saving to: '${g}'`);
+      l(`Saving to: '${g}'`);
       try {
         e.vfs.mountFile(e.vfs.resolve(e.state.cwd, g), o.bodyText);
-      } catch (T) {
-        e.err(`wget: cannot write '${g}': ${T instanceof Error ? T.message : String(T)}`), h = h === 0 ? 1 : h;
+      } catch (k) {
+        e.err(`wget: cannot write '${g}': ${k instanceof Error ? k.message : String(k)}`), p = p === 0 ? 1 : p;
         return;
       }
-      i(`'${g}' saved [${u}/${u}]`);
-    }, b = (a) => {
-      const o = U(a);
-      i(`wget: ${o.message}`), h = o.kind === "network" ? 4 : 1;
-    }, k = () => e.exit(h);
-    if (z() !== null)
+      l(`'${g}' saved [${i}/${i}]`);
+    }, T = (a) => {
+      const o = A(a);
+      l(`wget: ${o.message}`), p = o.kind === "network" ? 4 : 1;
+    }, O = () => e.exit(p);
+    if (X() !== null)
       return (async () => {
         for (const a of n)
           try {
-            m(a, await F({ method: "GET", url: a, headers: {}, body: null }));
+            m(a, await I({ method: "GET", url: a, headers: {}, body: null }));
           } catch (o) {
-            b(o);
+            T(o);
           }
-        k();
+        O();
       })();
     for (const a of n) {
       let o;
       try {
-        o = re({ method: "GET", url: a, headers: {}, body: null });
-      } catch (u) {
-        b(u);
+        o = ne({ method: "GET", url: a, headers: {}, body: null });
+      } catch (i) {
+        T(i);
         continue;
       }
       m(a, o);
     }
-    k();
+    O();
   }
-}, le = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
-function ue(e) {
+}, ue = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
+function de(e) {
   const t = [], r = {};
   let s = !1;
   for (const n of e) {
@@ -664,36 +676,36 @@ function ue(e) {
       s = !0;
       continue;
     }
-    const i = n.indexOf(":"), h = n.indexOf("=");
-    if (i >= 0 && (h < 0 || i < h)) {
-      t.push([n.slice(0, i), n.slice(i + 1)]);
+    const l = n.indexOf(":"), p = n.indexOf("=");
+    if (l >= 0 && (p < 0 || l < p)) {
+      t.push([n.slice(0, l), n.slice(l + 1)]);
       continue;
     }
-    if (h >= 0) {
-      r[n.slice(0, h)] = n.slice(h + 1), s = !0;
+    if (p >= 0) {
+      r[n.slice(0, p)] = n.slice(p + 1), s = !0;
       continue;
     }
     return { ok: !1, error: `invalid item '${n}' (want key:value, key=value or key:=json)` };
   }
   return { ok: !0, headers: t, fields: r, hasFields: s };
 }
-const de = {
+const ce = {
   name: "http",
-  usage: x("http"),
+  usage: P("http"),
   complete: (e) => {
     const t = e.word.toLowerCase();
-    return [...le.map((r) => r.toLowerCase()), "-v", "-b", "-h", "--verbose", "--body", "--headers", "--help"].filter(
+    return [...ue.map((r) => r.toLowerCase()), "-v", "-b", "-h", "--verbose", "--body", "--headers", "--help"].filter(
       (r) => r.startsWith(t)
     );
   },
   run(e) {
     const t = [];
     let r = !1, s = !1, n = !1;
-    for (let p = 0; p < e.args.length; p++) {
-      const f = e.args[p];
-      if (f === "--help") {
-        for (const v of [
-          x("http"),
+    for (let f = 0; f < e.args.length; f++) {
+      const c = e.args[f];
+      if (c === "--help") {
+        for (const b of [
+          P("http"),
           "",
           "HTTPie-style requests. METHOD is optional (default GET, or POST",
           "when body items or piped stdin are present). Items:",
@@ -711,100 +723,100 @@ const de = {
           "stage's tty-ness. Any completed HTTP exchange exits 0; usage/",
           "parse errors exit 1, bad URL/scheme 3, network/CORS 7, allowlist",
           "blocks 1."
-        ]) e.out(v);
+        ]) e.out(b);
         e.exit(0);
         return;
       }
-      if (f === "-v" || f === "--verbose") {
+      if (c === "-v" || c === "--verbose") {
         r = !0;
         continue;
       }
-      if (f === "-b" || f === "--body") {
+      if (c === "-b" || c === "--body") {
         s = !0;
         continue;
       }
-      if (f === "-h" || f === "--headers") {
+      if (c === "-h" || c === "--headers") {
         n = !0;
         continue;
       }
-      t.push(f);
+      t.push(c);
     }
     let d = null;
     t.length > 1 && /^[A-Za-z]+$/.test(t[0]) && (d = t.shift().toUpperCase());
-    let i = t.shift();
-    if (i === void 0 || i === "") {
+    let l = t.shift();
+    if (l === void 0 || l === "") {
       e.err("http: error: a URL is required"), e.exit(1);
       return;
     }
-    /^[a-z][a-z0-9+.-]*:\/\//i.test(i) || (i = "http://" + i);
-    const h = ue(t);
-    if (!h.ok) {
-      e.err(`http: error: ${h.error}`), e.exit(1);
+    /^[a-z][a-z0-9+.-]*:\/\//i.test(l) || (l = "http://" + l);
+    const p = de(t);
+    if (!p.ok) {
+      e.err(`http: error: ${p.error}`), e.exit(1);
       return;
     }
     const m = e.stdin;
-    if (h.hasFields && m !== null && m !== "") {
+    if (p.hasFields && m !== null && m !== "") {
       e.err("http: error: request body from stdin and key=value items are mutually exclusive"), e.exit(1);
       return;
     }
-    const b = h.hasFields || m !== null && m !== "", k = d ?? (b ? "POST" : "GET"), a = { Accept: "application/json, */*" };
-    b && (a["Content-Type"] = "application/json");
-    for (const [p, f] of h.headers) a[p] = f;
+    const T = p.hasFields || m !== null && m !== "", O = d ?? (T ? "POST" : "GET"), a = { Accept: "application/json, */*" };
+    T && (a["Content-Type"] = "application/json");
+    for (const [f, c] of p.headers) a[f] = c;
     let o = null;
-    m !== null && m !== "" ? o = m : h.hasFields && (o = JSON.stringify(h.fields));
-    let u;
+    m !== null && m !== "" ? o = m : p.hasFields && (o = JSON.stringify(p.fields));
+    let i;
     try {
-      u = C(i);
-    } catch (p) {
-      const f = U(p);
-      e.err(`http: error: ${f.message}`), e.exit(N(f));
+      i = F(l);
+    } catch (f) {
+      const c = A(f);
+      e.err(`http: error: ${c.message}`), e.exit(C(c));
       return;
     }
-    a.Host = u.host;
-    const g = (p) => {
-      const f = U(p);
-      e.err(`http: error: ${f.message}`), e.exit(N(f));
-    }, T = (p) => {
-      const f = e.color;
+    a.Host = i.host;
+    const g = (f) => {
+      const c = A(f);
+      e.err(`http: error: ${c.message}`), e.exit(C(c));
+    }, k = (f) => {
+      const c = e.color;
       if (r) {
-        const v = u.pathname + u.search;
-        e.out(E(f, 90, `${k} ${v} HTTP/1.1`));
-        for (const O of $(a)) e.out(E(f, 90, O));
+        const b = i.pathname + i.search;
+        e.out(x(c, 90, `${O} ${b} HTTP/1.1`));
+        for (const v of N(a)) e.out(x(c, 90, v));
         if (o !== null) {
           e.out("");
-          for (const O of D("application/json", o, f).split(`
-`)) e.out(O);
+          for (const v of D("application/json", o, c).split(`
+`)) e.out(v);
         }
         e.out("");
       }
       if (!s) {
-        e.out(E(f, p.status < 300 ? 32 : p.status < 400 ? 33 : 31, J(p)));
-        for (const v of $(p.headers)) e.out(v);
+        e.out(x(c, f.status < 300 ? 32 : f.status < 400 ? 33 : 31, J(f)));
+        for (const b of N(f.headers)) e.out(b);
       }
       if (!n) {
         s || e.out("");
-        const v = D(p.headers["content-type"] ?? "", p.bodyText, f);
-        if (v !== "") {
-          const O = v.split(`
+        const b = D(f.headers["content-type"] ?? "", f.bodyText, c);
+        if (b !== "") {
+          const v = b.split(`
 `);
-          v.endsWith(`
-`) && O.pop();
-          for (const H of O) e.out(H);
+          b.endsWith(`
+`) && v.pop();
+          for (const H of v) e.out(H);
         }
       }
       e.exit(0);
     };
     let S;
     try {
-      S = F({ method: k, url: i, headers: a, body: o });
-    } catch (p) {
-      g(p);
+      S = I({ method: O, url: l, headers: a, body: o });
+    } catch (f) {
+      g(f);
       return;
     }
-    if (S instanceof Promise) return S.then(T, g);
-    T(S);
+    if (S instanceof Promise) return S.then(k, g);
+    k(S);
   }
-}, ce = [oe, ie, de], he = {
+}, he = [ae, le, ce], fe = {
   curl: [
     "CURL(1)                   semtext-sh manual",
     "",
@@ -817,13 +829,13 @@ const de = {
     "          [-i | -I] [-w FORMAT] URL",
     "",
     "DESCRIPTION",
-    "     HTTP client modelled on GNU curl. The request runs on the",
-    "     synchronous transport (transport.ts): the shell blocks until the",
-    "     response arrives, and the body flows through stdout like any",
+    "     HTTP client modelled on GNU curl. The request runs on fetch",
+    "     (transport.ts; sync XHR only where fetch is absent): the shell",
+    "     awaits the response, and the body flows through stdout like any",
     "     command output — pipes and redirection work.",
     "",
-    "     No ambient credentials are ever attached (the transport never",
-    "     enables withCredentials): cookies and HTTP auth travel only when",
+    "     Ambient credentials are not attached (fetch runs with",
+    "     credentials: omit): cookies and HTTP auth travel only when",
     "     you pass them explicitly (-u, an Authorization header).",
     "",
     "     -d implies POST and defaults Content-Type to",
@@ -934,14 +946,14 @@ const de = {
     `     echo '{"a":1}' | http POST https://api.example.com/x`,
     "     http -b PATCH https://api.example.com/users/1 name=grace"
   ]
-}, ye = { commands: ce, manPages: he };
+}, ye = { commands: he, manPages: fe };
 export {
-  R as NetError,
-  ce as commands,
-  fe as configureNet,
-  we as fetchTransport,
-  he as manPages,
-  me as netConfig,
+  E as NetError,
+  he as commands,
+  pe as configureNet,
+  te as fetchTransport,
+  fe as manPages,
+  we as netConfig,
   ye as pkg,
-  pe as resetNet
+  me as resetNet
 };

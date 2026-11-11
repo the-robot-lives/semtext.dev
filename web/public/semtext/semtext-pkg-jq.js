@@ -3,7 +3,7 @@ class R extends Error {
     super(n), this.pos = t, this.name = "JqSyntaxError";
   }
 }
-const ge = /[A-Za-z_]/, ne = /[A-Za-z0-9_]/, C = /[0-9]/, Ye = /* @__PURE__ */ new Set(["<", ">", "+", "-", "*", "/", "%", "="]), Qe = {
+const ge = /[A-Za-z_]/, ne = /[A-Za-z0-9_]/, C = /[0-9]/, ve = /* @__PURE__ */ new Set(["<", ">", "+", "-", "*", "/", "%", "="]), et = {
   '"': '"',
   "\\": "\\",
   "/": "/",
@@ -13,9 +13,9 @@ const ge = /[A-Za-z_]/, ne = /[A-Za-z0-9_]/, C = /[0-9]/, Ye = /* @__PURE__ */ n
 `,
   r: "\r",
   t: "	"
-}, ve = /* @__PURE__ */ new Set([" ", "	", `
+}, tt = /* @__PURE__ */ new Set([" ", "	", `
 `, "\r"]);
-function Pe(e) {
+function Ie(e) {
   const n = [];
   let t = 0, r = 1;
   const i = e.length, o = (s, l = t) => {
@@ -85,7 +85,7 @@ function Pe(e) {
       n.push({ k: "op", op: l, pos: t }), t += 2;
       continue;
     }
-    if (Ye.has(s)) {
+    if (ve.has(s)) {
       n.push({ k: "op", op: s, pos: t }), t++;
       continue;
     }
@@ -104,7 +104,7 @@ function Pe(e) {
       continue;
     }
     if (s === '"') {
-      n.push({ k: "str", parts: et(e, t), pos: t }), t = tt(e, t);
+      n.push({ k: "str", parts: nt(e, t), pos: t }), t = rt(e, t);
       continue;
     }
     if (s === "$") {
@@ -127,14 +127,14 @@ function Pe(e) {
       const a = t;
       let p = "";
       for (; t < i && ne.test(e[t]); ) p += e[t++];
-      n.push({ k: "ident", name: p, pos: a, adj: a > 0 && !ve.has(e[a - 1]) });
+      n.push({ k: "ident", name: p, pos: a, adj: a > 0 && !tt.has(e[a - 1]) });
       continue;
     }
     o(`unexpected character '${s}'`);
   }
   return n.push({ k: "eof", pos: i }), n;
 }
-function et(e, n) {
+function nt(e, n) {
   const t = [];
   let r = "", i = n + 1;
   const o = e.length, s = () => {
@@ -152,14 +152,14 @@ function et(e, n) {
         const h = i + 2;
         let w = 1, d = h;
         for (; d < o && w > 0; ) {
-          const k = e[d];
-          if (k === '"') {
+          const x = e[d];
+          if (x === '"') {
             for (d++; d < o && e[d] !== '"'; )
               e[d] === "\\" && d++, d++;
             if (d >= o) throw new R("unterminated string in interpolation", h);
-          } else if (k === "(")
+          } else if (x === "(")
             w++;
-          else if (k === ")" && (w--, w === 0))
+          else if (x === ")" && (w--, w === 0))
             break;
           d++;
         }
@@ -167,7 +167,7 @@ function et(e, n) {
         t.push({ raw: e.slice(h, d), pos: h }), i = d + 1;
         continue;
       }
-      const p = Qe[a];
+      const p = et[a];
       if (p === void 0 && a !== "u")
         throw new R(`invalid escape '\\${a}' in string`, i);
       if (a === "u") {
@@ -183,7 +183,7 @@ function et(e, n) {
   }
   throw new R("unterminated string literal", n);
 }
-function tt(e, n) {
+function rt(e, n) {
   let t = n + 1;
   const r = e.length;
   for (; t < r; ) {
@@ -215,7 +215,7 @@ class ce extends Error {
     super(n), this.pos = t, this.name = "JqParseError";
   }
 }
-const nt = /* @__PURE__ */ new Set(["text", "json", "csv", "tsv", "html", "uri", "base64", "base64d"]), we = /* @__PURE__ */ new Set(["=", "|=", "+=", "-=", "*=", "/=", "%=", "//="]), be = /* @__PURE__ */ new Set([
+const it = /* @__PURE__ */ new Set(["text", "json", "csv", "tsv", "html", "uri", "base64", "base64d"]), we = /* @__PURE__ */ new Set(["=", "|=", "+=", "-=", "*=", "/=", "%=", "//="]), be = /* @__PURE__ */ new Set([
   "if",
   "then",
   "elif",
@@ -235,7 +235,7 @@ const nt = /* @__PURE__ */ new Set(["text", "json", "csv", "tsv", "html", "uri",
   "break",
   "__loc__"
 ]);
-class qe {
+class Ce {
   constructor(n, t) {
     this.toks = n, this.src = t, this.i = 0;
   }
@@ -440,7 +440,7 @@ class qe {
       case "var":
         return n.name === "__loc__" ? { t: "loc", line: n.line } : { t: "var", name: n.name };
       case "format": {
-        if (nt.has(n.name) || this.fail(`'@${n.name}' is not a known format`, n.pos), this.peek().k === "str") {
+        if (it.has(n.name) || this.fail(`'@${n.name}' is not a known format`, n.pos), this.peek().k === "str") {
           const r = this.next().parts.map((i) => typeof i == "string" ? i : $e(i.raw));
           return { t: "fmtnstr", name: n.name, parts: r };
         }
@@ -567,12 +567,12 @@ class qe {
     }
   }
 }
-function Ie(e) {
+function Je(e) {
   if (e.trim() === "") throw new ce("empty program", 0);
-  return new qe(Pe(e), e).parseProgram();
+  return new Ce(Ie(e), e).parseProgram();
 }
 function $e(e) {
-  return new qe(Pe(e), e).parseProgram();
+  return new Ce(Ie(e), e).parseProgram();
 }
 function re(e, n) {
   if (e.parts.length === 1 && typeof e.parts[0] == "string") return e.parts[0];
@@ -607,7 +607,7 @@ function ke(e) {
       return `'${e.k}'`;
   }
 }
-const rt = {
+const ot = {
   alpha: "A-Za-z",
   digit: "0-9",
   alnum: "0-9A-Za-z",
@@ -620,10 +620,10 @@ const rt = {
   xdigit: "0-9A-Fa-f",
   word: "\\w"
 };
-function it(e) {
-  return e.replace(/\[:(\w+):\]/g, (n, t) => rt[t] ?? n);
+function st(e) {
+  return e.replace(/\[:(\w+):\]/g, (n, t) => ot[t] ?? n);
 }
-function ot(e) {
+function lt(e) {
   let n = "", t = !1;
   for (let r = 0; r < e.length; r++) {
     const i = e[r];
@@ -649,7 +649,7 @@ function ot(e) {
   }
   return n;
 }
-function st(e) {
+function at(e) {
   let n = "";
   for (let t = 0; t < e.length; t++) {
     const r = e[t];
@@ -661,7 +661,7 @@ function st(e) {
   }
   return n;
 }
-function lt(e) {
+function ft(e) {
   const n = [];
   let t = !1;
   for (let r = 0; r < e.length; r++) {
@@ -702,21 +702,21 @@ function xe(e, n) {
       else if (l !== "s") if (l === "n") i = !0;
       else throw u(n, `${n === null ? "" : n} is not a valid modifier string`);
     }
-  let o = st(it(e));
-  (n ?? "").includes("x") && (o = ot(o));
+  let o = at(st(e));
+  (n ?? "").includes("x") && (o = lt(o));
   let s;
   try {
     s = new RegExp(o, t);
   } catch (l) {
     throw u(e, `"${e}" is not a valid regex: ${l.message.replace(/^Invalid regular expression: /, "")}`);
   }
-  return { re: s, global: r, nonEmpty: i, names: lt(e) };
+  return { re: s, global: r, nonEmpty: i, names: ft(e) };
 }
 function ie(e, n) {
   const t = e.charCodeAt(n);
   return t >= 55296 && t <= 56319 && n + 1 < e.length ? 2 : 1;
 }
-class Ce {
+class Re {
   constructor(n) {
     this.text = n, this.marks = [];
     for (let t = 0; t < n.length; )
@@ -744,7 +744,7 @@ function* P(e, n) {
     t.lastIndex = r;
     const i = t.exec(e);
     if (i === null) return;
-    const o = new Ce(e);
+    const o = new Re(e);
     if (i[0] === "" && n.nonEmpty) {
       const s = i.index + ie(e, i.index);
       if (s > e.length) return;
@@ -754,7 +754,7 @@ function* P(e, n) {
     if (yield { m: i, cp: o }, !n.global || (r = i[0] === "" ? i.index + ie(e, i.index) : i.index + i[0].length, r > e.length)) return;
   }
 }
-function at(e, n, t) {
+function ct(e, n, t) {
   const { m: r, cp: i } = n, o = r.indices, s = [];
   for (let l = 1; l < r.length; l++) {
     const a = o?.[l], p = r[l];
@@ -771,7 +771,7 @@ function at(e, n, t) {
   }
   return { offset: i.cp(r.index), length: i.cpLen(r.index, r[0].length), string: r[0], captures: s };
 }
-function L(e, n) {
+function F(e, n) {
   const { m: t, cp: r } = e, i = t.indices, o = {};
   for (let s = 1; s < t.length; s++) {
     const l = n.names[s - 1];
@@ -781,10 +781,10 @@ function L(e, n) {
   }
   return o;
 }
-function Je(e) {
+function Me(e) {
   return e.names.some((n) => n !== null);
 }
-function Re(e, n) {
+function Te(e, n) {
   const t = { ...n, global: !0 }, r = [];
   let i = 0;
   for (const { m: o } of P(e, t))
@@ -802,7 +802,7 @@ function y(e) {
 function _(e) {
   return typeof e == "string" ? e : y(e);
 }
-function ft(e, n = 2) {
+function ut(e, n = 2) {
   const t = (i) => " ".repeat(n * i), r = (i, o) => {
     if (Array.isArray(i))
       return i.length === 0 ? "[]" : `[
@@ -869,22 +869,22 @@ class Q extends Error {
   }
 }
 const q = (e, n, t) => ({ k: "var", name: n, value: t, parent: e }), W = (e, n) => ({ k: "fn", ...n, parent: e });
-function ct(e, n) {
+function pt(e, n) {
   for (let t = e; t !== null; t = t.parent)
     if (t.k === "var" && t.name === n) return t.value;
   throw u(n, `$${n} is not defined (pass --arg ${n} <value> or --argjson ${n} <json>)`);
 }
-function Me(e, n, t) {
+function Ue(e, n, t) {
   for (let r = e; r !== null; r = r.parent)
     if (r.k === "fn" && r.name === n && r.arity === t) return r;
   return null;
 }
-const x = { nextInput: null, filename: null, env: {}, depth: 0 };
-function Te(e, n) {
+const k = { nextInput: null, filename: null, env: {}, depth: 0 };
+function Ve(e, n) {
   const t = { ...e };
   for (const [r, i] of Object.entries(n)) {
     const o = t[r];
-    t[r] = g(o) && g(i) ? Te(o, i) : i;
+    t[r] = g(o) && g(i) ? Ve(o, i) : i;
   }
   return t;
 }
@@ -911,7 +911,7 @@ function oe(e, n, t) {
         if (!Number.isInteger(i)) throw J(n, t, "multiplied");
         return i <= 0 ? null : r.repeat(i);
       }
-      if (g(n) && g(t)) return Te(n, t);
+      if (g(n) && g(t)) return Ve(n, t);
       throw J(n, t, "multiplied");
     }
     case "/":
@@ -991,10 +991,10 @@ function E(e) {
   if (typeof e != "string") throw u(e, `${y(e)} (${m(e)}) cannot be matched, as it is not a string`);
   return e;
 }
-function D(e, n, t) {
+function L(e, n, t) {
   return [...f(e, n, t)];
 }
-function G(e, n) {
+function X(e, n) {
   let t = e;
   for (const r of n)
     typeof r == "string" || typeof r == "number" ? t = z(t, r) : t = ue(t, r.start, r.end);
@@ -1070,16 +1070,16 @@ function* O(e, n, t, r) {
       yield [...r];
       return;
     case "field": {
-      ut(n, e.name), yield [...r, e.name];
+      ht(n, e.name), yield [...r, e.name];
       return;
     }
     case "index":
       for (const i of f(e.key, n, t))
-        pt(n, i), yield [...r, i];
+        dt(n, i), yield [...r, i];
       return;
     case "slice":
-      for (const i of e.lo !== null ? f(e.lo, n, t) : X(null))
-        for (const o of e.hi !== null ? f(e.hi, n, t) : X(null)) {
+      for (const i of e.lo !== null ? f(e.lo, n, t) : H(null))
+        for (const o of e.hi !== null ? f(e.hi, n, t) : H(null)) {
           if (n !== null && !Array.isArray(n) && typeof n != "string") throw u(n, `Cannot slice ${m(n)} (${y(n)})`);
           yield [...r, { start: Ae(i), end: Ae(o) }];
         }
@@ -1094,7 +1094,7 @@ function* O(e, n, t, r) {
     }
     case "pipe":
       for (const i of O(e.l, n, t, r)) {
-        const o = G(n, i.slice(r.length));
+        const o = X(n, i.slice(r.length));
         yield* O(e.r, o, t, i);
       }
       return;
@@ -1109,7 +1109,7 @@ function* O(e, n, t, r) {
       }
       return;
     case "if":
-      yield* Ue(e.clauses, e.els, 0, n, t, r);
+      yield* Le(e.clauses, e.els, 0, n, t, r);
       return;
     case "call": {
       if (e.name === "select" && e.args.length === 1) {
@@ -1125,7 +1125,7 @@ function* O(e, n, t, r) {
         for (const o of f(e.args[0], n, t)) yield [...r, ...ee(o)];
         return;
       }
-      const i = Me(t, e.name, e.args.length);
+      const i = Ue(t, e.name, e.args.length);
       if (i !== null) {
         yield* se(i, 0, e.args, n, t, i.paramClosure === !0 ? i.defEnv : W(i.defEnv, i), r);
         return;
@@ -1147,14 +1147,14 @@ function* se(e, n, t, r, i, o, s) {
   else
     yield* se(e, n + 1, t, r, i, W(o, { name: l.name, arity: 0, params: [], body: t[n], defEnv: i, paramClosure: !0 }), s);
 }
-function* Ue(e, n, t, r, i, o) {
+function* Le(e, n, t, r, i, o) {
   if (t === e.length) {
     n !== null ? yield* O(n, r, i, o) : yield [...o];
     return;
   }
   const { cond: s, then: l } = e[t];
   for (const a of f(s, r, i))
-    A(a) ? yield* O(l, r, i, o) : yield* Ue(e, n, t + 1, r, i, o);
+    A(a) ? yield* O(l, r, i, o) : yield* Le(e, n, t + 1, r, i, o);
 }
 function* le(e, n) {
   if (yield [...n], Array.isArray(e))
@@ -1162,11 +1162,11 @@ function* le(e, n) {
   else if (g(e))
     for (const t of Object.keys(e)) yield* le(e[t], [...n, t]);
 }
-function ut(e, n) {
+function ht(e, n) {
   if (!(e === null || g(e)))
     throw u(n, `Cannot index ${m(e)} with "${n}"`);
 }
-function pt(e, n) {
+function dt(e, n) {
   if (e !== null) {
     if (typeof n == "string" && !g(e)) throw u(n, `Cannot index ${m(e)} with "${n}"`);
     if (typeof n == "number" && !Array.isArray(e)) throw u(n, `Cannot index ${m(e)} with number`);
@@ -1178,7 +1178,7 @@ function Ae(e) {
   return Math.floor(e);
 }
 const V = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-function ht(e) {
+function yt(e) {
   const n = new TextEncoder().encode(e);
   let t = "";
   for (let r = 0; r < n.length; r += 3) {
@@ -1187,7 +1187,7 @@ function ht(e) {
   }
   return t;
 }
-function dt(e) {
+function mt(e) {
   const n = e.replace(/[\s=]+/g, ""), t = [];
   let r = 0, i = 0;
   for (const o of n) {
@@ -1204,9 +1204,9 @@ function _e(e, n) {
     case "json":
       return y(n);
     case "base64":
-      return ht(_(n));
+      return yt(_(n));
     case "base64d":
-      return dt(j(n, "@base64d"));
+      return mt(j(n, "@base64d"));
     case "uri":
       return encodeURIComponent(_(n));
     case "html":
@@ -1236,11 +1236,11 @@ function Se(e, n, t) {
   return { ok: !1, value: null };
 }
 function he(e, n, t) {
-  return e.map((r) => ({ el: r, key: D(n, r, t) })).sort((r, i) => b(r.key, i.key));
+  return e.map((r) => ({ el: r, key: L(n, r, t) })).sort((r, i) => b(r.key, i.key));
 }
-const F = /* @__PURE__ */ new Map();
+const D = /* @__PURE__ */ new Map();
 function c(e, n, t) {
-  F.set(`${e}/${n}`, t);
+  D.set(`${e}/${n}`, t);
 }
 c("empty", 0, function* () {
 });
@@ -1308,7 +1308,7 @@ c("tojson", 0, function* (e) {
 c("fromjson", 0, function* (e) {
   const n = j(e, "fromjson");
   try {
-    yield $t(n);
+    yield xt(n);
   } catch (t) {
     throw t instanceof T ? t : u(n, `${y(n)} cannot be parsed as JSON: ${t.message}`);
   }
@@ -1369,11 +1369,11 @@ c("max", 0, function* (e) {
 });
 c("min_by", 1, function* (e, [n], t) {
   const r = $(e, "min_by");
-  r.length === 0 ? yield null : yield r.reduce((i, o) => b(D(n, o, t), D(n, i, t)) < 0 ? o : i);
+  r.length === 0 ? yield null : yield r.reduce((i, o) => b(L(n, o, t), L(n, i, t)) < 0 ? o : i);
 });
 c("max_by", 1, function* (e, [n], t) {
   const r = $(e, "max_by");
-  r.length === 0 ? yield null : yield r.reduce((i, o) => b(D(n, o, t), D(n, i, t)) > 0 ? o : i);
+  r.length === 0 ? yield null : yield r.reduce((i, o) => b(L(n, o, t), L(n, i, t)) > 0 ? o : i);
 });
 c("sort", 0, function* (e) {
   yield [...$(e, "sort")].sort(b);
@@ -1535,7 +1535,7 @@ c("path", 1, function* (e, [n], t) {
   for (const r of O(n, e, t, [])) yield r;
 });
 c("getpath", 1, function* (e, [n], t) {
-  for (const r of f(n, e, t)) yield G(e, ee(r));
+  for (const r of f(n, e, t)) yield X(e, ee(r));
 });
 c("setpath", 2, function* (e, [n, t], r) {
   for (const i of f(n, e, r)) {
@@ -1559,7 +1559,7 @@ c("indices", 1, function* (e, [n], t) {
     }
     if (typeof e == "string") {
       if (typeof r != "string") throw u(r, `Cannot get indices of ${m(r)} in string`);
-      yield r === "" ? [] : yt(e, r);
+      yield r === "" ? [] : gt(e, r);
     } else if (Array.isArray(e)) {
       const i = Array.isArray(r) ? r : [r];
       if (i.length === 0) {
@@ -1580,8 +1580,8 @@ c("indices", 1, function* (e, [n], t) {
     } else throw u(r, `Cannot get indices of ${m(e)}`);
   }
 });
-function yt(e, n) {
-  const t = new Ce(e), r = [];
+function gt(e, n) {
+  const t = new Re(e), r = [];
   let i = 0;
   for (; ; ) {
     const o = e.indexOf(n, i);
@@ -1590,13 +1590,13 @@ function yt(e, n) {
   }
 }
 c("index", 1, function* (e, [n], t) {
-  for (const r of Ve(e, n, t)) yield Array.isArray(r) && r.length > 0 ? r[0] : null;
+  for (const r of De(e, n, t)) yield Array.isArray(r) && r.length > 0 ? r[0] : null;
 });
 c("rindex", 1, function* (e, [n], t) {
-  for (const r of Ve(e, n, t)) yield Array.isArray(r) && r.length > 0 ? r[r.length - 1] : null;
+  for (const r of De(e, n, t)) yield Array.isArray(r) && r.length > 0 ? r[r.length - 1] : null;
 });
-function* Ve(e, n, t) {
-  yield* F.get("indices/1")(e, [n], t);
+function* De(e, n, t) {
+  yield* D.get("indices/1")(e, [n], t);
 }
 c("transpose", 0, function* (e) {
   const n = $(e, "transpose");
@@ -1631,24 +1631,24 @@ c("ascii", 0, function* (e) {
   yield String.fromCodePoint(n);
 });
 c("env", 0, function* () {
-  yield { ...x.env };
+  yield { ...k.env };
 });
 c("input", 0, function* () {
-  if (x.nextInput === null) throw u(null, "No more inputs");
-  const e = x.nextInput();
+  if (k.nextInput === null) throw u(null, "No more inputs");
+  const e = k.nextInput();
   if (e === null) throw u(null, "No more inputs");
   yield e;
 });
 c("inputs", 0, function* () {
-  if (x.nextInput === null) throw u(null, "No more inputs");
+  if (k.nextInput === null) throw u(null, "No more inputs");
   for (; ; ) {
-    const e = x.nextInput();
+    const e = k.nextInput();
     if (e === null) return;
     yield e;
   }
 });
 c("input_filename", 0, function* () {
-  yield x.filename;
+  yield k.filename;
 });
 c("halt", 0, function* () {
   throw new Q(0, null);
@@ -1683,59 +1683,59 @@ c("test", 2, function* (e, [n, t], r) {
 });
 c("match", 1, function* (e, [n], t) {
   const r = E(e);
-  for (const i of S(e, n, null, t)) yield* De(r, i);
+  for (const i of S(e, n, null, t)) yield* Fe(r, i);
 });
 c("match", 2, function* (e, [n, t], r) {
   const i = E(e);
-  for (const o of S(e, n, t, r)) yield* De(i, o);
+  for (const o of S(e, n, t, r)) yield* Fe(i, o);
 });
-function* De(e, n) {
-  for (const t of P(e, n)) yield at(e, t, n);
+function* Fe(e, n) {
+  for (const t of P(e, n)) yield ct(e, t, n);
 }
 c("capture", 1, function* (e, [n], t) {
   const r = E(e);
   for (const i of S(e, n, null, t))
-    for (const o of P(r, i)) yield L(o, i);
+    for (const o of P(r, i)) yield F(o, i);
 });
 c("capture", 2, function* (e, [n, t], r) {
   const i = E(e);
   for (const o of S(e, n, t, r))
-    for (const s of P(i, o)) yield L(s, o);
+    for (const s of P(i, o)) yield F(s, o);
 });
 c("scan", 1, function* (e, [n], t) {
   const r = E(e);
   for (const i of S(e, n, null, t))
-    for (const o of P(r, { ...i, global: !0 })) yield Je(i) ? L(o, i) : o.m[0];
+    for (const o of P(r, { ...i, global: !0 })) yield Me(i) ? F(o, i) : o.m[0];
 });
 c("scan", 2, function* (e, [n, t], r) {
   const i = E(e);
   for (const o of S(e, n, t, r))
-    for (const s of P(i, { ...o, global: !0 })) yield Je(o) ? L(s, o) : s.m[0];
+    for (const s of P(i, { ...o, global: !0 })) yield Me(o) ? F(s, o) : s.m[0];
 });
 c("split", 2, function* (e, [n, t], r) {
   const i = j(e, "split");
-  for (const o of S(e, n, t, r)) yield Re(i, o);
+  for (const o of S(e, n, t, r)) yield Te(i, o);
 });
 c("splits", 2, function* (e, [n, t], r) {
   const i = j(e, "splits");
-  for (const o of S(e, n, t, r)) yield* Re(i, o);
+  for (const o of S(e, n, t, r)) yield* Te(i, o);
 });
 function* te(e, n, t, r, i, o) {
   const s = E(e);
   for (const l of S(e, n, t, i)) {
     const a = o || l.global, p = [...P(s, { ...l, global: !0 })], h = a ? p : p.slice(0, 1);
-    yield* Fe(s, h, 0, 0, "", r, i, l);
+    yield* We(s, h, 0, 0, "", r, i, l);
   }
 }
-function* Fe(e, n, t, r, i, o, s, l) {
+function* We(e, n, t, r, i, o, s, l) {
   if (t === n.length) {
     yield i + e.slice(r);
     return;
   }
-  const { m: a, cp: p } = n[t], h = e.slice(r, a.index), w = L({ m: a, cp: p }, l);
+  const { m: a, cp: p } = n[t], h = e.slice(r, a.index), w = F({ m: a, cp: p }, l);
   for (const d of f(o, w, s)) {
     if (typeof d != "string") throw u(d, `sub/gsub replacement must be a string (${y(d)} given)`);
-    yield* Fe(e, n, t + 1, a.index + a[0].length, i + h + d, o, s, l);
+    yield* We(e, n, t + 1, a.index + a[0].length, i + h + d, o, s, l);
   }
 }
 c("sub", 2, function* (e, [n, t], r) {
@@ -1750,7 +1750,7 @@ c("gsub", 2, function* (e, [n, t], r) {
 c("gsub", 3, function* (e, [n, t, r], i) {
   yield* te(e, n, r, t, i, !0);
 });
-const mt = [
+const wt = [
   "def recurse(f): def r: ., (f | r); r;",
   "def recurse: recurse(.[]?);",
   'def objects: select(type == "object");',
@@ -1784,8 +1784,8 @@ const mt = [
   "def splits($re): splits($re; null);",
   "def ascii: [.] | implode;"
 ].join(`
-`), Le = (() => {
-  const e = Ie(`${mt}
+`), ze = (() => {
+  const e = Je(`${wt}
 empty`), n = [];
   let t = e;
   for (; t.t === "def"; )
@@ -1795,25 +1795,28 @@ empty`), n = [];
     r = { ...n[i], parent: r }, n[i] = r;
   for (const i of n) i.defEnv = r;
   return r;
-})(), We = (() => {
+})(), Ze = (() => {
   const e = /* @__PURE__ */ new Set();
-  for (let n = Le; n !== null && n.k === "fn"; n = n.parent) e.add(`${n.name}/${n.arity}`);
+  for (let n = ze; n !== null && n.k === "fn"; n = n.parent) e.add(`${n.name}/${n.arity}`);
   return e;
-})(), Oe = /* @__PURE__ */ new Set([...F.keys(), ...We]);
-function gt(e, n) {
-  let t = q(Le, "ENV", n);
+})(), Oe = /* @__PURE__ */ new Set([...D.keys(), ...Ze]);
+function bt(e, n) {
+  let t = q(ze, "ENV", n);
   for (const [r, i] of e) t = q(t, r, i);
   return t;
 }
-const Ee = 400;
-function* wt(e, n, t, r) {
-  if (x.depth++, x.depth > Ee)
-    throw x.depth--, u(null, `jq recursion limit exceeded (over ${Ee} nested function calls)`);
+const Ee = 400, Ne = 1e6;
+let Pe = 0;
+function* $t(e, n, t, r) {
+  if (k.depth === 0 && (Pe = 0), ++Pe > Ne)
+    throw u(null, `jq step limit exceeded (over ${Ne} function calls)`);
+  if (k.depth++, k.depth > Ee)
+    throw k.depth--, u(null, `jq recursion limit exceeded (over ${Ee} nested function calls)`);
   try {
     const i = e.paramClosure === !0 ? e.defEnv : W(e.defEnv, e);
     yield* ae(e, 0, n, t, r, i);
   } finally {
-    x.depth--;
+    k.depth--;
   }
 }
 function* ae(e, n, t, r, i, o) {
@@ -1836,10 +1839,10 @@ function* f(e, n, t) {
       yield e.v;
       return;
     case "str":
-      yield* H(e.parts, 0, "", n, t, _);
+      yield* G(e.parts, 0, "", n, t, _);
       return;
     case "fmtnstr":
-      yield* H(e.parts, 0, "", n, t, (r) => {
+      yield* G(e.parts, 0, "", n, t, (r) => {
         const i = _e(e.name, r);
         return j(i, `@${e.name}`);
       });
@@ -1854,8 +1857,8 @@ function* f(e, n, t) {
       for (const r of f(e.key, n, t)) yield z(n, r);
       return;
     case "slice":
-      for (const r of e.lo !== null ? f(e.lo, n, t) : X(null))
-        for (const i of e.hi !== null ? f(e.hi, n, t) : X(null)) yield ue(n, r, i);
+      for (const r of e.lo !== null ? f(e.lo, n, t) : H(null))
+        for (const i of e.hi !== null ? f(e.hi, n, t) : H(null)) yield ue(n, r, i);
       return;
     case "iter":
       yield* Z(n);
@@ -1931,7 +1934,7 @@ function* f(e, n, t) {
       }
     }
     case "if":
-      yield* ze(e.clauses, e.els, 0, n, t);
+      yield* Be(e.clauses, e.els, 0, n, t);
       return;
     case "reduce": {
       for (const r of f(e.init, n, t)) {
@@ -1997,7 +2000,7 @@ function* f(e, n, t) {
         const s = [...r].sort((a, p) => b(p, a));
         let l = n;
         for (const a of s) {
-          const p = G(l, a);
+          const p = X(l, a);
           let h;
           for (const w of f(e.rhs, p, t)) {
             h = w;
@@ -2012,7 +2015,7 @@ function* f(e, n, t) {
       for (const s of f(e.rhs, n, t)) {
         let l = n;
         for (const a of r) {
-          const p = G(l, a);
+          const p = X(l, a);
           l = M(l, a, o !== void 0 ? oe(o, p, s) : A(p) ? p : s);
         }
         yield l;
@@ -2023,17 +2026,17 @@ function* f(e, n, t) {
       yield { file: "<top-level>", line: e.line };
       return;
     case "var":
-      yield ct(t, e.name);
+      yield pt(t, e.name);
       return;
     case "call": {
-      const r = Me(t, e.name, e.args.length);
+      const r = Ue(t, e.name, e.args.length);
       if (r !== null) {
-        yield* wt(r, e.args, n, t);
+        yield* $t(r, e.args, n, t);
         return;
       }
-      const i = F.get(`${e.name}/${e.args.length}`);
+      const i = D.get(`${e.name}/${e.args.length}`);
       if (i === void 0) {
-        const o = [...F.keys(), ...We].some((s) => s.startsWith(`${e.name}/`));
+        const o = [...D.keys(), ...Ze].some((s) => s.startsWith(`${e.name}/`));
         throw u(e.name, `${e.name}/${e.args.length} is not defined${o ? ` (only ${e.name} with a different arity exists)` : ""}`);
       }
       yield* i(n, e.args, t);
@@ -2050,26 +2053,26 @@ function* f(e, n, t) {
       return;
   }
 }
-function* ze(e, n, t, r, i) {
+function* Be(e, n, t, r, i) {
   if (t === e.length) {
     n !== null ? yield* f(n, r, i) : yield r;
     return;
   }
   const { cond: o, then: s } = e[t];
   for (const l of f(o, r, i))
-    A(l) ? yield* f(s, r, i) : yield* ze(e, n, t + 1, r, i);
+    A(l) ? yield* f(s, r, i) : yield* Be(e, n, t + 1, r, i);
 }
-function* H(e, n, t, r, i, o) {
+function* G(e, n, t, r, i, o) {
   if (n === e.length) {
     yield t;
     return;
   }
   const s = e[n];
   if (typeof s == "string") {
-    yield* H(e, n + 1, t + s, r, i, o);
+    yield* G(e, n + 1, t + s, r, i, o);
     return;
   }
-  for (const l of f(s, r, i)) yield* H(e, n + 1, t + o(l), r, i, o);
+  for (const l of f(s, r, i)) yield* G(e, n + 1, t + o(l), r, i, o);
 }
 function* fe(e, n, t, r, i) {
   if (n === e.length) {
@@ -2088,7 +2091,7 @@ function* fe(e, n, t, r, i) {
     for (const a of f(s, r, i)) yield* fe(e, n + 1, { ...t, [l]: a }, r, i);
   }
 }
-function bt(e, n) {
+function kt(e, n) {
   let t = null;
   const r = (i, o, s, l) => {
     if (t === null)
@@ -2187,12 +2190,12 @@ function bt(e, n) {
   };
   return r(e, n, /* @__PURE__ */ new Set(), /* @__PURE__ */ new Set()), t;
 }
-function $t(e) {
+function xt(e) {
   const n = e.trim();
   if (n === "") throw new Error("empty JSON text");
   return JSON.parse(n);
 }
-function* X(e) {
+function* H(e) {
   yield e;
 }
 class I extends Error {
@@ -2202,28 +2205,28 @@ class I extends Error {
 }
 const Y = (e) => e === " " || e === "	" || e === `
 ` || e === "\r";
-function* Ze(e) {
+function* Ke(e) {
   const n = e.length;
   let t = 0;
   for (; ; ) {
     for (; t < n && Y(e[t]); ) t++;
     if (t >= n) return;
-    const r = t, i = Ke(e, t);
-    yield Be(e, r, i), t = i;
+    const r = t, i = Ge(e, t);
+    yield Xe(e, r, i), t = i;
   }
 }
-function kt(e) {
+function jt(e) {
   const n = e.length;
   let t = 0;
   for (; t < n && Y(e[t]); ) t++;
   if (t >= n) throw new I("empty JSON text (offset 0)", 0);
-  const r = t, i = Ke(e, t), o = Be(e, r, i);
+  const r = t, i = Ge(e, t), o = Xe(e, r, i);
   let s = i;
   for (; s < n && Y(e[s]); ) s++;
   if (s < n) throw new I(`extra data after JSON value (offset ${s})`, s);
   return o;
 }
-function Be(e, n, t) {
+function Xe(e, n, t) {
   try {
     return JSON.parse(e.slice(n, t));
   } catch (r) {
@@ -2231,7 +2234,7 @@ function Be(e, n, t) {
     throw new I(`${i} (offset ${n})`, n);
   }
 }
-function Ke(e, n) {
+function Ge(e, n) {
   const t = e[n], r = e.length;
   if (t === "{" || t === "[") {
     let o = 0, s = n, l = !1;
@@ -2261,10 +2264,10 @@ function Ke(e, n) {
   for (; i < r && !Y(e[i]) && e[i] !== "," && e[i] !== "]" && e[i] !== "}"; ) i++;
   return i;
 }
-function Ge(e, n) {
-  return n.raw && typeof e == "string" ? e : n.compact ? y(e) : ft(e);
+function He(e, n) {
+  return n.raw && typeof e == "string" ? e : n.compact ? y(e) : ut(e);
 }
-const ye = "jq [-rscn] [--arg name value] [--argjson name json] 'FILTER' [file ...]", xt = [
+const ye = "jq [-rscn] [--arg name value] [--argjson name json] 'FILTER' [file ...]", At = [
   "Usage: " + ye,
   "",
   "Filter and transform JSON (a jq subset that covers real use).",
@@ -2299,7 +2302,7 @@ const ye = "jq [-rscn] [--arg name value] [--argjson name json] 'FILTER' [file .
   "",
   "Exit codes: 0 ok · 2 usage/bad input JSON · 3 bad program · 5 runtime",
   "error (later inputs still run); halt/halt_error exit with their code."
-], me = "json [-c] [-r] [file ...]", jt = [
+], me = "json [-c] [-r] [file ...]", _t = [
   "Usage: " + me,
   "",
   "Pretty-print and validate JSON (the jq pretty-printer under an",
@@ -2310,8 +2313,8 @@ const ye = "jq [-rscn] [--arg name value] [--argjson name json] 'FILTER' [file .
   "  -c, --compact   one line per document",
   "  -r, --raw       print strings without quotes",
   "  -h, --help      this help"
-], At = /^[A-Za-z_][A-Za-z0-9_]*$/;
-function _t(e, n, t) {
+], St = /^[A-Za-z_][A-Za-z0-9_]*$/;
+function Ot(e, n, t) {
   const r = [];
   let i = 0, o = !1;
   const s = (l) => {
@@ -2331,10 +2334,10 @@ function _t(e, n, t) {
     if (l.startsWith("--")) {
       switch (l) {
         case "--help":
-          for (const a of xt) n.out(a);
+          for (const a of At) n.out(a);
           return n.exit(0), "handled";
         case "--version":
-          return n.out(St), n.exit(0), "handled";
+          return n.out(Et), n.exit(0), "handled";
         case "--raw-output":
           t.raw = !0;
           break;
@@ -2348,16 +2351,16 @@ function _t(e, n, t) {
           t.nullInput = !0;
           break;
         case "--arg": {
-          const a = s("--arg"), p = s("--arg"), h = Ne(a);
+          const a = s("--arg"), p = s("--arg"), h = qe(a);
           if (h !== null) return h;
           t.vars.set(a, p);
           break;
         }
         case "--argjson": {
-          const a = s("--argjson"), p = s("--argjson"), h = Ne(a);
+          const a = s("--argjson"), p = s("--argjson"), h = qe(a);
           if (h !== null) return h;
           try {
-            t.vars.set(a, kt(p));
+            t.vars.set(a, jt(p));
           } catch {
             return "jq: Invalid JSON text passed to --argjson";
           }
@@ -2390,16 +2393,16 @@ Try 'jq --help' for more information.`;
   }
   return t.files = r, null;
 }
-function Ne(e) {
-  return At.test(e) ? null : `jq: Invalid variable name '${e}' passed to --arg/--argjson`;
+function qe(e) {
+  return St.test(e) ? null : `jq: Invalid variable name '${e}' passed to --arg/--argjson`;
 }
-const St = "jq-1.7-semtext (semtext-sh) — a jq subset for the sem-shell";
-class He extends Error {
+const Et = "jq-1.7-semtext (semtext-sh) — a jq subset for the sem-shell";
+class Ye extends Error {
   constructor(n, t) {
     super(n), this.label = t, this.name = "JqDocError";
   }
 }
-function Ot(e, n) {
+function Nt(e, n) {
   const t = [];
   if (n.length === 0)
     return t.push({ label: "<stdin>", text: e.stdin ?? "" }), t;
@@ -2419,7 +2422,7 @@ function Ot(e, n) {
   }
   return t;
 }
-function Et(e) {
+function Pt(e) {
   let n = 0, t = null;
   return {
     next() {
@@ -2429,9 +2432,9 @@ function Et(e) {
           const i = e[n].label, o = e[n].text;
           t = (function* () {
             try {
-              for (const s of Ze(o)) yield { v: s, file: i };
+              for (const s of Ke(o)) yield { v: s, file: i };
             } catch (s) {
-              throw s instanceof I ? new He(s.message, i) : s;
+              throw s instanceof I ? new Ye(s.message, i) : s;
             }
           })();
         }
@@ -2445,8 +2448,8 @@ function Et(e) {
     }
   };
 }
-function Xe(e, n, t) {
-  const r = Ge(n, t);
+function Qe(e, n, t) {
+  const r = He(n, t);
   if (r === "") {
     e.out("");
     return;
@@ -2454,7 +2457,7 @@ function Xe(e, n, t) {
   for (const i of r.split(`
 `)) e.out(i);
 }
-const Nt = {
+const qt = {
   name: "jq",
   usage: ye,
   complete: (e) => ["-r", "-c", "-s", "-n", "--arg", "--argjson", "--raw-output", "--compact-output", "--slurp", "--null-input", "--help", "--version"].filter(
@@ -2464,7 +2467,7 @@ const Nt = {
     const n = { raw: !1, compact: !1, slurp: !1, nullInput: !1, vars: /* @__PURE__ */ new Map(), files: [] };
     let t;
     try {
-      t = _t(e.args, e, n);
+      t = Ot(e.args, e, n);
     } catch (d) {
       e.err(d.message), e.err("Try 'jq --help' for more information."), e.exit(2);
       return;
@@ -2481,8 +2484,8 @@ const Nt = {
     }
     let i;
     try {
-      i = Ie(r);
-      const d = bt(i, /* @__PURE__ */ new Set([...n.vars.keys(), "ENV"]));
+      i = Je(r);
+      const d = kt(i, /* @__PURE__ */ new Set([...n.vars.keys(), "ENV"]));
       if (d !== null) {
         e.err(`jq: error: ${d}`), e.exit(3);
         return;
@@ -2494,25 +2497,25 @@ const Nt = {
       }
       throw d;
     }
-    const o = Ot(e, n.files);
+    const o = Nt(e, n.files);
     if (o === null) return;
-    const s = Et(o);
+    const s = Pt(o);
     let l = null;
     if (n.nullInput) l = [{ v: null, file: null }];
     else if (n.slurp) {
       const d = [];
       for (; ; ) {
-        const k = s.next();
-        if (k === null) break;
-        d.push(k.v);
+        const x = s.next();
+        if (x === null) break;
+        d.push(x.v);
       }
       l = [{ v: d, file: null }];
     }
-    x.env = { ...e.state.env }, x.depth = 0, x.nextInput = () => {
+    k.env = { ...e.state.env }, k.depth = 0, k.nextInput = () => {
       const d = s.next();
       return d === null ? null : d.v;
     };
-    const a = gt(n.vars.entries(), x.env);
+    const a = bt(n.vars.entries(), k.env);
     let p = 0;
     const h = () => l !== null ? p < l.length ? l[p++] : null : s.next();
     let w = !1;
@@ -2520,31 +2523,31 @@ const Nt = {
       for (; ; ) {
         const d = h();
         if (d === null) break;
-        x.filename = d.file;
+        k.filename = d.file;
         try {
-          for (const k of f(i, d.v, a)) Xe(e, k, n);
-        } catch (k) {
-          if (k instanceof T) {
-            e.err(`jq: error: ${k.jqMessage}`), w = !0;
+          for (const x of f(i, d.v, a)) Qe(e, x, n);
+        } catch (x) {
+          if (x instanceof T) {
+            e.err(`jq: error: ${x.jqMessage}`), w = !0;
             continue;
           }
-          if (k instanceof RangeError) {
+          if (x instanceof RangeError) {
             e.err("jq: error: recursion limit exceeded"), w = !0;
             continue;
           }
-          throw k;
+          throw x;
         }
       }
     } catch (d) {
-      if (d instanceof He) {
+      if (d instanceof Ye) {
         e.err(`jq: error (at ${d.label}): ${d.message}`), e.exit(2);
         return;
       }
       if (d instanceof Q) {
         if (d.payload !== null)
           if (typeof d.payload == "string") e.err(d.payload);
-          else for (const k of Ge(d.payload, { raw: !1, compact: !0 }).split(`
-`)) e.err(k);
+          else for (const x of He(d.payload, { raw: !1, compact: !0 }).split(`
+`)) e.err(x);
         e.exit(d.code);
         return;
       }
@@ -2552,7 +2555,7 @@ const Nt = {
     }
     w && e.exit(5);
   }
-}, Pt = {
+}, It = {
   name: "json",
   usage: me,
   complete: (e) => ["-c", "-r", "--compact", "--raw", "--help"].filter((n) => n.startsWith(e.word)),
@@ -2570,7 +2573,7 @@ const Nt = {
         continue;
       }
       if (a === "--help") {
-        for (const p of jt) e.out(p);
+        for (const p of _t) e.out(p);
         e.exit(0);
         return;
       }
@@ -2619,7 +2622,7 @@ const Nt = {
     let l = !1;
     for (const a of s)
       try {
-        for (const p of Ze(a.text)) Xe(e, p, { raw: r, compact: t });
+        for (const p of Ke(a.text)) Qe(e, p, { raw: r, compact: t });
       } catch (p) {
         if (p instanceof I) {
           e.err(`json: ${a.label}: parse error: ${p.message}`), l = !0;
@@ -2629,7 +2632,7 @@ const Nt = {
       }
     l && e.exit(2);
   }
-}, qt = [Nt, Pt], It = {
+}, Ct = [qt, It], Jt = {
   jq: [
     "NAME",
     "     jq — filter and transform JSON (a jq subset for the sem-shell)",
@@ -2691,9 +2694,9 @@ const Nt = {
     "     flags. Same engine as jq — this is the obvious-name alias for",
     '     "validate and normalize this JSON".'
   ]
-}, Ct = { commands: qt, manPages: It };
+}, Rt = { commands: Ct, manPages: Jt };
 export {
-  qt as commands,
-  It as manPages,
-  Ct as pkg
+  Ct as commands,
+  Jt as manPages,
+  Rt as pkg
 };
