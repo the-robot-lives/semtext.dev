@@ -30,7 +30,8 @@ defmodule SemtextWeb.Hologram.Components.Landing.TryViews do
 
   Placeholder contract for the later lanes (keep these attribute names and
   the window layout stable; the transcript text may change):
-  `<sem-shell start-script="/demo/scripts/<tab>.txt" aria-label="...">` and
+  `<sem-shell start-script="landing-<tab>" aria-label="...">` (named demos
+  from the bundle's script/landing-scripts.ts) and
   `<sem-browser src="/demo/example-deck.sem.html" aria-label="...">`.
   """
 
@@ -42,18 +43,18 @@ defmodule SemtextWeb.Hologram.Components.Landing.TryViews do
       label: "code",
       chrome: "sem-shell · demo/example-deck.sem.html · code view",
       aria: "The deck file in a shell pager",
-      script: "/demo/scripts/code.txt",
+      script: "landing-code",
       src: nil,
       address: nil,
       lines: [
-        "$ cat demo/messages/code.txt",
+        "$ bat demo/example-deck.sem.html",
         "code view — the pager over the deck file:",
         "",
         "    bat demo/example-deck.sem.html",
         "",
         "Up/Down line · PgUp/PgDn page · / find · n/N next/prev · q quit",
         "",
-        "(placeholder — this shell types and runs the script once the shell bundle lands)"
+        "(interactive demo — runs in your browser with JavaScript on)"
       ]
     },
     %{
@@ -71,18 +72,18 @@ defmodule SemtextWeb.Hologram.Components.Landing.TryViews do
       label: "tui",
       chrome: "sem-shell · demo/auth-notes.sem.html · terminal",
       aria: "The notes file in the interactive terminal view",
-      script: "/demo/scripts/tui.txt",
+      script: "landing-tui",
       src: nil,
       address: nil,
       lines: [
-        "$ cat demo/messages/tui.txt",
+        "$ semtext tui demo/auth-notes.sem.html",
         "tui view — the interactive terminal over the notes file:",
         "",
         "    semtext tui demo/auth-notes.sem.html",
         "",
         "arrow keys or click: sections, flashcards, quiz · Esc exits",
         "",
-        "(placeholder — this shell types and runs the script once the shell bundle lands)"
+        "(interactive demo — runs in your browser with JavaScript on)"
       ]
     },
     %{
@@ -90,11 +91,11 @@ defmodule SemtextWeb.Hologram.Components.Landing.TryViews do
       label: "cli",
       chrome: "sem-shell · plain-text readers",
       aria: "The plain-text commands agents run on the demo files",
-      script: "/demo/scripts/cli.txt",
+      script: "landing-cli",
       src: nil,
       address: nil,
       lines: [
-        "$ cat demo/messages/cli.txt",
+        "$ render-card demos/render-demo.card",
         "cli view — plain text out, one command per reader:",
         "",
         "    render-card demos/render-demo.card",
@@ -102,7 +103,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.TryViews do
         "    render-card demos/render-subsection.card",
         "    render-card demos/render-toc.card",
         "",
-        "(placeholder — this shell types and runs the script once the shell bundle lands)"
+        "(interactive demo — runs in your browser with JavaScript on)"
       ]
     }
   ]

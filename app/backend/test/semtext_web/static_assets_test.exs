@@ -23,4 +23,30 @@ defmodule SemtextWeb.StaticAssetsTest do
     conn = get(conn, "/semtext/" <> js)
     assert conn.status == 200
   end
+
+  # The shell's lazy chunks must travel with the bundle: every file the shell
+  # manifest names, all ten command-package chunks, and the wasm worker. These
+  # were never vendored before, so nano / jq / awk / git / … failed on the live
+  # site (sem-shell finish-line §1.4). This guard fails if a future sync drops
+  # them again.
+  test "the shell manifest files and every lazy chunk are served", %{conn: conn} do
+    root = Path.join([Application.app_dir(:semtext), "priv", "static", "semtext"])
+
+    manifest =
+      root |> Path.join("semtext-js-shell-manifest.json") |> File.read!() |> Jason.decode!()
+
+    for {_tag, file} <- manifest do
+      assert File.exists?(Path.join(root, file)), "shell manifest file missing: #{file}"
+      assert get(conn, "/semtext/" <> file).status == 200, "#{file} not served"
+    end
+
+    for pkg <- ~w(fs text jq awk diff git net archive hello wasm) do
+      file = "semtext-pkg-#{pkg}.js"
+      assert File.exists?(Path.join(root, file)), "package chunk missing: #{file}"
+      assert get(conn, "/semtext/" <> file).status == 200, "#{file} not served"
+    end
+
+    assert File.exists?(Path.join(root, "worker-wasm.js")), "wasm worker missing"
+    assert get(conn, "/semtext/worker-wasm.js").status == 200
+  end
 end
