@@ -18,9 +18,20 @@ defmodule Semtext.Reference.Tags do
   else reading this module show it. `mix semtext.export_elements` applies the
   same file to the public /data/elements.json search index. Edit the JSON,
   rebuild, re-export; never edit the generated files.
+
+  CLAUDE-EXAMPLE LAYER: `priv/data/claude-examples.json` (loaded by
+  `Semtext.Reference.ClaudeExamples`) carries every tag's "SemText — Claude
+  example" — the fragment each reference card shows as a static code block
+  and renders live. Mandatory per tag, like the copy layer: a tag without
+  an entry, or an entry naming no tag, fails the build. Refresh path after
+  a subtree pull: `mix semtext.gen_reference --web <web> --seed-claude-examples`
+  (re-seeds `"source": "seed"` entries from the new spec examples; `"hand"`
+  entries are never touched), then `mix test` (the validator test). See
+  `docs/reference-refresh.md`. Each tag record gains `claude_example` (the
+  code) and `claude_example_source` (`:hand` | `:seed`).
   """
 
-  alias Semtext.Reference.{Bundles, Elements, Glossary}
+  alias Semtext.Reference.{Bundles, ClaudeExamples, Elements, Glossary}
 
   @typedoc "One element record; see Elements for the shape."
   @type tag :: map()
@@ -48,8 +59,11 @@ defmodule Semtext.Reference.Tags do
   @unknown_overrides Map.keys(@overrides) -- Enum.map(@raw_tags, & &1.name)
   :ok =
     case @unknown_overrides do
-      [] -> :ok
-      extra -> raise ArgumentError, "description-overrides.json names unknown tags: #{inspect(extra)}"
+      [] ->
+        :ok
+
+      extra ->
+        raise ArgumentError, "description-overrides.json names unknown tags: #{inspect(extra)}"
     end
 
   @all_tags Enum.map(@raw_tags, fn t ->
@@ -61,6 +75,27 @@ defmodule Semtext.Reference.Tags do
                 :error ->
                   raise ArgumentError,
                         "description-overrides.json has no entry for tag #{t.name}"
+              end
+            end)
+
+  # Claude-example layer (mandatory per tag; see moduledoc).
+  @claude_examples ClaudeExamples.all()
+  @unknown_claude Map.keys(@claude_examples) -- Enum.map(@raw_tags, & &1.name)
+  :ok =
+    case @unknown_claude do
+      [] -> :ok
+      extra -> raise ArgumentError, "claude-examples.json names unknown tags: #{inspect(extra)}"
+    end
+
+  @all_tags Enum.map(@all_tags, fn t ->
+              case Map.fetch(@claude_examples, t.name) do
+                {:ok, %{code: code, source: source}} when code != "" ->
+                  t |> Map.put(:claude_example, code) |> Map.put(:claude_example_source, source)
+
+                _ ->
+                  raise ArgumentError,
+                        "claude-examples.json has no entry for tag #{t.name} " <>
+                          "(run node app/scripts/seed-claude-examples.mjs)"
               end
             end)
 

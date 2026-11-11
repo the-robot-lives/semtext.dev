@@ -42,6 +42,24 @@ defmodule SemtextWeb.ReferencePagesTest do
       refute body =~ "No summary stated"
     end
 
+    test "every card carries its Claude-example code block, renders collapsed", %{conn: conn} do
+      body = html_response(conn, 200)
+      total = length(Semtext.Reference.Tags.all_tags())
+      blocks = length(String.split(body, ~s(class="ref-claude-code"))) - 1
+      assert blocks == total
+      assert body =~ "SemText — Claude example"
+      assert body =~ ~s(data-sem-shell="pending")
+      # Collapsed by default: no Claude render pane boots at load.
+      refute body =~ ~s(id="claude-sem-note-pane")
+      assert body =~ ~s(<article data-ref-tag="sem-note")
+    end
+
+    test "renders the show-renders switch, off by default", %{conn: conn} do
+      body = html_response(conn, 200)
+      assert body =~ ~s(id="ref-show-renders")
+      assert body =~ ~r/aria-pressed="false"[^>]*>\s*Show renders/
+    end
+
     test "loads the reference assets", %{conn: conn} do
       body = html_response(conn, 200)
       assert body =~ "/css/reference.css"
@@ -70,6 +88,15 @@ defmodule SemtextWeb.ReferencePagesTest do
       body = html_response(conn, 200)
       assert body =~ "ref-attrs"
       assert body =~ "variant"
+    end
+
+    test "renders the Claude example, always on, above the Example section", %{conn: conn} do
+      body = html_response(conn, 200)
+      [before_example | _] = String.split(body, ~s(id="example-h"))
+      assert before_example =~ ~s(id="claude-example-h")
+      assert before_example =~ ~s(id="claude-sem-note-pane")
+      assert before_example =~ ~s(class="ref-claude-code")
+      refute before_example =~ ~s(data-sem-defer)
     end
 
     test "renders the example section with a viewer pane payload", %{conn: conn} do

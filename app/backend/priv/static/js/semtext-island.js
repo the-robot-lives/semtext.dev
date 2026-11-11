@@ -200,8 +200,40 @@
     syncPane(document.getElementById(id));
   }
 
+  // ————— deferred panes (reference cards) —————
+  // A pane carrying data-sem-defer="visible" boots only once it scrolls
+  // near the viewport, so a page of expanded cards never boots every
+  // island at once. Idempotent per element (the resync observer calls
+  // syncPane on every mutation); a Hologram patch that replaces the pane
+  // element simply registers the new one. No IntersectionObserver => boot
+  // immediately.
+  var deferIO = null;
+  function deferUntilVisible(pane) {
+    if (pane.__semVisible) return false;
+    if (!("IntersectionObserver" in window)) return false;
+    if (pane.__semObserved) return true;
+    pane.__semObserved = true;
+    if (!deferIO) {
+      deferIO = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            var el = entry.target;
+            deferIO.unobserve(el);
+            el.__semVisible = true;
+            syncPane(el);
+          });
+        },
+        { rootMargin: "200px 0px" }
+      );
+    }
+    deferIO.observe(pane);
+    return true;
+  }
+
   function syncPane(pane) {
     if (!pane) return;
+    if (pane.getAttribute("data-sem-defer") === "visible" && deferUntilVisible(pane)) return;
     var spec;
     try {
       spec = JSON.parse(pane.getAttribute("data-sem-pane") || "null");
@@ -541,7 +573,9 @@
     var input = document.getElementById("ref-search");
     if (!input) return;
 
-    var cards = document.querySelectorAll("main a[data-ref-tag]");
+    // Cards are <article data-ref-tag> (they hold the Claude-example block,
+    // which cannot nest in a link).
+    var cards = document.querySelectorAll("main [data-ref-tag]");
     var links = [].slice.call(
       document.querySelectorAll('nav[aria-label="Docs"] a[data-ref]')
     );
