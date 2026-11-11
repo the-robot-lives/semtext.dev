@@ -18,28 +18,28 @@ defmodule Semtext.Reference.SemMd do
   # The TS literal, byte-for-byte (except indentation, which HTML ignores
   # between block elements and which the heredoc would otherwise bake in).
   @rendered """
-  <div class="ref-md-static">
-    <div class="ref-md-static-label">Token lifetimes</div>
-    <table>
-      <thead>
-        <tr>
-          <th scope="col" style="text-align: left">Token</th>
-          <th scope="col" style="text-align: right">Lifetime</th>
-          <th scope="col" style="text-align: center">Rotates</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>access</td><td style="text-align: right">15 min</td><td style="text-align: center">no</td></tr>
-        <tr><td>refresh</td><td style="text-align: right">30 days</td><td style="text-align: center">yes</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <sem-md id="m-lifetimes" label="Token lifetimes" controls="toggle,copy">| Token   | Lifetime | Rotates |
-  | :------ | -------: | :-----: |
-  | access  | 15 min   | no      |
-  | refresh | 30 days  | yes     |</sem-md>
-  """
-  |> String.replace_suffix("\n", "")
+            <div class="ref-md-static">
+              <div class="ref-md-static-label">Token lifetimes</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col" style="text-align: left">Token</th>
+                    <th scope="col" style="text-align: right">Lifetime</th>
+                    <th scope="col" style="text-align: center">Rotates</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>access</td><td style="text-align: right">15 min</td><td style="text-align: center">no</td></tr>
+                  <tr><td>refresh</td><td style="text-align: right">30 days</td><td style="text-align: center">yes</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <sem-md id="m-lifetimes" label="Token lifetimes" controls="toggle,copy">| Token   | Lifetime | Rotates |
+            | :------ | -------: | :-----: |
+            | access  | 15 min   | no      |
+            | refresh | 30 days  | yes     |</sem-md>
+            """
+            |> String.replace_suffix("\n", "")
 
   @doc "The authored block, verbatim from the generated inventory."
   @spec source() :: String.t()

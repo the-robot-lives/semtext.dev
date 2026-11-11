@@ -37,6 +37,22 @@ export function collapseWhitespace(value: string): string {
   return value.replace(/\s+/g, ' ').trim()
 }
 
+/**
+ * Whitespace-collapses each line of `value` while keeping `\n` row breaks
+ * verbatim (runs of blank lines collapse to one). The boxed-prose capture
+ * rule: `<br>` variants and literal newlines are hard row breaks at draw
+ * time (proseLines), labels/summaries still flatten via collapseWhitespace.
+ */
+export function collapseLines(value: string): string {
+  return value
+    .split('\n')
+    .map(line => collapseWhitespace(line))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/^\n+/, '')
+    .replace(/\n+$/, '')
+}
+
 /** 60-char word-boundary summary of a body — the browser reveal rule. */
 export function truncateSummary(value: string): string {
   const flat = collapseWhitespace(value)
@@ -338,6 +354,7 @@ export const GLYPHS = {
   },
   tree: { branch: '├──', last: '└──', spine: '│', blank: ' ' },
   crumb: '›',
+  selected: '❯',
   toggle: { open: '▸', shut: '▾' },
   quote: '▌',
   option: '▢',
@@ -467,17 +484,62 @@ export function truncateCell(value: string, width: number): string {
 }
 
 /**
- * Splits `value` into at most `maxLines` rows of `width` code points, cutting
- * the last row short with `…` when content remains. Code-point safe.
+ * Splits `value` into at most `maxLines` rows of at most `width` code points.
+ * Word mode (default) wraps prose at whitespace: each row breaks after the
+ * last whole word that fits and the break's whitespace run is consumed, while
+ * leading indentation survives and a token longer than the width hard-cuts.
+ * Char mode keeps the raw fixed-width slicing — code/pre bodies pass it so
+ * source lines never reflow (tables truncate cells instead and never reach
+ * this helper). The final row ends in `…` when content remains. Width counts
+ * code points like truncateCell — an emoji is one unit, so double-width
+ * glyphs still misalign by one cell (accepted, tracked in the defect ledger).
  */
-export function wrapLines(value: string, width: number, maxLines: number): string[] {
+export function wrapLines(
+  value: string,
+  width: number,
+  maxLines: number,
+  mode: 'word' | 'char' = 'word',
+): string[] {
   const cells = Math.max(1, width)
   const chars = Array.from(value)
   const out: string[] = []
+  const isSpace = (ch: string): boolean => ch === ' ' || ch === '\t' || ch === '\n'
   let at = 0
   while (at < chars.length && out.length < maxLines) {
-    out.push(chars.slice(at, at + cells).join(''))
-    at += cells
+    const rest = chars.length - at
+    if (rest <= cells) {
+      out.push(chars.slice(at).join(''))
+      at += rest
+      break
+    }
+    const window = chars.slice(at, at + cells)
+    // Last whitespace inside the window: the wrap point (word mode only).
+    let brk = -1
+    if (mode === 'word') {
+      for (let i = window.length - 1; i >= 0; i--) {
+        if (isSpace(window[i]!)) {
+          brk = i
+          break
+        }
+      }
+    }
+    if (brk > 0) {
+      out.push(window.slice(0, brk).join(''))
+      at += brk
+      // The whole run at the break is the boundary — consume it so the next
+      // row starts on a word character.
+      while (at < chars.length && isSpace(chars[at]!)) at++
+    } else if (brk === 0 && at > 0) {
+      // The window opens on whitespace mid-text: it is the boundary left
+      // hanging from the previous row — skip it and keep filling this row.
+      while (at < chars.length && isSpace(chars[at]!)) at++
+    } else {
+      // No usable break (a token longer than the width, or leading
+      // indentation at the very start): hard-cut the window. Leading
+      // indentation survives the cut, so the first row keeps its prefix.
+      out.push(window.join(''))
+      at += cells
+    }
   }
   if (at < chars.length && out.length > 0) {
     const last = out.length - 1
@@ -493,6 +555,14 @@ export function treePrefix(ancestorsLast: readonly boolean[], isLast: boolean): 
     .map(last => (last ? '   ' : `${GLYPHS.tree.spine}  `))
     .join('')
   return `${spine}${isLast ? GLYPHS.tree.last : GLYPHS.tree.branch} `
+}
+
+/**
+ * The outline's selected-row mark: dedicated `❯` in the leftmost column,
+ * blank elsewhere. `▸`/`▾` stay toggle/nav glyphs — they never mean selection.
+ */
+export function selectedMark(isSelected: boolean): string {
+  return isSelected ? GLYPHS.selected : ' '
 }
 
 /** `▰▰▱▱`: `filled/total` over `cells` cells, rounded, clamped. */
@@ -637,6 +707,119 @@ export function frameLines(
   ]
 }
 
+/**
+ * Lines of a card frame whose top border IS the toggle: `┌ ▾ badge ───┐` when
+ * open (the body rows run between it and `└───┘`), `┌ ▸ badge · hint ───┐`
+ * when shut (that single line is the whole card — collapsed shows a size
+ * hint). Below ~32 columns the right/bottom borders drop and body rows carry
+ * a bare `│ ` left rule instead of a full frame. Every line is prefixed with
+ * `inset` spaces so nested cards sit inside their parent's frame (box-model
+ * nesting). `toggle: false` draws a plain labelled frame (prose boxes): no
+ * toggle glyph, no press target.
+ */
+export function cardFrameLines(
+  width: number,
+  inset: number,
+  opts: {
+    badge: string
+    open: boolean
+    /** Size hint shown while shut, e.g. `3 lines` or `2 children`. */
+    hint?: string
+    bodyLines?: readonly string[]
+    toggle?: boolean
+    /** Just the header line (the JSX card adds body/children itself). */
+    headerOnly?: boolean
+  },
+): string[] {
+  const padStr = ' '.repeat(inset)
+  const inner = Math.max(10, width - inset - 2)
+  const cellW = Math.max(6, inner - 2) // '│ ' + content + ' │'
+  const narrow = inner < 30
+  const toggleable = opts.toggle !== false
+  const label =
+    toggleable && !opts.open && opts.hint !== undefined && opts.hint !== ''
+      ? `${opts.badge} · ${opts.hint}`
+      : opts.badge
+  const toggleGlyph = opts.open ? GLYPHS.toggle.shut : GLYPHS.toggle.open
+  const headCore = toggleable ? `${toggleGlyph} ${label}` : label
+  const headText = truncateCell(headCore, Math.max(4, inner - 2))
+  const fill = Math.max(0, inner - 1 - cpLen(headText) - 1)
+  const top = `${GLYPHS.frame.tl} ${headText} ${hRule(fill)}`
+  if (opts.headerOnly) {
+    // Header line only; the glyph still reflects the real open state so the
+    // pane's first row shows ▾ on an open card and ▸ on a shut one.
+    return [padStr + top + (narrow ? '' : GLYPHS.frame.tr)]
+  }
+  if (!toggleable || !opts.open) {
+    // Shut card: the header line is the whole card. Prose boxes end with the
+    // corner like any frame.
+    return [padStr + top + (toggleable ? '' : GLYPHS.frame.tr)]
+  }
+  const body = (opts.bodyLines ?? []).map(line =>
+    narrow
+      ? `${GLYPHS.frame.v} ${truncateCell(line, Math.max(4, cellW - 2))}`
+      : `${GLYPHS.frame.v} ${truncateCell(line, cellW).padEnd(cellW)} ${GLYPHS.frame.v}`,
+  )
+  const bottom = narrow ? '' : `${GLYPHS.frame.bl}${hRule(inner)}${GLYPHS.frame.br}`
+  return [
+    padStr + top + (narrow ? '' : GLYPHS.frame.tr),
+    ...body.map(line => padStr + line),
+    ...(bottom === '' ? [] : [padStr + bottom]),
+  ]
+}
+
+/**
+ * Prose rows for a captured text: `<br>` variants and literal newlines split
+ * rows (consecutive blanks collapse to one empty row), each row word-wraps
+ * inside the width, and an over-budget tail ends in `…`. `firstPrefix` (a
+ * block's `##`/`▌` marker) rides the first row — wrapping reserves its
+ * columns. Code/pre bodies never pass through here (verbatim lines).
+ */
+export function proseLines(
+  value: string,
+  width: number,
+  maxLines: number,
+  firstPrefix = '',
+): string[] {
+  const segments = sanitize(value)
+    .split(/<br\s*\/?>/gi)
+    .flatMap(seg => seg.split('\n'))
+    .map(seg => seg.trim())
+  while (segments.length > 0 && segments[0] === '') segments.shift()
+  while (segments.length > 0 && segments[segments.length - 1] === '') segments.pop()
+  const rows: string[] = []
+  segments.forEach((seg, i) => {
+    if (seg === '') {
+      if (rows.length > 0 && rows[rows.length - 1] !== '') rows.push('')
+      return
+    }
+    const prefix = i === 0 ? firstPrefix : ''
+    const prefixWidth = cpLen(prefix)
+    // Wrap under the marker's narrower column; continuation rows stay aligned
+    // under the marked text (they ride the same reduced width).
+    const wrapped = wrapLines(seg, Math.max(4, width - prefixWidth), Math.max(1, maxLines - rows.length))
+    if (prefixWidth > 0 && wrapped.length > 0) {
+      rows.push(prefix + wrapped[0]!, ...wrapped.slice(1))
+    } else {
+      rows.push(...wrapped)
+    }
+  })
+  if (rows.length > maxLines) {
+    const shown = rows.slice(0, maxLines)
+    const last = shown.length - 1
+    shown[last] = `${truncateCell(shown[last]!, Math.max(1, width - 1))}${GLYPHS.more}`
+    return shown
+  }
+  return rows
+}
+
+/** The dim `… (+N chars)` row for a capture-cap-cut body; '' when whole. */
+export function truncationHint(node: SemTextNode): string {
+  return node.truncated !== undefined && node.truncated > 0
+    ? `${GLYPHS.more} (+${node.truncated} chars)`
+    : ''
+}
+
 /** `🔑 ttl ──▸ 3600` rows, keys column-aligned, values truncated. */
 export function propertyLines(
   properties: readonly { key: string; value: string }[],
@@ -687,8 +870,9 @@ export function outlineTree(tree: readonly SemTextNode[], maxDepth = 8): Outline
 
 /**
  * Keys of the card nodes whose renderers consult `viewer.expanded` — the
- * note/reveal families and the npl block family. Expand-all / collapse-all
- * walks these; dotted keys match outlineTree's scheme.
+ * section family (framed, subtree collapse), the note/reveal family and the
+ * npl block family. Expand-all / collapse-all walks these; dotted keys match
+ * outlineTree's scheme.
  */
 export function cardKeys(tree: readonly SemTextNode[]): string[] {
   const out: string[] = []
@@ -696,6 +880,9 @@ export function cardKeys(tree: readonly SemTextNode[]): string[] {
     nodes.forEach((node, i) => {
       const key = `${base}${i}`
       if (
+        node.tag === 'sem-section' ||
+        node.tag === 'sem-summary' ||
+        node.tag === 'sem-tldr' ||
         node.tag === 'sem-note' ||
         node.tag === 'sem-reveal' ||
         node.tag === 'sem-detail' ||
@@ -747,6 +934,8 @@ export type RenderCtx = {
   viewer: SemTextViewer
   /** Body columns of the pane (adapted renders). */
   width: number
+  /** Spaces every drawn line is prefixed with (nesting depth × 2). */
+  inset: number
   /** Outline key path of the node being rendered. */
   wkey: string
   /** Rows the section view still has room for. */
@@ -765,10 +954,14 @@ const roomOf = (ctx: RenderCtx): number => Math.max(0, ctx.budget - ctx.spent.ro
 const spend = (ctx: RenderCtx, rows: number): void => {
   ctx.spent.rows += rows
 }
+/** Columns a renderer may draw in: pane width minus the nesting inset. */
+const widthOf = (ctx: RenderCtx): number => Math.max(12, ctx.width - ctx.inset)
+/** Prefixes a row with the nesting inset — frame-in-frame children indent. */
+const pad = (ctx: RenderCtx, line: string): string => `${' '.repeat(ctx.inset)}${line}`
 
 const EMPTY = (ctx: RenderCtx): RenderElement => ctx.el.Box({})
 
-/** Shared text-row builder for renderer bodies. */
+/** Shared text-row builder for renderer bodies (inset-prefixed). */
 function dimRows(
   ctx: RenderCtx,
   lines: readonly string[],
@@ -776,46 +969,295 @@ function dimRows(
   dim = true,
 ): RenderElement[] {
   return lines.map(
-    (line, i) => h(ctx.el.Text, { key: `${key}${i}`, dimColor: dim }, line) as RenderElement,
+    (line, i) =>
+      h(ctx.el.Text, { key: `${key}${i}`, dimColor: dim }, pad(ctx, line)) as RenderElement,
   )
 }
 
-/** A framed body (used by note/code/source/reader/procedure). */
-function framedBody(
-  ctx: RenderCtx,
-  body: string,
-  badge: string,
-  align: 'left' | 'right',
-  tabExpand = false,
-): { element: RenderElement | null; hidden: number } {
-  const room = roomOf(ctx)
-  if (room <= 2 || body === '') return { element: null, hidden: 0 }
-  const text = tabExpand ? body.replace(/\t/g, '  ') : body
-  const inner = Math.max(10, ctx.width - 4)
-  const maxBody = room - 2 // top + bottom borders
-  const totalLines = text.split('\n').length
-  const shown: string[] = []
-  for (const line of text.split('\n')) {
-    if (shown.length >= maxBody) break
-    for (const part of wrapLines(line, inner - 4, maxBody - shown.length)) {
-      if (shown.length >= maxBody) break
-      shown.push(part)
+// --- headings (bold + underline rules) ---
+
+export type HeadingStyle = {
+  bold: boolean
+  dim: boolean
+  /** Rule character under the heading, null = no rule. */
+  ruleChar: string | null
+  /** true = the rule spans only the heading text's longest row. */
+  ruleUnderText: boolean
+}
+
+/** h1 `═` full width · h2 `─` full width · h3 `┄` under text · h4 bold · h5/h6 bold+dim. */
+export function headingStyle(level: number): HeadingStyle {
+  const lv = Math.min(6, Math.max(1, level))
+  if (lv === 1) return { bold: true, dim: false, ruleChar: '═', ruleUnderText: false }
+  if (lv === 2) return { bold: true, dim: false, ruleChar: '─', ruleUnderText: false }
+  if (lv === 3) return { bold: true, dim: false, ruleChar: '┄', ruleUnderText: true }
+  return { bold: true, dim: lv >= 5, ruleChar: null, ruleUnderText: false }
+}
+
+/**
+ * A heading's rows at `width`: word-wrapped bold text, then its rule
+ * (emoji/code-point aware — the rule length follows cpLen, matching every
+ * other width decision in the pane). The rule row is a separate entry so the
+ * pane can style it unbolded.
+ */
+export function headingBlock(
+  value: string,
+  width: number,
+  level: number,
+  maxLines = 8,
+): { text: string[]; rule: string | null; style: HeadingStyle } {
+  const style = headingStyle(level)
+  const wrapped = wrapLines(sanitize(value), Math.max(4, width), maxLines)
+  let rule: string | null = null
+  if (style.ruleChar !== null && wrapped.length > 0) {
+    const span = style.ruleUnderText
+      ? Math.max(...wrapped.map(row => cpLen(row)))
+      : Math.max(4, width)
+    rule = style.ruleChar.repeat(span)
+  }
+  return { text: wrapped, rule, style }
+}
+
+// --- captured blocks (heading/quote/prose) as style-tagged rows ---
+
+export type StyledRow = { text: string; bold?: boolean; dim?: boolean }
+
+/**
+ * Hang-indented list rows: the first row carries `marker` + the text, every
+ * continuation row aligns under the text column (the hang). Ordered labels
+ * are passed pre-padded so `1.`/`10.` align right in their gutter.
+ */
+function hangRows(marker: string, value: string, width: number, maxLines: number): StyledRow[] {
+  const gutter = cpLen(marker) + 1
+  const wrapped = wrapLines(sanitize(value), Math.max(4, width - gutter), maxLines)
+  return wrapped.map((row, i) => ({
+    text: i === 0 ? `${marker} ${row}` : `${' '.repeat(gutter)}${row}`,
+  }))
+}
+
+/** One captured block as style-tagged rows (headings bold + rule, quotes `▌` dim, prose plain, lists hanging). */
+export function blockRows(block: SemBlock, width: number, maxLines: number): StyledRow[] {
+  if (block.kind === 'heading') {
+    const head = headingBlock(block.text, width, block.level, maxLines)
+    const rows: StyledRow[] = head.text.map(text => ({
+      text,
+      bold: head.style.bold,
+      dim: head.style.dim,
+    }))
+    if (head.rule !== null) rows.push({ text: head.rule })
+    return rows
+  }
+  if (block.kind === 'quote') {
+    return wrapLines(sanitize(block.text), Math.max(4, width - 2), maxLines).map(text => ({
+      text: `${GLYPHS.quote} ${text}`,
+      dim: true,
+    }))
+  }
+  if (block.kind === 'list-item') {
+    return hangRows(block.bullet, block.text, width, maxLines)
+  }
+  if (block.kind === 'list-item-ordered') {
+    // Right-aligned number/letter label in a 3-char gutter.
+    return hangRows(block.label.padStart(3), block.text, width, maxLines)
+  }
+  if (block.kind === 'task-item') {
+    return hangRows(block.done ? '☑' : '☐', block.text, width, maxLines)
+  }
+  if (block.kind === 'term') {
+    return wrapLines(sanitize(block.text), Math.max(4, width), maxLines).map(text => ({
+      text,
+      bold: true,
+    }))
+  }
+  if (block.kind === 'definition') {
+    return wrapLines(sanitize(block.text), Math.max(4, width - 2), maxLines).map(text => ({
+      text: `  ${text}`,
+    }))
+  }
+  return wrapLines(sanitize(block.text), Math.max(4, width), maxLines).map(text => ({ text }))
+}
+
+/** Consecutive blocks as rows; one blank row above every heading but the first row of the set. */
+export function blocksRows(
+  blocks: readonly SemBlock[],
+  width: number,
+  maxLines: number,
+): StyledRow[] {
+  const rows: StyledRow[] = []
+  for (const block of blocks) {
+    const drawn = blockRows(block, width, Math.max(1, maxLines - rows.length))
+    if (drawn.length === 0) continue
+    if (
+      block.kind === 'heading' &&
+      rows.length > 0 &&
+      rows[rows.length - 1]!.text !== ''
+    ) {
+      rows.push({ text: '' })
     }
+    rows.push(...drawn)
+    if (rows.length >= maxLines) break
   }
-  const hidden = Math.max(0, totalLines - shown.length)
-  const lines = frameLines(shown, ctx.width, badge, align)
-  spend(ctx, lines.length + (hidden > 0 ? 1 : 0))
-  return {
-    element: h(
-      ctx.el.Box,
-      { flexDirection: 'column' },
-      lines.map((line, i) => h(ctx.el.Text, { key: `f${i}` }, line)),
-      hidden > 0
-        ? h(ctx.el.Text, { key: 'fh', dimColor: true }, `${GLYPHS.more} (+${hidden} lines)`)
-        : null,
-    ) as RenderElement,
-    hidden,
+  return rows.slice(0, maxLines)
+}
+
+/** Rows a captured text would occupy once `<br>`/newlines split it (shut-card size hints). */
+export function lineCount(value: string): number {
+  const segments = sanitize(value)
+    .split(/<br\s*\/?>/gi)
+    .flatMap(seg => seg.split('\n'))
+    .map(seg => seg.trim())
+  while (segments.length > 0 && segments[0] === '') segments.shift()
+  while (segments.length > 0 && segments[segments.length - 1] === '') segments.pop()
+  return segments.filter(seg => seg !== '').length
+}
+
+// --- the card: one presentation for every framed element ---
+
+type CardOpts = {
+  /** Outline key path (drives viewer.expanded + the toggle press). */
+  key: string
+  badge: string
+  open: boolean
+  /** Size hint shown while shut (`3 lines`, `2 children`). */
+  hint?: string
+  /** Prose body (word-wrapped, `<br>`/newline aware, blank-collapse, dim). */
+  body?: string
+  /** Verbatim lines (code): no trim, no blank-collapse, hard-cut at the frame. */
+  rawLines?: readonly string[]
+  /** Prebuilt body rows (procedure steps) drawn dim. */
+  rows?: readonly string[]
+  /** Captured blocks (headings bold + rule, quotes, prose). */
+  blocks?: readonly SemBlock[]
+  /** Element children drawn INSIDE the frame below the body (box nesting). */
+  children?: readonly SemTextNode[]
+  /** Dim footer row (`… (+N chars)`); the over-budget marker is added on top. */
+  footer?: string
+  /** false = a plain labelled box (prose): header is not a button. */
+  toggle?: boolean
+  /** Bold header text (section titles are document headings). */
+  bold?: boolean
+}
+
+/**
+ * The single card presentation: header line = the toggle button (or plain
+ * label for prose boxes), body rows inside the frame, child cards nested
+ * between body and bottom border (box-model nesting), dim footer. Every
+ * framed renderer goes through here — no renderer draws its own hide row.
+ * Budget: header + bottom border reserved first, children render at
+ * inset+2 against the shared ledger, then the body is fitted to the rest.
+ */
+function cardBlock(ctx: RenderCtx, opts: CardOpts): RenderElement {
+  const { Box, Text, Button } = ctx.el
+  const toggleable = opts.toggle !== false
+  const open = toggleable && opts.open
+  const innerW = Math.max(10, ctx.width - ctx.inset - 2)
+  const narrow = innerW < 30
+
+  const header = cardFrameLines(ctx.width, ctx.inset, {
+    badge: opts.badge,
+    open: opts.open,
+    hint: opts.hint,
+    toggle: toggleable,
+    headerOnly: true,
+  })[0]!
+
+  const headerEl: RenderElement = !toggleable ? (
+    <Text bold={opts.bold} dimColor={!opts.bold}>
+      {header}
+    </Text>
+  ) : (
+    <Button
+      key={`x:${opts.key}`}
+      plain
+      onPress={() => ctx.press(v => setExpanded(v, opts.key, !opts.open))}
+    >
+      {header}
+    </Button>
+  )
+
+  if (!open) {
+    spend(ctx, 1)
+    return <Box>{headerEl}</Box>
   }
+
+  spend(ctx, 1) // header
+  const bottomBorder = narrow ? '' : `${GLYPHS.frame.bl}${hRule(innerW)}${GLYPHS.frame.br}`
+  if (bottomBorder !== '') spend(ctx, 1)
+
+  // Children first (they claim budget at inset+2, dotted keys match outlineTree).
+  // showBody: true — nested unknown tags keep their text (boxed generic).
+  const childEls: RenderElement[] = []
+  ;(opts.children ?? []).forEach((child, i) => {
+    if (roomOf(ctx) <= 0) return
+    const render = RENDERERS[child.tag] ?? RENDERERS['*']!
+    const sub: RenderCtx = {
+      ...ctx,
+      inset: ctx.inset + 2,
+      wkey: `${opts.key}.${i}`,
+      showBody: true,
+    }
+    childEls.push(render(child, sub))
+  })
+
+  // Body rows, fitted to the room the children left (the footer keeps one row
+  // of budget when the body overflows or carries a truncation hint).
+  let bodyRows: StyledRow[] = []
+  if (opts.blocks !== undefined && opts.blocks.length > 0) {
+    bodyRows = blocksRows(opts.blocks, Math.max(6, innerW - 4), 400)
+  } else if (opts.rawLines !== undefined) {
+    for (const line of opts.rawLines) {
+      if (bodyRows.length >= 400) break
+      wrapLines(line.replace(/\t/g, '  '), Math.max(6, innerW - 4), 400 - bodyRows.length, 'char').forEach(
+        text => bodyRows.push({ text, dim: true }),
+      )
+    }
+  } else if (opts.rows !== undefined) {
+    bodyRows = opts.rows.slice(0, 400).map(text => ({ text, dim: true }))
+  } else if (opts.body !== undefined && opts.body !== '') {
+    bodyRows = proseLines(opts.body, Math.max(6, innerW - 4), 400).map(text => ({ text, dim: true }))
+  }
+  const room = roomOf(ctx)
+  const fits = bodyRows.length <= room - (opts.footer !== undefined && opts.footer !== '' ? 1 : 0)
+  const fitted = fits ? bodyRows : bodyRows.slice(0, Math.max(0, room - 1))
+  const hiddenRows = bodyRows.length - fitted.length
+  const footer = [
+    opts.footer !== undefined && opts.footer !== '' ? opts.footer : '',
+    hiddenRows > 0 ? `${GLYPHS.more} (+${hiddenRows} rows)` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+  spend(ctx, fitted.length + (footer !== '' ? 1 : 0))
+
+  // The open frame re-uses the same header (glyph direction included), so
+  // what was drawn shut and what was drawn open agree on the first row.
+  const frame = cardFrameLines(ctx.width, ctx.inset, {
+    badge: opts.badge,
+    open: true,
+    hint: opts.hint,
+    bodyLines: fitted.map(row => row.text),
+  })
+  // frame = [header, ...body gutter rows..., bottom (absent when narrow)]
+  const hasBottom = !narrow && frame.length > 1
+  const gutter = frame.slice(1, hasBottom ? -1 : undefined)
+
+  return (
+    <Box flexDirection="column">
+      {headerEl}
+      {gutter.map((line, i) => {
+        const style = fitted[i] ?? { text: line }
+        return (
+          <Text key={`g${i}`} bold={style.bold} dimColor={style.dim ?? true}>
+            {line}
+          </Text>
+        )
+      })}
+      {childEls}
+      {hasBottom ? (
+        <Text dimColor>{frame[frame.length - 1]!}</Text>
+      ) : null}
+      {footer !== '' ? <Text dimColor>{`${pad(ctx, '')}${footer}`}</Text> : null}
+    </Box>
+  )
 }
 
 // --- per-kind renderers ---
@@ -823,78 +1265,32 @@ function framedBody(
 const noteRenderer: ElementRenderer = (node, ctx) => {
   const content = node.content
   if (content?.kind !== 'note') return genericRenderer(node, ctx)
-  const { Box, Button } = ctx.el
   const warn =
     (node.attrs['kind'] ?? node.attrs['data-kind'] ?? node.attrs['variant']) === 'warning'
   const glyph = warn ? GLYPHS.kind.warning : GLYPHS.kind.note
-  // Notes default open in v0.4: the expanded view shows bodies inline; an
-  // explicit hide toggle (expanded[key] === false) still collapses.
-  const open = ctx.viewer.expanded[ctx.wkey] ?? true
-  if (!open) {
-    spend(ctx, 1)
-    return (
-      <Box>
-        <Button
-          key={`x:${ctx.wkey}`}
-          plain
-          onPress={() => ctx.press(v => setExpanded(v, ctx.wkey, true))}
-        >
-          {`${glyph} ${truncateCell(content.summary, Math.max(8, ctx.width - 8))} ${GLYPHS.toggle.open}`}
-        </Button>
-      </Box>
-    )
-  }
-  const frame = framedBody(ctx, content.body, `${glyph} note`, 'left')
-  if (frame.element === null) return genericRenderer(node, ctx)
-  spend(ctx, 1) // the hide button
-  return (
-    <Box flexDirection="column">
-      {frame.element}
-      <Button
-        key={`x:${ctx.wkey}`}
-        plain
-        onPress={() => ctx.press(v => setExpanded(v, ctx.wkey, false))}
-      >
-        {`${GLYPHS.toggle.shut} hide`}
-      </Button>
-    </Box>
-  )
+  // Notes default open: the body shows inline inside its card frame; the
+  // header IS the toggle (no separate hide row).
+  return cardBlock(ctx, {
+    key: ctx.wkey,
+    badge: `${glyph} note`,
+    open: ctx.viewer.expanded[ctx.wkey] ?? true,
+    hint: `${lineCount(content.body)} lines`,
+    body: content.body,
+    footer: truncationHint(node),
+  })
 }
 
 const revealRenderer: ElementRenderer = (node, ctx) => {
   const content = node.content
   if (content?.kind !== 'reveal') return genericRenderer(node, ctx)
-  const { Box, Button } = ctx.el
-  const open = ctx.viewer.expanded[ctx.wkey] ?? !content.collapsed
-  if (!open) {
-    spend(ctx, 1)
-    return (
-      <Box>
-        <Button
-          key={`x:${ctx.wkey}`}
-          plain
-          onPress={() => ctx.press(v => setExpanded(v, ctx.wkey, true))}
-        >
-          {`${GLYPHS.kind.reveal} ${truncateCell(content.summary, Math.max(8, ctx.width - 8))} ${GLYPHS.toggle.open}`}
-        </Button>
-      </Box>
-    )
-  }
-  const room = roomOf(ctx)
-  const body = wrapLines(sanitize(content.body), Math.max(8, ctx.width - 2), Math.max(1, room - 1))
-  spend(ctx, body.length + 1)
-  return (
-    <Box flexDirection="column">
-      {...dimRows(ctx, body, 'r')}
-      <Button
-        key={`x:${ctx.wkey}`}
-        plain
-        onPress={() => ctx.press(v => setExpanded(v, ctx.wkey, false))}
-      >
-        {`${GLYPHS.toggle.shut} hide`}
-      </Button>
-    </Box>
-  )
+  return cardBlock(ctx, {
+    key: ctx.wkey,
+    badge: `${GLYPHS.kind.reveal} ${node.tag === 'sem-reveal' ? 'reveal' : 'detail'}`,
+    open: ctx.viewer.expanded[ctx.wkey] ?? !content.collapsed,
+    hint: `${lineCount(content.body)} lines`,
+    body: content.body,
+    footer: truncationHint(node),
+  })
 }
 
 const factsRenderer: ElementRenderer = (node, ctx) => {
@@ -920,7 +1316,7 @@ const factsRenderer: ElementRenderer = (node, ctx) => {
     spend(ctx, lines.length + 1)
     return (
       <Box flexDirection="column">
-        <Text dimColor>{head}</Text>
+        <Text dimColor>{pad(ctx, head)}</Text>
         {...dimRows(ctx, lines, 'fl')}
       </Box>
     )
@@ -929,16 +1325,19 @@ const factsRenderer: ElementRenderer = (node, ctx) => {
   const kind: 'quiz' | 'flashcards' = content.viewAs
   return (
     <Box flexDirection="column">
-      <Text dimColor>{`${glyph} ${name} · ${content.items.length} items`}</Text>
-      <Button
-        key={`run:${ctx.wkey}`}
-        plain
-        onPress={() => {
-          ctx.press(v => startQuiz(v, ctx.wkey, kind, buildQuizOptions(content.items, 0, content.seed)))
-        }}
-      >
-        {`${GLYPHS.toggle.open} run ${name}`}
-      </Button>
+      <Text dimColor>{pad(ctx, `${glyph} ${name} · ${content.items.length} items`)}</Text>
+      <Box flexDirection="row">
+        <Text dimColor>{pad(ctx, '')}</Text>
+        <Button
+          key={`run:${ctx.wkey}`}
+          plain
+          onPress={() => {
+            ctx.press(v => startQuiz(v, ctx.wkey, kind, buildQuizOptions(content.items, 0, content.seed)))
+          }}
+        >
+          {`${GLYPHS.toggle.open} run ${name}`}
+        </Button>
+      </Box>
     </Box>
   )
 }
@@ -953,19 +1352,21 @@ const tableRenderer: ElementRenderer = (node, ctx) => {
   if (cells.length === 0) return EMPTY(ctx)
   const cols = cells.reduce((max, row) => Math.max(max, row.length), 0)
   const maxRows = Math.max(2, room - 1) // one row for the caption
-  const { lines, hidden } = drawTable(cells, Math.max(12, ctx.width - 2), maxRows)
+  const { lines, hidden } = drawTable(cells, Math.max(12, widthOf(ctx) - 2), maxRows)
   spend(ctx, 1 + lines.length + (hidden > 0 ? 1 : 0))
   return (
     <Box flexDirection="column">
-      <Text dimColor>{`${GLYPHS.kind.table} table · ${cells.length} rows × ${cols} cols`}</Text>
+      <Text dimColor>
+        {pad(ctx, `${GLYPHS.kind.table} table · ${cells.length} rows × ${cols} cols`)}
+      </Text>
       {/* lines[1] is the header row: emphasized; borders and body dim. */}
       {lines.map((line, i) =>
         i === 1
-          ? h(ctx.el.Text, { key: `tb${i}`, bold: true }, line)
-          : h(ctx.el.Text, { key: `tb${i}`, dimColor: true }, line),
+          ? h(ctx.el.Text, { key: `tb${i}`, bold: true }, pad(ctx, line))
+          : h(ctx.el.Text, { key: `tb${i}`, dimColor: true }, pad(ctx, line)),
       )}
       {hidden > 0 ? (
-        <Text dimColor>{`${GLYPHS.more} (+${hidden} rows)`}</Text>
+        <Text dimColor>{pad(ctx, `${GLYPHS.more} (+${hidden} rows)`)}</Text>
       ) : null}
     </Box>
   )
@@ -973,13 +1374,18 @@ const tableRenderer: ElementRenderer = (node, ctx) => {
 
 const codeRenderer: ElementRenderer = (node, ctx) => {
   const content = node.content
-  const body = content?.kind === 'code' ? content.body : ''
-  const lang = content?.kind === 'code' ? content.lang : (node.attrs['lang'] ?? '')
   if (content?.kind !== 'code') return genericRenderer(node, ctx)
-  const badge = `${GLYPHS.kind.code}${lang !== '' ? ` ${sanitize(lang)}` : ''}`
-  const frame = framedBody(ctx, body, badge, 'right', true)
-  if (frame.element === null) return EMPTY(ctx)
-  return frame.element
+  const lang = sanitize(content.lang !== '' ? content.lang : (node.attrs['lang'] ?? ''))
+  // Code never reflows: lines keep their column layout and hard-cut at the
+  // frame edge (word mode is for prose only). C3 adds the dedicated code
+  // renderer (gutter, tinting, markers); the card frame is already here.
+  return cardBlock(ctx, {
+    key: ctx.wkey,
+    badge: `${GLYPHS.kind.code}${lang !== '' ? ` ${lang}` : ''}`,
+    open: ctx.viewer.expanded[ctx.wkey] ?? true,
+    hint: `${content.body.split('\n').length} lines`,
+    rawLines: content.body.split('\n'),
+  })
 }
 
 const propertiesRenderer: ElementRenderer = (node, ctx) => {
@@ -988,11 +1394,13 @@ const propertiesRenderer: ElementRenderer = (node, ctx) => {
   const { Box, Text } = ctx.el
   const room = roomOf(ctx)
   if (room <= 1) return EMPTY(ctx)
-  const lines = propertyLines(content.properties, ctx.width).slice(0, room - 1)
+  const lines = propertyLines(content.properties, widthOf(ctx)).slice(0, room - 1)
   spend(ctx, lines.length + 1)
   return (
     <Box flexDirection="column">
-      <Text dimColor>{`${GLYPHS.kind.properties} properties · ${content.properties.length}`}</Text>
+      <Text dimColor>
+        {pad(ctx, `${GLYPHS.kind.properties} properties · ${content.properties.length}`)}
+      </Text>
       {...dimRows(ctx, lines, 'pr', false)}
     </Box>
   )
@@ -1005,7 +1413,7 @@ const viewsRenderer: ElementRenderer = (node, ctx) => {
   const room = roomOf(ctx)
   if (room <= 0) return EMPTY(ctx)
   const active = ctx.viewer.activeView[ctx.wkey] ?? content.initial
-  const tabs: RenderElement[] = [h(ctx.el.Text, { key: 'lb', dimColor: true }, '[') as RenderElement]
+  const tabs: RenderElement[] = [h(ctx.el.Text, { key: 'lb', dimColor: true }, pad(ctx, '[')) as RenderElement]
   content.views.forEach((view, idx) => {
     if (idx > 0) tabs.push(h(ctx.el.Text, { key: `sep${idx}`, dimColor: true }, '│') as RenderElement)
     tabs.push(
@@ -1018,12 +1426,12 @@ const viewsRenderer: ElementRenderer = (node, ctx) => {
       </Button>,
     )
   })
-  tabs.push(h(ctx.el.Text, { key: 'rb', dimColor: true }, ']') as RenderElement)
+  tabs.push(h(ctx.el.Text, { key: 'rb', dimColor: true }, pad(ctx, ']')) as RenderElement)
   spend(ctx, 1)
   const body = content.views[active]?.body ?? ''
   const lines =
     room > 1
-      ? wrapLines(sanitize(body), Math.max(8, ctx.width - 2), room - 1)
+      ? proseLines(body, Math.max(8, widthOf(ctx) - 2), room - 1)
       : []
   spend(ctx, lines.length)
   return (
@@ -1035,15 +1443,21 @@ const viewsRenderer: ElementRenderer = (node, ctx) => {
 }
 
 const sectionRenderer: ElementRenderer = (node, ctx) => {
-  // A section's content arrives as the section view's blocks + descendants;
-  // the renderer itself is just the kind-marked heading line.
-  const { Text } = ctx.el
-  spend(ctx, 1)
-  return (
-    <Text dimColor>
-      {`${GLYPHS.kind.section} ${truncateCell(labelOf(node), Math.max(8, ctx.width - 4))}`}
-    </Text>
-  )
+  // Section cards: the frame header carries toggle + glyph + title (bold — a
+  // document heading); captured blocks (headings with their rules, quotes,
+  // prose) and element children draw INSIDE the frame. No second heading row.
+  const blocks = node.blocks ?? []
+  const leafText = blocks.length === 0 ? (node.text ?? '') : ''
+  return cardBlock(ctx, {
+    key: ctx.wkey,
+    badge: `${glyphOf(node)} ${truncateCell(labelOf(node), Math.max(8, widthOf(ctx) - 8))}`,
+    open: ctx.viewer.expanded[ctx.wkey] ?? true,
+    bold: true,
+    blocks,
+    body: leafText === '' ? undefined : leafText,
+    children: node.children,
+    footer: truncationHint(node),
+  })
 }
 
 const factRenderer: ElementRenderer = (node, ctx) => {
@@ -1051,7 +1465,10 @@ const factRenderer: ElementRenderer = (node, ctx) => {
   spend(ctx, 1)
   return (
     <Text dimColor>
-      {`${GLYPHS.kind.fact} ${truncateCell(collapseWhitespace(sanitize(node.text ?? '')), Math.max(8, ctx.width - 4))}`}
+      {pad(
+        ctx,
+        `${GLYPHS.kind.fact} ${truncateCell(collapseWhitespace(sanitize(node.text ?? '')), Math.max(8, widthOf(ctx) - 4))}`,
+      )}
     </Text>
   )
 }
@@ -1061,7 +1478,10 @@ const stepRenderer: ElementRenderer = (node, ctx) => {
   spend(ctx, 1)
   return (
     <Text>
-      {`${GLYPHS.kind.step} ${truncateCell(collapseWhitespace(sanitize(node.text ?? '(empty step)')), Math.max(8, ctx.width - 4))}`}
+      {pad(
+        ctx,
+        `${GLYPHS.kind.step} ${truncateCell(collapseWhitespace(sanitize(node.text ?? '(empty step)')), Math.max(8, widthOf(ctx) - 4))}`,
+      )}
     </Text>
   )
 }
@@ -1070,124 +1490,112 @@ const sourceRenderer: ElementRenderer = (node, ctx) => {
   const content = node.content
   const body = content !== undefined && 'body' in content ? String(content.body) : (node.text ?? '')
   const glyph = glyphOf(node)
-  const frame = framedBody(ctx, body, `${glyph} ${node.tag.replace('sem-', '')}`, 'left')
-  if (frame.element === null) return genericRenderer(node, ctx)
-  return frame.element
+  return cardBlock(ctx, {
+    key: ctx.wkey,
+    badge: `${glyph} ${node.tag.replace('sem-', '')}`,
+    open: ctx.viewer.expanded[ctx.wkey] ?? true,
+    hint: `${lineCount(body)} lines`,
+    body,
+    footer: truncationHint(node),
+  })
+}
+
+/** Depth-first sem-step collection (document order) — nested groups included. */
+function collectSteps(node: SemTextNode, out: SemTextNode[]): void {
+  for (const child of node.children) {
+    if (child.tag === 'sem-step') out.push(child)
+    collectSteps(child, out)
+  }
 }
 
 const procedureRenderer: ElementRenderer = (node, ctx) => {
-  const { Box, Text } = ctx.el
   const room = roomOf(ctx)
   if (room <= 2) return genericRenderer(node, ctx)
-  // Steps: direct sem-step children, else the flattened text as one step.
-  // One line per step (truncated), so the drawn count is exact.
-  const steps = node.children.filter(child => child.tag === 'sem-step')
+  // Steps: any sem-step descendant (nested sub-groups included since v0.6.1),
+  // else the flattened text as one step. One line per step (truncated), so
+  // the drawn count is exact.
+  const steps: SemTextNode[] = []
+  collectSteps(node, steps)
   const stepTexts =
     steps.length > 0
       ? steps.map(step => collapseWhitespace(sanitize(step.text ?? '')))
       : [collapseWhitespace(sanitize(node.text ?? ''))]
   const named = node.attrs['title'] ?? node.attrs['label'] ?? node.attrs['name']
   const badge = `${GLYPHS.kind.procedure}${named !== undefined ? ` ${sanitize(named).slice(0, 24)}` : ''}`
-  const inner = Math.max(10, ctx.width - 4)
-  const maxBody = room - 2
-  const drawn = stepTexts.slice(0, maxBody)
-  const bodyLines = drawn.map((step, i) =>
-    `${i + 1} ${GLYPHS.kind.step} ${truncateCell(step === '' ? '(empty step)' : step, inner - 8)}`,
+  const innerW = Math.max(10, ctx.width - ctx.inset - 2)
+  const rows = stepTexts.map(
+    (step, i) =>
+      `${i + 1} ${GLYPHS.kind.step} ${truncateCell(step === '' ? '(empty step)' : step, Math.max(8, innerW - 10))}`,
   )
-  const hidden = Math.max(0, stepTexts.length - drawn.length)
-  const lines = frameLines(bodyLines, ctx.width, badge, 'left')
-  spend(ctx, lines.length + (hidden > 0 ? 1 : 0))
-  return (
-    <Box flexDirection="column">
-      {lines.map((line, i) => (
-        <Text key={`p${i}`}>{line}</Text>
-      ))}
-      {hidden > 0 ? (
-        <Text dimColor>{`${GLYPHS.more} (+${hidden} steps)`}</Text>
-      ) : null}
-    </Box>
-  )
+  const hiddenSteps = Math.max(0, stepTexts.length - rows.length)
+  return cardBlock(ctx, {
+    key: ctx.wkey,
+    badge,
+    open: ctx.viewer.expanded[ctx.wkey] ?? true,
+    hint: `${stepTexts.length} steps`,
+    rows,
+    footer: hiddenSteps > 0 ? `${GLYPHS.more} (+${hiddenSteps} steps)` : '',
+  })
 }
 
-/** Generic fallback: kind glyph + label, plus the body when nothing else drew it. */
+/** Generic fallback: kind glyph + label, plus the body boxed (no free-floating prose rows). */
 const genericRenderer: ElementRenderer = (node, ctx) => {
-  const { Box, Text } = ctx.el
+  const { Text } = ctx.el
   const room = roomOf(ctx)
   if (room <= 0) return EMPTY(ctx)
-  const head = `${glyphOf(node)} ${truncateCell(labelOf(node), Math.max(8, ctx.width - 4))}`
+  const badge = `${glyphOf(node)} ${truncateCell(labelOf(node), 28)}`
   if (!ctx.showBody || (node.text ?? '') === '') {
     spend(ctx, 1)
-    return <Text dimColor>{head}</Text>
+    return <Text dimColor>{pad(ctx, badge)}</Text>
   }
-  const body = wrapLines(sanitize(node.text ?? ''), Math.max(8, ctx.width - 2), room - 1)
-  spend(ctx, 1 + body.length)
-  return (
-    <Box flexDirection="column">
-      <Text dimColor>{head}</Text>
-      {...dimRows(ctx, body, 'g', false)}
-    </Box>
-  )
+  return cardBlock(ctx, {
+    key: ctx.wkey,
+    badge,
+    open: true,
+    body: node.text ?? '',
+    toggle: false,
+    footer: truncationHint(node),
+  })
 }
 
 /**
  * NPL pump tags (npl-*) and the Trinity friction markers: one shared block
- * renderer. Collapsed it is a single toggle row (glyph, name, attrs);
- * expanded it draws a framed body (frameLines, dim rows) under the same
- * header badge plus a hide row — the note/reveal collapse pattern.
+ * renderer. Collapsed it is the single header line (glyph, name, attrs, size
+ * hint); expanded it draws its own text inside the frame AND its element
+ * children nested inside (box-model) — nothing hides behind a hide row.
  */
 const renderNplBlock: ElementRenderer = (node, ctx) => {
-  const { Box, Text, Button } = ctx.el
   const glyph = glyphOf(node)
   const name = ['wedge', 'shadow', 'critic', 'weego'].includes(node.tag)
     ? node.tag.toUpperCase()
     : node.tag
-  const attrPairs = Object.entries(node.attrs).slice(0, 3)
-  const head =
+  // `collapsed` is viewer state, not content — never echo it in the badge.
+  const attrPairs = Object.entries(node.attrs)
+    .filter(([key]) => key !== 'collapsed')
+    .slice(0, 3)
+  const badge =
     `${glyph} ${name}` +
     (attrPairs.length > 0
       ? ` · ${attrPairs.map(([key, value]) => `${key}=${sanitize(value)}`).join(' ')}`
       : '')
-  // npl blocks default open in v0.4; an authored `collapsed` attribute keeps
-  // the card shut by default, and an explicit toggle always wins.
-  const open = ctx.viewer.expanded[ctx.wkey] ?? node.attrs['collapsed'] === undefined
-  if (!open) {
-    spend(ctx, 1)
-    return (
-      <Box>
-        <Button
-          key={`x:${ctx.wkey}`}
-          plain
-          onPress={() => ctx.press(v => setExpanded(v, ctx.wkey, true))}
-        >
-          {`${truncateCell(head, Math.max(8, ctx.width - 8))} ${GLYPHS.toggle.open}`}
-        </Button>
-      </Box>
-    )
-  }
-  const room = roomOf(ctx)
-  if (room <= 2) return genericRenderer(node, ctx)
+  // npl blocks default open; an authored `collapsed` attribute keeps the card
+  // shut by default, and an explicit toggle always wins.
   const raw = sanitize(node.text ?? '')
-  const bodyRows = raw === '' ? [] : wrapLines(raw, Math.max(10, ctx.width - 4) - 4, room - 2)
-  const lines = frameLines(bodyRows, ctx.width, head, 'left')
-  spend(ctx, lines.length + 1) // frame rows + the hide button
-  return (
-    <Box flexDirection="column">
-      {lines.map((line, i) =>
-        i >= 1 && i <= bodyRows.length
-          ? (h(ctx.el.Text, { key: `n${i}`, dimColor: true }, line) as RenderElement)
-          : (
-            <Text key={`n${i}`}>{line}</Text>
-          ),
-      )}
-      <Button
-        key={`x:${ctx.wkey}`}
-        plain
-        onPress={() => ctx.press(v => setExpanded(v, ctx.wkey, false))}
-      >
-        {`${GLYPHS.toggle.shut} hide`}
-      </Button>
-    </Box>
-  )
+  const hint = [
+    `${lineCount(raw)} lines`,
+    node.children.length > 0 ? `${node.children.length} children` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+  return cardBlock(ctx, {
+    key: ctx.wkey,
+    badge,
+    open: ctx.viewer.expanded[ctx.wkey] ?? node.attrs['collapsed'] === undefined,
+    hint,
+    body: raw,
+    children: node.children,
+    footer: truncationHint(node),
+  })
 }
 
 /**
@@ -1262,13 +1670,13 @@ export const RENDERERS: Record<string, ElementRenderer> = {
 // --- the expanded document view's per-node role ---
 
 /**
- * How the expanded view treats one node. 'card': a dedicated renderer draws
- * the node's content inline (its children are consumed — never re-drawn as
- * rows). 'heading': the outline heading row IS the render (section family;
- * children get their own rows). 'flow': no dedicated body — draw captured
- * blocks or the leaf's own text, then recurse into children.
+ * How the expanded view treats one node. 'card': the node's renderer draws a
+ * framed card — header, body, and its children nested INSIDE (consumed; the
+ * plan emits no rows for them). 'flow': no dedicated body — the outline row
+ * stands, then captured blocks or the leaf's own text, then recursion into
+ * children.
  */
-export type ExpandedRole = 'heading' | 'flow' | 'card'
+export type ExpandedRole = 'flow' | 'card'
 
 /** Renderers that draw captured content and fall back to the generic head (a duplicate row in the expanded view) when nothing was captured. */
 const CONTENT_RENDERERS: ReadonlySet<ElementRenderer> = new Set([
@@ -1283,24 +1691,21 @@ const CONTENT_RENDERERS: ReadonlySet<ElementRenderer> = new Set([
 
 export function expandedRoleOf(node: SemTextNode): ExpandedRole {
   const render = RENDERERS[node.tag] ?? RENDERERS['*']!
-  if (render === sectionRenderer) return 'heading'
   if (render === genericRenderer) return 'flow'
-  // npl blocks always draw their own frame (even content-less).
-  if (render === renderNplBlock) return 'card'
   if (node.content === undefined && CONTENT_RENDERERS.has(render)) return 'flow'
+  // Sections, npl blocks and every captured card render as framed cards now.
   return 'card'
 }
 
 // --- the expanded document view's pure content plan ---
 
 /**
- * One unit of the expanded view, in document order. 'row': the outline
- * heading row (the pane draws it as the focus button). 'text': content drawn
- * inline under that row — captured blocks (with their markers) or a flow
+ * One unit of the expanded view, in document order. 'row': the outline row
+ * of a flow node (the pane draws it as the focus button). 'text': content
+ * drawn under that row — captured blocks (with their markers) or a flow
  * leaf's own text; unknown tags land here, so their text is never dropped.
- * 'card': the node defers to its RENDERERS entry (default-open in v0.4);
- * its children are consumed by the renderer and never re-planned — except
- * npl-block cards, whose children re-plan below the card.
+ * 'card': a framed card through its renderer — the header replaces the
+ * outline row and its children are consumed (drawn inside the frame).
  */
 export type ExpandedUnit =
   | { role: 'row'; key: string; row: OutlineRow }
@@ -1308,41 +1713,37 @@ export type ExpandedUnit =
       role: 'text'
       key: string
       depth: number
-      /** The row prefix with the branch glyphs blanked — sits under the branch. */
+      /** Two spaces per nesting level (no tree gutters in the body view). */
       indent: string
       text: string
       /** Captured block (heading/quote/prose) — the pane draws its markers. */
       block?: SemBlock
     }
-  | { role: 'card'; key: string; depth: number; indent: string; node: SemTextNode }
-
-/** A row's tree prefix with the ├──/└── glyphs blanked (spines kept). */
-export function indentOf(prefix: string): string {
-  return prefix.replace(/[├└─]/g, ' ')
-}
+  | { role: 'card'; key: string; depth: number; node: SemTextNode }
 
 /**
- * The expanded view's full content plan: every outline row top-to-bottom,
- * each followed by its content — section prose and unknown-tag text as text
- * rows, note/reveal/facts/table/code/properties/views/procedure/source/npl
- * nodes as cards. Card renderers consume their children (they feed the
- * captured content), except the npl block renderer, which draws only the
- * node's own text — its blocks and element children plan below the card.
- * Pure; the pane maps units to elements under its row budget (renderer
- * spend is only known at draw time).
+ * The expanded view's full content plan: every flow row top-to-bottom with
+ * its text under it, and every card as a single card unit whose renderer
+ * draws header, body and nested children inside the frame — a nested or
+ * unclosed sibling is never swallowed; it draws inside its parent.
+ * `baseKey` prefixes every key (the section view re-plans a subtree with the
+ * document's key paths). Pure; the pane maps units to elements under its row
+ * budget (renderer spend is only known at draw time).
  */
-export function expandedPlan(tree: readonly SemTextNode[], maxDepth = 8): ExpandedUnit[] {
+export function expandedPlan(
+  tree: readonly SemTextNode[],
+  maxDepth = 8,
+  baseKey = '',
+): ExpandedUnit[] {
   const units: ExpandedUnit[] = []
-  const walkNodes = (
-    nodes: readonly SemTextNode[],
-    depth: number,
-    base: string,
-    ancestors: readonly boolean[],
-  ): void => {
+  const walkNodes = (nodes: readonly SemTextNode[], depth: number, base: string): void => {
     nodes.forEach((node, i) => {
-      const isLast = i === nodes.length - 1
       const key = `${base}${i}`
-      const prefix = treePrefix(ancestors, isLast)
+      const role = expandedRoleOf(node)
+      if (role === 'card') {
+        units.push({ role: 'card', key, depth, node })
+        return
+      }
       units.push({
         role: 'row',
         key,
@@ -1350,59 +1751,37 @@ export function expandedPlan(tree: readonly SemTextNode[], maxDepth = 8): Expand
           key,
           depth,
           label: labelOf(node),
-          prefix,
+          prefix: '',
           glyph: glyphOf(node),
           count: node.children.length,
         },
       })
-      const role = expandedRoleOf(node)
-      if (role === 'card') {
-        units.push({ role: 'card', key, depth, indent: indentOf(prefix), node })
-        // A card renderer normally consumes the node's children (they feed
-        // its captured content). The npl block renderer draws only the node's
-        // own text, so its captured blocks and element children still plan
-        // below the card — a nested or unclosed sibling is never swallowed
-        // by its parent card.
-        const render = RENDERERS[node.tag] ?? RENDERERS['*']!
-        if (render !== renderNplBlock) return
-        ;(node.blocks ?? []).forEach((block, b) => {
+      const blocks = node.blocks ?? []
+      if (blocks.length > 0) {
+        blocks.forEach((block, b) => {
           units.push({
             role: 'text',
             key: `${key}#b${b}`,
             depth: depth + 1,
-            indent: indentOf(prefix),
+            indent: '  '.repeat(depth + 1),
             text: block.text,
             block,
           })
         })
-      } else {
-        const blocks = node.blocks ?? []
-        if (blocks.length > 0) {
-          blocks.forEach((block, b) => {
-            units.push({
-              role: 'text',
-              key: `${key}#b${b}`,
-              depth: depth + 1,
-              indent: indentOf(prefix),
-              text: block.text,
-              block,
-            })
-          })
-        } else if (node.children.length === 0 && (node.text ?? '') !== '') {
-          // A leaf without captured content (plain tldr/summary text, unknown
-          // tags, note-less notes): its own text sits inline under the row.
-          units.push({
-            role: 'text',
-            key: `${key}#leaf`,
-            depth: depth + 1,
-            indent: indentOf(prefix),
-            text: node.text ?? '',
-          })
-        }
+      } else if (node.children.length === 0 && (node.text ?? '') !== '') {
+        // A leaf without captured content (plain tldr/summary text, unknown
+        // tags, note-less notes): its own text sits inline under the row.
+        units.push({
+          role: 'text',
+          key: `${key}#leaf`,
+          depth: depth + 1,
+          indent: '  '.repeat(depth + 1),
+          text: node.text ?? '',
+        })
       }
-      if (depth < maxDepth) walkNodes(node.children, depth + 1, `${key}.`, [...ancestors, isLast])
+      if (depth < maxDepth) walkNodes(node.children, depth + 1, `${key}.`)
     })
   }
-  walkNodes(tree, 0, '', [])
+  walkNodes(tree, 0, baseKey)
   return units
 }

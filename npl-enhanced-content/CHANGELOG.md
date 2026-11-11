@@ -1,59 +1,250 @@
 # Changelog
 
-## 2026-10-18 (sem-bind — live data on sem-* elements)
+## 2026-11-11
 
-- **`sem-bind` runtime (`src/lit/bind.ts`).** One hydration pipe for every
-  source: `sem-bind="<https URL>"` fetches plain (static JSON, no auth unless
-  the host 401s); `sem-bind="agent-kit/{org}/proj/{project}/{kind}/{id}"`
-  resolves to `https://agentonomi.com/status/{org}/proj/{project}/{kind}/{id}`
-  with bearer auth. Token lives per-origin in `localStorage["semtext.bind.token"]`
-  (`semtext.bind.expires` alongside), sent as `Authorization: Bearer`, never a
-  cookie (`credentials: 'omit'`). On 401 the embed authorize flow runs —
-  `agentonomi.com/embed/authorize?redirect_uri&state` in a popup, token via
-  `postMessage` (`semtext-bind-token`, origin + state verified); popup blocked
-  or closed empty → full-page redirect, token returns in the
-  `#access_token=…&state=…` fragment and is verified, stored and stripped on
-  the next load (`consumeBindHash`). Progress binds poll every 30s
-  (`sem-refresh="<seconds>"` overrides); definition+status kinds fetch once.
-  Error / empty / auth states render into the host — a bound element never
-  sits blank.
-- **Payload intake on the elements.** `sem-progress` and `sem-procedure`
-  graduate from the claim stubs to their own modules (round-2 graduation
-  rule); `sem-plan`, `sem-runbook`, `sem-workflow` rebase on the new
-  `BindableElement` base — a reactive `payload` property (direct JSON, no
-  server) plus automatic attach for authored `sem-bind` attributes, poll
-  torn down on disconnect. `sem-progress` hydrates `{percent, comment}` and
-  `{step, steps, comment}` into the same meter DOM the vanilla handler
-  builds; the plan family hydrates `{plan, status}` — the fetched definition
-  replaces authored children, the per-step dictionary
-  (`complete|pending|error|skipped|none` + comment + choice) lands as
-  `data-sem-bind-status` plus the mapped catalog status
-  (`done|todo|blocked`), a comment line, and the taken fork (single choice
-  object) or walked sequence (choice array, numbered in order). Unknown
-  payload keys and unknown step keys pass through untouched; other tags get
-  `data-sem-bind-payload` + a `sem-bind-payload` event. Fetched `plan`
-  markup is sanitized (script/iframe dropped, `on*` handlers stripped,
-  `href`/`src` scheme-allowlisted — http/https/mailto and relative URLs
-  pass, every other scheme removed).
-- **Vocabulary chrome** (`_vocabulary.css`): the `skipped` step marker,
-  bind comment/choice/state lines, and the payload-meter caption — the
-  catalog glyphs keep working through the mapped status attribute.
-- **Budget ratchet**: `semtext.js` 152 → 162 KB raw (sem-bind measured
-  161.3 / 50.2 gzipped; history note in ROADMAP "Size budgets" and the
-  `build.mjs` budget comment).
-- **Demo + fixtures**: `web/demo/sem-bind.html` (static-JSON binds with a
-  `sem-refresh` override, direct-payload intakes, plan + status dictionary,
-  agent-kit shorthand with its error states) and
-  `web/demo/data/{progress-percent,progress-steps,plan-status}.json`.
-- **Tests**: `test/unit/sem-bind-{parse,hydrate,attach}.test.ts` — parse
-  rules, token store/expiry, hash-return state verification, both progress
-  payload forms, plan hydration (choice object + array, sanitize, body
-  replacement), attach wiring with an injected fetch (bearer header,
-  401 → login → retry-once, error/empty states) and the poll loop with
-  fake timers.
+- **quiet boot — one clean `shell ready` line, no CDN-refusal demo.**
+  The shell's first paint collapses the 14 per-plugin/per-package mount
+  lines + hint into a single `shell ready — N plugins, M packages, K
+  commands (type help)` stdout line (mount failures still surface as
+  stderr); the deliberate `cdn.noizu.com` CDN-refusal demo block and its
+  `#cdnDemoShown` field are deleted (removed once in v0.7.2 e218d23,
+  reintroduced in c317853, now permanent per owner 2026-11-11); the
+  replay hint prints only when a replayable script is actually attached
+  (`SemTerminal.replayable`, via `markScripted`), so an unscripted boot
+  emits exactly one stdout line and zero stderr. (#92)
+
+- `nano` fix: build `nano-app.js` as an ES module (was IIFE with no
+  exports — the LazyNano stub's `import('./nano-app.js')` resolved but
+  `mod.NanoEditor` was undefined, so `new undefined()` threw inside the
+  import's success handler and nano could never start from the built
+  bundle); the LazyNano constructor now maps both failure modes (missing
+  usable `NanoEditor` export / throwing constructor) to the same null
+  editor as a rejected import, so the existing start() path reports
+  'nano: editor chunk failed to load' and exits 1. Budget 24 → 32 KB
+  (ES chunk keeps every export; measured 27.3 raw / 8.0 gz vs IIFE 17.9),
+  `docs/arch/bundles.md` nano rows corrected, 4 new unit tests
+  (test/unit/nano-command.test.ts). (#91)
+
+- **0.9.6 — `sem-reference` real handler (AUTO-ID, footnote chrome) +
+  `sem-procedure` / `sem-step` / `sem-tldr` / `sem-summary` renders.**
+  `sem-reference` and `sem-step` graduate out of `sem-stubs.ts`. An
+  id-less reference derives `id = <sem-references id || "refs">-` +
+  `referenceSlug(cite || href)` (lowercase, non-`[a-z0-9]` runs → `-`,
+  trimmed; `src/shared/reference-id.ts`, exported as
+  `SemText.referenceSlug` / `referenceId` / `deriveReferenceId`), marked
+  `data-sem-minted-id`; extraction reports the same derived id in both
+  tiers. The component stamps `data-ordinal` (badge-styled counter), a
+  `cite` `title` tooltip and emits `sem:reference-ready`;
+  `src/reading/references.ts` no longer skips id-less refs and links a
+  URL `cite`. `sem-procedure` prepends a `.sem-procedure-meta` progress
+  line ("1 of 4 done · 1 blocked", extraction chrome) + `data-blocked`;
+  `sem-step` stamps `data-ordinal` + `aria-current="step"`; `sem-tldr` /
+  `sem-summary` become labelled notes (`role="note"` + `aria-label`, via
+  `src/lit/callout.ts`). Validator: id-less reference = `info auto-id`
+  (no cite/href = error, collision = warning; info not counted as a
+  warning); schema `id` no longer required; spec prose for references
+  (§ Auto-id), procedure, tldr, summary, extraction chrome list; demo
+  `web/demo/auto-id-renders.html` + e2e `sem-reference-auto-id.cy.js`;
+  unit suites for slug/auto-id/numbering/renders/validator.
+  `elements.json` regenerated. Bundle budget 173 → 175 KB (measured
+  174.8 raw / 54.0 gzipped, was 172.1 / 53.2).
+- **`semtext focus` + `.sem.md` support: purpose-driven collapse lands in
+  the agent toolkit and both CLIs.** New `.sem.md` parser
+  (`src/agent/markdown-sections.ts`, re-exported through the agent
+  bundle): ATX sections own content until a same-or-higher heading
+  (fence-aware), optional `<sem-section id/kind/tags>` markers bind
+  authored ids (else mint `x-sec-*`), authored `<sem-tldr>` is carried
+  verbatim, `kind="hard-rule"`/`data-pin` pins a section; outline /
+  expand / filter accept `.md`/`.sem.md` in both CLIs alongside XHTML.
+  `semtext focus <file> --purpose "<text>"` keeps purpose-serving
+  sections verbatim and collapses the rest to TL;DR reveals: task match
+  (exact normalized → cache, else one batched `:choice` over top-5
+  token-Jaccard neighbours with a `none` option), content-addressed
+  TL;DR cache keyed by collapsed-body sha256 with drift detection
+  (index prior sha → unified diff → ONE batched `:boolean`: no ⇒ rebind
+  the old summary, yes ⇒ tweak it), ONE batched `:score` relevance round
+  on a 10-level rubric, pinned/`--keep` always relevant. Flags:
+  `--notes` (task footnotes), `--track-refs` (referenced-file drift),
+  `--write-back` (idempotent `<sem-tldr data-auto data-digest>` upkeep,
+  path-confined), `--write-notes`, `--no-llm` (cache-only fallback),
+  `--refresh`, `--dry-run` (planned-call JSON, no network/cache),
+  `--classifier alibaba|jev`, `--threshold`, `--keep`, `--format
+  md|html|text|json`, `--verbose`. Config via
+  `$XDG_CONFIG_HOME/semtext/config.yaml` (tiny YAML subset — no new
+  deps), precedence flag > env > config > default; cache under
+  `$XDG_CACHE_HOME/semtext` (tasks.jsonl, sections/, notes/, index/),
+  atomic writes. Credential errors name the env vars (never values) and
+  suggest `--no-llm`. Pipe exit contract 0/1/2, agent JSON-default with
+  2/1. Docs: `docs/focus.md`; US-405 notes the future MCP wrapper
+  (PENDING). 60 new unit specs (markdown-sections, focus core, CLI
+  contracts over both binaries).
+- **Terminal render mode: `<sem-tui>` wrapper + `render-mode="tui"` on any
+  SemText element.** Every element can now present itself as terminal
+  text — box-drawing callouts, `▸/▾` disclosure carets honoring
+  `collapsed`/`open`, `├─ └─` tree glyphs for nested records, aligned
+  table columns, `[TL;DR]` labels, `[sem-xyz: summary]` placeholders for
+  non-textual elements — reusing the pipe CLI's extraction recipe
+  (`src/extract/records.ts` + `parseTreeContainer`) through a new pure
+  module `src/shared/text-render/`. Mode resolution: own
+  `render-mode`/`tui` attribute > nearest `<sem-tui>` frame's current
+  mode > rich; the outermost tui element renders the whole subtree and
+  nested sem-* never double-frame. `<sem-tui>` adds `cols` (default 80),
+  `theme` (dark/light/amber/green via `--sem-tui-*` custom properties)
+  and an optional `toggle` Rich/Terminal switch (real button,
+  `aria-pressed`, bubbling `sem-render-mode-change`). The terminal view
+  mounts `<pre class="sem-tui" part="tui" aria-label=…>` while authored
+  children are CSS-hidden — nothing moves, so extraction stays
+  byte-identical and flipping back restores rich wiring. New document
+  driver `src/lit/shared/render-mode.ts` (installed from the core
+  barrel); new element registered in the lazy manifest, schema
+  (`spec/schema/sem-tui.md` + global `render-mode`/`tui` attributes) and
+  `elements.json`; demo `web/demo/sem-tui.html`; docs `docs/sem-tui.md`.
+
+## 2026-10-26
+
+- docs: doc-sweep (pointers-check, layout, arch, schema, threat-model)
+
+## 2026-10-21
+
+- **`sem-component` + `sem-see-also`: component-inventory cards and
+  related-reference entries land upstream (#86).** Component-eval
+  platform item 9. `sem-component` renders a `components/manifest.yaml`
+  entry as a card (tag/name/type/status/source/labels; authored children
+  are the description record; head prepended, meta appended, authored
+  DOM never moved). `sem-see-also` renders one related target — a
+  section id, a component tag, or a file — as a link with a shared
+  popover hover preview, a click-through into the factored shared modal
+  shell (`src/shared/modal.ts`; `data-modal.ts` now delegates to it),
+  a View-all new-tab affordance, and the `#ref=<id>` deep link alongside
+  `#dv=` (new `ref` key in `src/data/deeplink.ts`). Extraction
+  (`buildComponent`/`buildSeeAlso`), schema defs + prose contracts,
+  conventions, vocabulary CSS, `web/demo/component-cards.html` fixture,
+  e2e (`sem-component`, `sem-see-also-hover/-modal/-deep-link`) and unit
+  tests (modal-shell, data-deeplink, both elements) ride along.
+
+## 2026-10-18
+
+- **sem-bind port: the live-data runtime + hydrated progress/procedure
+  elements land upstream.** Faithful port of the semtext.dev subtree delta
+  (#182, #184 — landed there 2026-10-18): `src/lit/bind.ts` (parse →
+  fetch → hydrate runtime — bind declarations incl. relative-URL
+  resolution against the document base, KV-definition plan hydration,
+  popup-login token flow, polling, per-element payload intake);
+  `sem-progress` + `sem-procedure` graduated out of `sem-stubs.ts` into
+  their own modules and grew the bind intake alongside the already-real
+  plan/runbook/workflow hydration; bind chrome (per-step status markers,
+  choice/fork rendering, never-blank state line, progress caption) added
+  to `themes/_vocabulary.css`; the unit tier gained the sem-bind
+  parse/attach/hydrate suites (58 tests); demo page
+  `web/demo/sem-bind.html` + payload fixtures under `web/demo/data/`.
+  Bundle budget 154 → 165 KB to absorb the runtime (measured 164.5 raw /
+  51.2 gzipped; see `scripts/build.mjs` + ROADMAP "Size budgets").
+
+- **post-0.9.x cypress hardening: quiz-details rescan claim + site shim
+  removal + deflaked specs.** `vanilla/details` never claimed its root
+  (`data-sem-upgraded`), so the 50 ms rescan re-ran the pass forever and a
+  just-revealed span (`sem-highlight sem-revealed`) still matched the
+  pass's own input selector — every reveal was replaced back to
+  `.sem-occluded` on the tick after it happened (retry-based checks saw
+  it, same-tick probes didn't); roots now claimed like facts.ts.
+  `web/site/index.html` dropped its page-local
+  `makeCardsKeyboardOperable` shim — 0.9.1 deck wiring owns Enter/Space,
+  so shim + runtime double-toggled `.sem-flipped` to a net no-flip. Specs
+  fixed to the shipped meter contract: quiz wrong pick is a retry (score
+  `0/0` until the correct pick), and chip-index assertions no longer pin
+  the unseeded demo deck's per-load random order (#82).
+
+- **validate scope excludes web/demo.** `npm run validate` on pristine
+  develop reported 18 pre-existing errors, all confined to `web/demo/*`
+  pages lagging the current vocabulary; demos are frozen historical
+  examples, so the default scope narrows to `web/site/**` + `spec/*`
+  (scope fix, not a content fix) — everything outside demo stays gated (#81).
+
+## 2026-10-18 (0.9.3 — first family-complete versioned snapshot)
+
+- **Re-cut release.** #68 landed after 0.9.2 and set `package.json` back to
+  0.9.1 (its branch was cut before the 0.9.2 rename) — this release takes
+  0.9.3 to clear both taken numbers and because its whole point is the
+  artifact set: `dist/v0.9.3/` is the FIRST versioned snapshot that carries
+  the Phase-7 families (`semext.js/-lazy/-manifest` + chunks,
+  `agent-kit.js/-lazy/-manifest` + chunks). No runtime source changes.
+- **stamp-version + publish-cdn carry the families** (found re-vendoring
+  0.9.2): `stamp-version.mjs` copied only core + npl into
+  `dist/v<version>/`, so the `semext-*` / `agent-kit-*` lazy surface had no
+  immutable versioned URL; its FILES/DIRS lists now include the six family
+  bundles + `semext-chunks/` + `agent-kit-chunks/`, covered by
+  `stamp-version.test.mjs`. The `publish-cdn` payload stages the same set —
+  npl was missing there too.
+
+## 2026-10-18 (0.9.1 — SEMTEX high-bug wave)
+
+- **Late DOM now upgrades (MutationObserver rescan).** The bundle scanned once at
+  DOMContentLoaded; content a host rendered afterwards (client-side routes, hydration,
+  CMS injection) stayed unenhanced — the root cause behind SEMTEX-001 (sem-views tabs
+  navigating instead of switching), SEMTEX-005/006/007 (sem-reveal / sem-details /
+  sem-source div-alias and data-summary forms dead), and SEMTEX-008 (tag-form
+  sem-progress). `src/index.ts` now observes `document.documentElement` (childList,
+  subtree), debounces 50 ms, and re-runs the three scans over the whole document; the
+  observer is quiet after its own chrome insertions.
+- **Re-scan idempotency guards.** `views` guards on its generated `.sem-views-tabs` bar,
+  `progress` on `.sem-progress-track` (NOT the element marker — the tag form's claim stub
+  stamps `data-sem-upgraded` at connect, before the handler runs), `audience` and
+  `target` wire document-level listeners once (`WeakSet` for scoped audiences). Covered
+  by `test/unit/rescan-idempotency.test.ts`.
+- **sem-facts deck rework (SEMTEX-003 / SEMTEX-004).** One shared wiring
+  (`src/vanilla/facts-deck.ts`) serves both tiers and both deck views: flashcards show
+  ONE card in a seeded shuffled order, flip on click/Enter/Space, record ✓ Got it /
+  ✗ Wrong verdicts that advance to the next unanswered card, carry a numbered-chip INDEX
+  (prev/next kept, the `n/N` count dropped) and end with a "You got X of N" summary +
+  Restart; quiz shuffles its options, keeps the question open on a wrong pick (✗ spent),
+  and auto-advances 500 ms after the correct pick. Fixed the sparse-array trap
+  (`new Array(n).every()` skips holes and read "all answered" at first render) with
+  `.fill(undefined)`; Restart got its own listener (it lives outside the chrome row).
+- **sem-question ships (SEMTEX-009).** The glossary element was plain HTML — no
+  component, `shipped: false`. New `src/lit/sem-question.ts` (+ `sem-option` claim stub):
+  seeded-shuffled thin-bordered option buttons, keep-picking-until-correct, optional
+  `retry`. Barrel + manifest updated via the entry graph.
+- **Default theme tokens (`:where(html)`).** `_vocabulary.css` declared no palette, so
+  unmounted pages rendered `.sem-occluded` invisible and modals borderless/transparent
+  (SEMTEX-006/020 visual half). A zero-specificity default block now provides bg,
+  surface, fg, muted, border, accent, note, correct/wrong and occluded tokens; any
+  `[data-sem-theme]` mount still wins regardless of load order.
+- **e2e spec updated** to the chips-index contract (`test/e2e/sem-facts.cy.js`); the
+  disabled-spent-pick re-click uses `:enabled`. Unit suite 182 files / 2859 tests green;
+  Playwright integration smoke green (views, flashcards, quiz, progress, question,
+  tokens, reveal/details aliases) with zero console errors.
+## 2026-10-18 (0.9.2 — Phase 7 vocabulary release)
+
+- **Version note:** 0.9.1 is claimed by the in-flight SEMTEX bug-fix wave
+  (`fix/semext-091`, branch-pushed, PR pending as this lands) — this
+  vocabulary release takes the next free number to keep the train
+  single-filed.
+
+- **First versioned release of the Phase 7 surface** (landed on `develop` through #56/#61–#66,
+  previously only on the branch): the 108-tag vocabulary — 19 static knowledge/doc containers
+  (`sem-kb`, `sem-howto`, `sem-runbook`, `sem-faq(s)`, `sem-changelog(s)`, `sem-tsg(s)`,
+  `sem-guard-rail(s)`, `sem-plan`, `sem-requirement`, `sem-rubric`, `sem-eval`, `sem-philosophy`,
+  `sem-summary`, `sem-mockup`, `sem-threat-model`, `sem-tldr`), the interactive
+  workflow/site/file-tree containers, nine service-backed `semext-*` embeds and 22 `agent-kit-*`
+  cards — plus `bin/semtext-refresh.mjs` (`npm run refresh`, #65) and the conventions generator
+  (`npm run gen:conventions`, #66). Every element ships a Lit component (display stubs register
+  and claim `data-sem-upgraded`; no CSS-only elements). `elements.json` regenerated from the
+  spec (108 tags, no gaps).
+- **Fix forward — `gen:conventions` emitted an unbalanced §7** (the #66 regression that left the
+  `unit` lane red on `develop`): the distribution container closed before the danger note, then
+  re-opened nothing and emitted a second `</sem-properties>` — the stray close made every
+  `spec/conventions.html` round-trip test fail byte-exactness. The generator now holds the note
+  and emits it after the container close (properties 1/2/3/5 inside, note after — the
+  hand-authored shape); `spec/conventions.html` regenerated (4 opens / 4 closes) and the
+  freshness gate passes.
 
 ## 2026-10-18 (0.9.0 — fallback tier removal)
 
+- **Authoring refresh tooling (Phase 7):** `bin/semtext-refresh.mjs` (`npm run refresh`) — a pure cache-region
+  splicer (`src/tools/cache-splicer.js`: marker-only rewrites, byte-identical prose, timestamp-normalized
+  `--check`, `--seed` authoring, malformed-marker errors) plus lazy fail-soft adapters (`src/tools/adapters.js`:
+  agentkit / docptr / styleguide / annotate / media) wired through `src/tools/refresh-cli.js`; 64 new unit tests,
+  no new dependencies, no dist-bundle impact.
 - **Breaking (0.8.3 → 0.9.0): the standalone fallback tier is gone.** The retired
   artifacts (`dist/semtext-fallback.js`, the `./fallback`/`./reading`/`./extract`/`./md`
   package exports, the `sem:inline fallback` marker, its budget row) had already left the
@@ -84,6 +275,7 @@
 
 ## 2026-10-18
 
+- conventions.html is now generated (feat/gen-conventions-html, PR 4a of the vocabulary epic): scripts/gen-conventions-html.mjs regenerates spec/conventions.html from spec/conventions.md (npm run gen:conventions / gen:conventions:check; deterministic, no new deps), splicing verbatim hand-page segments (17 live sem-source examples, consumers views, notes, tier-status, references) around mechanically rendered prose — md wins on content, so the hand page's reworded paragraphs, §2 catalog placement, and the DRAFT/XHTML intro split collapse to the .md's structure, while the q1/q4 sem-notes (md carries them inline), banner comments, and entity prettification are dropped and 10 agent-kit schema references are added. Generation fails (exit 1) if any pinned/aliased anchor would go missing — the build-standalone llms.txt invariant anchor `8-machine-readability-contract`, the cypress spec-page pins, the mis-slugged `#appendix-a--…` outline target (aliased to the real 4-dash heading id) — and a vitest suite (test/unit/gen-conventions-html.test.mjs) pins determinism, alias preservation, and the exit-1 drift path; CI's unit job runs `gen:conventions:check` after build so a stale page fails the run. spec-pages.cy.js 14/14 against the regenerated page (incl. the .md-row table-parity and nojs extraction invariant); full build green incl. the standalone anchor assertion.
 - agent-kit bundle (feat/agent-kit-bundle, family C, based on feat/cached-embed-base): the 22 `agent-kit-*` tags over the cached-embed base — 6 ticket records (`agent-kit-issue`/`-epic`/`-bug`/`-user-story`/`-task`/`-sub-task` sharing title/description/state/labels/last-updated parts), `agent-kit-ticket-ref` (board column entries), user/agent persona cards, `agent-kit-acceptance-criteria` (given/when/then criteria), `agent-kit-custom-assert` (expr → expect), `agent-kit-board` (heading columns of ticket-refs), organization/project reference cards, `agent-kit-chatroom` (authored chat log), media trio `agent-kit-asset`/`-artifact`/`-review` (lazy-loaded image + mime chip; type chip + inert version chips + snapshot stamp; verdict-colored review chip + comment count), and the testing quartet `agent-kit-test-suite`/`-test-case`/`-cypress`/`-cucumber` (branch totals with pass/fail attr badges, step counters, script cards promoting inline `text/plain` scripts via CSS so real JS-off browsing keeps the authored source — the `.nojs` build artifact strips all scripts by hard invariant, documented in script-cards.md). Every element is a registered Lit component over CachedEmbedElement (`livePolicy: 'never'` throughout — no client creds; authored JSON snapshots only); attribute-borne labels render via CSS ::before/::after so JS-off == JS-on extraction (CHROME_CLASSES union keeps chrome subtrees out of records). Contracts spec/schema/agent-kit/*.md; schema $defs +47; vocabulary CSS appended as marked agent-kit sections; demo web/demo/agent-kit.html (built twin + nojs); elements.json 76 → 108 tags, 0 gaps; unit 15 new specs, e2e 20 new specs (extraction invariant per batch); budgets proposed for agent-kit.js (39.9 raw / 12.5 gz) 48.0 KB and agent-kit-lazy.js (4.6 / 1.9) 6.0 KB — build:strict wired with LAZY_TARGETS.
 - interactive containers (feat/sem-interactive, family A part 2): three lazy elements — `<sem-workflow>`/`<sem-step>` (steps carrying `action`/`description`/`gate`/`check`/`if-no`/`output`; JS-off a CSS-ordered list with workflow-scoped ordinals + `attr()` gate ⛨ / check ▸ badges, JS-on an `if-no` step grows an `aria-expanded` collapsible branch) and the twin trees `<sem-site-tree>` (nested bare `<node path label kind collapsed>`; JS-off a static nested list purely via CSS) / `<sem-file-tree>` (`mode="text"` — the authored `<pre>` IS the record, parsed from box-drawing or smallest-indent-unit whitespace, trailing `/` marks a dir) over ONE shared engine (`src/lit/sem-tree.ts`: pure `parseStructuredTree`/`parseTreeText`/`parseTreeContainer`/`flattenTree`/`filterTree`/`findInTree`/`ancestorsOf` + a `TreeHost` base; per-node collapse with `aria-expanded`, filter keeping ancestor chains, find with `data-match` + Enter-cycled current). Schema: $defs for all four tags + a NEW per-parent `childForms` mechanism in the validator (workflow>sem-step requires `action`; tree>node requires `path` — sem-procedure steps and stray nodes keep their old contracts, proven both ways); contracts spec/schema/sem-workflow.md + sem-site-tree.md + sem-file-tree.md; vocabulary CSS appended as a marked section (dual `:is()` selectors, tokens only; gate badge takes the step ::after status slot, check rides the ordinal ::before); demo web/demo/workflows-trees.html + an append-only index.html entry (plain paragraph — no new records for extraction.cy.js); conventions.md/.html (family row, §5 "Interactive containers" section with live samples, Appendix A rows, three schema references); elements.json regenerated (58 tags / 47 schema files, 0 gaps); unit tests (both tree parsers + equivalence, filter keeps-ancestors, find marking/cycling, workflow step model, 12 childForm validator specs) and e2e (sem-workflow.cy.js / sem-site-tree.cy.js / sem-file-tree.cy.js — JS-off static rendering, expand/collapse, filter/find, and the extraction invariant deep-equal across script tiers). Lazy chunks: sem-workflow.js 1294 B, sem-site-tree.js 166 B, sem-file-tree.js 166 B (each ≤2KB budget; the trees share a 5.3 KB engine chunk) — core bundle carries the registrations per the no-CSS-only-tags contract (`lit-all-tags-registered.test.ts`), measured 150.1 raw / 46.6 gz, so the `semtext.js` budget moves 144 → 152 KB (scripts/build.mjs comment + ROADMAP "Size budgets" entry, matching the recorded 96 → 126 → 144 history).
 - family A containers (feat/sem-containers): the 15 static knowledge/doc containers — 19 tags — land as no-logic Lit display stubs in the core bundle (no CSS-only elements): sem-kb, sem-runbook, sem-howto (`<name>`/`<tags>` children), sem-requirement (kind/status/priority enums), sem-threat-model, sem-guard-rails/sem-guard-rail (severity info/warn/block rails), sem-mockup (mode text/html), sem-rubric (max-score chip), sem-eval (status chip), sem-philosophy, sem-summary, sem-plan (status chip; NOT the sem-workflow lane), sem-tsgs/sem-tsg, sem-faqs/sem-faq (exactlyOne question/answer; never a disclosure), sem-changelogs/sem-changelog (date/impacted heading chrome). Contracts spec/schema/sem-<el>.md; schema $defs +61 defs total with the bare `name` part extended to sem-howto/sem-tsg; vocabulary CSS appended as the marked "sem-containers family A" section (labels/chips ::before/::after, outside textContent — JS-off identical); validator pair enforcement unit-tested (validate-containers.test.mjs 13/13); e2e sem-containers-a/-b prove registered stubs + extraction invariant vs the .nojs artifact; demo web/demo/containers.html (all 15) linked from index.html; elements.json regenerated — 74 tags, 0 gaps; editor count pins re-derived from loadSchema() on merge with the cached-embed base (PR #55) rather than re-pinned; EDITOR.md count + companion list updated; semtext.js size budget raised 144 → 145 KB post-measure (family A = +1.2 KB on a base grown to 143.1 by parallel lanes; ROADMAP Size budgets + scripts/build.mjs history).

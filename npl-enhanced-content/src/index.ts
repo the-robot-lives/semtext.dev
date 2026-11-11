@@ -1,3 +1,4 @@
+// 〚📦:𓒢𓐈𔘣𓥏〛 core bundle :: Core one-bundle entry (dist/semtext.js, global SemText): defines the sem-* custom elements, re-exports extraction and the shared foundation, runs the vanilla handlers on DOMContentLoaded.
 /**
  * SemText — the one bundle (spec v0.6, three-file surface).
  *
@@ -58,10 +59,19 @@ export { SemNote } from './lit/sem-note.js';
 import './lit/sem-note.js';
 export { SemFacts } from './lit/sem-facts.js';
 import './lit/sem-facts.js';
+/* sem-question + sem-option — the quiz block (shipped 0.9.1, SEMTEX-009) */
+export { SemQuestion, SemOption } from './lit/sem-question.js';
+import './lit/sem-question.js';
 export { SemDetails } from './lit/sem-details.js';
 import './lit/sem-details.js';
 export { SemReveal } from './lit/sem-reveal.js';
 import './lit/sem-reveal.js';
+/* component inventory + related references (spec/schema/sem-component.md,
+ * sem-see-also.md, 0.9.5) */
+export { SemComponent } from './lit/sem-component.js';
+import './lit/sem-component.js';
+export { SemSeeAlso } from './lit/sem-see-also.js';
+import './lit/sem-see-also.js';
 /* reference-definition cards (spec/schema/sem-tag-def.md, sem-api-call.md) */
 export { SemTagDef } from './lit/sem-tag-def.js';
 import './lit/sem-tag-def.js';
@@ -75,6 +85,11 @@ export { SemCode } from './lit/sem-code.js';
 import './lit/sem-code.js';
 export { SemReferences } from './lit/sem-references.js';
 import './lit/sem-references.js';
+/* sem-reference — auto-id + footnote chrome (graduated from the stubs);
+ * the pure AUTO-ID rule is exported for hosts and machine consumers. */
+export { SemReference } from './lit/sem-reference.js';
+import './lit/sem-reference.js';
+export { referenceSlug, referenceId, deriveReferenceId } from './shared/reference-id.js';
 export { SemProperties } from './lit/sem-properties.js';
 import './lit/sem-properties.js';
 /* R/W2 chrome + data — thin wrappers over src/reading/* */
@@ -114,6 +129,8 @@ export { SemProgress } from './lit/sem-progress.js';
 import './lit/sem-progress.js';
 export { SemProcedure } from './lit/sem-procedure.js';
 import './lit/sem-procedure.js';
+export { SemStep } from './lit/sem-step.js';
+import './lit/sem-step.js';
 /* sem-bind — the live-data runtime (parse → fetch → hydrate; see
  * src/lit/bind.ts). The bound elements wire it themselves; these named
  * exports serve programmatic hosts and the unit tier. */
@@ -227,12 +244,34 @@ export { SemFaqs, SemFaq } from './lit/sem-faqs.js';
 import './lit/sem-faqs.js';
 export { SemChangelogs, SemChangelog } from './lit/sem-changelogs.js';
 import './lit/sem-changelogs.js';
+/* sem-tui — the terminal-frame wrapper (render-mode context provider):
+ * the subtree switch between rich and the terminal text view, plus the
+ * document driver that resolves `render-mode="tui"` / `tui` attributes
+ * everywhere (src/lit/shared/render-mode.ts, pure renderers in
+ * src/shared/text-render). Programmatic hosts may install the driver
+ * themselves on a different document; the core barrel installs one for
+ * this document below. */
+export { SemTui } from './lit/sem-tui.js';
+import './lit/sem-tui.js';
+export {
+  resolveRenderMode,
+  hasTuiRenderingAncestor,
+  nearestTuiCols,
+  mountTui,
+  unmountTui,
+  rescanRenderModes,
+} from './lit/shared/render-mode.js';
+import { installRenderModeDriver } from './lit/shared/render-mode.js';
+export type { RenderMode } from './lit/shared/render-mode.js';
+export { renderElementAsText } from './shared/text-render/index.js';
+export type { TextRenderOptions } from './shared/text-render/index.js';
 
 /* Core vanilla handlers — sem-views/progress/audiences, deep links, the
  * sem-source snapshot pass and the other elements no Lit component defines
  * (the former standalone fallback bundle's code, renamed 0.9.0). */
 import {
   enhance as enhanceCore,
+  settleTarget,
   type VanillaHandler,
 } from './vanilla/index.js';
 export type { VanillaHandler } from './vanilla/index.js';
@@ -248,6 +287,7 @@ export {
   enhanceProgress,
   enhanceAudience,
   enhanceTarget,
+  settleTarget,
 } from './vanilla/index.js';
 import { enhance as enhanceMdScan } from './md/index.js';
 export { enhanceMd, enhanceMdElement, normalizeMd, parseBlocks, safeUrl } from './md/index.js';
@@ -263,6 +303,9 @@ export {
   disposeReaderElement,
 } from './reading/index.js';
 export { enhanceCore, enhanceMdScan as enhanceMdDocument, enhanceReading };
+/* see-also deep link + modal shell — programmatic hosts and the unit tier */
+export { enhanceSeeAlsoElement, resetSeeAlsoLatch } from './reading/see-also.js';
+export { openModalShell, closeModalShell, modalShellOpenFor } from './shared/modal.js';
 
 function init(): void {
   // Load-bearing order: the core's sem-source snapshot pass must precede
@@ -270,6 +313,31 @@ function init(): void {
   enhanceCore(document);
   enhanceMdScan(document);
   enhanceReading(document);
+  // Passes settled — the initial deep-link resolution waits for exactly
+  // this (a mid-parse `setTimeout(run, 0)` fired before the reveal/deck
+  // passes had wrapped the target and the `wired` latch never retried).
+  settleTarget();
+}
+
+/* Late-mounted DOM (SPA islands, Hologram renders, async embeds) never
+ * sees the one-shot DOMContentLoaded scan — every reference pane on a
+ * hydrating host was invisible to it (0.9.1 defect class: views with no
+ * tab bar, div-alias handlers never wired). The passes are idempotent on
+ * marked DOM (`data-sem-upgraded` / chrome guards, including the
+ * window-listener dedup in audience/target), so the cheapest correct
+ * strategy is a debounced FULL re-scan whenever nodes enter the document.
+ * Our own chrome insertions trigger one extra pass that finds nothing
+ * unmarked and quiets — no loop. */
+let rescanTimer = 0;
+function rescan(): void {
+  if (rescanTimer) return;
+  rescanTimer = window.setTimeout(() => {
+    rescanTimer = 0;
+    enhanceCore(document);
+    enhanceMdScan(document);
+    enhanceReading(document);
+    settleTarget(); // structure may have moved — re-arm the deep-link settle
+  }, 50);
 }
 
 if (typeof document !== 'undefined') {
@@ -277,5 +345,21 @@ if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', init, { once: true });
   } else {
     init();
+  }
+  // The render-mode driver: one scan + mutation/attribute watches for
+  // `render-mode="tui"` elements and every `<sem-tui>` subtree. Installed
+  // after the handler scheduling above, so a same-event DOMContentLoaded
+  // scan lands after the content passes.
+  installRenderModeDriver(document);
+  if (typeof MutationObserver !== 'undefined' && document.documentElement) {
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        if (record.addedNodes.length > 0) {
+          rescan();
+          return;
+        }
+      }
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
   }
 }

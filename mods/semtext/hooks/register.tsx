@@ -7,8 +7,10 @@ import {
   RENDERERS,
   backToOutline,
   breadcrumbOf,
+  blockRows,
   buildQuizOptions,
   cardKeys,
+  collapseLines,
   collapseWhitespace,
   expandedPlan,
   factLine,
@@ -21,6 +23,7 @@ import {
   pickOption,
   promptFor,
   sanitize,
+  selectedMark,
   setActiveView,
   setAllExpanded,
   setExpanded,
@@ -115,6 +118,13 @@ const NPL_ELEMENTS: ReadonlySet<string> = new Set([
 // (markdown-escaped `\<WEDGE\>` and bare `<WEDGE>` alike), so the parser
 // applies the flat-section rule to exactly this set (see parseSemText).
 const FRICTION_MARKERS: ReadonlySet<string> = new Set(['wedge', 'shadow', 'critic', 'weego'])
+
+// Same-name implied end for the loose sem-* leaves: sem-note, sem-step and
+// sem-fact are routinely emitted unclosed back-to-back (one per item), so a
+// new opening of the same name closes the still-open one and both render as
+// siblings. Every other sem-* name keeps normal same-name nesting (nested
+// sem-section is real markup) — see parseSemText.
+const IMPLIED_END_SEM: ReadonlySet<string> = new Set(['sem-note', 'sem-step', 'sem-fact'])
 
 // The element vocabulary of sem-text.v0.7.spec.html (the 57 §2 table entries
 // plus the structural authoring elements its §1 names: sem-enhanced-document,
@@ -271,7 +281,75 @@ type ParseNode = SemTextNode & {
   inheritedSeed?: number | null
 }
 
-type TextContainer = { name: string; start: number }
+type TextContainer = {
+  name: string
+  start: number
+  /** Tag attributes (ol start/type matter for the ordered labels). */
+  attrs?: Record<string, string>
+  /** Absolute spans of inner containers already captured — subtracted from
+   *  this container's own capture so nested lists never double-draw. */
+  consumed?: Array<[number, number]>
+  /** li items emitted so far by this ol (the ordered index base). */
+  count?: number
+  /** li carries a checkbox task state (from an input type=checkbox inside). */
+  task?: boolean
+  done?: boolean
+  /** This container's own blocks (document-order pre-merge). */
+  own?: SemBlock[]
+  /** Merged blocks of inner containers, in pre-order. */
+  kids?: SemBlock[]
+}
+
+const LIST_CONTAINERS = new Set(['ul', 'ol', 'dl'])
+const ITEM_CONTAINERS = new Set(['li', 'dt', 'dd'])
+
+function roman(n: number, upper: boolean): string {
+  const table: Array<[number, string]> = [
+    [1000, 'm'], [900, 'cm'], [500, 'd'], [400, 'cd'], [100, 'c'], [90, 'xc'],
+    [50, 'l'], [40, 'xl'], [10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i'],
+  ]
+  let out = ''
+  for (const [value, sym] of table) {
+    while (n >= value) {
+      out += sym
+      n -= value
+    }
+  }
+  return upper ? out.toUpperCase() : out
+}
+
+/** `1.`-style display label per the ol's type attr (1/a/A/i/I), index 1-based. */
+function orderedLabel(type: string, index: number): string {
+  if (type === 'a') return `${String.fromCharCode(97 + ((index - 1) % 26))}.`
+  if (type === 'A') return `${String.fromCharCode(65 + ((index - 1) % 26))}.`
+  if (type === 'i') return `${roman(Math.max(1, index), false)}.`
+  if (type === 'I') return `${roman(Math.max(1, index), true)}.`
+  return `${index}.`
+}
+
+/** Removes already-captured inner spans (absolute coords, `base` = slice start). */
+function subtractSpans(
+  slice: string,
+  spans: ReadonlyArray<[number, number]>,
+  base: number,
+): string {
+  if (spans.length === 0) return slice
+  const rel = spans
+    .map(
+      ([from, to]) =>
+        [Math.max(0, from - base), Math.min(slice.length, to - base)] as [number, number],
+    )
+    .filter(([from, to]) => to > from)
+    .sort((a, b) => a[0] - b[0])
+  let out = ''
+  let cursor = 0
+  for (const [from, to] of rel) {
+    if (from < cursor) continue
+    out += slice.slice(cursor, from) + ' '
+    cursor = Math.max(cursor, to)
+  }
+  return out + slice.slice(cursor)
+}
 
 function parseSeedAttr(value: string | undefined): number | null {
   if (value === undefined) return null
@@ -329,7 +407,10 @@ function contentFor(
       return { kind: 'reveal', summary, body: full, collapsed: node.attrs['collapsed'] !== undefined }
     }
     case 'sem-note': {
-      if (node.attrs['collapsed'] === undefined || full === '') return undefined
+      // v0.6: every note is a card (default-open with its body inline), so
+      // the content captures regardless of the `collapsed` attribute — the
+      // attribute only biases the default toggle state, it never hides text.
+      if (full === '') return undefined
       return {
         kind: 'note',
         collapsed: true,
@@ -391,18 +472,26 @@ function contentFor(
 function finalizeNode(node: ParseNode): void {
   const childRaws = node.children.map(child => (child as ParseNode).raw ?? '')
   for (const child of node.children) finalizeNode(child as ParseNode)
-  const raw = node.raw ?? ''
-  const direct = collapseWhitespace(raw)
+  const direct = collapseLines(node.raw ?? '')
   const childText = node.children
     .map(child => child.text ?? '')
     .filter(text => text !== '')
-    .join(' ')
-  const full = collapseWhitespace(`${direct} ${childText}`)
+    .join('\n')
+  const full = collapseLines(
+    childText === '' ? direct : direct === '' ? childText : `${direct}\n${childText}`,
+  )
   // An NPL block card draws its own prose; its element children render as
   // their own rows (expandedPlan), so their text stays out of the body here
-  // — never drawn twice.
-  node.text = (NPL_ELEMENTS.has(node.tag) ? direct : full).slice(0, MAX_TEXT)
-  node.content = contentFor(node, full, raw, childRaws)
+  // — never drawn twice. The cap is visible: a cut body records how many
+  // characters were dropped so the pane can show `… (+N chars)`.
+  const body = NPL_ELEMENTS.has(node.tag) ? direct : full
+  if (body.length > MAX_TEXT) {
+    node.text = body.slice(0, MAX_TEXT)
+    node.truncated = body.length - MAX_TEXT
+  } else {
+    node.text = body
+  }
+  node.content = contentFor(node, full, node.raw ?? '', childRaws)
   delete node.raw
   delete node.inheritedSeed
 }
@@ -434,26 +523,102 @@ export function parseSemText(text: string): ParsedSemText | null {
     // Markdown-escaped tag markers (`\<WEDGE\>`) leak their backslash into
     // the gap text; strip the escape. The backslash before an opening `<`
     // always sits at the very end of the gap slice (the tag starts the next
-    // slice), so `$` must count as an escape position too.
+    // slice), so `$` must count as an escape position too. Quotes round the
+    // set out — escaped `\"` at a body's end leaked a stray backslash.
     top.raw =
       (top.raw ?? '') +
-      sanitize(text.slice(from, to)).replace(/\\([<>]|$)/g, '$1')
+      sanitize(text.slice(from, to)).replace(/\\([<>"']|$)/g, '$1')
   }
-  const captureContainer = (container: TextContainer, to: number): void => {
+  const captureContainer = (container: TextContainer, at: number, to: number): void => {
+    // Record spans of every implicitly-closed inner container (and this one)
+    // into their parents, so a parent's own capture never re-draws inner text
+    // (nested lists/paragraphs inside an li emit their own blocks).
+    for (let j = containers.length - 1; j >= at; j--) {
+      const span: [number, number] = [containers[j]!.start, to]
+      if (j > 0) {
+        const parent = containers[j - 1]!
+        parent.consumed ??= []
+        parent.consumed.push(span)
+      }
+    }
+    // Pre-order block merge: inner containers close first, so each container
+    // collects its own block + its children's merged blocks and hands the
+    // result up on close — the final order is parent-then-children in
+    // document order, never inside-out.
+    const close = (): void => {
+      const merged = [...(container.own ?? []), ...(container.kids ?? [])]
+      if (merged.length === 0) return
+      if (at > 0) {
+        const parent = containers[at - 1]!
+        parent.kids = [...(parent.kids ?? []), ...merged]
+        return
+      }
+      const top = stack[stack.length - 1]
+      if (top === undefined) return
+      const blocks: SemBlock[] = (top.blocks ??= [])
+      for (const block of merged) {
+        if (blocks.length >= MAX_BLOCKS) return
+        blocks.push(block)
+      }
+    }
     const top = stack[stack.length - 1]
     if (top === undefined) return
-    const inner = text
-      .slice(container.start, to)
+    if (container.name === 'ul' || container.name === 'ol' || container.name === 'dl') {
+      close()
+      return
+    }
+    const inner = subtractSpans(
+      text.slice(container.start, to),
+      container.consumed ?? [],
+      container.start,
+    )
       .replace(COMMENT_BLOCK, ' ')
       .replace(TAG_LIKE, ' ')
     const clean = collapseWhitespace(sanitize(inner))
-    if (clean === '') return
-    const blocks: SemBlock[] = (top.blocks ??= [])
-    if (blocks.length >= MAX_BLOCKS) return
     const heading = HEADING_NAME.exec(container.name)
-    if (heading !== null) blocks.push({ kind: 'heading', level: Number(heading[1]), text: clean })
-    else if (container.name === 'blockquote') blocks.push({ kind: 'quote', text: clean })
-    else blocks.push({ kind: 'text', text: clean })
+    if (clean !== '') {
+      const own: SemBlock[] = (container.own ??= [])
+      if (heading !== null) own.push({ kind: 'heading', level: Number(heading[1]), text: clean })
+      else if (container.name === 'blockquote') own.push({ kind: 'quote', text: clean })
+      else if (container.name === 'li') {
+        // List item: bullet/number/task from the enclosing structure (v0.6.1).
+        let lists = 0
+        for (let s = 0; s < at; s++) {
+          const n = containers[s]!.name
+          if (n === 'ul' || n === 'ol') lists++
+        }
+        const parent = at > 0 ? containers[at - 1]! : undefined
+        const parentIsList = parent !== undefined && (parent.name === 'ul' || parent.name === 'ol')
+        const depth = Math.max(0, parentIsList ? lists - 1 : lists)
+        const authoredTask =
+          container.task === true ||
+          /task/.test(container.attrs?.['class'] ?? '') ||
+          container.attrs?.['data-task'] !== undefined
+        if (authoredTask) {
+          own.push({ kind: 'task-item', text: clean, done: container.done === true, depth })
+        } else if (parentIsList && parent.name === 'ol') {
+          parent.count = (parent.count ?? 0) + 1
+          const start = parseSeedAttr(parent.attrs?.['start']) ?? 1
+          const type = parent.attrs?.['type'] ?? '1'
+          own.push({
+            kind: 'list-item-ordered',
+            text: clean,
+            label: orderedLabel(type, Math.max(1, start) + parent.count - 1),
+            depth,
+          })
+        } else {
+          own.push({
+            kind: 'list-item',
+            text: clean,
+            bullet: depth === 0 ? '•' : depth === 1 ? '◦' : '▪',
+            depth,
+          })
+        }
+      } else if (container.name === 'dt') own.push({ kind: 'term', text: clean })
+      else if (container.name === 'dd') own.push({ kind: 'definition', text: clean })
+      else own.push({ kind: 'text', text: clean })
+    }
+    close()
   }
 
   while (i < text.length) {
@@ -509,14 +674,40 @@ export function parseSemText(text: string): ParsedSemText | null {
           }
         }
         if (at >= 0) {
-          captureContainer(containers[at]!, i)
+          captureContainer(containers[at]!, at, i)
           containers.length = at
         }
       } else if (
         !selfClosing &&
-        (name === 'p' || name === 'blockquote' || HEADING_NAME.test(name))
+        (name === 'p' ||
+          name === 'blockquote' ||
+          HEADING_NAME.test(name) ||
+          LIST_CONTAINERS.has(name) ||
+          ITEM_CONTAINERS.has(name))
       ) {
-        containers.push({ name, start: end })
+        containers.push(
+          name === 'ol' || name === 'li'
+            ? { name, start: end, attrs: parseAttrs(attrSrcOf(src)) }
+            : { name, start: end },
+        )
+      } else if (!closing && name === 'input') {
+        // Task-list checkbox: mark the nearest enclosing li as a task item.
+        const attrs = parseAttrs(attrSrcOf(src))
+        if ((attrs['type'] ?? '').toLowerCase() === 'checkbox') {
+          for (let s = containers.length - 1; s >= 0; s--) {
+            if (containers[s]!.name === 'li') {
+              containers[s]!.task = true
+              containers[s]!.done = attrs['checked'] !== undefined
+              break
+            }
+          }
+        }
+      } else if (name === 'br' && !closing) {
+        // `<br>` variants are hard row breaks in boxed prose — record a line
+        // break in the raw capture so finalizeNode's per-line collapse keeps
+        // the split (literal newlines already land in gap slices verbatim).
+        const top = stack[stack.length - 1]
+        if (top !== undefined && containers.length === 0) top.raw += '\n'
       }
       i = end
       continue
@@ -537,14 +728,16 @@ export function parseSemText(text: string): ParsedSemText | null {
     } else {
       count++
       if (!KNOWN_ELEMENTS.has(name)) unknown.add(name)
-      // Implied end tags, NPL family only. The friction markers are flat
-      // sibling sections emitted unclosed (WEDGE then SHADOW then CRITIC…),
-      // so one marker opening closes the still-open marker; an NPL element
-      // also closes an earlier open of its own name. Same-name nesting stays
-      // legal elsewhere (nested sem-section is real markup) — without this
-      // rule each unclosed marker nested into the previous one and vanished
-      // inside its parent card.
-      if (!selfClosing && NPL_ELEMENTS.has(name)) {
+      // Implied end tags: the NPL family (friction markers are flat sibling
+      // sections emitted unclosed — WEDGE then SHADOW then CRITIC… — so one
+      // marker opening closes the still-open marker, and an NPL element also
+      // closes an earlier open of its own name), plus same-name implied end
+      // for sem-note/sem-step/sem-fact. Same-name nesting stays legal for
+      // every other sem-* name (nested sem-section is real markup) — without
+      // these rules each unclosed marker nested into the previous one and
+      // vanished inside its parent card, and back-to-back notes/steps/facts
+      // collapsed into a single swallowed body.
+      if (!selfClosing && (NPL_ELEMENTS.has(name) || IMPLIED_END_SEM.has(name))) {
         for (let s = stack.length - 1; s >= 0; s--) {
           const open = stack[s]!.tag
           if (
@@ -755,41 +948,6 @@ export function nodeAt(tree: readonly SemTextNode[], key: string): SemTextNode |
   return node
 }
 
-const INTERACTIVE: ReadonlySet<SemNodeContent['kind']> = new Set([
-  'facts',
-  'reveal',
-  'note',
-  'views',
-  'properties',
-  'table',
-  'code',
-])
-
-type Widget = { key: string; node: SemTextNode }
-
-/**
- * Card descendants of `root` (interactive content or an NPL-family block),
- * keyed by outline row key — the section view draws each through the render
- * registry after the focused node's own render.
- */
-function widgetsIn(root: SemTextNode, baseKey: string): Widget[] {
-  const out: Widget[] = []
-  const walk = (nodes: readonly SemTextNode[], prefix: string): void => {
-    for (let i = 0; i < nodes.length && out.length < MAX_WIDGETS; i++) {
-      const node = nodes[i]!
-      const key = `${prefix}${i}`
-      if (
-        (node.content !== undefined && INTERACTIVE.has(node.content.kind)) ||
-        NPL_ELEMENTS.has(node.tag)
-      ) {
-        out.push({ key, node })
-      }
-      walk(node.children, `${key}.`)
-    }
-  }
-  walk(root.children, `${baseKey}.`)
-  return out
-}
 
 // --- the mod ---
 
@@ -871,6 +1029,7 @@ export const register: Register = on => {
       el: { Box, Text, Button },
       viewer,
       width,
+      inset: 0,
       wkey: '',
       budget: room,
       spent: { rows: 0 },
@@ -903,7 +1062,11 @@ export const register: Register = on => {
           plain
           dimColor
           onPress={() => {
-            void update($, VIEWER, v => setAllExpanded(v, cards, anyShut))
+            // Collapse-all IS the compact outline (and expand-all returns to
+            // the streamlined expanded view) — one view, two zoom levels.
+            void update($, VIEWER, v =>
+              setOutlineMode(setAllExpanded(v, cards, anyShut), anyShut ? 'expanded' : 'outline'),
+            )
           }}
         >
           {anyShut
@@ -942,7 +1105,7 @@ export const register: Register = on => {
                 void update($, VIEWER, v => focusSection(v, row.key))
               }}
             >
-              {`${row.key === selected ? GLYPHS.toggle.open : ' '} ${row.prefix}${row.glyph} ${row.label}`}
+              {`${selectedMark(row.key === selected)} ${row.prefix}${row.glyph} ${row.label}`}
               {row.count > 0 && <Text dimColor>{` (${row.count})`}</Text>}
             </Button>
           ))}
@@ -953,19 +1116,19 @@ export const register: Register = on => {
       )
     }
 
-    // The expanded document view (default): the whole outline tree top-to-
-    // bottom, every row followed by its content inline — section prose and
-    // unknown-tag text as dim text rows, cards through their renderers
-    // (default-open). Rows stay clickable to focus; the row budget applies.
-    const expandedView = (): RenderElement => {
-      const unknown = doc.unknownElements
-      const units = expandedPlan(doc.tree)
-      const budget = Math.max(1, room - 4) // source + stats + unknown? + toggle
-      const ectx: RenderCtx = { ...ctx, budget, spent: { rows: 0 } }
-      const parts: RenderElement[] = []
+    // The shared content drawer: plan units -> elements under a row budget.
+    // Cards render through the registry (the card header replaces the outline
+    // row, children draw inside the frame); flow rows stay pressable to
+    // focus, their blocks draw bold + rules, their text indents 2 per depth.
+    const drawUnits = (
+      units: ReturnType<typeof expandedPlan>,
+      ectx: RenderCtx,
+      parts: RenderElement[],
+    ): number => {
       let hidden = 0
+      let drewContent = false
       for (const unit of units) {
-        const left = budget - ectx.spent.rows
+        const left = ectx.budget - ectx.spent.rows
         if (left <= 0) {
           hidden++
           continue
@@ -975,7 +1138,7 @@ export const register: Register = on => {
             <Button
               key={`sec:${unit.key}`}
               plain
-              dimColor={unit.row.depth > 0}
+              dimColor
               onPress={() => {
                 void update($, VIEWER, v => focusSection(v, unit.key))
               }}
@@ -985,23 +1148,58 @@ export const register: Register = on => {
             </Button>,
           )
           ectx.spent.rows += 1
+          drewContent = true
         } else if (unit.role === 'text') {
+          const cellW = Math.max(8, width - unit.indent.length - 2)
           if (unit.block !== undefined) {
-            ectx.spent.rows += pushBlock(parts, unit.block, left, unit.indent)
+            // One blank row above a heading that isn't the first drawn row.
+            const blank =
+              unit.block.kind === 'heading' && drewContent && left > 1
+                ? 1
+                : 0
+            if (blank === 1) {
+              parts.push(<Text key={`t:${unit.key}.blank`}>{' '}</Text>)
+              ectx.spent.rows += 1
+            }
+            const rows = blockRows(unit.block, cellW, Math.max(1, left - blank))
+            rows.forEach((row, i) => {
+              parts.push(
+                <Text
+                  key={`t:${unit.key}.${i}`}
+                  bold={row.bold}
+                  dimColor={row.dim ?? false}
+                >
+                  {row.text === '' ? ' ' : `${unit.indent}${row.text}`}
+                </Text>,
+              )
+            })
+            ectx.spent.rows += rows.length
+            drewContent = true
           } else {
-            const lines = wrapLines(
-              sanitize(unit.text),
-              Math.max(8, width - unit.indent.length - 2),
-              left,
-            )
+            // Boxed-prose line rule for flow leaf text too: literal newlines
+            // (and captured `<br>` breaks) split rows, blanks collapse.
+            const segments = sanitize(unit.text)
+              .split('\n')
+              .map(seg => seg.trim())
+            while (segments.length > 0 && segments[0] === '') segments.shift()
+            while (segments.length > 0 && segments[segments.length - 1] === '') segments.pop()
+            const lines: string[] = []
+            segments.forEach(seg => {
+              if (seg === '') {
+                if (lines.length > 0 && lines[lines.length - 1] !== '') lines.push('')
+                return
+              }
+              lines.push(...wrapLines(seg, cellW, Math.max(1, left - lines.length)))
+            })
             ectx.spent.rows += lines.length
             lines.forEach((line, i) => {
               parts.push(
                 <Text key={`t:${unit.key}.${i}`} dimColor>
-                  {`${unit.indent}${line}`}
+                  {line === '' ? ' ' : `${unit.indent}${line}`}
                 </Text>,
               )
             })
+            drewContent = drewContent || lines.length > 0
           }
         } else {
           const render = RENDERERS[unit.node.tag] ?? RENDERERS['*']!
@@ -1012,8 +1210,22 @@ export const register: Register = on => {
               {drawn}
             </Box>,
           )
+          drewContent = true
         }
       }
+      return hidden
+    }
+
+    // The streamlined expanded view (default): the whole document top-to-
+    // bottom — every section, note and NPL block as a framed card with its
+    // children nested inside; flow rows keep their press-to-focus. Collapse
+    // all and the compact outline remains.
+    const expandedView = (): RenderElement => {
+      const unknown = doc.unknownElements
+      const budget = Math.max(1, room - 4) // source + stats + unknown? + toggle
+      const ectx: RenderCtx = { ...ctx, inset: 0, budget, spent: { rows: 0 } }
+      const parts: RenderElement[] = []
+      const hidden = drawUnits(expandedPlan(doc.tree), ectx, parts)
       return (
         <Box flexDirection="column">
           <Text>{`${GLYPHS.kind.source} ${sanitize(doc.fileName ?? doc.source)}`}</Text>
@@ -1078,63 +1290,17 @@ export const register: Register = on => {
       </Box>
     )
 
-    // Blocks: headings (`##` dim marker), blockquotes (`▌`), paragraphs plain.
-    // `indent` shifts every drawn line right (the expanded view nests content
-    // under its tree branch). Returns the number of rows actually drawn.
-    const pushBlock = (
-      parts: RenderElement[],
-      block: SemBlock,
-      budget: number,
-      indent = '',
-    ): number => {
-      if (budget <= 0) return 0
-      const cellWidth = Math.max(8, width - 2)
-      const draw = (marker: string, text: string, dim: boolean, weight?: 'semibold'): number => {
-        const lines = wrapLines(
-          sanitize(text),
-          Math.max(4, cellWidth - marker.length - indent.length),
-          budget,
-        )
-        lines.forEach((line, i) => {
-          parts.push(
-            i === 0 && marker !== '' ? (
-              <Text key={`b${parts.length}-${i}`} dimColor={dim} weight={weight}>
-                <Text dimColor>{`${indent}${marker}`}</Text>
-                {line}
-              </Text>
-            ) : (
-              <Text
-                key={`b${parts.length}-${i}`}
-                dimColor={dim}
-                weight={i === 0 ? weight : undefined}
-              >
-                {i > 0
-                  ? `${indent}${marker !== '' ? `${' '.repeat(marker.length)}` : ''}${line}`
-                  : `${indent}${marker}${line}`}
-              </Text>
-            ),
-          )
-        })
-        return lines.length
-      }
-      if (block.kind === 'heading') {
-        const mark = `${'#'.repeat(Math.min(6, Math.max(1, block.level)))} `
-        return draw(mark, block.text, false, block.level <= 2 ? 'semibold' : undefined)
-      }
-      if (block.kind === 'quote') {
-        return draw(`${GLYPHS.quote} `, block.text, true)
-      }
-      return draw('', block.text, false)
-    }
-
+    // Section focus: the same streamlined drawer scoped to the focused
+    // element's subtree (document key paths, so card toggles keep working),
+    // with a breadcrumb and prev/next nav on top.
     const sectionView = (): RenderElement => {
       const key = viewer.focusedSection ?? ''
       const node = nodeAt(doc.tree, key)
       if (node === undefined) {
         return viewer.outlineMode === 'outline' ? outlineView() : expandedView()
       }
-      let used = 1 // the breadcrumb row
       const budget = Math.max(1, room - 2)
+      const ectx: RenderCtx = { ...ctx, inset: 0, budget, spent: { rows: 0 } }
       const parts: RenderElement[] = []
 
       // Breadcrumb: source › ancestors (dim) › leaf.
@@ -1156,44 +1322,20 @@ export const register: Register = on => {
           {`${GLYPHS.crumb} ${truncateCell(leaf, Math.max(8, width - 4))}`}
         </Text>,
       )
-      parts.push(
+      const crumbBox = (
         <Box key="crumb" flexDirection="row">
           {crumbs}
-        </Box>,
+        </Box>
       )
 
-      // Headings / paragraphs / blockquotes captured inside the element.
-      for (const block of node.blocks ?? []) {
-        if (used >= budget) break
-        used += pushBlock(parts, block, budget - used)
-      }
-
-      // The element's own content, then interactive descendants — both
-      // through the render registry. `spent` is shared; only the delta
-      // between calls counts against the budget.
-      const renderWith = (widgetKey: string, target: SemTextNode, showBody: boolean): void => {
-        if (used >= budget) return
-        const render = RENDERERS[target.tag] ?? RENDERERS['*']!
-        const before = ctx.spent.rows
-        const sub: RenderCtx = { ...ctx, wkey: widgetKey, budget: budget - used, showBody }
-        const drawn = render(target, sub)
-        used += ctx.spent.rows - before
-        parts.push(
-          <Box key={`w:${widgetKey}`} flexDirection="column">
-            {drawn}
-          </Box>,
-        )
-      }
-      renderWith(key, node, (node.blocks ?? []).length === 0 && node.content === undefined)
-      for (const widget of widgetsIn(node, key)) {
-        if (used >= budget) break
-        renderWith(widget.key, widget.node, false)
-      }
+      const hidden = drawUnits(expandedPlan([node], 8, key), ectx, parts)
 
       return (
         <Box flexDirection="column">
-          {parts.length === 1 ? <Text dimColor>(no content captured)</Text> : parts}
-          {used >= budget && <Text dimColor>{GLYPHS.more}</Text>}
+          {crumbBox}
+          {parts.length === 0 && <Text dimColor>(no content captured)</Text>}
+          {parts}
+          {hidden > 0 && <Text dimColor>{`${GLYPHS.more} (+${hidden} rows hidden)`}</Text>}
           {navRow()}
         </Box>
       )

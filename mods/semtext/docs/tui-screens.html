@@ -7,47 +7,37 @@
 <body>
 <sem-enhanced-document>
 
-<sem-tldr>*Expected pane output for every major screen, drawn as monospace mockups.* Each screen is marked *current* (renders exactly like this since v0.5) or *target* (where v0.4 differed — kept for the record of the wedge fix). Trace through these when touching render.tsx.</sem-tldr>
+<sem-tldr>*Expected pane output for every major screen, drawn as monospace mockups.* Each screen is marked *current* (renders exactly like this since v0.6) or *record* (older shapes kept for the history of a fix). Trace through these when touching render.tsx.</sem-tldr>
 
 <sem-section>
 <h2>Screen 1 — expanded view of a Trinity response</h2>
-<p>*Target reached in v0.5.* Default pane state for an answer carrying the four friction phases. v0.4 (bug) is kept below for the record: unclosed markers nested into WEDGE and its card consumed the children, so SHADOW/CRITIC/WEEGO never appeared.</p>
+<p>*Current since v0.6.* Every element draws as a framed card; the header row is the toggle; there are no hide rows and no tree gutters. v0.4 (bug) is kept below for the record: unclosed markers nested into WEDGE and its card consumed the children, so SHADOW/CRITIC/WEEGO never appeared.</p>
 
-<sem-code lang="tui" filename="v0.5 — target"><pre><code>◫ answer
+<sem-code lang="tui" filename="v0.6 — current"><pre><code>◫ answer
 § 5 elements · ✓ all elements known
-▸ compact outline   ▾ collapse all
-├── ◆ npl-mindread (0)
-│   ┌─ ◆ npl-mindread ──────────────────────┐
-│   │ User reports only the wedge card;     │
-│   │ expects all four phases visible.      │
-│   └───────────────────────────────────────┘
-│   ▾ hide
-├── ▲ WEDGE (0)
-│   ┌─ ▲ WEDGE ─────────────────────────────┐
-│   │ The premise hides a parse-order bug   │
-│   │ in the plan walker.                   │
-│   └───────────────────────────────────────┘
-│   ▾ hide
-├── ▼ SHADOW (0)
-│   ┌─ ▼ SHADOW ────────────────────────────┐
-│   │ The v0.4 walker already dropped card  │
-│   │ children silently once.               │
-│   └───────────────────────────────────────┘
-│   ▾ hide
-├── ✕ CRITIC (0)
-│   ┌─ ✕ CRITIC ────────────────────────────┐
-│   │ Frankfurt check: repro tracks the     │
-│   │ report, not the tree.                 │
-│   └───────────────────────────────────────┘
-│   ▾ hide
-└── ◎ WEEGO (0)
-    ┌─ ◎ WEEGO ──────────────────────────────┐
-    │ Other panes share the walker; fix at   │
-    │ the plan layer, not the renderer.      │
-    └────────────────────────────────────────┘
-    ▾ hide</code></pre></sem-code>
+▾ compact outline   ▾ collapse all
+┌ ▾ ◆ npl-mindread ──────────────────────────┐
+│ User reports only the wedge card; expects │
+│ all four phases visible.                  │
+└───────────────────────────────────────────┘
+┌ ▾ ▲ WEDGE ────────────────────────────────┐
+│ The premise hides a parse-order bug in    │
+│ the plan walker.                          │
+└───────────────────────────────────────────┘
+┌ ▾ ▼ SHADOW ───────────────────────────────┐
+│ The v0.4 walker already dropped card      │
+│ children silently once.                   │
+└───────────────────────────────────────────┘
+┌ ▾ ✕ CRITIC ───────────────────────────────┐
+│ Frankfurt check: repro tracks the report, │
+│ not the tree.                             │
+└───────────────────────────────────────────┘
+┌ ▾ ◎ WEEGO ────────────────────────────────┐
+│ Other panes share the walker; fix at the  │
+│ plan layer, not the renderer.             │
+└───────────────────────────────────────────┘</code></pre></sem-code>
 
-<p>v0.4 record — the reported defect (only the wedge card, everything else swallowed):</p>
+<p>v0.4 record — the reported defect (only the wedge card, everything else swallowed; v0.5 removed the swallow but still drew `▾ hide` rows and tree gutters):</p>
 <sem-code lang="tui" filename="v0.4 — bug record"><pre><code>◫ answer
 § 5 elements · ✓ all elements known
 ▸ compact outline   ▾ collapse all
@@ -56,23 +46,44 @@
     ┌─ ▲ wedge ──────────────────────────────┐
     │ The premise hides a parse-order bug   │
     │ … The v0.4 plan walker dropped …      │
-    │ … Frankfurt check … Other panes …     │
     └────────────────────────────────────────┘
     ▾ hide
   (SHADOW / CRITIC / WEEGO rows: absent)</code></pre></sem-code>
 </sem-section>
 
 <sem-section>
-<h2>Screen 2 — compact outline</h2>
-<p>*Current.* Bare tree rows, click-to-focus; child counts dim.</p>
+<h2>Screen 2 — nested cards, boxed prose, heading rules</h2>
+<p>*Current since v0.6.* Child cards draw *inside* the parent frame with a 2-column inset per depth; prose is boxed with its line breaks kept; headings are bold with underline rules (h2 ── full width here) and the section title lives in the frame header — never duplicated inside. The shut npl-thought grandchild shows the ▸ header with a size hint; internal attrs never echo.</p>
+<sem-code lang="tui" filename="nested frames"><pre><code>┌ ▾ § sem-section — Deep dive ──────────────┐
+│                                           │
+│ Deep dive                                 │
+│ ──────────────────────────────────────    │
+│ Recap prose.                              │
+│  ┌ ▾ 📌 note ───────────────────────────┐ │
+│  │ line one                             │ │
+│  │ line two                             │ │
+│  └──────────────────────────────────────┘ │
+│  ┌ ▾ ▣ npl-block ───────────────────────┐ │
+│  │ outer                                │ │
+│  │    ┌ ▸ ◇ npl-thought · 1 lines ────┐ │ │
+│  │    └───────────────────────────────┘ │ │
+│  └──────────────────────────────────────┘ │
+└───────────────────────────────────────────┘</code></pre></sem-code>
+<p>Shutting the section header collapses its whole subtree — one header line, size hint in place of the body:</p>
+<sem-code lang="tui" filename="subtree shut"><pre><code>┌ ▸ § sem-section — Deep dive · 4 blocks ───┐</code></pre></sem-code>
+</sem-section>
+
+<sem-section>
+<h2>Screen 3 — compact outline (the collapse-all shape)</h2>
+<p>*Current.* Bare tree rows, click-to-focus; child counts dim. This is what ▾ collapse all produces — expand all returns to the expanded view. The focused row is marked by the dedicated ❯ in the leftmost column (v0.5.1 — previously it reused the ▸ collapse glyph); ▸/▾ stay toggle/nav glyphs.</p>
 <sem-code lang="tui" filename="compact outline"><pre><code>◫ answer
 § 5 elements · ✓ all elements known
-▸ compact outline   ▾ collapse all
-├── ◆ npl-mindread (0)
-├── ▲ WEDGE (0)
-├── ▼ SHADOW (0)
-├── ✕ CRITIC (0)
-└── ◎ WEEGO (0)</code></pre></sem-code>
+▸ expanded view   ▸ expand all
+  ├── ◆ npl-mindread (0)
+❯ ├── ▲ WEDGE (0)
+  ├── ▼ SHADOW (0)
+  ├── ✕ CRITIC (0)
+  └── ◎ WEEGO (0)</code></pre></sem-code>
 <p>Nested example — counts and spines:</p>
 <sem-code lang="tui" filename="compact outline nested"><pre><code>├── § sem-doc (3)
 │   ├── § sem-tldr (0)
@@ -85,48 +96,50 @@
 </sem-section>
 
 <sem-section>
-<h2>Screen 3 — section focus</h2>
-<p>*Current.* Breadcrumb trail dim, blocks drawn (## marker, ▌ quote), the node's render, interactive descendants, nav row.</p>
+<h2>Screen 4 — section focus</h2>
+<p>*Current.* No separate focus presentation — the same expanded renderer scoped to the subtree, breadcrumb on top, document keys so nested toggles keep working, nav row at the bottom.</p>
 <sem-code lang="tui" filename="section focus"><pre><code>answer › sem-doc › sem-section — Deep dive
-## Deep dive
-Recap prose.
-┌─ ⌨ ts ─────────────────────────────────┐
-│ const a = 1                            │
-│ const b = 2                            │
-└────────────────────────────────────────┘
-❓ quiz · 2 items
-▸ run quiz
+┌ ▾ § sem-section — Deep dive ──────────────┐
+│ Deep dive                                 │
+│ ──────────────────────────────────────    │
+│ Recap prose.                              │
+│  ┌ ▾ ⌨ ts ─────────────────────────────┐ │
+│  │ const a = 1                          │ │
+│  │ const b = 2                          │ │
+│  └──────────────────────────────────────┘ │
+│  ❓ quiz · 2 items                        │
+│  ▸ run quiz                               │
+└───────────────────────────────────────────┘
 ◂ outline   ◂ prev   ▸ next</code></pre></sem-code>
 </sem-section>
 
 <sem-section>
-<h2>Screen 4 — card collapsed vs expanded</h2>
-<p>*Current.* Shut card is one toggle row (summary + ▸); open card is the framed body plus ▾ hide. Authored collapsed defaults shut; an explicit hide wins over expand-all.</p>
-<sem-code lang="tui" filename="card states"><pre><code>├── 📌 sem-note (0)
-│   📌 one two three four five six eight … ▸
-├── 📌 sem-note (0)        (after pressing ▸)
-│   ┌─ 📌 note ─────────────────────────────┐
-│   │ one two three four five six eight     │
-│   │ nine ten eleven                       │
-│   └───────────────────────────────────────┘
-│   ▾ hide
-├── 💡 sem-reveal (0)      (collapsed attr → shut)
-│   💡 Why not localStorage? ▸</code></pre></sem-code>
+<h2>Screen 5 — card open vs shut</h2>
+<p>*Current.* The header row is the only control: open is `┌ ▾ badge ───┐` with the body inside the frame; shut is one `┌ ▸ badge · N lines ───┐` line — the hint states the size, no hide row anywhere. Authored collapsed biases the default state.</p>
+<sem-code lang="tui" filename="card states"><pre><code>┌ ▸ 📌 note · 3 lines ──────────────────────┐
+(press the header)
+┌ ▾ 📌 note · 3 lines ──────────────────────┐
+│ one two three four five six eight nine    │
+│ ten eleven                                │
+└───────────────────────────────────────────┘
+┌ ▸ 💡 reveal · Why not localStorage? ──────┐
+(collapsed attr → shut by default)</code></pre></sem-code>
 </sem-section>
 
 <sem-section>
-<h2>Screen 5 — unknown tag</h2>
-<p>*Current.* Unknown tags keep name, id and body (never dropped); the header names the first four unknowns.</p>
+<h2>Screen 6 — unknown tag</h2>
+<p>*Current.* Unknown tags keep name, id and body in their own frame (never dropped); the header names the first four unknowns.</p>
 <sem-code lang="tui" filename="unknown tag"><pre><code>◫ answer
 § 6 elements
 ✗ 1 unknown: sem-unknown-widget
-▸ compact outline   ▾ collapse all
-└── · sem-unknown-widget #w1 (0)
-    unrendered body text still visible here</code></pre></sem-code>
+▾ compact outline   ▾ collapse all
+┌ ▾ · sem-unknown-widget #w1 ───────────────┐
+│ unrendered body text still visible here   │
+└───────────────────────────────────────────┘</code></pre></sem-code>
 </sem-section>
 
 <sem-section>
-<h2>Screen 6 — quiz and flashcards</h2>
+<h2>Screen 7 — quiz and flashcards</h2>
 <p>*Current.* Meter with position and score, prompt, ▢ options with hotkeys; after picking, ✓/✗ marks and next. Flashcards flip on f.</p>
 <sem-code lang="tui" filename="quiz runner"><pre><code>▰▰▱▱▱▱▱▱ 2/4 · score 1/1
 What is B?
@@ -146,23 +159,39 @@ What is A?
 </sem-section>
 
 <sem-section>
-<h2>Screen 7 — long document budget truncation</h2>
-<p>*Current.* Rows render top-down until the budget runs out; the tail is one counted footer, never a silent cut.</p>
+<h2>Screen 8 — long document budget truncation</h2>
+<p>*Current.* Rows render top-down until the budget runs out; the tail is one counted footer, never a silent cut — and an oversized captured body shows its own `… (+N chars)` marker on the card.</p>
 <sem-code lang="tui" filename="budget cut"><pre><code>◫ long-doc.html
 § 31 elements · ✓ all elements known
-▸ compact outline   ▾ collapse all
-├── § sem-tldr (0)
-│   Short summary line here.
-├── 🧭 sem-procedure (3)
-│   ┌─ 🧭 Deploy ────────────────────────────┐
-│   │ 1 → port-forward minio                │
-│   │ 2 → run migrations                    │
-│   └───────────────────────────────────────┘
-│   … (+1 steps)
+▾ compact outline   ▾ collapse all
+┌ ▾ § sem-tldr ─────────────────────────────┐
+│ Short summary line here.                  │
+└───────────────────────────────────────────┘
+┌ ▾ 🧭 procedure — Deploy ──────────────────┐
+│ 1 → port-forward minio                    │
+│ 2 → run migrations                        │
+│ … (+1 steps)                              │
+└───────────────────────────────────────────┘
 … (+18 rows hidden)</code></pre></sem-code>
 </sem-section>
 
-<sem-summary>Seven screens cover the pane contract: flat friction cards (the v0.5 fix, with the v0.4 bug kept as record), compact outline, section focus with breadcrumb and nav, card open/shut states, honest unknown tags, the quiz/flashcard runner, and counted budget truncation. If a code change makes real output diverge from a *current* screen here, update the screen in the same PR.</sem-summary>
+<sem-section>
+<h2>Screen 9 — lists, tasks and definition lists</h2>
+<p>*Current since v0.6.1.* HTML lists draw inside the containing card like the page would: bullets by depth, ordered labels right-aligned from start/type, ☐/☑ task items, bold dl terms with indented definitions, hanging continuation rows, nested items in document order.</p>
+<sem-code lang="tui" filename="lists"><pre><code>┌ ▾ § sem-section — Plan ───────────────────┐
+│ • outer item                              │
+│   ◦ nested item                           │
+│     ▪ deepest                             │
+│    2. second                              │
+│    3. third                               │
+│   ☑ shipped                               │
+│   ☐ still open                            │
+│ Budget                                    │
+│   What it costs and why.                  │
+└───────────────────────────────────────────┘</code></pre></sem-code>
+</sem-section>
+
+<sem-summary>Nine screens cover the pane contract: framed cards with header toggles (no hide rows), nested frames with boxed prose and heading rules, the compact outline as the collapse-all shape, section focus as the same view scoped, card open/shut states, honest unknown tags, the quiz/flashcard runner, counted budget truncation, and lists/tasks/dl rendered webpage-like. If a code change makes real output diverge from a *current* screen here, update the screen in the same PR.</sem-summary>
 
 </sem-enhanced-document>
 </body>
