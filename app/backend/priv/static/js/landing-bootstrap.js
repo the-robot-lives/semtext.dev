@@ -187,6 +187,7 @@
       shell.defer = true;
       shell.src = "/semtext/semtext-js-shell.js";
       shell.setAttribute("data-sem-view-runtime", "shell");
+      shell.onerror = runtimeLoadFailed;
       document.head.appendChild(shell);
     }
     if (!document.querySelector('script[data-sem-view-runtime="lazy"]')) {
@@ -195,14 +196,44 @@
       lazy.type = "module";
       lazy.src = "/semtext/semtext-lazy.js";
       lazy.setAttribute("data-sem-view-runtime", "lazy");
+      lazy.onerror = runtimeLoadFailed;
       document.head.appendChild(lazy);
     }
   }
 
+  // A failed bundle load leaves the SSR transcript in place and appends one
+  // honest note per shell panel — never the old "once the bundle lands" text.
+  function runtimeLoadFailed() {
+    var codes = document.querySelectorAll("[data-sem-panel] pre code");
+    for (var i = 0; i < codes.length; i++) {
+      if (codes[i].querySelector("[data-sem-runtime-note]")) continue;
+      var note = document.createElement("span");
+      note.className = "block whitespace-pre text-ink-faint";
+      note.setAttribute("data-sem-runtime-note", "true");
+      note.textContent = "(the interactive demo could not load — the transcript above still describes it)";
+      codes[i].appendChild(note);
+    }
+  }
+
   function scheduleViewRuntimes() {
-    // Hydration settled → give the final client render one more beat, then
-    // mount. If hydration never lands (blocked runtime, cap reached), the
-    // SSR DOM is stable too — mounting into it is equally safe.
+    // Inject only when the try section nears the viewport — no shell request
+    // on a landing visit that never scrolls to it. Hydration has settled by
+    // the time this runs, so the observed container is stable.
+    var target = document.querySelector("[data-sem-try-views]");
+    if (target && typeof IntersectionObserver === "function") {
+      var io = new IntersectionObserver(function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i].isIntersecting) {
+            io.disconnect();
+            loadViewRuntimes();
+            return;
+          }
+        }
+      }, { rootMargin: "300px 0px" });
+      io.observe(target);
+      return;
+    }
+    // No IntersectionObserver (or no try section): fall back to the settle beat.
     if (hydrateDone) {
       window.setTimeout(loadViewRuntimes, RUNTIME_SETTLE_MS);
     } else {
