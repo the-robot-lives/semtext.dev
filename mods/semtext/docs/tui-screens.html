@@ -7,7 +7,7 @@
 <body>
 <sem-enhanced-document>
 
-<sem-tldr>*Expected pane output for every major screen, drawn as monospace mockups.* Each screen is marked *current* (renders exactly like this since v0.6) or *record* (older shapes kept for the history of a fix). Trace through these when touching render.tsx.</sem-tldr>
+<sem-tldr>*Expected pane output for every major screen, drawn as monospace mockups.* Each screen is marked *current* (renders exactly like this since the version named) or *record* (older shapes kept for the history of a fix). Trace through these when touching render.tsx — v0.7.0 adds the code card (Screen 10) and heavy table grids (Screen 11).</sem-tldr>
 
 <sem-section>
 <h2>Screen 1 — expanded view of a Trinity response</h2>
@@ -104,8 +104,8 @@
 │ ──────────────────────────────────────    │
 │ Recap prose.                              │
 │  ┌ ▾ ⌨ ts ─────────────────────────────┐ │
-│  │ const a = 1                          │ │
-│  │ const b = 2                          │ │
+│  │ 1 │ const a = 1                      │ │
+│  │ 2 │ const b = 2                      │ │
 │  └──────────────────────────────────────┘ │
 │  ❓ quiz · 2 items                        │
 │  ▸ run quiz                               │
@@ -191,7 +191,51 @@ What is A?
 └───────────────────────────────────────────┘</code></pre></sem-code>
 </sem-section>
 
-<sem-summary>Nine screens cover the pane contract: framed cards with header toggles (no hide rows), nested frames with boxed prose and heading rules, the compact outline as the collapse-all shape, section focus as the same view scoped, card open/shut states, honest unknown tags, the quiz/flashcard runner, counted budget truncation, and lists/tasks/dl rendered webpage-like. If a code change makes real output diverge from a *current* screen here, update the screen in the same PR.</sem-summary>
+<sem-section>
+<h2>Screen 10 — code card</h2>
+<p>*Current since v0.7.0.* sem-code draws a dedicated card: the badge names lang and provenance (`lang · file`), a dim line-number gutter runs down the left, and lines keep their column layout (never reflowed). `controls="wrap"` gives ↪ continuations; without it long lines cut with … at the frame edge; `mark="2,4-5"` carries a ▌ gutter marker and bold; entities decode (`&lt;` renders as a literal &lt;). Keywords tint blue, strings green, comments dim — tints not visible in a monospace mock.</p>
+<sem-code lang="tui" filename="code card"><pre><code>┌ ▸ ⌨ ts · src/rotate.ts · 5 lines ─────────┐
+(press the header)
+┌ ▾ ⌨ ts · src/rotate.ts ───────────────────┐
+│  1 │ export function rotate(dir) {        │
+│  2▌│   // quarterly identity rotation     │
+│  3 │   const key = "pair@quarter"         │
+│  4▌│   return { dir, key }                │
+│  5▌│ }                                    │
+└───────────────────────────────────────────┘
+┌ ▾ ⌨ json ─────────────────────────────────┐
+│  1 │ {"event":"rotate","dir":"quarterly",  │
+│    │   ↪ "pair":"dragons@Q3"}              │
+│  2 │ {"event":"trim"}                      │
+└───────────────────────────────────────────┘
+┌ ▾ ⌨ sh ───────────────────────────────────┐
+│  1 │ # rotate the pair and report          │
+│  2 │ ./rotate --identity dragons --repo t… │
+└───────────────────────────────────────────┘</code></pre></sem-code>
+</sem-section>
+
+<sem-section>
+<h2>Screen 11 — table grids</h2>
+<p>*Current since v0.7.0.* sem-table draws a heavy box-drawn grid: the caption is the header badge, columns size to their content (emoji count two cells), header rows bold, alignment from the delimiter row (numeric columns right-align when unauthored), cell wrap grows the row (an authored br is a hard in-cell break), and counted footers report hidden rows and columns.</p>
+<sem-code lang="tui" filename="table grid"><pre><code>▦ Token lifetimes
+┏━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━┓
+┃ tier    ┃ window   ┃ hours ┃
+┝━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━┥
+┃ free    ┃ rolling  ┃    24 ┃
+┃ pair    ┃ session  ┃     1 ┃
+┗━━━━━━━━━┻━━━━━━━━━━┻━━━━━━━┘</code></pre></sem-code>
+<p>Multi-line cells and counted overflow:</p>
+<sem-code lang="tui" filename="grid overflow"><pre><code>▦ table · 12 rows × 6 cols
+┏━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━┓
+┃ name    ┃ notes      ┃ score ┃
+┝━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━┥
+┃ dragons ┃ first line ┃    92 ┃
+┃         ┃ second line┃       ┃
+┗━━━━━━━━━┻━━━━━━━━━━━━┻━━━━━━━┘
+… (+10 rows) · … (+3 cols)</code></pre></sem-code>
+</sem-section>
+
+<sem-summary>Eleven screens cover the pane contract: framed cards with header toggles (no hide rows), nested frames with boxed prose and heading rules, the compact outline as the collapse-all shape, section focus as the same view scoped, card open/shut states, honest unknown tags, the quiz/flashcard runner, counted budget truncation, lists/tasks/dl rendered webpage-like, the code card with gutter and tint, and heavy table grids with caption headers and alignment. If a code change makes real output diverge from a *current* screen here, update the screen in the same PR.</sem-summary>
 
 </sem-enhanced-document>
 </body>
