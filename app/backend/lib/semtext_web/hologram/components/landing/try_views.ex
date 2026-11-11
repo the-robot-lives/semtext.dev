@@ -183,7 +183,7 @@ defmodule SemtextWeb.Hologram.Components.Landing.TryViews do
                     start-script {tab.script}
                   </span>
                 </div>
-                <pre class="max-h-[26rem] min-h-[16rem] overflow-auto p-4 font-mono text-[0.78rem] leading-relaxed text-ink-mute"><code>{%for line <- tab.lines}<span class={line.cls}>{line.text}</span>{/for}</code></pre>
+                <pre class="h-[24rem] overflow-auto bg-[#0f1216] p-4 font-mono text-[0.78rem] leading-relaxed text-[#d7dee7]"><code>{%for line <- tab.lines}<span class={line.cls}>{line.text}</span>{/for}</code></pre>
               </figure>
             </sem-shell>
           {/if}
