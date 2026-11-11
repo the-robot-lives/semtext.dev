@@ -175,7 +175,23 @@ What is A?
 … (+18 rows hidden)</code></pre></sem-code>
 </sem-section>
 
-<sem-summary>Eight screens cover the pane contract: framed cards with header toggles (no hide rows), nested frames with boxed prose and heading rules, the compact outline as the collapse-all shape, section focus as the same view scoped, card open/shut states, honest unknown tags, the quiz/flashcard runner, and counted budget truncation. If a code change makes real output diverge from a *current* screen here, update the screen in the same PR.</sem-summary>
+<sem-section>
+<h2>Screen 9 — lists, tasks and definition lists</h2>
+<p>*Current since v0.6.1.* HTML lists draw inside the containing card like the page would: bullets by depth, ordered labels right-aligned from start/type, ☐/☑ task items, bold dl terms with indented definitions, hanging continuation rows, nested items in document order.</p>
+<sem-code lang="tui" filename="lists"><pre><code>┌ ▾ § sem-section — Plan ───────────────────┐
+│ • outer item                              │
+│   ◦ nested item                           │
+│     ▪ deepest                             │
+│    2. second                              │
+│    3. third                               │
+│   ☑ shipped                               │
+│   ☐ still open                            │
+│ Budget                                    │
+│   What it costs and why.                  │
+└───────────────────────────────────────────┘</code></pre></sem-code>
+</sem-section>
+
+<sem-summary>Nine screens cover the pane contract: framed cards with header toggles (no hide rows), nested frames with boxed prose and heading rules, the compact outline as the collapse-all shape, section focus as the same view scoped, card open/shut states, honest unknown tags, the quiz/flashcard runner, counted budget truncation, and lists/tasks/dl rendered webpage-like. If a code change makes real output diverge from a *current* screen here, update the screen in the same PR.</sem-summary>
 
 </sem-enhanced-document>
 </body>

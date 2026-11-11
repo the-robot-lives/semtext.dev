@@ -29,6 +29,15 @@ export type SemBlock =
   | { kind: 'heading'; level: number; text: string }
   | { kind: 'quote'; text: string }
   | { kind: 'text'; text: string }
+  /** Unordered item; bullet is depth-styled at capture (• depth 0, ◦ 1, ▪ 2+). */
+  | { kind: 'list-item'; text: string; bullet: string; depth: number }
+  /** Ordered item; label is the capture-computed marker (`1.`, `a.`, `i.` …). */
+  | { kind: 'list-item-ordered'; text: string; label: string; depth: number }
+  /** Task item (`input type=checkbox` inside the li); done = checked attr present. */
+  | { kind: 'task-item'; text: string; done: boolean; depth: number }
+  /** dl term (draws bold); its dd siblings draw indented after it. */
+  | { kind: 'term'; text: string }
+  | { kind: 'definition'; text: string }
 
 export type FactItem = {
   /** Prompt text: the fact's content with its conclusion/distractors removed. */
