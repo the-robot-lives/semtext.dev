@@ -1,6 +1,6 @@
 class E extends Error {
 }
-const j = /* @__PURE__ */ new Set([
+const W = /* @__PURE__ */ new Set([
   "BEGIN",
   "END",
   "function",
@@ -21,7 +21,7 @@ const j = /* @__PURE__ */ new Set([
   "getline",
   "print",
   "printf"
-]), q = /* @__PURE__ */ new Set([
+]), Z = /* @__PURE__ */ new Set([
   ">>",
   "++",
   "--",
@@ -38,7 +38,7 @@ const j = /* @__PURE__ */ new Set([
   "<=",
   ">=",
   "!~"
-]), Z = /* @__PURE__ */ new Set([
+]), V = /* @__PURE__ */ new Set([
   "+",
   "-",
   "*",
@@ -63,7 +63,7 @@ const j = /* @__PURE__ */ new Set([
   "$",
   "|"
 ]);
-function V(n) {
+function Y(n) {
   const t = [];
   let e = 0, s = 1, i = !1;
   const a = (r) => {
@@ -117,7 +117,7 @@ function V(n) {
         if (h === `
 ` && a("unterminated string"), h === "\\") {
           e++;
-          const [d, g] = W(n, e, s, a);
+          const [d, g] = J(n, e, s, a);
           l += d, e = g;
           continue;
         }
@@ -149,11 +149,11 @@ function V(n) {
       let l = e;
       for (; l < n.length && /[A-Za-z0-9_]/.test(n[l]); ) l++;
       const h = n.slice(e, l);
-      e = l, j.has(h) ? (t.push({ t: "kw", v: h, ln: s }), i = h === "next" || h === "nextfile" || h === "break" || h === "continue") : (t.push({ t: "name", v: h, ln: s }), i = !0);
+      e = l, W.has(h) ? (t.push({ t: "kw", v: h, ln: s }), i = h === "next" || h === "nextfile" || h === "break" || h === "continue") : (t.push({ t: "name", v: h, ln: s }), i = !0);
       continue;
     }
     const o = n.slice(e, e + 2);
-    if (q.has(o)) {
+    if (Z.has(o)) {
       if (o === "/=" && !i) {
         t.push({ t: "op", v: "/", ln: s }), e++, i = !1;
         continue;
@@ -161,7 +161,7 @@ function V(n) {
       t.push({ t: "op", v: o, ln: s }), e += 2, i = o === "++" || o === "--";
       continue;
     }
-    if (Z.has(r)) {
+    if (V.has(r)) {
       t.push({ t: "op", v: r, ln: s }), e++, i = r === ")" || r === "]";
       continue;
     }
@@ -169,7 +169,7 @@ function V(n) {
   }
   return t;
 }
-function W(n, t, e, s) {
+function J(n, t, e, s) {
   const i = n[t];
   i === void 0 && s("unterminated escape at end of input");
   const a = {
@@ -225,7 +225,7 @@ const R = /* @__PURE__ */ new Set([
   "fflush",
   "system"
 ]);
-class Y {
+class Q {
   constructor(t, e) {
     this.toks = t, this.functions = e, this.pos = 0, this.inFunction = !1, this.inPrintList = !1, this.calls = [];
   }
@@ -619,7 +619,7 @@ class Y {
     return this.expectOp(")"), { k: "call", name: t, args: s, ln: e };
   }
 }
-function J(n) {
+function tt(n) {
   const t = /* @__PURE__ */ new Map();
   for (let e = 0; e < n.length; e++) {
     const s = n[e];
@@ -630,12 +630,13 @@ function J(n) {
   }
   return t;
 }
-function Q(n) {
-  const t = V(n), e = J(t);
-  return new Y(t, e).program();
+function et(n) {
+  const t = Y(n), e = tt(t);
+  return new Q(t, e).program();
 }
-class p extends Error {
+class u extends Error {
 }
+const T = 1e6, I = () => new u(`loop iteration limit exceeded (over ${T} iterations of one loop)`);
 class F {
 }
 class N {
@@ -644,34 +645,34 @@ class O {
 }
 class $ {
 }
-class T {
+class P {
   constructor(t) {
     this.value = t;
   }
 }
-class I {
+class C {
   constructor(t) {
     this.code = t;
   }
 }
-const c = (n) => ({ v: n, sn: !1 }), w = (n) => ({ v: n, sn: !1 }), S = { v: void 0, sn: !1 }, tt = /^[ \t\n]*[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?[ \t\n]*$/, et = /^[ \t\n]*[+-]?0[xX][0-9a-fA-F]+[ \t\n]*$/;
-function z(n) {
-  return tt.test(n) || et.test(n);
-}
+const c = (n) => ({ v: n, sn: !1 }), w = (n) => ({ v: n, sn: !1 }), S = { v: void 0, sn: !1 }, st = /^[ \t\n]*[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?[ \t\n]*$/, it = /^[ \t\n]*[+-]?0[xX][0-9a-fA-F]+[ \t\n]*$/;
 function X(n) {
+  return st.test(n) || it.test(n);
+}
+function j(n) {
   const t = /^[ \t\n]*[+-]?(0[xX][0-9a-fA-F]+|(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?)/.exec(n);
   if (!t) return 0;
   const e = Number(t[1]);
   return Number.isNaN(e) ? 0 : e;
 }
-function st(n) {
+function nt(n) {
   if (n === void 0) return 6;
   const t = /^%[-+ 0#]*(\d+)?(?:\.\d+)?[eEfgG]$/.exec(n);
   if (!t) return 6;
   const e = t[1] === void 0 ? 6 : Number(t[1]);
   return e >= 1 ? e : 1;
 }
-function C(n, t) {
+function B(n, t) {
   if (Number.isNaN(n)) return "nan";
   if (!Number.isFinite(n)) return n > 0 ? "inf" : "-inf";
   let e = n.toPrecision(t);
@@ -683,31 +684,31 @@ function C(n, t) {
   }
   return e.includes(".") && (e = e.replace(/0+$/, "").replace(/\.$/, "")), e;
 }
-function it(n) {
-  return Number.isInteger(n) && Math.abs(n) < 1e21 ? String(n) : C(n, 6);
+function rt(n) {
+  return Number.isInteger(n) && Math.abs(n) < 1e21 ? String(n) : B(n, 6);
 }
 function v(n) {
   const t = n.v;
-  return t === void 0 ? 0 : typeof t == "number" ? t : X(t);
+  return t === void 0 ? 0 : typeof t == "number" ? t : j(t);
 }
-function u(n) {
+function f(n) {
   const t = n.v;
-  return t === void 0 ? "" : typeof t == "string" ? t : it(t);
+  return t === void 0 ? "" : typeof t == "string" ? t : rt(t);
 }
 function k(n) {
   const t = n.v;
-  return t === void 0 ? !1 : typeof t == "number" ? t !== 0 : z(t) ? X(t) !== 0 : t !== "";
+  return t === void 0 ? !1 : typeof t == "number" ? t !== 0 : X(t) ? j(t) !== 0 : t !== "";
 }
-function nt(n, t) {
+function at(n, t) {
   const e = n.v === void 0 || typeof n.v == "number" || n.sn, s = t.v === void 0 || typeof t.v == "number" || t.sn;
   if (e && s) {
     const r = v(n), o = v(t);
     return r < o ? -1 : r > o ? 1 : 0;
   }
-  const i = u(n), a = u(t);
+  const i = f(n), a = f(t);
   return i < a ? -1 : i > a ? 1 : 0;
 }
-const H = {
+const U = {
   alpha: "a-zA-Z",
   digit: "0-9",
   alnum: "a-zA-Z0-9",
@@ -721,7 +722,7 @@ const H = {
   print: "\\x20-\\x7e",
   graph: "\\x21-\\x7e"
 };
-function rt(n) {
+function ot(n) {
   let t = "";
   for (let e = 0; e < n.length; e++) {
     const s = n[e];
@@ -733,8 +734,8 @@ function rt(n) {
       const i = n.indexOf(":]", e + 2);
       if (i !== -1) {
         const a = n.slice(e + 2, i);
-        if (a in H) {
-          t += "[" + H[a] + "]", e = i + 1;
+        if (a in U) {
+          t += "[" + U[a] + "]", e = i + 1;
           continue;
         }
       }
@@ -745,12 +746,12 @@ function rt(n) {
 }
 function b(n, t) {
   try {
-    return new RegExp(rt(n), t ? "g" : "");
+    return new RegExp(ot(n), t ? "g" : "");
   } catch (e) {
-    throw new p(`invalid regular expression /${n}/: ${e instanceof Error ? e.message : String(e)}`);
+    throw new u(`invalid regular expression /${n}/: ${e instanceof Error ? e.message : String(e)}`);
   }
 }
-function at(n, t) {
+function lt(n, t) {
   if (t === `
 `) {
     if (n === "") return [];
@@ -778,7 +779,7 @@ function at(n, t) {
   }
   return s.push(n.slice(i)), s.length > 0 && s[s.length - 1] === "" && s.pop(), s;
 }
-function G(n, t) {
+function _(n, t) {
   if (t === " ") {
     const r = n.replace(/^[ \t\n]+/, "").replace(/[ \t\n]+$/, "");
     return r === "" ? [] : r.split(/[ \t\n]+/);
@@ -797,8 +798,8 @@ function G(n, t) {
   }
   return s.push(n.slice(i)), s;
 }
-const M = (n) => ({ v: n, sn: z(n) }), P = (1n << 64n) - 1n;
-function U(n, t) {
+const M = (n) => ({ v: n, sn: X(n) }), L = (1n << 64n) - 1n;
+function D(n, t) {
   let e = "", s = 0;
   const i = () => s < t.length ? t[s++] : S, a = () => v(i()), r = (o) => Number.isNaN(o) ? 0n : Number.isFinite(o) ? BigInt(Math.trunc(o)) : o > 0 ? 9223372036854775807n : -9223372036854775808n;
   for (let o = 0; o < n.length; o++) {
@@ -833,56 +834,56 @@ function U(n, t) {
       break;
     }
     let m;
-    const L = h.includes("-") ? "-" : h.includes("0") ? "0" : "", A = (f, x) => (h.includes("+") && f >= 0 ? "+" : h.includes(" ") && f >= 0 ? " " : "") + x;
+    const H = h.includes("-") ? "-" : h.includes("0") ? "0" : "", A = (p, x) => (h.includes("+") && p >= 0 ? "+" : h.includes(" ") && p >= 0 ? " " : "") + x;
     switch (y) {
       case "d":
       case "i": {
-        const f = a();
-        m = A(f, (f < 0 ? "-" : "") + r(f).toString().replace("-", ""));
+        const p = a();
+        m = A(p, (p < 0 ? "-" : "") + r(p).toString().replace("-", ""));
         break;
       }
       case "u": {
-        const f = a();
-        m = (r(f) & P).toString();
+        const p = a();
+        m = (r(p) & L).toString();
         break;
       }
       case "o": {
-        const f = a(), x = r(f);
-        m = (h.includes("#") && x !== 0n ? "0" : "") + (x & P).toString(8);
+        const p = a(), x = r(p);
+        m = (h.includes("#") && x !== 0n ? "0" : "") + (x & L).toString(8);
         break;
       }
       case "x":
       case "X": {
-        const f = a(), x = r(f), B = (x & P).toString(16);
-        m = (h.includes("#") && x !== 0n ? "0x" : "") + (y === "X" ? B.toUpperCase() : B);
+        const p = a(), x = r(p), G = (x & L).toString(16);
+        m = (h.includes("#") && x !== 0n ? "0x" : "") + (y === "X" ? G.toUpperCase() : G);
         break;
       }
       case "c": {
-        const f = i();
-        m = typeof f.v == "number" ? String.fromCharCode(Math.abs(Math.trunc(f.v)) % 256) : u(f).charAt(0) || "";
+        const p = i();
+        m = typeof p.v == "number" ? String.fromCharCode(Math.abs(Math.trunc(p.v)) % 256) : f(p).charAt(0) || "";
         break;
       }
       case "s": {
-        const f = u(i());
-        m = g >= 0 ? f.slice(0, g) : f;
+        const p = f(i());
+        m = g >= 0 ? p.slice(0, g) : p;
         break;
       }
       case "e":
       case "E": {
-        const f = a();
-        m = f.toExponential(g >= 0 ? g : 6).replace(/e([+-])(\d)$/, "e$10$2"), y === "E" && (m = m.toUpperCase()), m = A(f, m);
+        const p = a();
+        m = p.toExponential(g >= 0 ? g : 6).replace(/e([+-])(\d)$/, "e$10$2"), y === "E" && (m = m.toUpperCase()), m = A(p, m);
         break;
       }
       case "f":
       case "F": {
-        const f = a();
-        m = A(f, f.toFixed(g >= 0 ? g : 6));
+        const p = a();
+        m = A(p, p.toFixed(g >= 0 ? g : 6));
         break;
       }
       case "g":
       case "G": {
-        const f = a();
-        m = A(f, C(f, g >= 0 ? Math.max(g, 1) : 6)), y === "G" && (m = m.toUpperCase());
+        const p = a();
+        m = A(p, B(p, g >= 0 ? Math.max(g, 1) : 6)), y === "G" && (m = m.toUpperCase());
         break;
       }
       default:
@@ -890,30 +891,30 @@ function U(n, t) {
         continue;
     }
     if (d > m.length)
-      if (L === "-") m = m.padEnd(d, " ");
-      else if (L === "0" && "diuoxXeEfgG".includes(y)) {
-        const f = /^[+-]/.test(m) ? m[0] : "";
-        f !== "" && (m = m.slice(1));
-        const x = d - m.length - f.length;
-        m = f + (x > 0 ? "0".repeat(x) : "") + m;
+      if (H === "-") m = m.padEnd(d, " ");
+      else if (H === "0" && "diuoxXeEfgG".includes(y)) {
+        const p = /^[+-]/.test(m) ? m[0] : "";
+        p !== "" && (m = m.slice(1));
+        const x = d - m.length - p.length;
+        m = p + (x > 0 ? "0".repeat(x) : "") + m;
       } else m = m.padStart(d, " ");
     e += m;
   }
   return e;
 }
-class D {
+class z {
   constructor(t, e) {
     this.content = t, this.rs = e, this.records = null, this.idx = 0;
   }
   next() {
-    return this.records === null && (this.records = at(this.content, this.rs)), this.idx < this.records.length ? this.records[this.idx++] : null;
+    return this.records === null && (this.records = lt(this.content, this.rs)), this.idx < this.records.length ? this.records[this.idx++] : null;
   }
 }
-const ot = 800;
-function lt(n, t) {
-  return new ht(n, t).run();
+const ht = 800;
+function ct(n, t) {
+  return new ut(n, t).run();
 }
-class ht {
+class ut {
   constructor(t, e) {
     this.program = t, this.opts = e, this.globals = /* @__PURE__ */ new Map(), this.globalArrays = /* @__PURE__ */ new Map(), this.frames = [], this.depth = 0, this.status = 0, this.rec = "", this.fields = null, this.nfCell = c(0), this.nr = 0, this.fnr = 0, this.filename = "", this.rstart = 0, this.rlength = -1, this.subsep = "", this.mainFeeder = null, this.inputHandles = /* @__PURE__ */ new Map(), this.outputHandles = /* @__PURE__ */ new Map(), this.randState = 1, this.randSeed = 0;
   }
@@ -922,11 +923,11 @@ class ht {
     for (let a = this.frames.length - 1; a >= 0; a--) {
       const r = this.frames[a], o = r.cells.get(t);
       if (o) return o;
-      if (r.arrays.has(t)) throw new p(`attempt to use array '${t}' in a scalar context`);
+      if (r.arrays.has(t)) throw new u(`attempt to use array '${t}' in a scalar context`);
     }
     const e = this.globals.get(t);
     if (e) return e;
-    if (this.globalArrays.has(t)) throw new p(`attempt to use array '${t}' in a scalar context`);
+    if (this.globalArrays.has(t)) throw new u(`attempt to use array '${t}' in a scalar context`);
     const s = { v: void 0, sn: !1 }, i = this.frames[this.frames.length - 1];
     return i ? i.cells.set(t, s) : this.globals.set(t, s), s;
   }
@@ -934,11 +935,11 @@ class ht {
     for (let a = this.frames.length - 1; a >= 0; a--) {
       const r = this.frames[a], o = r.arrays.get(t);
       if (o) return o;
-      if (r.cells.has(t)) throw new p(`attempt to use scalar '${t}' as array`);
+      if (r.cells.has(t)) throw new u(`attempt to use scalar '${t}' as array`);
     }
     const e = this.globalArrays.get(t);
     if (e) return e;
-    if (this.globals.has(t)) throw new p(`attempt to use scalar '${t}' as array`);
+    if (this.globals.has(t)) throw new u(`attempt to use scalar '${t}' as array`);
     const s = /* @__PURE__ */ new Map(), i = this.frames[this.frames.length - 1];
     return i ? i.arrays.set(t, s) : this.globalArrays.set(t, s), s;
   }
@@ -974,7 +975,7 @@ class ht {
     switch (t) {
       case "NF": {
         const s = Math.trunc(v(e));
-        if (s < 0) throw new p(`NF set to negative value ${s}`);
+        if (s < 0) throw new u(`NF set to negative value ${s}`);
         for (this.ensureFields(); this.fields.length < s; ) this.fields.push(S);
         return this.fields.length = s, this.nfCell = c(s), this.rebuildRecord(), !0;
       }
@@ -983,13 +984,13 @@ class ht {
       case "FNR":
         return this.fnr = Math.trunc(v(e)), !0;
       case "FILENAME":
-        return this.filename = u(e), !0;
+        return this.filename = f(e), !0;
       case "RSTART":
         return this.rstart = Math.trunc(v(e)), !0;
       case "RLENGTH":
         return this.rlength = Math.trunc(v(e)), !0;
       case "SUBSEP":
-        return this.subsep = u(e), !0;
+        return this.subsep = f(e), !0;
       default:
         return !1;
     }
@@ -997,7 +998,7 @@ class ht {
   /* ---------------- fields ---------------- */
   globalStr(t, e) {
     const s = this.globals.get(t);
-    return s && s.v !== void 0 ? u(s) : e;
+    return s && s.v !== void 0 ? f(s) : e;
   }
   currentFs() {
     return this.globalStr("FS", " ");
@@ -1014,23 +1015,23 @@ class ht {
 `);
   }
   ensureFields() {
-    this.fields === null && (this.fields = G(this.rec, this.currentFs()).map(M), this.nfCell = c(this.fields.length));
+    this.fields === null && (this.fields = _(this.rec, this.currentFs()).map(M), this.nfCell = c(this.fields.length));
   }
   invalidateFields() {
     this.fields = null, this.nfCell = c(0);
   }
   rebuildRecord() {
-    this.rec = this.fields.map((t) => u(t)).join(this.currentOfs());
+    this.rec = this.fields.map((t) => f(t)).join(this.currentOfs());
   }
   getField(t) {
     return t === 0 ? w(this.rec) : t < 0 ? S : (this.ensureFields(), this.fields[t - 1] ?? S);
   }
   setField(t, e) {
     if (t === 0) {
-      this.rec = u(e), this.invalidateFields();
+      this.rec = f(e), this.invalidateFields();
       return;
     }
-    if (t < 0) throw new p(`attempt to access field ${t}`);
+    if (t < 0) throw new u(`attempt to access field ${t}`);
     for (this.ensureFields(); this.fields.length < t; ) this.fields.push(S);
     this.fields[t - 1] = e, this.nfCell = c(this.fields.length), this.rebuildRecord();
   }
@@ -1043,7 +1044,7 @@ class ht {
   }
   /* ---------------- arrays ---------------- */
   arrayKey(t) {
-    return t.map((e) => u(e)).join(this.subsep);
+    return t.map((e) => f(e)).join(this.subsep);
   }
   /* ---------------- expression evaluation ---------------- */
   eval(t) {
@@ -1082,15 +1083,15 @@ class ht {
         return c(e.has(s) ? 1 : 0);
       }
       case "match": {
-        const e = this.eval(t.a), s = t.b, a = (s.k === "ere" ? b(s.src, !1) : b(u(this.eval(s)), !1)).test(u(e));
+        const e = this.eval(t.a), s = t.b, a = (s.k === "ere" ? b(s.src, !1) : b(f(this.eval(s)), !1)).test(f(e));
         return c(a === !t.neg ? 1 : 0);
       }
       case "cmp": {
-        const e = nt(this.eval(t.a), this.eval(t.b)), s = t.op === "<" ? e < 0 : t.op === "<=" ? e <= 0 : t.op === ">" ? e > 0 : t.op === ">=" ? e >= 0 : t.op === "==" ? e === 0 : e !== 0;
+        const e = at(this.eval(t.a), this.eval(t.b)), s = t.op === "<" ? e < 0 : t.op === "<=" ? e <= 0 : t.op === ">" ? e > 0 : t.op === ">=" ? e >= 0 : t.op === "==" ? e === 0 : e !== 0;
         return c(s ? 1 : 0);
       }
       case "cat":
-        return w(u(this.eval(t.a)) + u(this.eval(t.b)));
+        return w(f(this.eval(t.a)) + f(this.eval(t.b)));
       case "bin":
         return this.evalBin(t);
       case "neg": {
@@ -1108,7 +1109,7 @@ class ht {
         return this.setLvalue(t.e, c(e + (t.op === "++" ? 1 : -1))), c(e);
       }
       case "group": {
-        if (t.exprs.length !== 1) throw new p("syntax error: (expr, expr) is only valid with `in`");
+        if (t.exprs.length !== 1) throw new u("syntax error: (expr, expr) is only valid with `in`");
         return this.eval(t.exprs[0]);
       }
       case "getline":
@@ -1125,10 +1126,10 @@ class ht {
       case "*":
         return c(e * s);
       case "/":
-        if (s === 0) throw new p("division by zero");
+        if (s === 0) throw new u("division by zero");
         return c(e / s);
       case "%":
-        if (s === 0) throw new p("division by zero in %");
+        if (s === 0) throw new u("division by zero in %");
         return c(e % s);
       case "^":
         return c(Math.pow(e, s));
@@ -1152,18 +1153,18 @@ class ht {
         i = e * s;
         break;
       case "/=":
-        if (s === 0) throw new p("division by zero");
+        if (s === 0) throw new u("division by zero");
         i = e / s;
         break;
       case "%=":
-        if (s === 0) throw new p("division by zero in %=");
+        if (s === 0) throw new u("division by zero in %=");
         i = e % s;
         break;
       case "^=":
         i = Math.pow(e, s);
         break;
       default:
-        throw new p(`unknown assignment operator ${t.op}`);
+        throw new u(`unknown assignment operator ${t.op}`);
     }
     const a = c(i);
     return this.setLvalue(t.target, a), a;
@@ -1172,7 +1173,7 @@ class ht {
     switch (t.k) {
       case "var": {
         if (this.specialSet(t.name, e)) return;
-        if (this.isKnownArray(t.name)) throw new p(`attempt to use array '${t.name}' in a scalar context`);
+        if (this.isKnownArray(t.name)) throw new u(`attempt to use array '${t.name}' in a scalar context`);
         const s = this.scalarCell(t.name);
         s.v = e.v, s.sn = e.sn;
         return;
@@ -1188,14 +1189,14 @@ class ht {
         return;
       }
       default:
-        throw new p("assignment to a non-lvalue");
+        throw new u("assignment to a non-lvalue");
     }
   }
   /* ---------------- user functions ---------------- */
   callUser(t) {
     const e = this.program.functions.get(t.name);
-    if (!e) throw new p(`calling undefined function ${t.name}`);
-    if (this.depth >= ot) throw new p(`function call nesting too deep at '${t.name}'`);
+    if (!e) throw new u(`calling undefined function ${t.name}`);
+    if (this.depth >= ht) throw new u(`function call nesting too deep at '${t.name}'`);
     const s = [];
     for (let a = 0; a < e.params.length; a++) {
       const r = e.params[a], o = t.args[a];
@@ -1217,7 +1218,7 @@ class ht {
     try {
       return this.execBody(e.body), S;
     } catch (a) {
-      if (a instanceof T) return a.value;
+      if (a instanceof P) return a.value;
       throw a;
     } finally {
       this.depth--, this.frames.pop();
@@ -1227,12 +1228,12 @@ class ht {
   evalGetline(t) {
     let e, s;
     if (t.file !== null) {
-      const i = this.opts.vfs.resolve(this.opts.cwd, u(this.eval(t.file)));
+      const i = this.opts.vfs.resolve(this.opts.cwd, f(this.eval(t.file)));
       let a = this.inputHandles.get(i);
       if (!a) {
         const r = this.opts.vfs.read(i);
         if (r === null) return c(-1);
-        a = new D(r, this.currentRs()), this.inputHandles.set(i, a);
+        a = new z(r, this.currentRs()), this.inputHandles.set(i, a);
       }
       e = a.next(), s = i;
     } else {
@@ -1253,7 +1254,7 @@ class ht {
       return { content: this.opts.vfs.read(r) ?? "", file: r };
     });
     e.length === 0 && this.opts.stdin !== null && e.push({ content: this.opts.stdin, file: "-" });
-    const s = e.map((a) => ({ stream: new D(a.content, t), file: a.file }));
+    const s = e.map((a) => ({ stream: new z(a.content, t), file: a.file }));
     let i = 0;
     return () => {
       for (; i < s.length; ) {
@@ -1271,10 +1272,10 @@ class ht {
       case "length": {
         if (e.length === 0) return c([...this.rec].length);
         const s = e[0];
-        return s.k === "var" && this.isKnownArray(s.name) ? c(this.arrayFor(s.name).size) : c([...u(this.eval(s))].length);
+        return s.k === "var" && this.isKnownArray(s.name) ? c(this.arrayFor(s.name).size) : c([...f(this.eval(s))].length);
       }
       case "substr": {
-        const s = [...u(this.eval(e[0]))], i = Math.trunc(v(this.eval(e[1])));
+        const s = [...f(this.eval(e[0]))], i = Math.trunc(v(this.eval(e[1])));
         if (e.length < 3) return w(i < 1 ? s.join("") : s.slice(i - 1).join(""));
         const a = Math.trunc(v(this.eval(e[2])));
         if (a <= 0) return w("");
@@ -1282,7 +1283,7 @@ class ht {
         return w(s.slice(r - 1, o - 1).join(""));
       }
       case "index": {
-        const s = u(this.eval(e[0])), i = u(this.eval(e[1]));
+        const s = f(this.eval(e[0])), i = f(this.eval(e[1]));
         if (i === "") return c(1);
         const a = s.indexOf(i);
         return c(a === -1 ? 0 : a + 1);
@@ -1293,17 +1294,17 @@ class ht {
       case "gsub":
         return this.builtinSub(t.name === "gsub", e);
       case "match": {
-        const s = u(this.eval(e[0])), i = e[1], r = (i.k === "ere" ? b(i.src, !1) : b(u(this.eval(i)), !1)).exec(s);
+        const s = f(this.eval(e[0])), i = e[1], r = (i.k === "ere" ? b(i.src, !1) : b(f(this.eval(i)), !1)).exec(s);
         return r === null ? (this.rstart = 0, this.rlength = -1, c(0)) : (this.rstart = r.index + 1, this.rlength = r[0].length, c(this.rstart));
       }
       case "sprintf": {
-        const s = u(this.eval(e[0]));
-        return w(U(s, e.slice(1).map((i) => this.eval(i))));
+        const s = f(this.eval(e[0]));
+        return w(D(s, e.slice(1).map((i) => this.eval(i))));
       }
       case "tolower":
-        return w(u(this.eval(e[0])).toLowerCase());
+        return w(f(this.eval(e[0])).toLowerCase());
       case "toupper":
-        return w(u(this.eval(e[0])).toUpperCase());
+        return w(f(this.eval(e[0])).toUpperCase());
       case "sin":
         return c(Math.sin(v(this.eval(e[0]))));
       case "cos":
@@ -1325,7 +1326,7 @@ class ht {
         return this.randSeed = i, this.randState = Math.abs(i) % 2147483646 + 1, c(s);
       }
       case "close": {
-        const s = this.opts.vfs.resolve(this.opts.cwd, u(this.eval(e[0]))), i = this.outputHandles.get(s);
+        const s = this.opts.vfs.resolve(this.opts.cwd, f(this.eval(e[0]))), i = this.outputHandles.get(s);
         return i ? (this.flushHandle(s, i), this.outputHandles.delete(s), c(0)) : this.inputHandles.has(s) ? (this.inputHandles.delete(s), c(0)) : c(-1);
       }
       case "fflush": {
@@ -1333,9 +1334,9 @@ class ht {
         return c(0);
       }
       case "system":
-        throw new p("system() is not supported by this awk");
+        throw new u("system() is not supported by this awk");
       default:
-        throw new p(`calling undefined function ${t.name}`);
+        throw new u(`calling undefined function ${t.name}`);
     }
   }
   /** classic C-rand LCG — deterministic after srand(n), per POSIX rand semantics */
@@ -1343,18 +1344,18 @@ class ht {
     return this.randState = Math.imul(1103515245, this.randState) + 12345 & 2147483647, this.randState < 0 && (this.randState += 2147483648), this.randState / 2147483648;
   }
   builtinSplit(t) {
-    const e = u(this.eval(t[0])), s = t[1];
+    const e = f(this.eval(t[0])), s = t[1];
     if (s.k !== "var" && s.k !== "index")
-      throw new p("split: second argument must be an array");
+      throw new u("split: second argument must be an array");
     const i = this.arrayFor(s.name);
     if (i.clear(), e === "") return c(0);
-    const a = t.length >= 3 ? t[2] : null, r = a === null ? this.currentFs() : a.k === "ere" ? a.src : u(this.eval(a)), o = G(e, r);
+    const a = t.length >= 3 ? t[2] : null, r = a === null ? this.currentFs() : a.k === "ere" ? a.src : f(this.eval(a)), o = _(e, r);
     for (let l = 0; l < o.length; l++) i.set(String(l + 1), M(o[l]));
     return c(o.length);
   }
   builtinSub(t, e) {
-    if (e.length < 2) throw new p("sub/gsub needs a pattern and a replacement");
-    const s = e.length >= 3 ? e[2] : { k: "field", e: { k: "num", v: 0 } }, i = u(this.eval(s)), a = e[0], r = a.k === "ere" ? b(a.src, !0) : b(u(this.eval(a)), !0), o = u(this.eval(e[1]));
+    if (e.length < 2) throw new u("sub/gsub needs a pattern and a replacement");
+    const s = e.length >= 3 ? e[2] : { k: "field", e: { k: "num", v: 0 } }, i = f(this.eval(s)), a = e[0], r = a.k === "ere" ? b(a.src, !0) : b(f(this.eval(a)), !0), o = f(this.eval(e[1]));
     r.lastIndex = 0;
     let l = "", h = 0, d = 0, g;
     for (; (g = r.exec(i)) !== null && (d++, l += i.slice(h, g.index) + this.expandRepl(o, g), h = r.lastIndex, g[0].length === 0 && r.lastIndex++, !!t); )
@@ -1394,33 +1395,44 @@ class ht {
       case "if":
         k(this.eval(t.c)) ? this.execStmt(t.a) : t.b !== null && this.execStmt(t.b);
         return;
-      case "while":
-        for (; k(this.eval(t.c)); )
+      case "while": {
+        let e = 0;
+        for (; k(this.eval(t.c)); ) {
+          if (++e > T) throw I();
           try {
             this.execStmt(t.body);
-          } catch (e) {
-            if (e instanceof F) break;
-            if (!(e instanceof N)) throw e;
+          } catch (s) {
+            if (s instanceof F) break;
+            if (!(s instanceof N)) throw s;
           }
+        }
         return;
-      case "do":
+      }
+      case "do": {
+        let e = 0;
         for (; ; ) {
+          if (++e > T) throw I();
           try {
             this.execStmt(t.body);
-          } catch (e) {
-            if (e instanceof F) break;
-            if (!(e instanceof N)) throw e;
+          } catch (s) {
+            if (s instanceof F) break;
+            if (!(s instanceof N)) throw s;
           }
           if (!k(this.eval(t.c))) break;
         }
         return;
+      }
       case "forC": {
-        for (t.init !== null && this.eval(t.init); !(t.cond !== null && !k(this.eval(t.cond))); ) {
+        t.init !== null && this.eval(t.init);
+        let e = 0;
+        for (; ; ) {
+          if (++e > T) throw I();
+          if (t.cond !== null && !k(this.eval(t.cond))) break;
           try {
             this.execStmt(t.body);
-          } catch (e) {
-            if (e instanceof F) break;
-            if (!(e instanceof N)) throw e;
+          } catch (s) {
+            if (s instanceof F) break;
+            if (!(s instanceof N)) throw s;
           }
           t.step !== null && this.eval(t.step);
         }
@@ -1448,9 +1460,9 @@ class ht {
       case "nextfile":
         throw new $();
       case "exit":
-        throw new I(t.e === null ? null : Math.trunc(v(this.eval(t.e))));
+        throw new C(t.e === null ? null : Math.trunc(v(this.eval(t.e))));
       case "return":
-        throw new T(t.e === null ? S : this.eval(t.e));
+        throw new P(t.e === null ? S : this.eval(t.e));
       case "delete": {
         const e = this.arrayFor(t.name);
         t.args === null ? e.clear() : e.delete(this.arrayKey(t.args.map((s) => this.eval(s))));
@@ -1462,23 +1474,23 @@ class ht {
     }
   }
   setNamedScalar(t, e) {
-    if (this.isKnownArray(t)) throw new p(`attempt to use array '${t}' in a scalar context`);
+    if (this.isKnownArray(t)) throw new u(`attempt to use array '${t}' in a scalar context`);
     const s = this.scalarCell(t);
     s.v = e.v, s.sn = e.sn;
   }
   doPrint(t, e, s) {
     let i;
     if (s === "printf") {
-      if (t.length === 0) throw new p("printf: no format string");
-      const o = u(this.eval(t[0]));
-      i = U(o, t.slice(1).map((l) => this.eval(l)));
+      if (t.length === 0) throw new u("printf: no format string");
+      const o = f(this.eval(t[0]));
+      i = D(o, t.slice(1).map((l) => this.eval(l)));
     } else
       i = t.map((o) => this.display(this.eval(o))).join(this.currentOfs()) + this.currentOrs();
     if (e === null) {
       this.opts.out(i);
       return;
     }
-    const a = this.opts.vfs.resolve(this.opts.cwd, u(this.eval(e.target)));
+    const a = this.opts.vfs.resolve(this.opts.cwd, f(this.eval(e.target)));
     let r = this.outputHandles.get(a);
     if (!r) {
       const o = e.op === ">>" ? this.opts.vfs.read(a) ?? "" : "";
@@ -1489,10 +1501,10 @@ class ht {
   /** print's number form: OFMT for non-integral values (the POSIX print rule). */
   display(t) {
     if (typeof t.v == "number" && !Number.isInteger(t.v)) {
-      const e = this.globals.get("OFMT"), s = st(e && typeof e.v == "string" ? e.v : void 0);
-      return C(t.v, s);
+      const e = this.globals.get("OFMT"), s = nt(e && typeof e.v == "string" ? e.v : void 0);
+      return B(t.v, s);
     }
-    return u(t);
+    return f(t);
   }
   flushHandle(t, e) {
     if (e.buf.length === 0) return;
@@ -1501,12 +1513,12 @@ class ht {
     try {
       this.opts.vfs.mountFile(t, s);
     } catch (i) {
-      throw new p(`can't write to ${t}: ${i instanceof Error ? i.message : String(i)}`);
+      throw new u(`can't write to ${t}: ${i instanceof Error ? i.message : String(i)}`);
     }
   }
   /* ---------------- the run ---------------- */
   run() {
-    const { begins: t, mains: e, ends: s } = ct(this.program);
+    const { begins: t, mains: e, ends: s } = ft(this.program);
     try {
       for (const [i, a] of this.opts.assigns) this.setNamedScalar(i, M(a));
       for (const [i, a] of [
@@ -1528,11 +1540,11 @@ class ht {
         this.runMain(e);
       }
     } catch (i) {
-      if (i instanceof I)
+      if (i instanceof C)
         return i.code !== null && (this.status = i.code), this.runEnds(s), this.flushAll(), this.status;
-      if (i instanceof p)
+      if (i instanceof u)
         return this.opts.err(`awk: ${i.message}`), this.flushAll(), 2;
-      throw i instanceof T ? new p("return used outside of a function") : i instanceof O ? new p("next used in BEGIN action") : i instanceof $ ? new p("nextfile used in BEGIN action") : i instanceof F || i instanceof N ? new p("break/continue used outside of a loop") : i;
+      throw i instanceof P ? new u("return used outside of a function") : i instanceof O ? new u("next used in BEGIN action") : i instanceof $ ? new u("nextfile used in BEGIN action") : i instanceof F || i instanceof N ? new u("break/continue used outside of a loop") : i;
     }
     return this.runEnds(s), this.flushAll(), this.status;
   }
@@ -1540,15 +1552,15 @@ class ht {
     try {
       for (const e of t) this.execBody(e.body);
     } catch (e) {
-      if (e instanceof I) {
+      if (e instanceof C) {
         e.code !== null && (this.status = e.code);
         return;
       }
-      if (e instanceof p) {
+      if (e instanceof u) {
         this.opts.err(`awk: ${e.message}`), this.status = 2;
         return;
       }
-      throw e instanceof O ? new p("next used in END action") : e instanceof $ ? new p("nextfile used in END action") : e;
+      throw e instanceof O ? new u("next used in END action") : e instanceof $ ? new u("nextfile used in END action") : e;
     }
   }
   flushAll() {
@@ -1581,14 +1593,14 @@ class ht {
     }
   }
 }
-function ct(n) {
+function ft(n) {
   const t = [], e = [], s = [];
   for (const i of n.items)
     i.kind === "BEGIN" ? t.push(i) : i.kind === "END" ? s.push(i) : e.push(i);
   return { begins: t, mains: e, ends: s };
 }
-const K = "awk [-F fs] [-v var=val] [-f progfile] ['program'] [file ...]", ut = [
-  "Usage: " + K,
+const q = "awk [-F fs] [-v var=val] [-f progfile] ['program'] [file ...]", pt = [
+  "Usage: " + q,
   "",
   "Pattern scanning and processing language (POSIX awk, gawk-flavoured).",
   "",
@@ -1615,8 +1627,8 @@ const K = "awk [-F fs] [-v var=val] [-f progfile] ['program'] [file ...]", ut = 
   "with buffering and close().",
   "",
   "Not supported: | output pipes, system(), |& coprocesses."
-], ft = "awk (semtext-sh) 0.1.0 — POSIX awk for the sem-shell", pt = /^[_A-Za-z][_A-Za-z0-9]*$/;
-function dt(n, t, e) {
+], dt = "awk (semtext-sh) 0.1.0 — POSIX awk for the sem-shell", gt = /^[_A-Za-z][_A-Za-z0-9]*$/;
+function vt(n, t, e) {
   let s = 0;
   const i = /* @__PURE__ */ new Set(["F", "v", "f", "e"]);
   let a = [];
@@ -1624,7 +1636,7 @@ function dt(n, t, e) {
     const l = o.indexOf("=");
     if (l <= 0) return `awk: -v assignment '${o}' lacks a name=value shape`;
     const h = o.slice(0, l);
-    return pt.test(h) ? (e.assigns.push([h, o.slice(l + 1)]), null) : `awk: invalid -v variable name '${h}'`;
+    return gt.test(h) ? (e.assigns.push([h, o.slice(l + 1)]), null) : `awk: invalid -v variable name '${h}'`;
   };
   for (; s < n.length; ) {
     const o = n[s];
@@ -1636,10 +1648,10 @@ function dt(n, t, e) {
       const l = o.indexOf("="), h = l === -1 ? o : o.slice(0, l), d = l === -1 ? null : o.slice(l + 1);
       switch (h) {
         case "--help":
-          for (const g of ut) t.out(g);
+          for (const g of pt) t.out(g);
           return t.exit(0), "handled";
         case "--version":
-          return t.out(ft), t.exit(0), "handled";
+          return t.out(dt), t.exit(0), "handled";
         case "--field-separator":
           if (d === null) return "awk: option '--field-separator' requires an argument";
           e.assigns.push(["FS", d]);
@@ -1699,20 +1711,20 @@ Try 'awk --help' for more information.`;
   }
   return e.files = a, null;
 }
-function _(n, t) {
+function K(n, t) {
   const e = t.split(`
 `);
   e[e.length - 1] === "" && e.pop();
   for (const s of e) n(s);
 }
-const gt = {
+const mt = {
   name: "awk",
-  usage: K,
+  usage: q,
   complete: (n) => ["--help", "--version", "--field-separator=", "--assign=", "--file=", "--source=", "-F", "-v", "-f", "-e"].filter(
     (t) => t.startsWith(n.word)
   ),
   run(n) {
-    const t = { assigns: [], progFiles: [], progTexts: [], files: [] }, e = dt(n.args, n, t);
+    const t = { assigns: [], progFiles: [], progTexts: [], files: [] }, e = vt(n.args, n, t);
     if (e !== null) {
       if (e === "handled") return;
       n.err(e), n.exit(1);
@@ -1732,7 +1744,7 @@ const gt = {
 `);
     let i;
     try {
-      i = Q(s);
+      i = et(s);
     } catch (r) {
       if (r instanceof E) {
         n.err(`awk: ${r.message}`), n.exit(1);
@@ -1752,18 +1764,18 @@ const gt = {
         return;
       }
     }
-    const a = lt(i, {
+    const a = ct(i, {
       vfs: n.vfs,
       cwd: n.state.cwd,
       stdin: n.stdin,
       files: t.files,
       assigns: t.assigns,
-      out: (r) => _(n.out, r),
-      err: (r) => _(n.err, r)
+      out: (r) => K(n.out, r),
+      err: (r) => K(n.err, r)
     });
     n.exit(a);
   }
-}, vt = [gt], mt = {
+}, wt = [mt], xt = {
   awk: [
     "AWK(1)                    semtext-sh manual",
     "",
@@ -1824,9 +1836,9 @@ const gt = {
     "     awk 'END{print NR}' file               line count",
     "     awk '{s+=$1} END{print s}' nums        column sum"
   ]
-}, xt = { commands: vt, manPages: mt };
+}, bt = { commands: wt, manPages: xt };
 export {
-  vt as commands,
-  mt as manPages,
-  xt as pkg
+  wt as commands,
+  xt as manPages,
+  bt as pkg
 };

@@ -1,10 +1,10 @@
-function Ae(e) {
+function $e(e) {
   return `semtext-pkg-${e}.js`;
 }
 function Te(e) {
   return import(
     /* @vite-ignore */
-    new URL(Ae(e), import.meta.url).href
+    new URL($e(e), import.meta.url).href
   ).then(
     (t) => t
   );
@@ -13,49 +13,61 @@ function Ue(e) {
   return e.includes("--help") || e.includes("-h");
 }
 function We(e, t) {
-  const n = Ae(e.name), s = /* @__PURE__ */ new Map(), i = /* @__PURE__ */ new Map(), u = /* @__PURE__ */ new Map();
+  const n = $e(e.name), s = /* @__PURE__ */ new Map(), i = /* @__PURE__ */ new Map(), u = /* @__PURE__ */ new Map();
   for (const c of e.commands)
     c.man !== void 0 && u.set(c.name, c.man);
   let r = !1, a = !1, o = null;
   const l = () => (o ??= t().then(
     (c) => {
-      for (const d of c.commands) s.set(d.name, d);
-      for (const [d, g] of Object.entries(c.manPages ?? {})) i.set(d, g);
+      for (const h of c.commands) s.set(h.name, h);
+      for (const [h, m] of Object.entries(c.manPages ?? {})) i.set(h, m);
       return r = !0, !0;
     },
     () => (a = !0, !1)
   ), o), p = (c) => {
-    const d = () => s.get(c.name);
+    const h = () => s.get(c.name);
     return {
       name: c.name,
       // Help/completion surfaces read the stub's line — never the chunk.
       usage: c.usage,
-      run(g) {
-        const m = d();
-        if (m !== void 0)
-          return m.run(g);
-        if (Ue(g.args)) {
-          g.out(c.usage);
+      run(m) {
+        const g = h();
+        if (g !== void 0)
+          return g.run(m);
+        if (Ue(m.args)) {
+          m.out(c.usage);
           return;
         }
-        return l().then((h) => {
-          if (!h) {
-            g.err(`${c.name}: package chunk failed to load (${n})`), g.exit(1);
+        m.err(`loading ${e.name}…`);
+        const d = m.err, f = m.exit;
+        let w = !1, b = !1;
+        const z = () => {
+          m.err = d, m.exit = f, b || f(w ? 1 : 0);
+        };
+        return l().then((y) => {
+          if (!y) {
+            m.err(`${c.name}: package chunk failed to load (${n})`), m.exit(1);
             return;
           }
-          const f = d();
-          if (f === void 0) {
-            g.err(`${c.name}: package chunk ${n} does not provide it`), g.exit(70);
+          const $ = h();
+          if ($ === void 0) {
+            m.err(`${c.name}: package chunk ${n} does not provide it`), m.exit(70);
             return;
           }
-          return f.run(g);
+          return m.err = (A) => {
+            w = !0, d(A);
+          }, m.exit = (A) => {
+            b = !0, f(A);
+          }, Promise.resolve($.run(m)).then(z, (A) => {
+            throw z(), A;
+          });
         });
       },
-      complete(g) {
-        return d()?.complete?.(g) ?? [];
+      complete(m) {
+        return h()?.complete?.(m) ?? [];
       },
-      app(g) {
-        return d()?.app?.(g) ?? null;
+      app(m) {
+        return h()?.app?.(m) ?? null;
       }
     };
   };
@@ -70,7 +82,7 @@ function We(e, t) {
     supersedes: new Set(e.supersedes ?? [])
   };
 }
-const $e = {
+const Ae = {
   name: "archive",
   commands: [
     {
@@ -207,8 +219,8 @@ const $e = {
     }
   ]
 };
-We($e, () => Te("archive"));
-function C(e) {
+We(Ae, () => Te("archive"));
+function I(e) {
   let t = !0;
   for (let n = 0; n < e.length; n++)
     if (e.charCodeAt(n) > 255) {
@@ -222,7 +234,7 @@ function C(e) {
   }
   return new TextEncoder().encode(e);
 }
-function R(e) {
+function F(e) {
   try {
     return new TextDecoder("utf-8", { fatal: !0 }).decode(e);
   } catch {
@@ -239,25 +251,25 @@ function se(e) {
     t += he[e[n] >> 4] + he[e[n] & 15];
   return t;
 }
-const L = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const P = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 function _e(e, t) {
   const n = [];
   let s = "", i = 0;
   for (; i + 3 <= e.length; ) {
     const r = e[i] << 16 | e[i + 1] << 8 | e[i + 2];
-    s += L[r >> 18 & 63] + L[r >> 12 & 63] + L[r >> 6 & 63] + L[r & 63], i += 3, t > 0 && s.length + 4 > t && (n.push(s), s = "");
+    s += P[r >> 18 & 63] + P[r >> 12 & 63] + P[r >> 6 & 63] + P[r & 63], i += 3, t > 0 && s.length + 4 > t && (n.push(s), s = "");
   }
   const u = e.length - i;
   if (u === 1) {
     const r = e[i] << 16;
-    s += L[r >> 18 & 63] + L[r >> 12 & 63] + "==";
+    s += P[r >> 18 & 63] + P[r >> 12 & 63] + "==";
   } else if (u === 2) {
     const r = e[i] << 16 | e[i + 1] << 8;
-    s += L[r >> 18 & 63] + L[r >> 12 & 63] + L[r >> 6 & 63] + "=";
+    s += P[r >> 18 & 63] + P[r >> 12 & 63] + P[r >> 6 & 63] + "=";
   }
   return s !== "" && n.push(s), n;
 }
-const Ge = new Map([...L].map((e, t) => [e, t]));
+const Ge = new Map([...P].map((e, t) => [e, t]));
 function Ze(e, t) {
   let n = 0, s = 0;
   const i = [];
@@ -288,11 +300,11 @@ function X(e) {
   for (let n = 0; n < e.length; n++) t = Ve[(t ^ e[n]) & 255] ^ t >>> 8;
   return (t ^ 4294967295) >>> 0;
 }
-const M = (e, t) => e[t] | e[t + 1] << 8, I = (e, t) => (e[t] | e[t + 1] << 8 | e[t + 2] << 16 | e[t + 3] << 24) >>> 0;
+const R = (e, t) => e[t] | e[t + 1] << 8, k = (e, t) => (e[t] | e[t + 1] << 8 | e[t + 2] << 16 | e[t + 3] << 24) >>> 0;
 function v(e, t) {
   e.push(t & 255, t >>> 8 & 255);
 }
-function A(e, t) {
+function S(e, t) {
   e.push(t & 255, t >>> 8 & 255, t >>> 16 & 255, t >>> 24 & 255);
 }
 function Ke(e, t) {
@@ -322,18 +334,18 @@ function je(e) {
   let s = 1732584193, i = 4023233417, u = 2562383102, r = 271733878;
   const a = new Int32Array(16);
   for (let l = 0; l < n.length; l += 64) {
-    for (let m = 0; m < 16; m++)
-      a[m] = n[l + m * 4] | n[l + m * 4 + 1] << 8 | n[l + m * 4 + 2] << 16 | n[l + m * 4 + 3] << 24 | 0;
-    let p = s, c = i, d = u, g = r;
-    for (let m = 0; m < 64; m++) {
-      let h, f;
-      m < 16 ? (h = c & d | ~c & g, f = m) : m < 32 ? (h = g & c | ~g & d, f = (5 * m + 1) % 16) : m < 48 ? (h = c ^ d ^ g, f = (3 * m + 5) % 16) : (h = d ^ (c | ~g), f = 7 * m % 16);
-      const w = g;
-      g = d, d = c;
-      const b = p + h + Ye[m] + a[f] | 0;
-      c = c + Y(b, qe[(m >> 4) * 4 + m % 4]) | 0, p = w;
+    for (let g = 0; g < 16; g++)
+      a[g] = n[l + g * 4] | n[l + g * 4 + 1] << 8 | n[l + g * 4 + 2] << 16 | n[l + g * 4 + 3] << 24 | 0;
+    let p = s, c = i, h = u, m = r;
+    for (let g = 0; g < 64; g++) {
+      let d, f;
+      g < 16 ? (d = c & h | ~c & m, f = g) : g < 32 ? (d = m & c | ~m & h, f = (5 * g + 1) % 16) : g < 48 ? (d = c ^ h ^ m, f = (3 * g + 5) % 16) : (d = h ^ (c | ~m), f = 7 * g % 16);
+      const w = m;
+      m = h, h = c;
+      const b = p + d + Ye[g] + a[f] | 0;
+      c = c + Y(b, qe[(g >> 4) * 4 + g % 4]) | 0, p = w;
     }
-    s = s + p | 0, i = i + c | 0, u = u + d | 0, r = r + g | 0;
+    s = s + p | 0, i = i + c | 0, u = u + h | 0, r = r + m | 0;
   }
   const o = new Uint8Array(16);
   for (const [l, p] of [s, i, u, r].entries())
@@ -347,13 +359,13 @@ function Xe(e) {
   for (let r = 4; r < 8; r++) n[n.length - 8 + r] = t >>> 8 * (7 - r) & 255;
   const s = [1732584193, 4023233417, 2562383102, 271733878, 3285377520], i = new Int32Array(80);
   for (let r = 0; r < n.length; r += 64) {
-    for (let d = 0; d < 16; d++)
-      i[d] = n[r + d * 4] << 24 | n[r + d * 4 + 1] << 16 | n[r + d * 4 + 2] << 8 | n[r + d * 4 + 3];
-    for (let d = 16; d < 80; d++) i[d] = Y(i[d - 3] ^ i[d - 8] ^ i[d - 14] ^ i[d - 16], 1);
+    for (let h = 0; h < 16; h++)
+      i[h] = n[r + h * 4] << 24 | n[r + h * 4 + 1] << 16 | n[r + h * 4 + 2] << 8 | n[r + h * 4 + 3];
+    for (let h = 16; h < 80; h++) i[h] = Y(i[h - 3] ^ i[h - 8] ^ i[h - 14] ^ i[h - 16], 1);
     let [a, o, l, p, c] = s;
-    for (let d = 0; d < 80; d++) {
-      const g = d < 20 ? o & l | ~o & p : d < 40 ? o ^ l ^ p : d < 60 ? o & l | o & p | l & p : o ^ l ^ p, m = d < 20 ? 1518500249 : d < 40 ? 1859775393 : d < 60 ? 2400959708 : 3395469782, h = Y(a, 5) + g + c + m + i[d] | 0;
-      c = p, p = l, l = Y(o, 30), o = a, a = h;
+    for (let h = 0; h < 80; h++) {
+      const m = h < 20 ? o & l | ~o & p : h < 40 ? o ^ l ^ p : h < 60 ? o & l | o & p | l & p : o ^ l ^ p, g = h < 20 ? 1518500249 : h < 40 ? 1859775393 : h < 60 ? 2400959708 : 3395469782, d = Y(a, 5) + m + c + g + i[h] | 0;
+      c = p, p = l, l = Y(o, 30), o = a, a = d;
     }
     s[0] = s[0] + a | 0, s[1] = s[1] + o | 0, s[2] = s[2] + l | 0, s[3] = s[3] + p | 0, s[4] = s[4] + c | 0;
   }
@@ -362,7 +374,7 @@ function Xe(e) {
     for (let o = 0; o < 4; o++) u[r * 4 + o] = a >>> 8 * (3 - o) & 255;
   return u;
 }
-const J = Se(64), Je = J.map((e, t) => Number(te(J, t, 3, 32))), Qe = J.slice(0, 8).map((e, t) => Number(te(J, t, 2, 32))), F = (e, t) => (e >>> t | e << 32 - t) >>> 0;
+const J = Se(64), Je = J.map((e, t) => Number(te(J, t, 3, 32))), Qe = J.slice(0, 8).map((e, t) => Number(te(J, t, 2, 32))), H = (e, t) => (e >>> t | e << 32 - t) >>> 0;
 function xe(e) {
   const t = e.length * 8, n = new Uint8Array((e.length + 8 >> 6) + 1 << 6);
   n.set(e), n[e.length] = 128;
@@ -373,23 +385,23 @@ function xe(e) {
     for (let f = 0; f < 16; f++)
       i[f] = n[r + f * 4] << 24 | n[r + f * 4 + 1] << 16 | n[r + f * 4 + 2] << 8 | n[r + f * 4 + 3];
     for (let f = 16; f < 64; f++) {
-      const w = F(i[f - 15], 7) ^ F(i[f - 15], 18) ^ i[f - 15] >>> 3, b = F(i[f - 2], 17) ^ F(i[f - 2], 19) ^ i[f - 2] >>> 10;
+      const w = H(i[f - 15], 7) ^ H(i[f - 15], 18) ^ i[f - 15] >>> 3, b = H(i[f - 2], 17) ^ H(i[f - 2], 19) ^ i[f - 2] >>> 10;
       i[f] = i[f - 16] + w + i[f - 7] + b | 0;
     }
-    let [a, o, l, p, c, d, g, m] = s;
+    let [a, o, l, p, c, h, m, g] = s;
     for (let f = 0; f < 64; f++) {
-      const w = F(c, 6) ^ F(c, 11) ^ F(c, 25), b = c & d ^ ~c & g, z = m + w + b + Je[f] + i[f] | 0, y = F(a, 2) ^ F(a, 13) ^ F(a, 22), S = a & o ^ a & l ^ o & l, P = y + S | 0;
-      m = g, g = d, d = c, c = p + z | 0, p = l, l = o, o = a, a = z + P | 0;
+      const w = H(c, 6) ^ H(c, 11) ^ H(c, 25), b = c & h ^ ~c & m, z = g + w + b + Je[f] + i[f] | 0, y = H(a, 2) ^ H(a, 13) ^ H(a, 22), $ = a & o ^ a & l ^ o & l, A = y + $ | 0;
+      g = m, m = h, h = c, c = p + z | 0, p = l, l = o, o = a, a = z + A | 0;
     }
-    const h = [a, o, l, p, c, d, g, m];
-    for (let f = 0; f < 8; f++) s[f] = s[f] + h[f] | 0;
+    const d = [a, o, l, p, c, h, m, g];
+    for (let f = 0; f < 8; f++) s[f] = s[f] + d[f] | 0;
   }
   const u = new Uint8Array(32);
   for (const [r, a] of s.entries())
     for (let o = 0; o < 4; o++) u[r * 4 + o] = a >>> 8 * (3 - o) & 255;
   return u;
 }
-const Q = Se(80), et = Q.map((e, t) => te(Q, t, 3, 64)), tt = Q.slice(0, 8).map((e, t) => te(Q, t, 2, 64)), H = (e, t) => (e << BigInt(64 - t) | e >> BigInt(t)) & B;
+const Q = Se(80), et = Q.map((e, t) => te(Q, t, 3, 64)), tt = Q.slice(0, 8).map((e, t) => te(Q, t, 2, 64)), L = (e, t) => (e << BigInt(64 - t) | e >> BigInt(t)) & B;
 function nt(e) {
   const t = BigInt(e.length) * 8n, n = new Uint8Array((e.length + 16 >> 7) + 1 << 7);
   n.set(e), n[e.length] = 128;
@@ -402,16 +414,16 @@ function nt(e) {
       i[f] = w;
     }
     for (let f = 16; f < 80; f++) {
-      const w = H(i[f - 15], 1) ^ H(i[f - 15], 8) ^ i[f - 15] >> 7n, b = H(i[f - 2], 19) ^ H(i[f - 2], 61) ^ i[f - 2] >> 6n;
+      const w = L(i[f - 15], 1) ^ L(i[f - 15], 8) ^ i[f - 15] >> 7n, b = L(i[f - 2], 19) ^ L(i[f - 2], 61) ^ i[f - 2] >> 6n;
       i[f] = i[f - 16] + w + i[f - 7] + b & B;
     }
-    let [a, o, l, p, c, d, g, m] = s;
+    let [a, o, l, p, c, h, m, g] = s;
     for (let f = 0; f < 80; f++) {
-      const w = H(c, 14) ^ H(c, 18) ^ H(c, 41), b = c & d ^ ~c & g, z = m + w + b + et[f] + i[f] & B, y = H(a, 28) ^ H(a, 34) ^ H(a, 39), S = a & o ^ a & l ^ o & l, P = y + S & B;
-      m = g, g = d, d = c, c = p + z & B, p = l, l = o, o = a, a = z + P & B;
+      const w = L(c, 14) ^ L(c, 18) ^ L(c, 41), b = c & h ^ ~c & m, z = g + w + b + et[f] + i[f] & B, y = L(a, 28) ^ L(a, 34) ^ L(a, 39), $ = a & o ^ a & l ^ o & l, A = y + $ & B;
+      g = m, m = h, h = c, c = p + z & B, p = l, l = o, o = a, a = z + A & B;
     }
-    const h = [a, o, l, p, c, d, g, m];
-    for (let f = 0; f < 8; f++) s[f] = s[f] + h[f] & B;
+    const d = [a, o, l, p, c, h, m, g];
+    for (let f = 0; f < 8; f++) s[f] = s[f] + d[f] & B;
   }
   const u = new Uint8Array(64);
   for (const [r, a] of s.entries())
@@ -556,8 +568,8 @@ function Ce(e, t = 0) {
             if (p >= G.length) throw new Error("invalid distance code");
             const c = G[p] + n.bits(ee[p]);
             if (c > s.length) throw new Error("invalid distance too far back");
-            let d = s.length - c;
-            for (let g = 0; g < l; g++) s.push(s[d++]);
+            let h = s.length - c;
+            for (let m = 0; m < l; m++) s.push(s[h++]);
           }
         }
       }
@@ -603,29 +615,29 @@ function mt(e) {
   t.put(1, 1), t.put(1, 2);
   const u = new Int32Array(ke).fill(-1), r = new Int32Array(e.length), a = (l, p) => {
     const c = Math.min(me, e.length - l);
-    let d = 0;
-    for (; d < c && e[p + d] === e[l + d]; ) d++;
-    return d;
+    let h = 0;
+    for (; h < c && e[p + h] === e[l + h]; ) h++;
+    return h;
   };
   let o = 0;
   for (; o < e.length; ) {
     let l = W - 1, p = 0;
     if (o + W <= e.length) {
       const c = oe(e, o);
-      let d = u[c], g = ht;
-      const m = Math.min(dt, o);
-      for (; d >= 0 && o - d <= m && g-- > 0; ) {
-        const h = a(o, d);
-        if (h > l && (l = h, p = o - d, h >= me))
+      let h = u[c], m = ht;
+      const g = Math.min(dt, o);
+      for (; h >= 0 && o - h <= g && m-- > 0; ) {
+        const d = a(o, h);
+        if (d > l && (l = d, p = o - h, d >= me))
           break;
-        d = r[d];
+        h = r[h];
       }
     }
     if (l >= W) {
-      const { code: c, extra: d, value: g } = it(l);
-      t.putCode(n[c], i(c)), d !== 0 && t.put(g, d);
-      const { code: m, extra: h, value: f } = ot(p);
-      t.putCode(s[m], 5), h !== 0 && t.put(f, h);
+      const { code: c, extra: h, value: m } = it(l);
+      t.putCode(n[c], i(c)), h !== 0 && t.put(m, h);
+      const { code: g, extra: d, value: f } = ot(p);
+      t.putCode(s[g], 5), d !== 0 && t.put(f, d);
       for (let w = 0; w < l; w++) {
         const b = o + w;
         if (b + W <= e.length) {
@@ -663,44 +675,44 @@ function Ne(e) {
 function fe(e) {
   const t = [31, 139, 8, 0, 0, 0, 0, 0, 0, 3], n = Ne(e);
   for (const s of n) t.push(s);
-  return A(t, X(e)), A(t, e.length >>> 0), new Uint8Array(t);
+  return S(t, X(e)), S(t, e.length >>> 0), new Uint8Array(t);
 }
-class E extends Error {
+class C extends Error {
 }
 function j(e) {
   if (e.length < 18 || e[0] !== 31 || e[1] !== 139)
-    throw new E("not in gzip format");
-  if (e[2] !== 8) throw new E("unknown compression method");
+    throw new C("not in gzip format");
+  if (e[2] !== 8) throw new C("unknown compression method");
   const t = e[3];
-  if (t & 224) throw new E("unsupported flags set");
+  if (t & 224) throw new C("unsupported flags set");
   let n = 10;
   if (t & 4) {
-    if (n + 2 > e.length) throw new E("truncated header");
-    n += 2 + M(e, n);
+    if (n + 2 > e.length) throw new C("truncated header");
+    n += 2 + R(e, n);
   }
   const s = () => {
     for (; n < e.length && e[n] !== 0; ) n++;
     n++;
   };
   if (t & 8 && s(), t & 16 && s(), t & 2) {
-    if (n + 2 > e.length) throw new E("truncated header");
-    const o = M(e, n);
-    if ((X(e.subarray(0, n)) & 65535) !== o) throw new E("header checksum error");
+    if (n + 2 > e.length) throw new C("truncated header");
+    const o = R(e, n);
+    if ((X(e.subarray(0, n)) & 65535) !== o) throw new C("header checksum error");
     n += 2;
   }
-  if (n > e.length - 8) throw new E("unexpected end of input");
+  if (n > e.length - 8) throw new C("unexpected end of input");
   let i;
   try {
     i = Ce(e, n);
   } catch (o) {
-    throw new E(o instanceof Error ? o.message : "invalid compressed data");
+    throw new C(o instanceof Error ? o.message : "invalid compressed data");
   }
-  const u = n + i.consumed + 8, r = I(e, n + i.consumed), a = I(e, n + i.consumed + 4);
-  if (X(i.data) !== r) throw new E("invalid compressed data--crc error");
-  if (i.data.length >>> 0 !== a) throw new E("invalid compressed data--length error");
+  const u = n + i.consumed + 8, r = k(e, n + i.consumed), a = k(e, n + i.consumed + 4);
+  if (X(i.data) !== r) throw new C("invalid compressed data--crc error");
+  if (i.data.length >>> 0 !== a) throw new C("invalid compressed data--length error");
   return { raw: i.data, end: u };
 }
-const N = 512;
+const M = 512;
 function _(e, t) {
   const n = Math.max(1, t - 1);
   if (e >= 8 ** n) throw new Error("value too large for ustar field");
@@ -726,8 +738,8 @@ function wt(e) {
     if (i === "" || i === ".") throw new Error("cannot archive the root");
     const u = gt(i);
     if (u === null) throw new Error(`${i}: name too long to be stored in a ustar archive`);
-    const r = new Array(N).fill(0), a = (p, c) => {
-      for (const [d, g] of p.entries()) r[c + d] = g;
+    const r = new Array(M).fill(0), a = (p, c) => {
+      for (const [h, m] of p.entries()) r[c + h] = m;
     }, o = we(u.base, 100);
     if (o === null) throw new Error(`${i}: name too long to be stored in a ustar archive`);
     a(o, 0), a(_(n.mode & 4095, 8), 100), a(_(0, 8), 108), a(_(0, 8), 116), a(_(n.type === "file" ? n.data?.length ?? 0 : 0, 12), 124), a(_(Math.floor(n.mtime), 12), 136), r.fill(32, 148, 156), r[156] = n.type === "dir" ? 53 : 48, a([..."ustar\x0000"].map((p) => p.charCodeAt(0)), 257), a(we(u.prefix, 155) ?? [], 345);
@@ -735,15 +747,15 @@ function wt(e) {
     for (const p of r) l += p;
     if (a([...l.toString(8).padStart(6, "0")].map((p) => p.charCodeAt(0)).concat(0, 32), 148), t.push(...r), n.type === "file" && n.data !== void 0) {
       for (const c of n.data) t.push(c);
-      const p = (N - n.data.length % N) % N;
+      const p = (M - n.data.length % M) % M;
       for (let c = 0; c < p; c++) t.push(0);
     }
   }
-  for (let n = 0; n < N * 2; n++) t.push(0);
+  for (let n = 0; n < M * 2; n++) t.push(0);
   return new Uint8Array(t);
 }
 function bt(e, t) {
-  for (let n = t; n < t + N; n++) if (e[n] !== 0) return !1;
+  for (let n = t; n < t + M; n++) if (e[n] !== 0) return !1;
   return !0;
 }
 function V(e, t, n) {
@@ -765,24 +777,24 @@ function K(e, t, n) {
 function vt(e) {
   const t = [];
   let n = 0, s = null, i = null;
-  for (; n + N <= e.length && !bt(e, n); ) {
+  for (; n + M <= e.length && !bt(e, n); ) {
     const u = n, r = String.fromCharCode(e[n + 156]);
     let a = V(e, n, n + 100);
     const o = V(e, n + 345, n + 500);
     o !== "" && (a = o + "/" + a);
     const l = K(e, n + 124, 12), p = K(e, n + 148, 7);
     let c = 0;
-    for (let f = 0; f < N; f++) c += f >= 148 && f < 156 ? 32 : e[n + f];
+    for (let f = 0; f < M; f++) c += f >= 148 && f < 156 ? 32 : e[n + f];
     if (c !== p) throw new Error("header checksum error");
-    const d = n + N, g = d + l;
-    if (g > e.length) throw new Error("unexpected end of archive");
-    const m = e.subarray(d, g);
-    if (n = d + l + (N - l % N) % N, r === "L") {
-      s = V(m, 0, m.length);
+    const h = n + M, m = h + l;
+    if (m > e.length) throw new Error("unexpected end of archive");
+    const g = e.subarray(h, m);
+    if (n = h + l + (M - l % M) % M, r === "L") {
+      s = V(g, 0, g.length);
       continue;
     }
     if (r === "x" || r === "X" || r === "g") {
-      const f = V(m, 0, m.length);
+      const f = V(g, 0, g.length);
       for (const w of f.split(`
 `)) {
         const b = /^\d+ (?:[^=]+)=(.*)$/.exec(w);
@@ -790,14 +802,14 @@ function vt(e) {
       }
       continue;
     }
-    const h = r === "5" ? "dir" : r === "0" || r === "\0" ? "file" : "link";
-    a = i ?? s ?? a, h === "dir" && !a.endsWith("/") && (a += "/"), i = null, s = null, t.push({
+    const d = r === "5" ? "dir" : r === "0" || r === "\0" ? "file" : "link";
+    a = i ?? s ?? a, d === "dir" && !a.endsWith("/") && (a += "/"), i = null, s = null, t.push({
       name: a,
-      type: h,
+      type: d,
       mode: K(e, u + 100, 8),
       size: l,
       mtime: K(e, u + 136, 12),
-      data: h === "file" ? new Uint8Array(m) : null
+      data: d === "file" ? new Uint8Array(g) : null
     });
   }
   return t;
@@ -810,68 +822,68 @@ function yt(e) {
   const t = [], n = [];
   let s = 0;
   for (const r of e) {
-    const a = [...r.name].map((h) => h.charCodeAt(0) & 255), { dosTime: o, dosDate: l } = zt(/* @__PURE__ */ new Date()), p = X(r.data);
-    let c = 0, d = r.data;
+    const a = [...r.name].map((d) => d.charCodeAt(0) & 255), { dosTime: o, dosDate: l } = zt(/* @__PURE__ */ new Date()), p = X(r.data);
+    let c = 0, h = r.data;
     if (!r.store && r.data.length > 0) {
-      const h = Ne(r.data);
-      h.length < r.data.length && (c = 8, d = h);
+      const d = Ne(r.data);
+      d.length < r.data.length && (c = 8, h = d);
     }
-    const g = (r.mode & 65535) << 16 | (r.name.endsWith("/") ? 16 : 0), m = s;
-    A(t, Me), v(t, 20), v(t, 0), v(t, c), v(t, o), v(t, l), A(t, p), A(t, d.length), A(t, r.data.length), v(t, a.length), v(t, 0);
-    for (const h of a) t.push(h);
-    for (const h of d) t.push(h);
-    s = t.length, A(n, Re), v(n, 788), v(n, 20), v(n, 0), v(n, c), v(n, o), v(n, l), A(n, p), A(n, d.length), A(n, r.data.length), v(n, a.length), v(n, 0), v(n, 0), v(n, 0), v(n, 0), A(n, g), A(n, m);
-    for (const h of a) n.push(h);
+    const m = (r.mode & 65535) << 16 | (r.name.endsWith("/") ? 16 : 0), g = s;
+    S(t, Me), v(t, 20), v(t, 0), v(t, c), v(t, o), v(t, l), S(t, p), S(t, h.length), S(t, r.data.length), v(t, a.length), v(t, 0);
+    for (const d of a) t.push(d);
+    for (const d of h) t.push(d);
+    s = t.length, S(n, Re), v(n, 788), v(n, 20), v(n, 0), v(n, c), v(n, o), v(n, l), S(n, p), S(n, h.length), S(n, r.data.length), v(n, a.length), v(n, 0), v(n, 0), v(n, 0), v(n, 0), S(n, m), S(n, g);
+    for (const d of a) n.push(d);
   }
   const i = t.length;
   for (const r of n) t.push(r);
   const u = t.length - i;
-  return A(t, Fe), v(t, 0), v(t, 0), v(t, e.length), v(t, e.length), A(t, u), A(t, i), v(t, 0), new Uint8Array(t);
+  return S(t, Fe), v(t, 0), v(t, 0), v(t, e.length), v(t, e.length), S(t, u), S(t, i), v(t, 0), new Uint8Array(t);
 }
-class k extends Error {
+class N extends Error {
 }
 function He(e) {
   const t = Math.max(0, e.length - 22 - 65535);
   let n = -1;
   for (let a = e.length - 22; a >= t; a--)
-    if (I(e, a) === Fe) {
+    if (k(e, a) === Fe) {
       n = a;
       break;
     }
-  if (n < 0) throw new k("End-of-central-directory signature not found (not a zip file, or unsupported trailing data)");
-  const s = M(e, n + 10);
-  let i = I(e, n + 16);
-  const u = i + I(e, n + 12);
-  if (u > n || i + 46 > e.length) throw new k("bad central directory offset");
+  if (n < 0) throw new N("End-of-central-directory signature not found (not a zip file, or unsupported trailing data)");
+  const s = R(e, n + 10);
+  let i = k(e, n + 16);
+  const u = i + k(e, n + 12);
+  if (u > n || i + 46 > e.length) throw new N("bad central directory offset");
   const r = [];
   for (let a = 0; a < s; a++) {
-    if (I(e, i) !== Re) throw new k("bad central directory entry");
-    const o = M(e, i + 28), l = M(e, i + 30), p = M(e, i + 32);
+    if (k(e, i) !== Re) throw new N("bad central directory entry");
+    const o = R(e, i + 28), l = R(e, i + 30), p = R(e, i + 32);
     let c = "";
-    for (let d = 0; d < o; d++) c += String.fromCharCode(e[i + 46 + d]);
+    for (let h = 0; h < o; h++) c += String.fromCharCode(e[i + 46 + h]);
     if (r.push({
       name: c,
-      method: M(e, i + 10),
-      crc: I(e, i + 16),
-      csize: I(e, i + 20),
-      usize: I(e, i + 24),
-      dosTime: M(e, i + 12),
-      dosDate: M(e, i + 14),
-      mode: I(e, i + 38) >>> 16,
-      isDir: c.endsWith("/") || (I(e, i + 38) & 16) !== 0,
-      localOffset: I(e, i + 42)
-    }), i += 46 + o + l + p, i > u) throw new k("central directory overrun");
+      method: R(e, i + 10),
+      crc: k(e, i + 16),
+      csize: k(e, i + 20),
+      usize: k(e, i + 24),
+      dosTime: R(e, i + 12),
+      dosDate: R(e, i + 14),
+      mode: k(e, i + 38) >>> 16,
+      isDir: c.endsWith("/") || (k(e, i + 38) & 16) !== 0,
+      localOffset: k(e, i + 42)
+    }), i += 46 + o + l + p, i > u) throw new N("central directory overrun");
   }
   return r;
 }
 function Le(e, t) {
-  if (t.localOffset + 30 > e.length || I(e, t.localOffset) !== Me)
-    throw new k(`${t.name}: bad local header`);
-  const n = M(e, t.localOffset + 26), s = M(e, t.localOffset + 28), i = t.localOffset + 30 + n + s;
-  if (i + t.csize > e.length) throw new k(`${t.name}: truncated entry data`);
+  if (t.localOffset + 30 > e.length || k(e, t.localOffset) !== Me)
+    throw new N(`${t.name}: bad local header`);
+  const n = R(e, t.localOffset + 26), s = R(e, t.localOffset + 28), i = t.localOffset + 30 + n + s;
+  if (i + t.csize > e.length) throw new N(`${t.name}: truncated entry data`);
   const u = e.subarray(i, i + t.csize);
   if (t.method === 0) {
-    if (u.length !== t.usize) throw new k(`${t.name}: stored size mismatch`);
+    if (u.length !== t.usize) throw new N(`${t.name}: stored size mismatch`);
     return new Uint8Array(u);
   }
   if (t.method === 8) {
@@ -879,14 +891,14 @@ function Le(e, t) {
     try {
       r = Ce(u).data;
     } catch (a) {
-      throw new k(`${t.name}: ${a instanceof Error ? a.message : "deflate error"}`);
+      throw new N(`${t.name}: ${a instanceof Error ? a.message : "deflate error"}`);
     }
-    if (r.length !== t.usize) throw new k(`${t.name}: size mismatch after inflate`);
+    if (r.length !== t.usize) throw new N(`${t.name}: size mismatch after inflate`);
     return r;
   }
-  throw new k(`${t.name}: unsupported compression method ${t.method}`);
+  throw new N(`${t.name}: unsupported compression method ${t.method}`);
 }
-const $ = (e) => $e.commands.find((t) => t.name === e).usage;
+const E = (e) => Ae.commands.find((t) => t.name === e).usage;
 function T(e, t) {
   const n = [];
   let s = !1;
@@ -910,21 +922,21 @@ function ne(e, t, n) {
 }
 function Pe(e, t, n) {
   const s = e.vfs.resolve(e.state.cwd, n), i = e.vfs.nodeAt(s);
-  return i ? i.kind === "dir" ? (e.err(`${t}: ${n}: Is a directory`), e.exit(1), null) : C(i.content) : (ne(e, t, n), null);
+  return i ? i.kind === "dir" ? (e.err(`${t}: ${n}: Is a directory`), e.exit(1), null) : I(i.content) : (ne(e, t, n), null);
 }
 const be = () => Math.floor(Date.now() / 1e3);
-function At(e, t) {
+function $t(e, t) {
   const n = (i, u) => e & i ? u : "-", s = (i, u, r) => n(i, "r") + n(u, "w") + n(r, "x");
   return (t ? "d" : "-") + s(256, 128, 64) + s(32, 16, 8) + s(4, 2, 1);
 }
 const D = (e) => String(e).padStart(2, "0");
-function $t(e) {
+function At(e) {
   const t = new Date(e * 1e3);
   return `${t.getFullYear()}-${D(t.getMonth() + 1)}-${D(t.getDate())} ${D(t.getHours())}:${D(t.getMinutes())}`;
 }
 const St = {
   name: "base64",
-  usage: $("base64"),
+  usage: E("base64"),
   complete: (e) => ["-d", "--decode", "-w", "--wrap", "-i", "--ignore-garbage", "--help"].filter((t) => t.startsWith(e.word)),
   run(e) {
     const t = T(e.args, "w");
@@ -941,7 +953,7 @@ const St = {
       else if (o === "-w" || o === "--wrap") s = Number(t[++a] ?? "");
       else if (o.startsWith("--wrap=")) s = Number(o.slice(7));
       else if (o === "--help" || o === "-h") {
-        e.out($("base64")), e.out("Encode (-d decodes): 76-column output, 0 disables wrapping.");
+        e.out(E("base64")), e.out("Encode (-d decodes): 76-column output, 0 disables wrapping.");
         return;
       } else if (o.startsWith("-") && o !== "-") {
         U(e, "base64", o);
@@ -977,10 +989,10 @@ const St = {
         e.err(`base64: ${a}`), e.exit(1);
         return;
       }
-      e.out(R(a));
+      e.out(F(a));
       return;
     }
-    for (const a of _e(C(r), s)) e.out(a);
+    for (const a of _e(I(r), s)) e.out(a);
   }
 };
 function Et(e, t, n) {
@@ -998,7 +1010,7 @@ function Et(e, t, n) {
     else if (o === "-b" || o === "--binary") s.binary = !0;
     else if (o === "-t" || o === "--text") s.binary = !1;
     else if (o === "--tag") s.tag = !0;
-    else return o === "--help" || o === "-h" ? (e.out($(t)), e.out("-c verifies a checksum file (name: OK / FAILED), -b marks binary."), null) : (U(e, t, o), null);
+    else return o === "--help" || o === "-h" ? (e.out(E(t)), e.out("-c verifies a checksum file (name: OK / FAILED), -b marks binary."), null) : (U(e, t, o), null);
   }
   return { opts: s, operands: i };
 }
@@ -1006,25 +1018,25 @@ function q(e) {
   const t = `${e}sum`;
   return {
     name: t,
-    usage: $(t),
+    usage: E(t),
     complete: (n) => ["-c", "--check", "-b", "--binary", "-t", "--text", "--tag", "--help"].filter((s) => s.startsWith(n.word)),
     run(n) {
       const s = Et(n, t, "");
       if (s === null) return;
       const { opts: i, operands: u } = s;
       if (!i.check) {
-        const m = i.binary ? " *" : "  ", h = (f, w) => i.tag ? `${e.toUpperCase()} (${w}) = ${f}` : `${f}${m}${w}`;
+        const g = i.binary ? " *" : "  ", d = (f, w) => i.tag ? `${e.toUpperCase()} (${w}) = ${f}` : `${f}${g}${w}`;
         if (u.length === 0) {
           if (n.stdin === null) {
             n.err(`${t}: no input (pipe one in, or name a file)`), n.exit(1);
             return;
           }
-          n.out(h(se(ie(e, C(n.stdin))), "-"));
+          n.out(d(se(ie(e, I(n.stdin))), "-"));
           return;
         }
         for (const f of u) {
           const w = Pe(n, t, f);
-          w !== null && n.out(h(se(ie(e, w)), f));
+          w !== null && n.out(d(se(ie(e, w)), f));
         }
         return;
       }
@@ -1036,33 +1048,33 @@ function q(e) {
         }
         r.push(n.stdin);
       } else
-        for (const m of u) {
-          const h = n.vfs.read(n.vfs.resolve(n.state.cwd, m));
-          if (h === null) {
-            ne(n, t, m);
+        for (const g of u) {
+          const d = n.vfs.read(n.vfs.resolve(n.state.cwd, g));
+          if (d === null) {
+            ne(n, t, g);
             return;
           }
-          r.push(h);
+          r.push(d);
         }
       const a = st[e], o = new RegExp(`^([0-9a-fA-F]{${a}}) ([ *])(.+)$`), l = new RegExp(`^${e.toUpperCase()} \\((.+)\\) = ([0-9a-fA-F]{${a}})$`);
-      let p = 0, c = 0, d = 0, g = 0;
-      for (const m of r)
-        for (const h of m.split(`
+      let p = 0, c = 0, h = 0, m = 0;
+      for (const g of r)
+        for (const d of g.split(`
 `)) {
-          if (h === "") continue;
-          const f = h.replace(/\\(.)/g, "$1"), w = o.exec(f), b = w === null ? l.exec(f) : null, z = w !== null ? w[1] : b !== null ? b[2] : null, y = w !== null ? w[3] : b !== null ? b[1] : null;
+          if (d === "") continue;
+          const f = d.replace(/\\(.)/g, "$1"), w = o.exec(f), b = w === null ? l.exec(f) : null, z = w !== null ? w[1] : b !== null ? b[2] : null, y = w !== null ? w[3] : b !== null ? b[1] : null;
           if (z === null || y === null) {
-            g++;
+            m++;
             continue;
           }
-          const S = n.vfs.read(n.vfs.resolve(n.state.cwd, y));
-          if (S === null) {
-            n.err(`${t}: ${y}: No such file or directory`), n.err(`${y}: FAILED open or read`), d++;
+          const $ = n.vfs.read(n.vfs.resolve(n.state.cwd, y));
+          if ($ === null) {
+            n.err(`${t}: ${y}: No such file or directory`), n.err(`${y}: FAILED open or read`), h++;
             continue;
           }
-          se(ie(e, C(S))) === z.toLowerCase() ? (n.out(`${y}: OK`), p++) : (n.out(`${y}: FAILED`), c++);
+          se(ie(e, I($))) === z.toLowerCase() ? (n.out(`${y}: OK`), p++) : (n.out(`${y}: FAILED`), c++);
         }
-      d > 0 && n.err(`${t}: WARNING: ${d} listed ${d === 1 ? "file" : "files"} could not be read`), c > 0 ? n.err(`${t}: WARNING: ${c} computed checksum${c === 1 ? " did" : "s did"} NOT match`) : g > 0 && p + d > 0 ? n.err(`${t}: WARNING: ${g} lines are improperly formatted`) : g > 0 && p + c + d === 0 && n.err(`${t}: no properly formatted checksum lines`), c + d > 0 ? n.exit(1) : g > 0 && n.exit(2);
+      h > 0 && n.err(`${t}: WARNING: ${h} listed ${h === 1 ? "file" : "files"} could not be read`), c > 0 ? n.err(`${t}: WARNING: ${c} computed checksum${c === 1 ? " did" : "s did"} NOT match`) : m > 0 && p + h > 0 ? n.err(`${t}: WARNING: ${m} lines are improperly formatted`) : m > 0 && p + c + h === 0 && n.err(`${t}: no properly formatted checksum lines`), c + h > 0 ? n.exit(1) : m > 0 && n.exit(2);
     }
   };
 }
@@ -1089,7 +1101,7 @@ function ue(e, t, n) {
     else if (l === "-v" || l === "--verbose") s.verbose = !0;
     else if (l === "-f" || l === "--force") s.force = !0;
     else if (!(/^-[1-9]$/.test(l) || l === "--fast" || l === "--best")) if (l === "--help" || l === "-h") {
-      e.out($(t)), e.out("-c stdout, -d decompress, -k keep, -t test, -v verbose; -1..-9 accepted.");
+      e.out(E(t)), e.out("-c stdout, -d decompress, -k keep, -t test, -v verbose; -1..-9 accepted.");
       return;
     } else if (l === "-r" || l === "--recursive") {
       e.err(`gzip: ${t}: -r is not supported — name the files (the VFS has no globbing here)`), e.exit(2);
@@ -1105,9 +1117,9 @@ function ue(e, t, n) {
   }, a = (o, l) => {
     try {
       const { raw: p, end: c } = j(l);
-      e.out(R(p)), r(l, c) || (e.err(`gzip: ${o}: decompression OK, trailing garbage ignored`), e.exit(2));
+      e.out(F(p)), r(l, c) || (e.err(`gzip: ${o}: decompression OK, trailing garbage ignored`), e.exit(2));
     } catch (p) {
-      if (p instanceof E) {
+      if (p instanceof C) {
         ae(e, o, p);
         return;
       }
@@ -1124,10 +1136,10 @@ function ue(e, t, n) {
       return;
     }
     if (s.decompress) {
-      a("stdin", C(e.stdin));
+      a("stdin", I(e.stdin));
       return;
     }
-    e.out(R(fe(C(e.stdin))));
+    e.out(F(fe(I(e.stdin))));
     return;
   }
   for (const o of i) {
@@ -1140,67 +1152,67 @@ function ue(e, t, n) {
       e.err(`gzip: ${o}: Is a directory`), e.exit(1);
       continue;
     }
-    const c = C(p.content);
+    const c = I(p.content);
     if (s.test) {
       try {
         j(c);
-      } catch (m) {
-        if (m instanceof E) {
-          ae(e, o, m);
+      } catch (g) {
+        if (g instanceof C) {
+          ae(e, o, g);
           continue;
         }
-        throw m;
+        throw g;
       }
       continue;
     }
     if (!s.decompress) {
-      const m = o.toLowerCase();
-      if (Ct.some((w) => m.endsWith(w))) {
+      const g = o.toLowerCase();
+      if (Ct.some((w) => g.endsWith(w))) {
         e.err(`gzip: ${o} already has .gz suffix -- unchanged`), e.exit(2);
         continue;
       }
-      if (It.some((w) => m.endsWith(w)) && !s.force) {
+      if (It.some((w) => g.endsWith(w)) && !s.force) {
         e.err(`gzip: ${o} has a reserved archive suffix (use -f to compress anyway)`), e.exit(2);
         continue;
       }
-      const h = fe(c), f = o + ".gz";
+      const d = fe(c), f = o + ".gz";
       if (s.stdout) {
-        e.out(R(h));
+        e.out(F(d));
         continue;
       }
-      e.vfs.mountFile(l + ".gz", R(h)), s.verbose && e.err(`${o}: ${ve(c.length, h.length)}% -- replaced with ${f}`), s.keep || e.vfs.rm(l);
+      e.vfs.mountFile(l + ".gz", F(d)), s.verbose && e.err(`${o}: ${ve(c.length, d.length)}% -- replaced with ${f}`), s.keep || e.vfs.rm(l);
       continue;
     }
-    const d = o.toLowerCase(), g = d.endsWith(".tgz") || d.endsWith(".taz") ? o.slice(0, -4) + ".tar" : d.endsWith(".gz") ? o.slice(0, -3) : null;
-    if (g === null) {
+    const h = o.toLowerCase(), m = h.endsWith(".tgz") || h.endsWith(".taz") ? o.slice(0, -4) + ".tar" : h.endsWith(".gz") ? o.slice(0, -3) : null;
+    if (m === null) {
       e.err(`gzip: ${o}: unknown suffix -- ignored`), e.exit(2);
       continue;
     }
     try {
-      const { raw: m, end: h } = j(c), f = R(m);
-      s.stdout ? e.out(f) : (e.vfs.mountFile(e.vfs.resolve(e.state.cwd, g), f), s.verbose && e.err(`${o}: ${ve(c.length, m.length)}% -- replaced with ${g}`), s.keep || e.vfs.rm(l)), r(c, h) || (e.err(`gzip: ${o}: decompression OK, trailing garbage ignored`), e.exit(2));
-    } catch (m) {
-      if (m instanceof E) {
-        ae(e, o, m);
+      const { raw: g, end: d } = j(c), f = F(g);
+      s.stdout ? e.out(f) : (e.vfs.mountFile(e.vfs.resolve(e.state.cwd, m), f), s.verbose && e.err(`${o}: ${ve(c.length, g.length)}% -- replaced with ${m}`), s.keep || e.vfs.rm(l)), r(c, d) || (e.err(`gzip: ${o}: decompression OK, trailing garbage ignored`), e.exit(2));
+    } catch (g) {
+      if (g instanceof C) {
+        ae(e, o, g);
         continue;
       }
-      throw m;
+      throw g;
     }
   }
 }
 const ce = {
   name: "gzip",
-  usage: $("gzip"),
+  usage: E("gzip"),
   complete: (e) => ["-c", "-d", "-k", "-t", "-v", "-f", "--stdout", "--decompress", "--keep", "--test", "--help"].filter((t) => t.startsWith(e.word)),
   run: (e) => ue(e, "gzip", {})
 }, kt = {
   name: "gunzip",
-  usage: $("gunzip"),
+  usage: E("gunzip"),
   complete: ce.complete,
   run: (e) => ue(e, "gunzip", { decompress: !0 })
 }, Nt = {
   name: "zcat",
-  usage: $("zcat"),
+  usage: E("zcat"),
   complete: ce.complete,
   run: (e) => ue(e, "zcat", { decompress: !0, stdout: !0 })
 };
@@ -1226,12 +1238,12 @@ function Mt(e) {
     else if (r === "-z" || r === "--gzip" || r === "--gunzip") t.gzip = !0;
     else if (r === "-C" || r === "--directory") t.dir = s[++u] ?? null;
     else if (r.startsWith("--directory=")) t.dir = r.slice(12);
-    else return r === "--help" || r === "-h" ? (e.out($("tar")), e.out("One of -c/-x/-t, then -f ARCHIVE (- = stdin/stdout), -v, -z, -C DIR."), null) : ["-r", "-u", "-A", "-d", "--append", "--update", "--diff", "--compare", "--delete"].includes(r) ? (e.err(`tar: ${r}: not supported (create, list and extract only)`), e.exit(2), null) : (U(e, "tar", r), null);
+    else return r === "--help" || r === "-h" ? (e.out(E("tar")), e.out("One of -c/-x/-t, then -f ARCHIVE (- = stdin/stdout), -v, -z, -C DIR."), null) : ["-r", "-u", "-A", "-d", "--append", "--update", "--diff", "--compare", "--delete"].includes(r) ? (e.err(`tar: ${r}: not supported (create, list and extract only)`), e.exit(2), null) : (U(e, "tar", r), null);
   }
   return n === null ? (e.err("tar: You must specify one of the '-Acdtrux', '--delete' or '--test-label' options"), e.exit(2), null) : (t.mode = n, t);
 }
 function Rt(e, t) {
-  return t !== null && t !== "-" ? Pe(e, "tar", t) : e.stdin === null ? (e.err("tar: no archive (use -f ARCHIVE, or pipe one in)"), e.exit(2), null) : C(e.stdin);
+  return t !== null && t !== "-" ? Pe(e, "tar", t) : e.stdin === null ? (e.err("tar: no archive (use -f ARCHIVE, or pipe one in)"), e.exit(2), null) : I(e.stdin);
 }
 function ze(e, t) {
   return t.length === 0 ? !0 : t.some((n) => {
@@ -1248,7 +1260,7 @@ function Be(e, t, n, s, i) {
   if (!u)
     return e.err(`tar: ${t}: Cannot stat: No such file or directory`), !1;
   if (u.kind === "file")
-    return s.push({ name: n, type: "file", data: C(u.content), mode: 420, mtime: be() }), i && e.out(n), !0;
+    return s.push({ name: n, type: "file", data: I(u.content), mode: 420, mtime: be() }), i && e.out(n), !0;
   s.push({ name: n.endsWith("/") ? n : n + "/", type: "dir", mode: 493, mtime: be() }), i && e.out(n.endsWith("/") ? n : n + "/");
   let r = !0;
   for (const a of e.vfs.list(t)) {
@@ -1259,7 +1271,7 @@ function Be(e, t, n, s, i) {
 }
 const Ft = {
   name: "tar",
-  usage: $("tar"),
+  usage: E("tar"),
   complete: (e) => ["-c", "-x", "-t", "-f", "-v", "-z", "-C", "--create", "--extract", "--list", "--file", "--gzip", "--directory", "--help"].filter((t) => t.startsWith(e.word)),
   run(e) {
     const t = Mt(e);
@@ -1279,15 +1291,15 @@ const Ft = {
           e.err('tar: "-" is not a file operand here'), n();
           return;
         }
-        const c = t.dir !== null ? e.vfs.resolve(e.state.cwd, t.dir) : e.state.cwd, d = e.vfs.resolve(c, p), g = d.startsWith(c === "/" ? "/" : c + "/") ? d.slice(c === "/" ? 1 : c.length + 1) : p, m = De(g);
-        if (m.stripped && !o && (e.err("tar: Removing leading `/' from member names"), o = !0), m.name === "") {
+        const c = t.dir !== null ? e.vfs.resolve(e.state.cwd, t.dir) : e.state.cwd, h = e.vfs.resolve(c, p), m = h.startsWith(c === "/" ? "/" : c + "/") ? h.slice(c === "/" ? 1 : c.length + 1) : p, g = De(m);
+        if (g.stripped && !o && (e.err("tar: Removing leading `/' from member names"), o = !0), g.name === "") {
           e.err("tar: cannot archive the root directory"), n();
           return;
         }
-        Be(e, d, m.name, a, t.verbose) || n();
+        Be(e, h, g.name, a, t.verbose) || n();
       }
       let l = wt(a);
-      t.gzip && (l = fe(l)), t.file !== null && t.file !== "-" ? e.vfs.mountFile(e.vfs.resolve(e.state.cwd, t.file), R(l)) : e.out(R(l));
+      t.gzip && (l = fe(l)), t.file !== null && t.file !== "-" ? e.vfs.mountFile(e.vfs.resolve(e.state.cwd, t.file), F(l)) : e.out(F(l));
       return;
     }
     const s = Rt(e, t.file);
@@ -1297,7 +1309,7 @@ const Ft = {
       try {
         i = j(s).raw;
       } catch (a) {
-        if (a instanceof E) {
+        if (a instanceof C) {
           e.err(`tar: ${a.message}`), n();
           return;
         }
@@ -1322,7 +1334,7 @@ const Ft = {
       if (t.mode === "list") {
         if (t.verbose) {
           const p = a.type === "dir" ? 0 : a.size;
-          e.out(`${At(a.mode, a.type === "dir")} 0/0 ${String(p).padStart(8)} ${$t(a.mtime)} ${a.name}`);
+          e.out(`${$t(a.mode, a.type === "dir")} 0/0 ${String(p).padStart(8)} ${At(a.mtime)} ${a.name}`);
         } else
           e.out(a.name);
         continue;
@@ -1336,39 +1348,39 @@ const Ft = {
         continue;
       }
       const l = e.vfs.resolve(r, o);
-      a.type === "dir" ? e.vfs.mkdir(l, { parents: !0 }) : e.vfs.mountFile(l, R(a.data ?? new Uint8Array())), t.verbose && e.out(o);
+      a.type === "dir" ? e.vfs.mkdir(l, { parents: !0 }) : e.vfs.mountFile(l, F(a.data ?? new Uint8Array())), t.verbose && e.out(o);
     }
   }
 }, Ht = {
   name: "zip",
-  usage: $("zip"),
+  usage: E("zip"),
   complete: (e) => ["-r", "-q", "-0", "-9", "--help"].filter((t) => t.startsWith(e.word)),
   run(e) {
     let t = !1, n = !1, s = !1;
     const i = [], u = T(e.args, "");
-    for (const h of u) {
-      if (h === "--") {
-        i.push(...u.slice(u.indexOf(h) + 1));
+    for (const d of u) {
+      if (d === "--") {
+        i.push(...u.slice(u.indexOf(d) + 1));
         break;
       }
-      if (h === "-r") t = !0;
-      else if (h === "-q") n = !0;
-      else if (h === "-0") s = !0;
-      else if (!(h === "-9" || h === "-1")) if (h === "-e" || h.startsWith("--")) {
-        if (h === "--help" || h === "-h") {
-          e.out($("zip")), e.out("ARCHIVE first; -r recurses, -0 stores, -q quiets. No encryption.");
+      if (d === "-r") t = !0;
+      else if (d === "-q") n = !0;
+      else if (d === "-0") s = !0;
+      else if (!(d === "-9" || d === "-1")) if (d === "-e" || d.startsWith("--")) {
+        if (d === "--help" || d === "-h") {
+          e.out(E("zip")), e.out("ARCHIVE first; -r recurses, -0 stores, -q quiets. No encryption.");
           return;
         }
-        e.err(h === "-e" ? "zip: encryption is not supported" : `zip: unsupported option ${h}`), e.exit(16);
+        e.err(d === "-e" ? "zip: encryption is not supported" : `zip: unsupported option ${d}`), e.exit(16);
         return;
-      } else if (h.startsWith("-") && h !== "-") {
-        U(e, "zip", h);
+      } else if (d.startsWith("-") && d !== "-") {
+        U(e, "zip", d);
         return;
-      } else i.push(h);
+      } else i.push(d);
     }
     const [r, ...a] = i;
     if (r === void 0 || a.length === 0) {
-      e.err(`zip: usage: ${$("zip")}`), e.exit(16);
+      e.err(`zip: usage: ${E("zip")}`), e.exit(16);
       return;
     }
     const o = e.vfs.resolve(e.state.cwd, r);
@@ -1379,44 +1391,44 @@ const Ft = {
     const l = /* @__PURE__ */ new Map(), p = e.vfs.read(o);
     if (p !== null)
       try {
-        for (const h of He(C(p))) {
-          const f = Le(C(p), h);
-          l.set(h.name, { name: h.name, data: f, mode: h.mode || (h.isDir ? 493 : 420), store: !0 });
+        for (const d of He(I(p))) {
+          const f = Le(I(p), d);
+          l.set(d.name, { name: d.name, data: f, mode: d.mode || (d.isDir ? 493 : 420), store: !0 });
         }
-      } catch (h) {
-        e.err(`zip: ${r}: ${h instanceof k ? h.message : "not a zip archive (refusing to overwrite)"}`), e.exit(2);
+      } catch (d) {
+        e.err(`zip: ${r}: ${d instanceof N ? d.message : "not a zip archive (refusing to overwrite)"}`), e.exit(2);
         return;
       }
-    let c = 0, d = !1;
-    const g = (h) => {
-      const f = e.vfs.resolve(e.state.cwd, h), w = e.vfs.nodeAt(f);
+    let c = 0, h = !1;
+    const m = (d) => {
+      const f = e.vfs.resolve(e.state.cwd, d), w = e.vfs.nodeAt(f);
       if (!w) {
-        e.err(`zip warning: name not matched: ${h}`);
+        e.err(`zip warning: name not matched: ${d}`);
         return;
       }
-      const b = De(h);
-      if (b.stripped && !d && (e.err("zip: stripping leading `/' from member names"), d = !0), w.kind === "file") {
-        l.set(b.name, { name: b.name, data: C(w.content), mode: 420, store: s }), n || e.out(`  adding: ${b.name} (${s ? "stored" : "deflated"})`), c++;
+      const b = De(d);
+      if (b.stripped && !h && (e.err("zip: stripping leading `/' from member names"), h = !0), w.kind === "file") {
+        l.set(b.name, { name: b.name, data: I(w.content), mode: 420, store: s }), n || e.out(`  adding: ${b.name} (${s ? "stored" : "deflated"})`), c++;
         return;
       }
       if (!t) {
         l.set(b.name.endsWith("/") ? b.name : b.name + "/", { name: b.name.endsWith("/") ? b.name : b.name + "/", data: new Uint8Array(), mode: 493, store: !0 }), n || e.out(`  adding: ${b.name}/ (stored 0%)`), c++;
         return;
       }
-      const z = (y, S) => {
-        l.set(S + "/", { name: S + "/", data: new Uint8Array(), mode: 493, store: !0 }), n || e.out(`  adding: ${S}/ (stored 0%)`);
-        for (const P of e.vfs.list(y)) {
-          const de = y === "/" ? `/${P.name}` : `${y}/${P.name}`;
-          if (P.kind === "dir") z(de, S + "/" + P.name);
+      const z = (y, $) => {
+        l.set($ + "/", { name: $ + "/", data: new Uint8Array(), mode: 493, store: !0 }), n || e.out(`  adding: ${$}/ (stored 0%)`);
+        for (const A of e.vfs.list(y)) {
+          const de = y === "/" ? `/${A.name}` : `${y}/${A.name}`;
+          if (A.kind === "dir") z(de, $ + "/" + A.name);
           else {
-            const Oe = e.vfs.read(de) ?? "", re = S + "/" + P.name;
-            l.set(re, { name: re, data: C(Oe), mode: 420, store: s }), n || e.out(`  adding: ${re} (${s ? "stored" : "deflated"})`);
+            const Oe = e.vfs.read(de) ?? "", re = $ + "/" + A.name;
+            l.set(re, { name: re, data: I(Oe), mode: 420, store: s }), n || e.out(`  adding: ${re} (${s ? "stored" : "deflated"})`);
           }
         }
       };
       z(f, b.name), c++;
     };
-    for (const h of a) g(h);
+    for (const d of a) m(d);
     if (c === 0 && l.size === 0) {
       e.err(`zip error: Nothing to do! (${r})`), e.exit(12);
       return;
@@ -1425,8 +1437,8 @@ const Ft = {
       e.err(`zip warning: name not matched: nothing updated (${r})`), e.exit(12);
       return;
     }
-    const m = yt([...l.values()]);
-    e.vfs.mountFile(o, R(m));
+    const g = yt([...l.values()]);
+    e.vfs.mountFile(o, F(g));
   }
 };
 function ye(e, t) {
@@ -1436,19 +1448,19 @@ function ye(e, t) {
 }
 const Lt = {
   name: "unzip",
-  usage: $("unzip"),
+  usage: E("unzip"),
   complete: (e) => ["-l", "-o", "-n", "-q", "-d", "--help"].filter((t) => t.startsWith(e.word)),
   run(e) {
     let t = !1, n = !1, s = !1, i = null;
     const u = [], r = T(e.args, "d");
-    for (let h = 0; h < r.length; h++) {
-      const f = r[h];
+    for (let d = 0; d < r.length; d++) {
+      const f = r[d];
       if (f === "-l" || f === "--list") t = !0;
       else if (f === "-q" || f === "--quiet") n = !0;
       else if (!(f === "-o" || f === "--overwrite")) if (f === "-n" || f === "--never-overwrite") s = !0;
-      else if (f === "-d" || f === "--exdir") i = r[++h] ?? null;
+      else if (f === "-d" || f === "--exdir") i = r[++d] ?? null;
       else if (f === "--help" || f === "-h") {
-        e.out($("unzip")), e.out("ARCHIVE first, then member globs. -l lists, -d DIR extracts into DIR.");
+        e.out(E("unzip")), e.out("ARCHIVE first, then member globs. -l lists, -d DIR extracts into DIR.");
         return;
       } else if (f.startsWith("-") && f !== "-") {
         U(e, "unzip", f);
@@ -1465,51 +1477,51 @@ const Lt = {
       e.err(`unzip: cannot find ${a}`), e.exit(9);
       return;
     }
-    const c = C(p);
-    let d;
+    const c = I(p);
+    let h;
     try {
-      d = He(c);
-    } catch (h) {
-      e.err(h instanceof k ? `unzip: cannot find zipfile directory in ${a} (${h.message})` : `unzip: ${a}: not a zip file`), e.exit(9);
+      h = He(c);
+    } catch (d) {
+      e.err(d instanceof N ? `unzip: cannot find zipfile directory in ${a} (${d.message})` : `unzip: ${a}: not a zip file`), e.exit(9);
       return;
     }
-    const g = d.filter((h) => o.length === 0 || o.some((f) => ye(h.name, f)));
-    for (const h of o)
-      d.some((f) => ye(f.name, h)) || e.err(`caution: filename not matched: ${h}`);
-    if (o.length > 0 && g.length === 0) {
+    const m = h.filter((d) => o.length === 0 || o.some((f) => ye(d.name, f)));
+    for (const d of o)
+      h.some((f) => ye(f.name, d)) || e.err(`caution: filename not matched: ${d}`);
+    if (o.length > 0 && m.length === 0) {
       e.exit(11);
       return;
     }
     if (t) {
       e.out(`Archive:  ${a}`), e.out("  Length      Date    Time    Name"), e.out("---------  ---------- -----   ----");
-      let h = 0, f = 0;
-      for (const w of g) {
-        const b = w.dosDate, z = w.dosTime, y = `${1980 + (b >> 9 & 127)}-${D(b >> 5 & 15)}-${D(b & 31)}`, S = `${D(z >> 11 & 31)}:${D(z >> 5 & 63)}`;
-        e.out(`${String(w.usize).padStart(9)}  ${y} ${S}   ${w.name}`), w.isDir || (h += w.usize, f++);
+      let d = 0, f = 0;
+      for (const w of m) {
+        const b = w.dosDate, z = w.dosTime, y = `${1980 + (b >> 9 & 127)}-${D(b >> 5 & 15)}-${D(b & 31)}`, $ = `${D(z >> 11 & 31)}:${D(z >> 5 & 63)}`;
+        e.out(`${String(w.usize).padStart(9)}  ${y} ${$}   ${w.name}`), w.isDir || (d += w.usize, f++);
       }
-      e.out("---------                   -------"), e.out(`${String(h).padStart(9)}                   ${f} ${f === 1 ? "file" : "files"}`);
+      e.out("---------                   -------"), e.out(`${String(d).padStart(9)}                   ${f} ${f === 1 ? "file" : "files"}`);
       return;
     }
-    const m = i !== null ? e.vfs.resolve(e.state.cwd, i) : e.state.cwd;
-    for (const h of g) {
-      if (h.name.startsWith("/") || h.name.split("/").includes("..")) {
-        e.err(`unzip: ${h.name}: illegal member name (absolute or ..)`), e.exit(2);
+    const g = i !== null ? e.vfs.resolve(e.state.cwd, i) : e.state.cwd;
+    for (const d of m) {
+      if (d.name.startsWith("/") || d.name.split("/").includes("..")) {
+        e.err(`unzip: ${d.name}: illegal member name (absolute or ..)`), e.exit(2);
         continue;
       }
-      const f = e.vfs.resolve(m, h.name.replace(/\/+$/, ""));
-      if (h.isDir) {
+      const f = e.vfs.resolve(g, d.name.replace(/\/+$/, ""));
+      if (d.isDir) {
         e.vfs.mkdir(f, { parents: !0 });
         continue;
       }
       if (s && e.vfs.nodeAt(f) !== null) {
-        n || e.out(`   skipping: ${h.name}`);
+        n || e.out(`   skipping: ${d.name}`);
         continue;
       }
       try {
-        const w = Le(c, h);
-        e.vfs.mountFile(f, R(w)), n || e.out(`  ${h.method === 8 ? "inflating" : "extracting"}: ${h.name}`);
+        const w = Le(c, d);
+        e.vfs.mountFile(f, F(w)), n || e.out(`  ${d.method === 8 ? "inflating" : "extracting"}: ${d.name}`);
       } catch (w) {
-        if (w instanceof k) {
+        if (w instanceof N) {
           e.err(`unzip: ${w.message}`), e.exit(2);
           continue;
         }
