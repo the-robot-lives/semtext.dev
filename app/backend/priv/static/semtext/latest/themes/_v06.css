@@ -38,6 +38,10 @@
   font-size: .875em; background: color-mix(in srgb, var(--sem-fg) 7%, transparent);
   border: 1px solid var(--sem-border); border-radius: 4px; padding: .1em .35em;
   white-space: pre-wrap; overflow-wrap: anywhere; }
+/* The runtime unwraps the DOM, so these never exist on a chip; the rule
+   covers a regression (an enhance pass re-blocking a chip) — the chip
+   must stay chrome-free and single-line visually either way. */
+:is(sem-code, .sem-code)[data-sem-v06="inline"] :is(.sem-code-chrome, pre) { display: none; }
 
 /* ---- default reading measure (item 2: generous margins + measure) --- */
 body:has(> :is(sem-enhanced-document, .sem-enhanced-document)) { padding: 2rem 1.25rem 4rem; }

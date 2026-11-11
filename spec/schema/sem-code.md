@@ -98,6 +98,20 @@ same function once its children are parsed)
   function is idempotent — chrome already present means nothing is added
   twice).
 
+### Inline chip (single-line flat listing, v0.6 authoring layer)
+
+A flat listing that is single-line and carries none of `filename`,
+`lang`, `mark`, `controls` (either spelling) renders as an **inline
+chip**, not a block listing: no `.sem-code-chrome`, no copy control, no
+`<pre>` — the element's own text (minus the two structural trims) is
+the chip label. The v0.6 layer (`runtime/semtext-v06.js`) stamps
+`data-sem-v06="inline"`; because the reading bundle's enhance runs as a
+block pass over every flat listing, the layer also unwraps chrome the
+enhance already built and leaves the element in a state the enhance
+skips on a later run. Extraction reads the listing verbatim from the
+element's text either way. A multi-line flat listing, or one carrying
+any of those attributes, is a block listing and keeps the chrome above.
+
 ### JS-off
 
 - Plain `<pre>`; the filename renders as a caption through

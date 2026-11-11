@@ -182,9 +182,12 @@ export async function retry<T>(fn: () => Promise<T>, n: number, backoffMs = 250)
  * Transforms (idempotent; each container stamped `data-sem-v06`):
  *   refIds          sem-reference auto ids  = block id (default `refs`)
  *                   + '-' + slug(cite)      (pure function, sem-references.md)
- *   flatCode        sem-code without a <pre>: decorated or multi-line text
- *                   wraps into <pre><code>; plain single-line text is the
- *                   inline form (CSS chip, no restructure)
+ *   flatCode        sem-code without an authored <pre>: decorated or
+ *                   multi-line text wraps into <pre><code>; plain
+ *                   single-line text is the inline chip (CSS chip) —
+ *                   block chrome a prior enhance pass built is unwrapped
+ *                   back to the flat text, and the chip state leaves a
+ *                   later enhance pass nothing to do
  *   lists           sem-list markdown lines -> real <ul>/<ol>/<li>
  *                   (2-space indent = one nesting level); item text
  *                   carries inline sugar (appendInline): `code`, **bold**
@@ -239,26 +242,72 @@ export async function retry<T>(fn: () => Promise<T>, n: number, backoffMs = 250)
     });
   }
 
+  /* Structural trims (sem-code.md): one leading newline directly after
+     the open tag and the trailing whitespace before the close tag are
+     authoring layout; interior whitespace stays byte-identical. */
+  function trimListing(text) {
+    return String(text).replace(/^[^\S\n]*\n+/, '').replace(/\s+$/, '');
+  }
+
+  /* The listing text regardless of enhance state. Once the reading
+     bundle adopts the flat text into <pre><code>, the element's own
+     textContent is chrome-polluted (control button labels), so read the
+     adopted <code> instead. */
+  function listingText(el) {
+    var pre = el.querySelector(':scope > pre');
+    if (pre) return (pre.querySelector('code') || pre).textContent || '';
+    return el.textContent || '';
+  }
+
+  /* Single-line flat with none of filename/lang/mark/controls = inline
+     chip (sem-code.md, inline chip clause): no chrome, no <pre>, no copy
+     control — the element's own text IS the listing. The reading
+     bundle's Lit upgrade routinely lands before this layer (deferred
+     bundles: define() upgrades the element, our run() beats only the
+     update microtask — and after it the enhance has already blocked the
+     flat text), so the chip state has to cover both orders:
+
+       - chrome already built -> unwrap it back to the flat text;
+       - chrome not built yet -> leave one inert <template> child and no
+         <pre>, which makes the bundle's enhance a no-op (it adopts flat
+         text only over an element with no children, and bails once there
+         is no <pre> to enhance).
+
+     A <template> keeps its content in a separate fragment: no text, no
+     layout, invisible to querySelector('pre') — extraction and the chip
+     render are untouched, and literal `<` stays a character because the
+     listing goes back as a text node, never markup. */
+  function restoreInline(el) {
+    var chrome = el.querySelector(':scope > .sem-code-chrome');
+    var pre = el.querySelector(':scope > pre');
+    var text = trimListing(pre ? listingText(el) : (el.textContent || ''));
+    if (chrome) chrome.remove();
+    el.textContent = '';
+    el.appendChild(document.createTextNode(text));
+    el.appendChild(document.createElement('template'));
+  }
+
   function flatCode(root) {
     all(root, 'sem-code, .sem-code').forEach(function (el) {
       if (el.hasAttribute(MARK)) return;
-      if (el.querySelector('pre')) { el.setAttribute(MARK, 'block'); return; }
       var decorated = ['filename', 'lang', 'mark', 'controls'].some(function (a) {
         return el.hasAttribute(a) || el.hasAttribute('data-' + a);
       });
-      var text = el.textContent;
-      var multiline = /\n[^\s]/.test(text.replace(/^[^\S\n]*\n+/, '').replace(/\s+$/, ''));
-      if (decorated || multiline) {
-        var pre = document.createElement('pre');
-        var code = document.createElement('code');
-        code.textContent = text.replace(/^[^\S\n]*\n+/, '').replace(/\s+$/, '');
-        pre.appendChild(code);
-        el.textContent = '';
-        el.appendChild(pre);
-        el.setAttribute(MARK, 'block');
-      } else {
+      var text = listingText(el);
+      var multiline = /\n[^\s]/.test(trimListing(text));
+      if (!decorated && !multiline) {
+        restoreInline(el);
         el.setAttribute(MARK, 'inline');
+        return;
       }
+      if (el.querySelector('pre')) { el.setAttribute(MARK, 'block'); return; }
+      var pre = document.createElement('pre');
+      var code = document.createElement('code');
+      code.textContent = trimListing(text);
+      pre.appendChild(code);
+      el.textContent = '';
+      el.appendChild(pre);
+      el.setAttribute(MARK, 'block');
     });
   }
 
