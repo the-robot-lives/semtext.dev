@@ -74,7 +74,7 @@ guardrail discipline they document.
 
 | Artifact | Budget | Measured (2026-10-13) |
 |---|---|---|
-| `semtext.js` (one bundle) | **163 KB** (raised from 126 — user decision 2026-10-14; 144 → 145 after family A containers, 2026-10-18; 145 → 152 after the interactive containers joined the single bundle the same day; 152 → 162 after the sem-bind runtime, 2026-10-18; 162 → 163 after the sem-bind demo-gap lane — relative binds + KV-definition rendering — the same day) | 162.4 raw / 50.6 gzipped with sem-bind — in budget |
+| `semtext.js` (one bundle) | **175 KB** (raised from 126 — user decision 2026-10-14; 144 → 145 after family A containers, 2026-10-18; 145 → 152 after the interactive containers joined the single bundle the same day; 152 → 154 after the 0.9.1–0.9.3 trains, same day; 154 → 165 for the sem-bind port from semtext.dev #182/#184, same day; 165 → 172 for the 0.9.5 modal-shell factoring + sem-component / sem-see-also, 2026-10-21; 172 → 173 when the Oct-18 baseline CI fixes (#87) merged into the same bundle, 2026-10-21; 173 → 175 for the 0.9.6 sem-reference auto-id handler + procedure/step/tldr/summary renders, 2026-11-11) | 174.8 raw / 54.0 gzipped with the 0.9.6 renders in the bundle |
 | `npl.js` | **52 KB** | 49.0 raw / 15.3 gzipped (2026-10-14) |
 | `semtext-agent.js` | **24 KB** | 20.4 raw / 7.3 gzipped (2026-10-14) |
 | `semtext-js-shell.js` | **256 KB** | 126.5 raw / 43.4 gzipped (2026-10-14) |
@@ -150,12 +150,22 @@ sem-browser wiring, measured on the family A base. Measured 150.1 raw / 46.6
 gzipped on that base; 151.5 raw / 47.1 gzipped once both lanes merged — inside
 the new line.
 
-Core bundle budget (2026-10-18) raised `semtext.js` 152 → 162 KB raw: the
-sem-bind live-data runtime (parse → fetch → hydrate, bearer-token storage,
-popup/redirect authorize flow, progress polling) joined the single bundle with
-the payload intake on five elements (sem-progress / sem-procedure graduated
-from the claim stubs; sem-plan / sem-runbook / sem-workflow rebased on
-`BindableElement`). Measured 161.3 raw / 50.2 gzipped — inside the new line.
+Core bundle budget (2026-10-18) raised `semtext.js` 152 → 154 KB raw: the
+first train to cross the 152 line was the combined 0.9.1–0.9.3 landing —
+the SEMTEX high-bug wave (flashcards index/verdicts, quiz wrong-pick flow,
+progress re-scan guard, reveal/details wiring), the Phase 7 vocabulary, and
+the 0.9.3 features all ride the single bundle. Measured 153.5 raw / 47.7
+gzipped on main 9863d23, failing `--strict-budget` on main CI; raised with
+history per the established convention rather than trimming feature code.
+
+Core bundle budget (2026-10-21) raised `semtext.js` 165 → 172 KB raw: 0.9.5
+factors the modal viewer's shell into a shared modal module
+(`src/shared/modal.ts`, the data-visualizer modal keeps its public API) and
+lands the component-inventory pair — `sem-component` (the
+component-registry card, spec/schema/sem-component.md) and `sem-see-also`
+(the related-reference affordance with popover preview, modal and the
+`#ref=` deep link, spec/schema/sem-see-also.md). Measured 171.2 raw /
+52.9 gzipped on that base.
 
 
 ## History (recorded decisions — preserved)
@@ -259,6 +269,11 @@ Recorded wave decisions (abridged, kept for precedent):
 - **Distribution:** apply + seed `cdn.derobot.is` (infra committed on monorepo develop
   e8e2d35b, not yet applied — see monorepo runbook). Assets get `Cache-Control=immutable`
   for hashed names. Portfolio docs reference the CDN instead of vendoring bundles.
+- **Refresh tooling:** `bin/semtext-refresh.mjs` (`npm run refresh`) — the authoring-plan
+  Phase 7 cache-region splicer: pure offset-based splices inside
+  `<!-- semtext:cache:start <tag> <key> -->` markers only, `--check` drift detection with
+  timestamp-normalized compare, `--seed` region authoring, and lazy fail-soft adapters
+  (agentkit / docptr / styleguide / annotate / media).
 - **npm publish prep:** package metadata, versioning policy (additive-safe / reductive-
   breaking), deprecation story published with v0.1.
 - **Exit:** zero React, MHTML round-trip verified, CDN serving `semtext.js`, npm pack clean.
