@@ -3,7 +3,7 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
   /reference/:element — one page per element (port of the Next site's
   `app/reference/[element]/page.tsx`): eyebrow, title, summary/gap note,
   deduped description, shared-schema line, the options table, children,
-  the Example section (primary authored example + every variant, each with
+  the SemText — Claude example (always-on render), the Example section (primary authored example + every variant, each with
   a viewer island), the shipped-runtime line, the source ref and the back
   link.
 
@@ -20,8 +20,9 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
 
   use Hologram.Page
 
-  alias Semtext.Reference.{Buckets, Nav, SemMd, Tags, Tokenize, Variants}
+  alias Semtext.Reference.{Buckets, CardData, Nav, SemMd, Tags, Tokenize, Variants}
   alias SemtextWeb.Hologram.Components.ExampleViewer
+  alias SemtextWeb.Hologram.Components.Reference.ClaudeExample
   alias SemtextWeb.Hologram.Components.SemMdExample
   alias SemtextWeb.Hologram.Components.Site.DocsShell
   alias SemtextWeb.Hologram.Layouts.SiteLayout
@@ -99,6 +100,8 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
       has_children: tag.children != [],
       has_examples: tag.example != "" or variants != [],
       is_sem_md: t == "sem-md",
+      # The header card's custom render: the Claude example, always on.
+      claude: CardData.claude_example(tag),
       primary: primary_block(tag, renderable, render_note),
       variants: Enum.map(variants, &variant_block(&1, tag, renderable, render_note)),
       source_ref: tag.source
@@ -424,6 +427,16 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
               </ul>
             </div>
           {/if}
+
+          <section aria-labelledby="claude-example-h" class="mt-8" id="claude-example">
+            <h2 id="claude-example-h" class="g-nav-title">SemText — Claude example</h2>
+            <p class="mt-1 max-w-3xl text-sm leading-6 text-ink-mute">
+              How Claude authors <code class="font-mono">&lt;{@name}&gt;</code> inside a SemText document, rendered live.
+            </p>
+            <div class="mt-3">
+              <ClaudeExample cid="claude-header" example={@claude} always_on={true} />
+            </div>
+          </section>
 
           {%if @has_examples}
             <section aria-labelledby="example-h" class="mt-8">

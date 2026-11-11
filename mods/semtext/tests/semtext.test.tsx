@@ -22,25 +22,35 @@ import {
 import {
   GLYPHS,
   RENDERERS,
+  blockRows,
+  blocksRows,
   breadcrumbOf,
+  cardFrameLines,
   cardKeys,
   columnWidths,
+  cpLen,
   drawTable,
   expandedPlan,
   expandedRoleOf,
   firstWords,
   frameLines,
   glyphOf,
+  headingBlock,
+  headingStyle,
+  lineCount,
   meterLine,
   outlineTree,
   progressBar,
   propertyLines,
+  proseLines,
+  selectedMark,
   setAllExpanded,
   setOutlineMode,
   tableCells,
   treePrefix,
   truncateCell,
   truncateSummary,
+  truncationHint,
   wrapLines,
 } from '../hooks/render'
 import type { FactItem, QuizOption, SemTextDoc, SemTextNode } from '../types'
@@ -424,6 +434,35 @@ test('wrapLines chunks to width and marks the cut', async () => {
   expect(wrapLines('', 4, 2)).toEqual([])
 })
 
+test('wrapLines wraps prose at word boundaries; over-width tokens hard-cut', async () => {
+  // Each break lands on a whitespace boundary; 'three' is wider than the
+  // width so it hard-cuts, and the tail becomes its own row.
+  expect(wrapLines('one two three', 4, 5)).toEqual(['one', 'two', 'thre', 'e'])
+  expect(wrapLines('alpha beta gamma', 11, 4)).toEqual(['alpha beta', 'gamma'])
+  // Budget exhausted mid-prose: the last row keeps the … cut marker.
+  expect(wrapLines('one two three four five', 4, 2)).toEqual(['one', 'two…'])
+  // Leading indentation survives on the first row; rows stay within width.
+  expect(wrapLines('    keep indent and wrap', 10, 4)).toEqual([
+    '    keep', 'indent', 'and wrap',
+  ])
+  // char mode keeps the raw fixed-width slice — code/pre never reflow.
+  expect(wrapLines('one two', 3, 4, 'char')).toEqual(['one', ' tw', 'o'])
+})
+
+test('wrapLines never splits "first" in the reported real-world case', async () => {
+  const line =
+    'The klaviyo-middleware summary went to the manager to fold in after its first pass'
+  // Width 74 is where the old hard cut landed inside "first" (chars 73-77).
+  const wrapped = wrapLines(line, 74, 3)
+  expect(wrapped[0]!.endsWith('its')).toBe(true)
+  expect(wrapped[1]!.startsWith('first')).toBe(true)
+  // Nothing dropped, nothing split: rejoining the rows restores the sentence.
+  expect(wrapped.join(' ')).toBe(line)
+  for (const row of wrapped) {
+    expect(Array.from(row).length).toBeLessThanOrEqual(74)
+  }
+})
+
 test('columnWidths takes the widest cell and shrinks to fit the frame', async () => {
   expect(columnWidths([], 40)).toEqual([])
   expect(columnWidths([['a', 'bbb'], ['cc', 'd']], 100)).toEqual([2, 3])
@@ -516,6 +555,16 @@ test('treePrefix draws ├──/└── with │ continuation', async () => {
   expect(treePrefix([true, false], false)).toBe(
     `   ${GLYPHS.tree.spine}  ${GLYPHS.tree.branch} `,
   )
+})
+
+test('selectedMark draws the dedicated ❯ — never the toggle glyphs', async () => {
+  expect(selectedMark(true)).toBe('❯')
+  expect(selectedMark(false)).toBe(' ')
+  // The selection mark is its own vocabulary entry: ▸/▾ stay toggle/nav glyphs.
+  expect(GLYPHS.selected).toBe('❯')
+  expect(GLYPHS.selected).not.toBe(GLYPHS.toggle.open)
+  expect(GLYPHS.selected).not.toBe(GLYPHS.toggle.shut)
+  expect(GLYPHS.selected).not.toBe(GLYPHS.nav.next)
 })
 
 test('summary truncation follows the word-boundary and word-count rules', async () => {
@@ -754,15 +803,16 @@ test('notes default open; cardKeys and setAllExpanded drive expand/collapse all'
       '</sem-doc>',
   )!.roots
   const keys = cardKeys(tree)
-  expect(keys).toEqual(['0.0', '0.1', '0.2', '0.3.0'])
+  expect(keys).toEqual(['0.0', '0.1', '0.2', '0.3', '0.3.0'])
 
   // The note card renderer draws the body with the default viewer (open):
-  // framed body rows plus the hide row, not the one-row toggle.
+  // framed body rows inside the card frame, not the one-row toggle.
   const renderer = RENDERERS['sem-note']!
   const ctx: RenderCtx = {
     el: FAKE_EL,
     viewer: { ...INITIAL_VIEWER },
     width: 48,
+    inset: 0,
     wkey: '0.0',
     budget: 24,
     showBody: false,
@@ -778,67 +828,601 @@ test('notes default open; cardKeys and setAllExpanded drive expand/collapse all'
   const openAll = setAllExpanded(shutAll, keys, true)
   expect(keys.every(key => openAll.expanded[key] === true)).toBe(true)
   // Non-card keys are untouched.
-  expect(shutAll.expanded['0.3']).toBeUndefined()
+  expect(shutAll.expanded['0']).toBeUndefined()
 })
 
-test('expandedPlan shows content inline: tldr text, section prose, note cards, unknown tags', async () => {
+test('expandedPlan collapses cards: tldr/section cards consume their children', async () => {
   const tree = parseSemText(EXPANDED_FIXTURE)!.roots
-  const plan = expandedPlan(tree)
-  const texts = plan.filter(unit => unit.role === 'text').map(unit => unit.text)
+  // Plan the doc's content (sem-doc itself is a flow container).
+  const plan = expandedPlan(tree[0]!.children)
+  // Cards: tldr + section are card units — the note and the unknown widget
+  // draw INSIDE the section's frame, so no rows plan for them at all.
+  const cards = plan.filter(unit => unit.role === 'card')
+  expect(cards.map(unit => unit.node.tag)).toEqual(['sem-tldr', 'sem-section'])
+  expect(plan.every(unit => unit.role === 'card')).toBe(true)
 
-  // The tldr's text sits inline under its row (heading role, leaf text).
-  expect(texts.some(text => text.includes('Short summary'))).toBe(true)
-  // Section prose (captured blocks) sits inline under the section row.
-  expect(texts.some(text => text.includes('Recap prose'))).toBe(true)
-  // Section headings keep their titles.
-  const sectionRow = plan.find(
-    unit => unit.role === 'row' && unit.row.label.includes('sem-section — Deep dive'),
-  )
-  expect(sectionRow !== undefined).toBe(true)
-  // Unknown tag: the row keeps its name and the text is not dropped.
-  const unknownRow = plan.find(
-    unit => unit.role === 'row' && unit.row.label.includes('sem-unknown-widget'),
-  )
-  expect(unknownRow !== undefined).toBe(true)
-  expect(texts.some(text => text.includes('unrendered body'))).toBe(true)
-  // Text rows indent under their tree branch (spines kept, branch blanked).
-  const leaf = plan.find(unit => unit.role === 'text' && unit.text.includes('Short summary'))
-  expect(leaf !== undefined && leaf.indent.endsWith('    ')).toBe(true)
-
-  // The captured note defers to its renderer as a card, and the default
-  // viewer draws its body inline (framed, not the one-row toggle).
-  const noteUnit = plan.find(unit => unit.role === 'card' && unit.node.tag === 'sem-note')
-  expect(noteUnit !== undefined).toBe(true)
-  if (noteUnit?.role !== 'card') return
-  const renderer = RENDERERS['sem-note']!
-  const ctx: RenderCtx = {
+  // The section card renders its whole subtree: shut is the one header line;
+  // open draws blocks, the nested note card and the unknown tag inside.
+  const node = nodeAt(tree, '0.1')!
+  const shut: RenderCtx = {
     el: FAKE_EL,
-    viewer: { ...INITIAL_VIEWER },
+    viewer: { ...INITIAL_VIEWER, expanded: { '0.1': false } },
     width: 48,
-    wkey: noteUnit.key,
-    budget: 24,
+    inset: 0,
+    wkey: '0.1',
+    budget: 40,
     showBody: false,
     spent: { rows: 0 },
     press: () => {},
   }
-  expect(renderer(noteUnit.node, ctx)).not.toBeNull()
-  expect(ctx.spent.rows).toBeGreaterThan(1)
+  expect(RENDERERS['sem-section']!(node, shut)).not.toBeNull()
+  expect(shut.spent.rows).toBe(1)
+  const open: RenderCtx = { ...shut, viewer: { ...INITIAL_VIEWER }, spent: { rows: 0 } }
+  RENDERERS['sem-section']!(node, open)
+  expect(open.spent.rows).toBeGreaterThan(4)
 })
 
-test('expandedRoleOf dispatches heading/flow/card per renderer and capture', async () => {
+test('expandedRoleOf dispatches flow/card per renderer and capture', async () => {
   const tree = parseSemText(EXPANDED_FIXTURE)!.roots
   const doc = tree[0]!
   expect(expandedRoleOf(doc)).toBe('flow') // unknown generic container
-  expect(expandedRoleOf(doc.children[0]!)).toBe('heading') // sem-tldr
-  expect(expandedRoleOf(doc.children[1]!)).toBe('heading') // sem-section
+  expect(expandedRoleOf(doc.children[0]!)).toBe('card') // sem-tldr — framed card
+  expect(expandedRoleOf(doc.children[1]!)).toBe('card') // sem-section — framed card
   expect(expandedRoleOf(nodeAt(tree, '0.1.0')!)).toBe('card') // captured sem-note
   expect(expandedRoleOf(nodeAt(tree, '0.1.1')!)).toBe('flow') // unknown widget
-  // Procedure and npl families are always cards; a content-less note flows.
+  // Procedure and npl families are always cards; v0.6: plain notes capture
+  // their body and are cards too.
   const proc = parseSemText('<sem-procedure><sem-step>one</sem-step></sem-procedure>')!.roots[0]!
   expect(expandedRoleOf(proc)).toBe('card')
   const npl = parseSemText('<npl-intent>weave</npl-intent>')!.roots[0]!
   expect(expandedRoleOf(npl)).toBe('card')
   const plainNote =
     parseSemText('<sem-section><sem-note>real</sem-note></sem-section>')!.roots[0]!.children[0]!
-  expect(expandedRoleOf(plainNote)).toBe('flow')
+  expect(plainNote.content?.kind).toBe('note') // captures without `collapsed`
+  expect(expandedRoleOf(plainNote)).toBe('card')
+})
+
+// --- v0.5: Trinity friction sections — unclosed markers stay flat siblings ---
+
+/**
+ * A realistic Trinity-style response: Orientation (mindread + mermaid fence),
+ * four unclosed markdown-escaped friction markers, then the answer body.
+ * This is the exact shape that used to swallow SHADOW/CRITIC/WEEGO inside
+ * the WEDGE card.
+ */
+const TRINITY_ANSWER = [
+  '<npl-mindread>User sees only the wedge card</npl-mindread>',
+  '',
+  '<sem-code lang="mermaid">graph TD; A[Answer]-->B[User];</sem-code>',
+  '',
+  '\\<WEDGE\\> The premise that only wedge is broken may hide a parse-order bug.',
+  '',
+  '\\<SHADOW\\> The v0.4 plan walker dropped card children silently once already.',
+  '',
+  '\\<CRITIC\\> Frankfurt check: the repro above tracks the report, not the tree.',
+  '',
+  '\\<WEEGO\\> Other panes share this walker; fix at the plan layer, not the renderer.',
+].join('\n')
+
+test('unclosed friction markers stay flat siblings, each with its own card', async () => {
+  const parsed = parseSemText(TRINITY_ANSWER)!
+  // mindread (properly closed), the mermaid code element, and the four
+  // unclosed markers — all roots.
+  expect(parsed.roots.map(root => root.tag)).toEqual([
+    'npl-mindread', 'sem-code', 'wedge', 'shadow', 'critic', 'weego',
+  ])
+  // Each marker carries its own body text — nothing swallowed.
+  for (const tag of ['wedge', 'shadow', 'critic', 'weego']) {
+    const node = parsed.roots.find(root => root.tag === tag)!
+    expect(node.children.length).toBe(0)
+    expect(node.text).toContain(tag === 'wedge' ? 'parse-order bug' : '')
+    expect((node.text ?? '').length).toBeGreaterThan(10)
+  }
+  expect(parsed.unknownElements).toEqual([])
+
+  // Expanded plan: every marker gets its own row + card (the bug showed only
+  // the wedge card because the others had nested inside it and been consumed).
+  const plan = expandedPlan(parsed.roots)
+  for (const tag of ['wedge', 'shadow', 'critic', 'weego']) {
+    const card = plan.find(unit => unit.role === 'card' && unit.node.tag === tag)
+    expect(card !== undefined).toBe(true)
+  }
+  // The plan walker does not emit duplicate rows for consumed children.
+  const cardNodes = plan.filter(unit => unit.role === 'card')
+  expect(cardNodes.length).toBe(6) // mindread + code + 4 markers
+})
+
+test('implied end rules: friction closes friction, same-name closes same-name, sem-section nests', async () => {
+  // Same-name NPL: the second intent is a sibling, not a child.
+  const same = parseSemText('<npl-intent>one<npl-intent>two</npl-intent>')!
+  expect(same.roots.map(root => root.tag)).toEqual(['npl-intent', 'npl-intent'])
+  // Friction marker closes an open friction marker (mixed names).
+  const mixed = parseSemText('<wedge>a<shadow>b</shadow>')!
+  expect(mixed.roots.map(root => root.tag)).toEqual(['wedge', 'shadow'])
+  // Same-name sem-* nesting stays legal (nested sem-section is real markup).
+  const nested = parseSemText('<sem-section>a<sem-section>b</sem-section>')!
+  expect(nested.roots.length).toBe(1)
+  expect(nested.roots[0]!.children.length).toBe(1)
+  // An npl child inside a marker is NOT closed away by a non-friction sibling.
+  const inline = parseSemText('<wedge>a <npl-ref>cite</npl-ref> b</wedge>')!
+  expect(inline.roots.length).toBe(1)
+  expect(inline.roots[0]!.children[0]!.tag).toBe('npl-ref')
+})
+
+test('unclosed sem-note/sem-step/sem-fact siblings close their own name', async () => {
+  // Back-to-back unclosed notes: flat siblings, each keeping its own text.
+  const notes = parseSemText('<sem-note>one<sem-note>two')!
+  expect(notes.roots.map(root => root.tag)).toEqual(['sem-note', 'sem-note'])
+  expect(notes.roots[0]!.text).toBe('one')
+  expect(notes.roots[1]!.text).toBe('two')
+  // Each note gets its own card unit — none swallowed into a sibling.
+  const noteCards = expandedPlan(notes.roots).filter(unit => unit.role === 'card')
+  expect(noteCards.map(unit => unit.node.tag)).toEqual(['sem-note', 'sem-note'])
+  expect(noteCards.map(unit => unit.key)).toEqual(['0', '1'])
+
+  // Unclosed steps inside a procedure stay sibling steps (leaf role intact).
+  const steps = parseSemText('<sem-procedure title="t"><sem-step>a<sem-step>b<sem-step>c')!
+  expect(steps.roots[0]!.tag).toBe('sem-procedure')
+  expect(steps.roots[0]!.children.map(child => child.tag)).toEqual([
+    'sem-step', 'sem-step', 'sem-step',
+  ])
+
+  // Facts likewise, closed only by their container's end tag.
+  const facts = parseSemText('<sem-facts><sem-fact>a<sem-fact>b</sem-facts>')!
+  expect(facts.roots[0]!.children.map(child => child.tag)).toEqual(['sem-fact', 'sem-fact'])
+
+  // Sibling notes inside a section — the same-name rule applies at depth too.
+  const inside = parseSemText('<sem-section>a<sem-note>x<sem-note>y</sem-section>')!
+  expect(inside.roots[0]!.children.map(child => child.tag)).toEqual(['sem-note', 'sem-note'])
+  expect(inside.roots[0]!.children[0]!.text).toBe('x')
+  expect(inside.roots[0]!.children[1]!.text).toBe('y')
+
+  // Other sem-* names keep same-name nesting, and a properly closed note is
+  // unaffected: the flat rule is exactly sem-note/sem-step/sem-fact.
+  const nested = parseSemText('<sem-section>a<sem-section>b</sem-section>')!
+  expect(nested.roots.length).toBe(1)
+  expect(nested.roots[0]!.children.length).toBe(1)
+  const proper = parseSemText('<sem-section><sem-note>a</sem-note></sem-section>')!
+  expect(proper.roots[0]!.children[0]!.text).toBe('a')
+})
+
+test('npl card children draw inside the frame; the plan consumes card children', async () => {
+  const parsed = parseSemText(
+    '<npl-block>outer prose<npl-thought>inner thought</npl-thought></npl-block>',
+  )!
+  const block = parsed.roots[0]!
+  // Body excludes the child's text (never drawn twice).
+  expect(block.text).toBe('outer prose')
+  expect(block.children[0]!.text).toBe('inner thought')
+  // Plan: ONE card unit — the child draws nested inside the parent's frame,
+  // not as sibling rows below it.
+  const plan = expandedPlan(parsed.roots)
+  expect(plan).toHaveLength(1)
+  if (plan[0]!.role !== 'card') return
+  expect(plan[0]!.node.tag).toBe('npl-block')
+  // Rendering proves it: shut = the single header line; open = body rows
+  // PLUS the nested child card (header, borders, rows).
+  const shut: RenderCtx = {
+    el: FAKE_EL,
+    viewer: { ...INITIAL_VIEWER, expanded: { '0': false } },
+    width: 48,
+    inset: 0,
+    wkey: '0',
+    budget: 40,
+    showBody: false,
+    spent: { rows: 0 },
+    press: () => {},
+  }
+  expect(RENDERERS['npl-block']!(block, shut)).not.toBeNull()
+  expect(shut.spent.rows).toBe(1)
+  const open: RenderCtx = { ...shut, viewer: { ...INITIAL_VIEWER }, spent: { rows: 0 } }
+  RENDERERS['npl-block']!(block, open)
+  expect(open.spent.rows).toBeGreaterThanOrEqual(5) // parent header+body+bottom, child header+...
+})
+
+test('markdown-escaped tag markers leave no stray backslashes in captured text', async () => {
+  const parsed = parseSemText('\\<WEDGE\\>body here\\<SHADOW\\>more')!
+  const wedge = parsed.roots[0]!
+  expect(wedge.text).not.toContain('\\')
+  expect(wedge.text).toContain('body here')
+})
+
+// --- v0.6: card UX — box-model nesting, boxed prose, heading rules ---
+
+test('cardFrameLines draws the open frame; shut collapses to the header line', async () => {
+  const open = cardFrameLines(34, 0, { badge: '▲ WEDGE', open: true, bodyLines: ['one', 'two'] })
+  expect(open).toHaveLength(4) // top + two body rows + bottom
+  expect(open[0]!.startsWith('┌ ▾ ▲ WEDGE')).toBe(true)
+  expect(open[0]!.endsWith('┐')).toBe(true)
+  expect(open[1]).toBe(`│ one${' '.repeat(27)} │`)
+  expect(open[3]).toBe(`└${'─'.repeat(32)}┘`)
+  // inset shifts every line — nested cards sit inside the parent frame.
+  const nested = cardFrameLines(34, 2, { badge: '◆ note', open: true, bodyLines: [] })
+  expect(nested[0]!.startsWith('  ┌ ▾ ◆ note')).toBe(true)
+  // shut with hint: the single header line carries the size hint.
+  const shut = cardFrameLines(30, 0, { badge: '▲ WEDGE', open: false, hint: '3 lines' })
+  expect(shut).toHaveLength(1)
+  expect(shut[0]!.startsWith('┌ ▸ ▲ WEDGE · 3 lines')).toBe(true)
+  // narrow fallback: left rule only, no right border, no bottom.
+  const narrow = cardFrameLines(20, 0, { badge: '▲ WEDGE', open: true, bodyLines: ['row'] })
+  expect(narrow[1]).toBe('│ row')
+  expect(narrow.some(line => line.includes('└'))).toBe(false)
+  expect(narrow.some(line => line.includes('┐'))).toBe(false)
+  // plain prose box: labelled frame, no toggle glyph.
+  const plain = cardFrameLines(30, 0, { badge: '◆ prose', open: false, toggle: false })
+  expect(plain).toHaveLength(1)
+  expect(plain[0]!.startsWith('┌ ◆ prose')).toBe(true)
+  expect(plain[0]!.endsWith('┐')).toBe(true)
+})
+
+test('proseLines splits br/newlines, collapses blanks, wraps, and marks the cap', async () => {
+  // <br> variants and literal newlines split; consecutive blanks collapse.
+  expect(proseLines('a<br/>b<br />c\n\nd', 20, 10)).toEqual(['a', 'b', 'c', '', 'd'])
+  // leading/trailing blank rows are dropped.
+  expect(proseLines('\n\nx\n\n', 20, 10)).toEqual(['x'])
+  // firstPrefix rides row one; the wrap width reserves its columns.
+  const prefixed = proseLines('one two three four', 12, 10, '## ')
+  expect(prefixed[0]).toBe('## one two')
+  expect(prefixed.every(row => cpLen(row) <= 12)).toBe(true)
+  // over-budget: the last drawn row ends with the ellipsis glyph.
+  const capped = proseLines('a<br/>b<br/>c<br/>d<br/>e', 20, 3)
+  expect(capped).toHaveLength(3)
+  expect(capped[2]!.endsWith(GLYPHS.more)).toBe(true)
+})
+
+test('capture cap leaves a visible `… (+N chars)` hint on the node', async () => {
+  const block = parseSemText(`<npl-block>${'x'.repeat(6000)}</npl-block>`)!.roots[0]!
+  expect(block.truncated).toBeGreaterThan(0)
+  expect(truncationHint(block)).toBe(`${GLYPHS.more} (+${block.truncated} chars)`)
+  // a fitting body carries no hint.
+  const small = parseSemText('<npl-block>tiny</npl-block>')!.roots[0]!
+  expect(truncationHint(small)).toBe('')
+})
+
+test('headings draw bold with rules per level; rules follow the longest wrapped row', async () => {
+  expect(headingStyle(1)).toEqual({ bold: true, dim: false, ruleChar: '═', ruleUnderText: false })
+  const h1 = headingBlock('Title', 30, 1)
+  expect(h1.text).toEqual(['Title'])
+  expect(h1.rule).toBe('═'.repeat(30))
+  expect(headingBlock('Sub', 24, 2).rule).toBe('─'.repeat(24))
+  expect(headingBlock('Small', 24, 3).rule).toBe('┄'.repeat(cpLen('Small')))
+  const h4 = headingBlock('Tiny', 24, 4)
+  expect(h4.rule).toBe(null)
+  expect(h4.style.bold).toBe(true)
+  expect(h4.style.dim).toBe(false)
+  expect(headingBlock('Dim', 24, 5).style.dim).toBe(true)
+  // wrapped heading: the h3 rule matches the longest wrapped row.
+  const wrapped = headingBlock('one two three four five six seven eight', 10, 3)
+  expect(wrapped.text.length).toBeGreaterThan(1)
+  const longest = Math.max(...wrapped.text.map(cpLen))
+  expect(wrapped.rule).toBe('┄'.repeat(longest))
+  // emoji-aware width: the emoji counts as one unit.
+  expect(headingBlock('🚀 Ship', 24, 3).rule).toBe('┄'.repeat(cpLen('🚀 Ship')))
+})
+
+test('blockRows tag styles; blocksRows blanks above headings but never first', async () => {
+  const rows = blockRows({ kind: 'heading', level: 2, text: 'Head' }, 20, 10)
+  expect(rows[0]).toEqual({ text: 'Head', bold: true, dim: false })
+  expect(rows[1]!.text).toBe('─'.repeat(20))
+  const quote = blockRows({ kind: 'quote', text: 'care' }, 20, 10)
+  expect(quote[0]!.dim).toBe(true)
+  expect(quote[0]!.text.startsWith(`${GLYPHS.quote} `)).toBe(true)
+  const set = blocksRows(
+    [
+      { kind: 'text', text: 'intro' },
+      { kind: 'heading', level: 2, text: 'Next' },
+    ],
+    20,
+    10,
+  )
+  expect(set).toEqual([
+    { text: 'intro' },
+    { text: '' },
+    { text: 'Next', bold: true, dim: false },
+    { text: '─'.repeat(20) },
+  ])
+  // a heading leading the set gets no blank above it.
+  const first = blocksRows([{ kind: 'heading', level: 1, text: 'Top' }], 12, 10)
+  expect(first[0]).toEqual({ text: 'Top', bold: true, dim: false })
+  expect(first[1]!.text).toBe('═'.repeat(12))
+})
+
+test('lineCount drives shut-card hints across br and newlines', async () => {
+  expect(lineCount('a<br/>b<br>c')).toBe(3)
+  expect(lineCount('one two three')).toBe(1)
+  expect(lineCount('\n\n x \n\n y \n')).toBe(2)
+  expect(lineCount('')).toBe(0)
+})
+
+test('flow text rows indent two spaces per depth; no tree gutters in the body view', async () => {
+  const tree = parseSemText(
+    '<sem-doc><sem-weird-box><sem-weird-leaf>deep text</sem-weird-leaf></sem-weird-box></sem-doc>',
+  )!.roots
+  const plan = expandedPlan(tree[0]!.children)
+  const leaf = plan.find(unit => unit.role === 'text')
+  expect(leaf?.text).toBe('deep text')
+  expect(leaf?.indent).toBe('    ') // depth 2 × 2
+  // rows carry no ├──/└── prefixes in the streamlined view.
+  expect(plan.filter(unit => unit.role === 'row').map(unit => unit.row.prefix)).toEqual(['', ''])
+})
+
+test('escaped quotes collapse cleanly in captured prose', async () => {
+  const parsed = parseSemText('\\<SHADOW\\>said \\"hi\\" twice')!
+  const shadow = parsed.roots[0]!
+  expect(shadow.text).not.toContain('\\')
+  expect(shadow.text).toContain('said "hi" twice')
+})
+
+test('tableCells drops markdown delimiter rows', async () => {
+  const cells = tableCells(['| h1 | h2 |', '| --- | :---: |', '| a | b |'])
+  expect(cells).toEqual([['h1', 'h2'], ['a', 'b']])
+  // Non-delimiter content rows never dropped.
+  expect(tableCells(['plain line'])).toEqual([['plain line']])
+})
+
+test('full spec NPL vocabulary maps to glyphs and the shared block renderer', async () => {
+  const specTags = [
+    'npl-agent', 'npl-artifact', 'npl-block', 'npl-cot', 'npl-critique',
+    'npl-declaration', 'npl-directive', 'npl-example', 'npl-flag', 'npl-flags',
+    'npl-mode', 'npl-mood', 'npl-poa', 'npl-rubric', 'npl-section', 'npl-vos',
+  ]
+  const renderer = RENDERERS['npl-mindread']!
+  for (const tag of specTags) {
+    expect(RENDERERS[tag]).toBe(renderer)
+    const parsed = parseSemText(`<${tag}>x</${tag}>`)!
+    expect(parsed.unknownElements).toEqual([])
+    expect(glyphOf(parsed.roots[0]!)).not.toBe(GLYPHS.kind.misc)
+  }
+})
+
+test('sem-note warning glyph honors the spec variant spelling', async () => {
+  const parsed = parseSemText('<sem-note variant="warning">hot</sem-note>')!
+  expect(glyphOf(parsed.roots[0]!)).toBe(GLYPHS.kind.warning)
+})
+
+// --- v0.6 verify-the-thing: real fixtures through the card render pipeline ---
+
+/**
+ * Draws a whole document the way the expanded view does (expandedPlan ->
+ * render registry under one budget) and returns the JSON of the produced
+ * elements — every visible string the pane would draw is in there, so the
+ * assertions check what the user actually sees, not helper internals.
+ */
+const drawJSON = (
+  roots: readonly SemTextNode[],
+  viewer: SemTextViewer = { ...INITIAL_VIEWER },
+  width = 80,
+  budget = 600,
+): string => {
+  const ectx: RenderCtx = {
+    el: FAKE_EL,
+    viewer,
+    width,
+    inset: 0,
+    wkey: '',
+    budget,
+    spent: { rows: 0 },
+    showBody: false,
+    press: () => {},
+  }
+  const out: unknown[] = []
+  for (const unit of expandedPlan(roots)) {
+    if (unit.role === 'row') {
+      out.push(`${unit.row.prefix}${unit.row.glyph} ${unit.row.label}`)
+      continue
+    }
+    if (unit.role === 'text') {
+      out.push(`${unit.indent}${unit.text}`)
+      continue
+    }
+    const render = RENDERERS[unit.node.tag] ?? RENDERERS['*']!
+    out.push(render(unit.node, { ...ectx, wkey: unit.key, showBody: false }))
+  }
+  return JSON.stringify(out)
+}
+
+test('fixture: Trinity answer — framed cards with header toggles, zero hide rows, headings with rules', async () => {
+  const tree = parseSemText(TRINITY_ANSWER)!.roots
+  const json = drawJSON(tree)
+  // Every friction marker is its own open framed card (header = the toggle).
+  expect(json).toContain('▲ WEDGE')
+  expect(json).toContain('▼ SHADOW')
+  expect(json).toContain('✕ CRITIC')
+  expect(json).toContain('◎ WEEGO')
+  expect(json).toContain('┌ ▾ ▲ WEDGE')
+  // No standalone hide rows anywhere — the header IS the toggle. (The old
+  // hide button read `▸ hide`; prose may legitimately contain the word.)
+  expect(json.includes('▸ hide')).toBe(false)
+  // The mermaid code element draws as a framed card, verbatim inside its
+  // frame (markdown fences themselves are a parser gap — see the fixture
+  // note above; the pane's code elements are sem-code).
+  expect(json).toContain('⌨ mermaid')
+  expect(json).toContain('graph TD')
+  // mindread card body is visible inline, and the last marker's body too —
+  // nothing after the final unclosed marker is required for this fixture.
+  expect(json).toContain('User sees only the wedge card')
+  expect(json).toContain('plan layer')
+})
+
+test('fixture: quiz and flashcards are inline visible in the main view', async () => {
+  const doc =
+    '<sem-doc>' +
+    '<sem-facts data-view-as="quiz" data-sem-seed="7">' +
+    '<sem-fact>What is A?<sem-conclusion>Alpha</sem-conclusion><sem-distractor>Delta</sem-distractor></sem-fact>' +
+    '<sem-fact>What is B?<sem-conclusion>Beta</sem-conclusion></sem-fact>' +
+    '</sem-facts>' +
+    '<sem-facts data-view-as="flashcards">' +
+    '<sem-fact>Card one<sem-conclusion>Answer one</sem-conclusion></sem-fact>' +
+    '</sem-facts>' +
+    '</sem-doc>'
+  const json = drawJSON(parseSemText(doc)!.roots)
+  expect(json).toContain('❓ quiz · 2 items')
+  expect(json).toContain('run quiz')
+  expect(json).toContain('🃏 flashcards · 1 items')
+  expect(json).toContain('run flashcards')
+})
+
+test('fixture: nested cards draw inside the parent frame with 2-col insets and rules', async () => {
+  const doc =
+    '<sem-doc>' +
+    '<sem-section title="Deep dive">' +
+    '<h2>Recap</h2>' +
+    '<p>Recap prose.</p>' +
+    '<sem-note>line one<br/>line two</sem-note>' +
+    '<npl-block>outer<npl-thought collapsed>inner thought body</npl-thought></npl-block>' +
+    '</sem-section>' +
+    '</sem-doc>'
+  const json = drawJSON(parseSemText(doc)!.roots)
+  // Section card: header carries the title (bold heading placement, no
+  // duplicate heading row inside).
+  expect(json).toContain('┌ ▾ § sem-section — Deep dive')
+  // The nested note card is drawn with a 2-column inset inside the section.
+  expect(json).toContain('  ┌ ▾ 📌 note')
+  // Boxed prose inside the note: `<br>` variants split into frame rows.
+  expect(json).toContain('│ line one')
+  expect(json).toContain('│ line two')
+  // The h2 heading inside the section draws with its full-width rule.
+  expect(json).toContain('──────')
+  // The collapsed npl-thought nested two levels in shows its shut header with
+  // a size hint and 4-column inset (2 per depth) — without echoing `collapsed=`.
+  expect(json).toContain('    ┌ ▸ ◇ npl-thought')
+  // The section body prose is boxed too — no free-floating rows.
+  expect(json).toContain('│ Recap prose.')
+})
+
+test('fixture: code stays verbatim; oversized bodies keep a visible +N chars hint', async () => {
+  const doc =
+    '<sem-doc>' +
+    '<sem-code lang="bash">$ docker ps\nCONTAINER ID   IMAGE                 STATUS</sem-code>' +
+    `<npl-block>${'x'.repeat(5000)}</npl-block>` +
+    '</sem-doc>'
+  const json = drawJSON(parseSemText(doc)!.roots)
+  // Code lines keep their column layout — no word reflow inside the frame.
+  expect(json).toContain('$ docker ps')
+  expect(json).toContain('CONTAINER ID')
+  // Capture-cap: 5000 chars against the 4000 cap leaves an explicit hint.
+  expect(json).toContain('… (+1000 chars)')
+})
+
+test('fixture: collapse-all state shuts every card to its single header line', async () => {
+  const doc =
+    '<sem-doc>' +
+    '<sem-section title="S"><sem-note>note body</sem-note><npl-block>block body</npl-block></sem-section>' +
+    '</sem-doc>'
+  const tree = parseSemText(doc)!.roots
+  const keys = cardKeys(tree)
+  const shut = setAllExpanded({ ...INITIAL_VIEWER }, keys, false)
+  // A shut section collapses its whole subtree — only the header line remains.
+  const sectionJSON = drawJSON(tree, shut)
+  expect(sectionJSON).toContain('┌ ▸ § sem-section — S')
+  expect(sectionJSON.includes('note body')).toBe(false)
+  expect(sectionJSON.includes('block body')).toBe(false)
+  // The section's children drawn standalone (keys are document-relative, so
+  // the shut state is rebuilt over their own card keys): one header line
+  // each, with size hints — no frame bodies, no bottom borders.
+  const children = tree[0]!.children[0]!.children
+  const childShut = setAllExpanded({ ...INITIAL_VIEWER }, cardKeys(children), false)
+  const json = drawJSON(children, childShut)
+  expect(json).toContain('┌ ▸ 📌 note ·')
+  expect(json).toContain('┌ ▸ ▣ npl-block')
+  expect(json.includes('│ note body')).toBe(false)
+  expect(json.includes('│ block body')).toBe(false)
+})
+
+// --- v0.6.1 lists (amendment 8): bullets, ordered labels, tasks, dl, nested
+// items, procedure steps through sub-groups ---
+
+test('lists capture as blocks: bullets by depth, no double-draw of nested items', async () => {
+  const doc =
+    '<sem-section title="L">' +
+    '<ul><li>one<ul><li>inner a<ul><li>deepest</li></ul></li><li>inner b</li></ul></li><li>two</li></ul>' +
+    '</sem-section>'
+  const section = parseSemText(doc)!.roots[0]!
+  const blocks = section.blocks ?? []
+  const kinds = blocks.map(b => (b.kind === 'list-item' ? `${b.bullet} ${b.text}` : b.kind))
+  expect(kinds).toEqual([
+    '• one', '◦ inner a', '▪ deepest', '◦ inner b', '• two',
+  ])
+  const innerA = blocks[1] as { text: string; bullet: string }
+  expect(innerA.text).toBe('inner a')
+  expect(innerA.bullet).toBe('◦')
+  const deepest = blocks[2] as { bullet: string; text: string }
+  expect(deepest.bullet).toBe('▪')
+  expect(deepest.text).toBe('deepest')
+})
+
+test('ordered lists: start attr, type a/i labels, right-aligned hang', async () => {
+  const doc =
+    '<sem-section><ol start="3" type="a"><li>alpha</li><li>beta</li></ol>' +
+    '<ol type="i"><li>roman one</li></ol><ol start="9"><li>nine</li><li>ten</li></ol></sem-section>'
+  const section = parseSemText(doc)!.roots[0]!
+  const labels = (section.blocks ?? []).map(
+    b => (b.kind === 'list-item-ordered' ? b.label : (b as { kind: string }).kind),
+  )
+  expect(labels).toEqual(['c.', 'd.', 'i.', '9.', '10.'])
+  // Rendering right-aligns labels in a 3-char gutter with a hanging indent.
+  const rows = blockRows((section.blocks ?? [])[0]!, 24, 8)
+  expect(rows[0]!.text).toBe(' c. alpha')
+  const long = blockRows((section.blocks ?? [])[3]!, 24, 8)
+  expect(long[0]!.text).toBe(' 9. nine')
+  expect(long[1]).toBeUndefined()
+  // Wrap keeps continuation rows under the text column.
+  const wrapped = blockRows({ kind: 'list-item', text: 'aaa bbb ccc ddd', bullet: '•', depth: 0 }, 12, 8)
+  expect(wrapped[0]!.text).toBe('• aaa bbb')
+  expect(wrapped[1]!.text.startsWith('  ')).toBe(true)
+})
+
+test('task checkboxes: input type=checkbox and the task-list class both mark items', async () => {
+  const doc =
+    '<sem-section>' +
+    '<ul><li><input type="checkbox" checked>shipped thing</li>' +
+    '<li><input type="checkbox">open thing</li>' +
+    '<li class="task-list-item">class task</li></ul></sem-section>'
+  const blocks = parseSemText(doc)!.roots[0]!.blocks ?? []
+  expect(blocks.map(b => (b.kind === 'task-item' ? (b.done ? '☑' : '☐') : b.kind))).toEqual([
+    '☑', '☐', '☐',
+  ])
+  expect((blocks[0] as { text: string }).text).toBe('shipped thing')
+  const rows = blockRows(blocks[1]!, 24, 4)
+  expect(rows[0]!.text).toBe('☐ open thing')
+})
+
+test('dl: term draws bold, definition indented under it', async () => {
+  const doc = '<sem-section><dl><dt>Budget</dt><dd>What it costs and why.</dd></dl></sem-section>'
+  const blocks = parseSemText(doc)!.roots[0]!.blocks ?? []
+  expect(blocks.map(b => b.kind)).toEqual(['term', 'definition'])
+  const term = blockRows(blocks[0]!, 24, 4)
+  expect(term[0]!.text).toBe('Budget')
+  expect(term[0]!.bold).toBe(true)
+  const def = blockRows(blocks[1]!, 24, 4)
+  expect(def[0]!.text).toBe('  What it costs and why.')
+})
+
+test('procedure steps collect through nested sub-groups (was direct children only)', async () => {
+  const doc =
+    '<sem-procedure title="Ship"><sem-step>first</sem-step>' +
+    '<sem-group><sem-step>grouped</sem-step></sem-group>' +
+    '<sem-step>last</sem-step></sem-procedure>'
+  const tree = parseSemText(doc)!.roots
+  const json = drawJSON(tree)
+  expect(json).toContain('1 → first')
+  expect(json).toContain('2 → grouped')
+  expect(json).toContain('3 → last')
+})
+
+test('fixture: lists, dl and tasks draw inside the section frame (webpage-like)', async () => {
+  const doc =
+    '<sem-doc><sem-section title="Plan">' +
+    '<ul><li>outer<ul><li>inner</li></ul></li></ul>' +
+    '<ol start="2"><li>second</li></ol>' +
+    '<dl><dt>Scope</dt><dd>One screen, no chrome.</dd></dl>' +
+    '<ul><li class="task-list-item"><input type="checkbox" checked>landed</li></ul>' +
+    '</sem-doc></sem-section>'
+  const json = drawJSON(parseSemText(doc)!.roots)
+  expect(json).toContain('• outer')
+  expect(json).toContain('◦ inner')
+  expect(json).toContain('2. second')
+  expect(json).toContain('Scope')
+  expect(json).toContain('One screen, no chrome.')
+  expect(json).toContain('☑ landed')
 })
