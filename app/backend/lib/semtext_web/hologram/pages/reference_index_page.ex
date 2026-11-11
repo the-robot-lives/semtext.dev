@@ -11,11 +11,17 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
   rendered cards and sidebar links by tag name or summary. With no JS
   nothing runs and the page shows every element — the SSR render is whole,
   exactly like the static export.
+
+  Every card carries its custom render (the "SemText — Claude example"
+  code block + a live render pane). Renders are collapsed by default; the
+  "Show renders" switch (`show_renders`, default off) expands every card at
+  once, and expanded panes boot only when scrolled into view — so the page
+  never starts 115 live islands at load.
   """
 
   use Hologram.Page
 
-  alias Semtext.Reference.{Buckets, Nav, Tags}
+  alias Semtext.Reference.{Buckets, CardData, Nav, Tags}
   alias SemtextWeb.Hologram.Components.Reference.TagCard
   alias SemtextWeb.Hologram.Components.Site.DocsShell
   alias SemtextWeb.Hologram.Layouts.SiteLayout
@@ -24,7 +30,8 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
 
   layout SiteLayout,
     page_title: "Reference — every SemText tag",
-    description: "Generated reference for every SemText (sem-*), SemText extension (semext-*), Agent Kit (agent-kit-*) and NPL (npl-) tag: options, children and an authored example, one page per element, built from the spec's schema files.",
+    description:
+      "Generated reference for every SemText (sem-*), SemText extension (semext-*), Agent Kit (agent-kit-*) and NPL (npl-) tag: options, children and an authored example, one page per element, built from the spec's schema files.",
     canonical: "https://semtext.dev/reference/",
     reference_assets: true
 
@@ -35,6 +42,7 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
   def init(_params, component, _server) do
     put_state(component,
       groups: Nav.groups(),
+      show_renders: false,
       total: length(Tags.all_tags()),
       buckets: index_buckets(),
       npl_blurb: @npl_blurb,
@@ -74,9 +82,16 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
         gap_note: gap_note,
         href: Tags.tag_href(t.name),
         # Filter payload: tag name plus summary words, lowercase (TS dataRef).
-        data_ref: String.downcase("#{t.name} #{t.summary}")
+        data_ref: String.downcase("#{t.name} #{t.summary}"),
+        claude: CardData.claude_example(t, tokens: false)
       }
     end
+  end
+
+  # Page-wide "show renders" switch: a pure state flip passed down to every
+  # card (cards the reader toggled individually keep their own choice).
+  def action(:toggle_renders, _params, component) do
+    put_state(component, show_renders: not component.state.show_renders)
   end
 
   def template do
@@ -118,6 +133,18 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
             class="ref-search-input mt-2 w-full"
           />
           <p id="ref-count" hidden class="mt-2 text-sm text-ink-mute" aria-live="polite"></p>
+          <p class="ref-renders-switch mt-4">
+            <button
+              type="button"
+              id="ref-show-renders"
+              class="ref-action ref-claude-js-only"
+              aria-pressed={if @show_renders do "true" else "false" end}
+              $click={:toggle_renders}
+            >
+              Show renders
+            </button>
+            <span class="ref-renders-hint">Every card shows its SemText — Claude example; renders boot live on demand.</span>
+          </p>
         </div>
 
         {%for bucket <- @buckets}
@@ -128,7 +155,7 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
             <p class="mt-3 max-w-3xl leading-relaxed text-ink-mute">{bucket.description}</p>
             <div class="ref-card-grid mt-6">
               {%for card <- bucket.cards}
-                <TagCard card={card} />
+                <TagCard card={card} show_render={@show_renders} />
               {/for}
             </div>
           </section>
@@ -141,7 +168,7 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
           <p class="mt-3 max-w-3xl leading-relaxed text-ink-mute">{@semext_blurb}</p>
           <div class="ref-card-grid mt-6">
             {%for card <- @semext_tags}
-              <TagCard card={card} />
+              <TagCard card={card} show_render={@show_renders} />
             {/for}
           </div>
         </section>
@@ -153,7 +180,7 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
           <p class="mt-3 max-w-3xl leading-relaxed text-ink-mute">{@agent_kit_blurb}</p>
           <div class="ref-card-grid mt-6">
             {%for card <- @agent_kit_tags}
-              <TagCard card={card} />
+              <TagCard card={card} show_render={@show_renders} />
             {/for}
           </div>
         </section>
@@ -165,7 +192,7 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceIndexPage do
           <p class="mt-3 max-w-3xl leading-relaxed text-ink-mute">{@npl_blurb}</p>
           <div class="ref-card-grid mt-6">
             {%for card <- @npl_tags}
-              <TagCard card={card} />
+              <TagCard card={card} show_render={@show_renders} />
             {/for}
           </div>
         </section>
