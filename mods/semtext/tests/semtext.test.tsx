@@ -842,3 +842,131 @@ test('expandedRoleOf dispatches heading/flow/card per renderer and capture', asy
     parseSemText('<sem-section><sem-note>real</sem-note></sem-section>')!.roots[0]!.children[0]!
   expect(expandedRoleOf(plainNote)).toBe('flow')
 })
+
+// --- v0.5: Trinity friction sections — unclosed markers stay flat siblings ---
+
+/**
+ * A realistic Trinity-style response: Orientation (mindread + mermaid fence),
+ * four unclosed markdown-escaped friction markers, then the answer body.
+ * This is the exact shape that used to swallow SHADOW/CRITIC/WEEGO inside
+ * the WEDGE card.
+ */
+const TRINITY_ANSWER = [
+  '## I Orientation',
+  '',
+  '| Assumption | Basis |',
+  '| --- | --- |',
+  '| parser lowercases tags | register.tsx nameMatch toLowerCase |',
+  '',
+  '<npl-mindread>User sees only the wedge card</npl-mindread>',
+  '',
+  '```mermaid',
+  'graph TD; A[Answer]-->B[User];',
+  '```',
+  '',
+  '\\<WEDGE\\> The premise that only wedge is broken may hide a parse-order bug.',
+  '',
+  '\\<SHADOW\\> The v0.4 plan walker dropped card children silently once already.',
+  '',
+  '\\<CRITIC\\> Frankfurt check: the repro above tracks the report, not the tree.',
+  '',
+  '\\<WEEGO\\> Other panes share this walker; fix at the plan layer, not the renderer.',
+  '',
+  '## III Response',
+  '',
+  'Fix applied and regression-tested.',
+  '',
+  '(like) structure kept flat. (dislike) none.',
+].join('\n')
+
+test('unclosed friction markers stay flat siblings, each with its own card', async () => {
+  const parsed = parseSemText(TRINITY_ANSWER)!
+  // mindread (properly closed) + the four unclosed markers, all roots.
+  expect(parsed.roots.map(root => root.tag)).toEqual([
+    'npl-mindread', 'wedge', 'shadow', 'critic', 'weego',
+  ])
+  // Each marker carries its own body text — nothing swallowed.
+  for (const tag of ['wedge', 'shadow', 'critic', 'weego']) {
+    const node = parsed.roots.find(root => root.tag === tag)!
+    expect(node.children.length).toBe(0)
+    expect(node.text).toContain(tag === 'wedge' ? 'parse-order bug' : '')
+    expect((node.text ?? '').length).toBeGreaterThan(10)
+  }
+  expect(parsed.unknownElements).toEqual([])
+
+  // Expanded plan: every marker gets its own row + card (the bug showed only
+  // the wedge card because the others had nested inside it and been consumed).
+  const plan = expandedPlan(parsed.roots)
+  for (const tag of ['wedge', 'shadow', 'critic', 'weego']) {
+    const card = plan.find(unit => unit.role === 'card' && unit.node.tag === tag)
+    expect(card !== undefined).toBe(true)
+  }
+  // The plan walker does not emit duplicate rows for consumed children.
+  const cardNodes = plan.filter(unit => unit.role === 'card')
+  expect(cardNodes.length).toBe(5) // mindread + 4 markers
+})
+
+test('implied end rules: friction closes friction, same-name closes same-name, sem-section nests', async () => {
+  // Same-name NPL: the second intent is a sibling, not a child.
+  const same = parseSemText('<npl-intent>one<npl-intent>two</npl-intent>')!
+  expect(same.roots.map(root => root.tag)).toEqual(['npl-intent', 'npl-intent'])
+  // Friction marker closes an open friction marker (mixed names).
+  const mixed = parseSemText('<wedge>a<shadow>b</shadow>')!
+  expect(mixed.roots.map(root => root.tag)).toEqual(['wedge', 'shadow'])
+  // Same-name sem-* nesting stays legal (nested sem-section is real markup).
+  const nested = parseSemText('<sem-section>a<sem-section>b</sem-section>')!
+  expect(nested.roots.length).toBe(1)
+  expect(nested.roots[0]!.children.length).toBe(1)
+  // An npl child inside a marker is NOT closed away by a non-friction sibling.
+  const inline = parseSemText('<wedge>a <npl-ref>cite</npl-ref> b</wedge>')!
+  expect(inline.roots.length).toBe(1)
+  expect(inline.roots[0]!.children[0]!.tag).toBe('npl-ref')
+})
+
+test('npl card children re-plan below the card; card body keeps own text only', async () => {
+  const parsed = parseSemText(
+    '<npl-block>outer prose<npl-thought>inner thought</npl-thought></npl-block>',
+  )!
+  const block = parsed.roots[0]!
+  // Body excludes the child's text (never drawn twice).
+  expect(block.text).toBe('outer prose')
+  expect(block.children[0]!.text).toBe('inner thought')
+  // Plan: block card row, then the child's own row + card below.
+  const plan = expandedPlan(parsed.roots)
+  const tags = plan.filter(unit => unit.role === 'card').map(unit => unit.node.tag)
+  expect(tags).toEqual(['npl-block', 'npl-thought'])
+})
+
+test('markdown-escaped tag markers leave no stray backslashes in captured text', async () => {
+  const parsed = parseSemText('\\<WEDGE\\>body here\\<SHADOW\\>more')!
+  const wedge = parsed.roots[0]!
+  expect(wedge.text).not.toContain('\\')
+  expect(wedge.text).toContain('body here')
+})
+
+test('tableCells drops markdown delimiter rows', async () => {
+  const cells = tableCells(['| h1 | h2 |', '| --- | :---: |', '| a | b |'])
+  expect(cells).toEqual([['h1', 'h2'], ['a', 'b']])
+  // Non-delimiter content rows never dropped.
+  expect(tableCells(['plain line'])).toEqual([['plain line']])
+})
+
+test('full spec NPL vocabulary maps to glyphs and the shared block renderer', async () => {
+  const specTags = [
+    'npl-agent', 'npl-artifact', 'npl-block', 'npl-cot', 'npl-critique',
+    'npl-declaration', 'npl-directive', 'npl-example', 'npl-flag', 'npl-flags',
+    'npl-mode', 'npl-mood', 'npl-poa', 'npl-rubric', 'npl-section', 'npl-vos',
+  ]
+  const renderer = RENDERERS['npl-mindread']!
+  for (const tag of specTags) {
+    expect(RENDERERS[tag]).toBe(renderer)
+    const parsed = parseSemText(`<${tag}>x</${tag}>`)!
+    expect(parsed.unknownElements).toEqual([])
+    expect(glyphOf(parsed.roots[0]!)).not.toBe(GLYPHS.kind.misc)
+  }
+})
+
+test('sem-note warning glyph honors the spec variant spelling', async () => {
+  const parsed = parseSemText('<sem-note variant="warning">hot</sem-note>')!
+  expect(glyphOf(parsed.roots[0]!)).toBe(GLYPHS.kind.warning)
+})
