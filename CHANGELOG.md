@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-11
+
+- mod(semtext) v0.4.0: expanded outline default (#224) — the semtext-outline pane opens in the expanded document view (whole outline tree top-to-bottom, every node's content inline under its tree branch via the existing renderers: cards default open, unknown tags keep name+text through the generic flow, section rows keep titles and stay click-to-focus), compact outline + expand/collapse-all toggles at the top, focus's `◂ outline` returns to the active overview; npl-* cards honor `collapsed`; pure `expandedPlan`/`expandedRoleOf`/`cardKeys` in render.tsx; 32 mod tests green.
+
 ## 2026-10-28
 
 - docs: add AGENT-README.md (agent orientation)

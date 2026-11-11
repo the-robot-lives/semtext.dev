@@ -1,5 +1,6 @@
-// SemText pane rendering layer (v0.3): glyph vocabulary, pure drawing
-// helpers, viewer reducers and the per-kind render registry.
+// SemText pane rendering layer (v0.4): glyph vocabulary, pure drawing
+// helpers, viewer reducers, the per-kind render registry and the expanded
+// document view's per-node role dispatch.
 //
 // Every decoration glyph in the pane comes from GLYPHS — content strings are
 // control-stripped (sanitize) before drawing and never contribute glyphs.
@@ -17,6 +18,7 @@ import type {
 import type {
   FactItem,
   QuizOption,
+  SemBlock,
   SemTextNode,
   SemTextViewer,
 } from '../types'
@@ -158,7 +160,8 @@ export function buildQuizOptions(
 // --- viewer reducers (PURE; the pane's only writers) ---
 
 export const INITIAL_VIEWER: SemTextViewer = {
-  mode: 'outline',
+  mode: 'expanded',
+  outlineMode: 'expanded',
   focusedSection: null,
   activeFactSet: null,
   factSetKind: 'quiz',
@@ -184,8 +187,39 @@ export function focusSection(viewer: SemTextViewer, key: string): SemTextViewer 
   }
 }
 
+/** Back to whichever overview (compact outline / expanded) was last active. */
 export function backToOutline(viewer: SemTextViewer): SemTextViewer {
-  return { ...viewer, mode: 'outline', activeFactSet: null, order: [], picked: null, flipped: false }
+  return {
+    ...viewer,
+    mode: viewer.outlineMode,
+    activeFactSet: null,
+    order: [],
+    picked: null,
+    flipped: false,
+  }
+}
+
+/** Switches the overview between the compact outline and the expanded view. */
+export function setOutlineMode(
+  viewer: SemTextViewer,
+  mode: 'outline' | 'expanded',
+): SemTextViewer {
+  return { ...viewer, mode, outlineMode: mode }
+}
+
+/**
+ * Sets every card key in `keys` open (true) or shut (false) at once — the
+ * expand-all / collapse-all rule. Explicit per-card toggles keep winning over
+ * defaults afterwards, since the map stores the requested value.
+ */
+export function setAllExpanded(
+  viewer: SemTextViewer,
+  keys: readonly string[],
+  open: boolean,
+): SemTextViewer {
+  const expanded = { ...viewer.expanded }
+  for (const key of keys) expanded[key] = open
+  return { ...viewer, expanded }
 }
 
 export function startQuiz(
@@ -610,6 +644,36 @@ export function outlineTree(tree: readonly SemTextNode[], maxDepth = 8): Outline
   return rows
 }
 
+/**
+ * Keys of the card nodes whose renderers consult `viewer.expanded` — the
+ * note/reveal families and the npl block family. Expand-all / collapse-all
+ * walks these; dotted keys match outlineTree's scheme.
+ */
+export function cardKeys(tree: readonly SemTextNode[]): string[] {
+  const out: string[] = []
+  const walk = (nodes: readonly SemTextNode[], base: string): void => {
+    nodes.forEach((node, i) => {
+      const key = `${base}${i}`
+      if (
+        node.tag === 'sem-note' ||
+        node.tag === 'sem-reveal' ||
+        node.tag === 'sem-detail' ||
+        node.tag === 'sem-details' ||
+        node.tag.startsWith('npl-') ||
+        node.tag === 'wedge' ||
+        node.tag === 'shadow' ||
+        node.tag === 'critic' ||
+        node.tag === 'weego'
+      ) {
+        out.push(key)
+      }
+      walk(node.children, `${key}.`)
+    })
+  }
+  walk(tree, '')
+  return out
+}
+
 /** `source › section › subsection` parts of an outline key: trail then leaf. */
 export function breadcrumbOf(
   tree: readonly SemTextNode[],
@@ -721,7 +785,9 @@ const noteRenderer: ElementRenderer = (node, ctx) => {
   const { Box, Button } = ctx.el
   const warn = (node.attrs['kind'] ?? node.attrs['data-kind']) === 'warning'
   const glyph = warn ? GLYPHS.kind.warning : GLYPHS.kind.note
-  const open = ctx.viewer.expanded[ctx.wkey] ?? false
+  // Notes default open in v0.4: the expanded view shows bodies inline; an
+  // explicit hide toggle (expanded[key] === false) still collapses.
+  const open = ctx.viewer.expanded[ctx.wkey] ?? true
   if (!open) {
     spend(ctx, 1)
     return (
@@ -1039,7 +1105,9 @@ const renderNplBlock: ElementRenderer = (node, ctx) => {
     (attrPairs.length > 0
       ? ` · ${attrPairs.map(([key, value]) => `${key}=${sanitize(value)}`).join(' ')}`
       : '')
-  const open = ctx.viewer.expanded[ctx.wkey] ?? false
+  // npl blocks default open in v0.4; an authored `collapsed` attribute keeps
+  // the card shut by default, and an explicit toggle always wins.
+  const open = ctx.viewer.expanded[ctx.wkey] ?? node.attrs['collapsed'] === undefined
   if (!open) {
     spend(ctx, 1)
     return (
@@ -1127,4 +1195,131 @@ export const RENDERERS: Record<string, ElementRenderer> = {
   critic: renderNplBlock,
   weego: renderNplBlock,
   '*': genericRenderer,
+}
+
+// --- the expanded document view's per-node role ---
+
+/**
+ * How the expanded view treats one node. 'card': a dedicated renderer draws
+ * the node's content inline (its children are consumed — never re-drawn as
+ * rows). 'heading': the outline heading row IS the render (section family;
+ * children get their own rows). 'flow': no dedicated body — draw captured
+ * blocks or the leaf's own text, then recurse into children.
+ */
+export type ExpandedRole = 'heading' | 'flow' | 'card'
+
+/** Renderers that draw captured content and fall back to the generic head (a duplicate row in the expanded view) when nothing was captured. */
+const CONTENT_RENDERERS: ReadonlySet<ElementRenderer> = new Set([
+  noteRenderer,
+  revealRenderer,
+  factsRenderer,
+  viewsRenderer,
+  propertiesRenderer,
+  tableRenderer,
+  codeRenderer,
+])
+
+export function expandedRoleOf(node: SemTextNode): ExpandedRole {
+  const render = RENDERERS[node.tag] ?? RENDERERS['*']!
+  if (render === sectionRenderer) return 'heading'
+  if (render === genericRenderer) return 'flow'
+  // npl blocks always draw their own frame (even content-less).
+  if (render === renderNplBlock) return 'card'
+  if (node.content === undefined && CONTENT_RENDERERS.has(render)) return 'flow'
+  return 'card'
+}
+
+// --- the expanded document view's pure content plan ---
+
+/**
+ * One unit of the expanded view, in document order. 'row': the outline
+ * heading row (the pane draws it as the focus button). 'text': content drawn
+ * inline under that row — captured blocks (with their markers) or a flow
+ * leaf's own text; unknown tags land here, so their text is never dropped.
+ * 'card': the node defers to its RENDERERS entry (default-open in v0.4);
+ * its children are consumed by the renderer and never re-planned.
+ */
+export type ExpandedUnit =
+  | { role: 'row'; key: string; row: OutlineRow }
+  | {
+      role: 'text'
+      key: string
+      depth: number
+      /** The row prefix with the branch glyphs blanked — sits under the branch. */
+      indent: string
+      text: string
+      /** Captured block (heading/quote/prose) — the pane draws its markers. */
+      block?: SemBlock
+    }
+  | { role: 'card'; key: string; depth: number; indent: string; node: SemTextNode }
+
+/** A row's tree prefix with the ├──/└── glyphs blanked (spines kept). */
+export function indentOf(prefix: string): string {
+  return prefix.replace(/[├└─]/g, ' ')
+}
+
+/**
+ * The expanded view's full content plan: every outline row top-to-bottom,
+ * each followed by its content — section prose and unknown-tag text as text
+ * rows, note/reveal/facts/table/code/properties/views/procedure/source/npl
+ * nodes as cards. Pure; the pane maps units to elements under its row
+ * budget (renderer spend is only known at draw time).
+ */
+export function expandedPlan(tree: readonly SemTextNode[], maxDepth = 8): ExpandedUnit[] {
+  const units: ExpandedUnit[] = []
+  const walk = (
+    nodes: readonly SemTextNode[],
+    depth: number,
+    base: string,
+    ancestors: readonly boolean[],
+  ): void => {
+    nodes.forEach((node, i) => {
+      const isLast = i === nodes.length - 1
+      const key = `${base}${i}`
+      const prefix = treePrefix(ancestors, isLast)
+      units.push({
+        role: 'row',
+        key,
+        row: {
+          key,
+          depth,
+          label: labelOf(node),
+          prefix,
+          glyph: glyphOf(node),
+          count: node.children.length,
+        },
+      })
+      const role = expandedRoleOf(node)
+      if (role === 'card') {
+        units.push({ role: 'card', key, depth, indent: indentOf(prefix), node })
+        return // the renderer consumes the children
+      }
+      const blocks = node.blocks ?? []
+      if (blocks.length > 0) {
+        blocks.forEach((block, b) => {
+          units.push({
+            role: 'text',
+            key: `${key}#b${b}`,
+            depth: depth + 1,
+            indent: indentOf(prefix),
+            text: block.text,
+            block,
+          })
+        })
+      } else if (node.children.length === 0 && (node.text ?? '') !== '') {
+        // A leaf without captured content (plain tldr/summary text, unknown
+        // tags, note-less notes): its own text sits inline under the row.
+        units.push({
+          role: 'text',
+          key: `${key}#leaf`,
+          depth: depth + 1,
+          indent: indentOf(prefix),
+          text: node.text ?? '',
+        })
+      }
+      if (depth < maxDepth) walk(node.children, depth + 1, `${key}.`, [...ancestors, isLast])
+    })
+  }
+  walk(tree, 0, '', [])
+  return units
 }
