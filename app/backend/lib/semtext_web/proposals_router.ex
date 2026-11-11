@@ -1,5 +1,7 @@
 defmodule SemtextWeb.ProposalsRouter do
   @moduledoc """
+  〚📦:f7f5127a-7784-5148-8ce5-d6bce647c845〛 SemtextWeb.ProposalsRouter :: Proposals-host router (proposals.semtext.dev) — SSR pages, GitHub OAuth, inbound webhook receiver; own session.
+
   Router for the `proposals.semtext.dev` host (design v2 §3.1).
 
   Dispatched by `SemtextWeb.Plugs.HostDispatch` before the Hologram router,

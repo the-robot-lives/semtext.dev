@@ -23,8 +23,11 @@ import {
   GLYPHS,
   RENDERERS,
   breadcrumbOf,
+  cardKeys,
   columnWidths,
   drawTable,
+  expandedPlan,
+  expandedRoleOf,
   firstWords,
   frameLines,
   glyphOf,
@@ -32,6 +35,8 @@ import {
   outlineTree,
   progressBar,
   propertyLines,
+  setAllExpanded,
+  setOutlineMode,
   tableCells,
   treePrefix,
   truncateCell,
@@ -320,10 +325,21 @@ test('outline select jumps to a section; the runner reaches its end state', asyn
   expect(v.itemIndex).toBe(2)
   expect(v.order).toEqual([])
 
-  // Back to outline clears the runner.
+  // Back to outline clears the runner and returns to the overview that was
+  // active — the default viewer's expanded document view.
   v = backToOutline(v)
-  expect(v.mode).toBe('outline')
+  expect(v.mode).toBe('expanded')
   expect(v.activeFactSet).toBe(null)
+
+  // From the compact outline it returns to the compact outline.
+  const compact = setOutlineMode(INITIAL_VIEWER, 'outline')
+  expect(compact.mode).toBe('outline')
+  expect(compact.outlineMode).toBe('outline')
+  expect(backToOutline(focusSection(compact, '0.1')).mode).toBe('outline')
+  // Toggling back to the expanded view flips mode and the return target.
+  const back = setOutlineMode(compact, 'expanded')
+  expect(back.mode).toBe('expanded')
+  expect(back.outlineMode).toBe('expanded')
 })
 
 test('nodeAt resolves outline row keys', async () => {
@@ -640,7 +656,7 @@ const NPL_BODY: SemTextNode = {
   text: 'baseline steady, spike on friction',
 }
 
-test('npl blocks render collapsed by default and framed when expanded', async () => {
+test('npl blocks render expanded by default; explicit hides and collapsed attrs win', async () => {
   const renderer = RENDERERS['npl-hormones']!
   const base = {
     el: { Box: 'Box', Text: 'Text', Button: 'Button' } as unknown as PaneElements,
@@ -649,24 +665,39 @@ test('npl blocks render collapsed by default and framed when expanded', async ()
     budget: 24,
     showBody: true,
   }
-  const shut: RenderCtx = {
-    ...base,
-    viewer: { ...INITIAL_VIEWER },
-    spent: { rows: 0 },
-    press: () => {},
-  }
-  expect(renderer(NPL_BODY, shut)).not.toBeNull()
-  expect(shut.spent.rows).toBe(1) // one toggle row
-
+  // Default viewer (no expanded overrides): the framed body draws, not the
+  // one-row collapsed toggle.
   const open: RenderCtx = {
     ...base,
-    viewer: { ...INITIAL_VIEWER, expanded: { '0.0': true } },
+    viewer: { ...INITIAL_VIEWER },
     spent: { rows: 0 },
     press: () => {},
   }
   expect(renderer(NPL_BODY, open)).not.toBeNull()
   // Frame top + wrapped body rows + bottom, plus the hide button row.
   expect(open.spent.rows).toBeGreaterThan(2)
+
+  // An explicit hide toggle (expanded[key] === false) collapses to one row.
+  const shut: RenderCtx = {
+    ...base,
+    viewer: { ...INITIAL_VIEWER, expanded: { '0.0': false } },
+    spent: { rows: 0 },
+    press: () => {},
+  }
+  expect(renderer(NPL_BODY, shut)).not.toBeNull()
+  expect(shut.spent.rows).toBe(1) // one toggle row
+
+  // An authored `collapsed` attribute keeps the card shut by default.
+  const collapsed: RenderCtx = {
+    ...base,
+    viewer: { ...INITIAL_VIEWER },
+    spent: { rows: 0 },
+    press: () => {},
+  }
+  expect(
+    renderer({ ...NPL_BODY, attrs: { tone: 'steady', collapsed: '' } }, collapsed),
+  ).not.toBeNull()
+  expect(collapsed.spent.rows).toBe(1)
 })
 
 test('annotateNplMarkdown digests the meta-review, mind-read and table forms', async () => {
@@ -689,4 +720,125 @@ test('annotateNplMarkdown digests the meta-review, mind-read and table forms', a
   expect(annotateNplMarkdown(fencedTable)).toBe(fencedTable)
   // Nothing qualifies -> byte-identical passthrough.
   expect(annotateNplMarkdown('plain text\n')).toBe('plain text\n')
+})
+
+// --- v0.4: the expanded document view (default) ---
+
+const EXPANDED_FIXTURE = `<sem-doc>
+<sem-tldr>Short summary</sem-tldr>
+<sem-section title="Deep dive">
+  <h2>Recap</h2>
+  <p>Recap prose.</p>
+  <sem-note collapsed>Careful note body</sem-note>
+  <sem-unknown-widget id="w1">unrendered body</sem-unknown-widget>
+</sem-section>
+</sem-doc>`
+
+const FAKE_EL = { Box: 'Box', Text: 'Text', Button: 'Button' } as unknown as PaneElements
+
+test('the viewer defaults to the expanded document view', async () => {
+  expect(INITIAL_VIEWER.mode).toBe('expanded')
+  expect(INITIAL_VIEWER.outlineMode).toBe('expanded')
+  expect(INITIAL_VIEWER.expanded).toEqual({})
+  // A fresh-source reset copies INITIAL_VIEWER, so new documents open expanded.
+  expect({ ...INITIAL_VIEWER }.mode).toBe('expanded')
+})
+
+test('notes default open; cardKeys and setAllExpanded drive expand/collapse all', async () => {
+  const tree = parseSemText(
+    '<sem-doc>' +
+      '<sem-note collapsed>note body here</sem-note>' +
+      '<sem-reveal collapsed>hidden reveal</sem-reveal>' +
+      '<npl-block>framed body</npl-block>' +
+      '<sem-section><sem-note kind="warning">nested note</sem-note></sem-section>' +
+      '</sem-doc>',
+  )!.roots
+  const keys = cardKeys(tree)
+  expect(keys).toEqual(['0.0', '0.1', '0.2', '0.3.0'])
+
+  // The note card renderer draws the body with the default viewer (open):
+  // framed body rows plus the hide row, not the one-row toggle.
+  const renderer = RENDERERS['sem-note']!
+  const ctx: RenderCtx = {
+    el: FAKE_EL,
+    viewer: { ...INITIAL_VIEWER },
+    width: 48,
+    wkey: '0.0',
+    budget: 24,
+    showBody: false,
+    spent: { rows: 0 },
+    press: () => {},
+  }
+  expect(renderer(nodeAt(tree, '0.0')!, ctx)).not.toBeNull()
+  expect(ctx.spent.rows).toBeGreaterThan(1)
+
+  // Collapse-all marks every card shut; expand-all opens them again.
+  const shutAll = setAllExpanded({ ...INITIAL_VIEWER }, keys, false)
+  expect(keys.every(key => shutAll.expanded[key] === false)).toBe(true)
+  const openAll = setAllExpanded(shutAll, keys, true)
+  expect(keys.every(key => openAll.expanded[key] === true)).toBe(true)
+  // Non-card keys are untouched.
+  expect(shutAll.expanded['0.3']).toBeUndefined()
+})
+
+test('expandedPlan shows content inline: tldr text, section prose, note cards, unknown tags', async () => {
+  const tree = parseSemText(EXPANDED_FIXTURE)!.roots
+  const plan = expandedPlan(tree)
+  const texts = plan.filter(unit => unit.role === 'text').map(unit => unit.text)
+
+  // The tldr's text sits inline under its row (heading role, leaf text).
+  expect(texts.some(text => text.includes('Short summary'))).toBe(true)
+  // Section prose (captured blocks) sits inline under the section row.
+  expect(texts.some(text => text.includes('Recap prose'))).toBe(true)
+  // Section headings keep their titles.
+  const sectionRow = plan.find(
+    unit => unit.role === 'row' && unit.row.label.includes('sem-section — Deep dive'),
+  )
+  expect(sectionRow !== undefined).toBe(true)
+  // Unknown tag: the row keeps its name and the text is not dropped.
+  const unknownRow = plan.find(
+    unit => unit.role === 'row' && unit.row.label.includes('sem-unknown-widget'),
+  )
+  expect(unknownRow !== undefined).toBe(true)
+  expect(texts.some(text => text.includes('unrendered body'))).toBe(true)
+  // Text rows indent under their tree branch (spines kept, branch blanked).
+  const leaf = plan.find(unit => unit.role === 'text' && unit.text.includes('Short summary'))
+  expect(leaf !== undefined && leaf.indent.endsWith('    ')).toBe(true)
+
+  // The captured note defers to its renderer as a card, and the default
+  // viewer draws its body inline (framed, not the one-row toggle).
+  const noteUnit = plan.find(unit => unit.role === 'card' && unit.node.tag === 'sem-note')
+  expect(noteUnit !== undefined).toBe(true)
+  if (noteUnit?.role !== 'card') return
+  const renderer = RENDERERS['sem-note']!
+  const ctx: RenderCtx = {
+    el: FAKE_EL,
+    viewer: { ...INITIAL_VIEWER },
+    width: 48,
+    wkey: noteUnit.key,
+    budget: 24,
+    showBody: false,
+    spent: { rows: 0 },
+    press: () => {},
+  }
+  expect(renderer(noteUnit.node, ctx)).not.toBeNull()
+  expect(ctx.spent.rows).toBeGreaterThan(1)
+})
+
+test('expandedRoleOf dispatches heading/flow/card per renderer and capture', async () => {
+  const tree = parseSemText(EXPANDED_FIXTURE)!.roots
+  const doc = tree[0]!
+  expect(expandedRoleOf(doc)).toBe('flow') // unknown generic container
+  expect(expandedRoleOf(doc.children[0]!)).toBe('heading') // sem-tldr
+  expect(expandedRoleOf(doc.children[1]!)).toBe('heading') // sem-section
+  expect(expandedRoleOf(nodeAt(tree, '0.1.0')!)).toBe('card') // captured sem-note
+  expect(expandedRoleOf(nodeAt(tree, '0.1.1')!)).toBe('flow') // unknown widget
+  // Procedure and npl families are always cards; a content-less note flows.
+  const proc = parseSemText('<sem-procedure><sem-step>one</sem-step></sem-procedure>')!.roots[0]!
+  expect(expandedRoleOf(proc)).toBe('card')
+  const npl = parseSemText('<npl-intent>weave</npl-intent>')!.roots[0]!
+  expect(expandedRoleOf(npl)).toBe('card')
+  const plainNote =
+    parseSemText('<sem-section><sem-note>real</sem-note></sem-section>')!.roots[0]!.children[0]!
+  expect(expandedRoleOf(plainNote)).toBe('flow')
 })

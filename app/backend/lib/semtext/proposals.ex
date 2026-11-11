@@ -1,5 +1,7 @@
 defmodule Semtext.Proposals do
   @moduledoc """
+  〚📦:0c187ff2-d759-53b6-b2a6-f770a7f6be4f〛 Semtext.Proposals :: Proposals domain facade — proposals, versions, discussion links, moderation, reports, rate limits (P1 lane contract).
+
   Public context for the proposals domain (P1 contract — LANE=data).
 
   Other lanes (github-sync, ui, auth) code against THESE functions. Error contract:

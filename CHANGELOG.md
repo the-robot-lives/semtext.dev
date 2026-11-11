@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-11-11
+
+- mod(semtext) v0.4.0: expanded outline default (#224) — the semtext-outline pane opens in the expanded document view (whole outline tree top-to-bottom, every node's content inline under its tree branch via the existing renderers: cards default open, unknown tags keep name+text through the generic flow, section rows keep titles and stay click-to-focus), compact outline + expand/collapse-all toggles at the top, focus's `◂ outline` returns to the active overview; npl-* cards honor `collapsed`; pure `expandedPlan`/`expandedRoleOf`/`cardKeys` in render.tsx; 32 mod tests green.
+- chore: remove stale `claude-mods/` copy — pre-NPL duplicate of the live `mods/semtext` mod; nothing references it live (repo grep clean outside CHANGELOG history, no CI/package.json/marketplace dependencies, `~/.claude` dev-mods symlink resolves to `mods/semtext`) (#225)
+
+## 2026-10-28
+
+- docs: add AGENT-README.md (agent orientation)
+
+## 2026-10-26
+
+- docs: correct stale "main is CI/CD-only" deploy note — merging into main triggers CI/CD (user-verified 2026-10-26)
+- docs: doc-sweep refresh — app/docs + app/backend/docs layout/arch/schema/threat-model set re-grounded on the hydrated `:semtext` app (was pre-hydration `:starter` scaffold docs): helm chart path `app/helm/semtext`, changelogs 000–031 with the new Proposals & GitHub domain (schema/proposals-github.md), two-host `HostDispatch` routing (`proposals.semtext.dev`), TLS `semtext-dev-tls`, threat register +T-011/+T-012; README "stub repo" framing replaced; pointer-seed PR #223 (9 full-UUID markers, .meta/pointers.yaml bootstrap)
+
 ## 2026-10-26 (Google Analytics gtag.js on landing + main layouts) (#219)
 - added the gtag.js pair (measurement ID `G-XZX7QMLD7H`) to the `<head>` of both public layouts (`landing_layout.ex`, `main_layout.ex`): a src-based async loader tag plus a src-based config script — `priv/static/js/gtag-init.js` (new) carries the standard config because Hologram templates treat `{...}` as interpolation, so the canonical inline snippet cannot ride in a ~HOLO template; plain `/js/gtag-init.js` path (no AssetVersion hashing), matching the keep-location.js idiom.
 
