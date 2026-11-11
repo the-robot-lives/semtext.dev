@@ -425,6 +425,35 @@ test('wrapLines chunks to width and marks the cut', async () => {
   expect(wrapLines('', 4, 2)).toEqual([])
 })
 
+test('wrapLines wraps prose at word boundaries; over-width tokens hard-cut', async () => {
+  // Each break lands on a whitespace boundary; 'three' is wider than the
+  // width so it hard-cuts, and the tail becomes its own row.
+  expect(wrapLines('one two three', 4, 5)).toEqual(['one', 'two', 'thre', 'e'])
+  expect(wrapLines('alpha beta gamma', 11, 4)).toEqual(['alpha beta', 'gamma'])
+  // Budget exhausted mid-prose: the last row keeps the … cut marker.
+  expect(wrapLines('one two three four five', 4, 2)).toEqual(['one', 'two…'])
+  // Leading indentation survives on the first row; rows stay within width.
+  expect(wrapLines('    keep indent and wrap', 10, 4)).toEqual([
+    '    keep', 'indent', 'and wrap',
+  ])
+  // char mode keeps the raw fixed-width slice — code/pre never reflow.
+  expect(wrapLines('one two', 3, 4, 'char')).toEqual(['one', ' tw', 'o'])
+})
+
+test('wrapLines never splits "first" in the reported real-world case', async () => {
+  const line =
+    'The klaviyo-middleware summary went to the manager to fold in after its first pass'
+  // Width 74 is where the old hard cut landed inside "first" (chars 73-77).
+  const wrapped = wrapLines(line, 74, 3)
+  expect(wrapped[0]!.endsWith('its')).toBe(true)
+  expect(wrapped[1]!.startsWith('first')).toBe(true)
+  // Nothing dropped, nothing split: rejoining the rows restores the sentence.
+  expect(wrapped.join(' ')).toBe(line)
+  for (const row of wrapped) {
+    expect(Array.from(row).length).toBeLessThanOrEqual(74)
+  }
+})
+
 test('columnWidths takes the widest cell and shrinks to fit the frame', async () => {
   expect(columnWidths([], 40)).toEqual([])
   expect(columnWidths([['a', 'bbb'], ['cc', 'd']], 100)).toEqual([2, 3])

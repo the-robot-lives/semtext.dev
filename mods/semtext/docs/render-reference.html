@@ -2,12 +2,12 @@
 <html lang="en" data-sem-theme="minimal-tech-light">
 <head>
 <meta charset="utf-8">
-<title>SemText mod render reference — v0.5.1 vocabulary audit</title>
+<title>SemText mod render reference — v0.5.2 vocabulary audit</title>
 </head>
 <body>
 <sem-enhanced-document>
 
-<sem-tldr>*Every tag the semtext pane knows, how each one parses, glyphs, and renders across the four view modes, plus the defect ledger.* Reference for the Claude Code pane at mods/semtext (v0.5.1). Screens live in tui-screens.html; design rationale in tui-design.html.</sem-tldr>
+<sem-tldr>*Every tag the semtext pane knows, how each one parses, glyphs, and renders across the four view modes, plus the defect ledger.* Reference for the Claude Code pane at mods/semtext (v0.5.2). Screens live in tui-screens.html; design rationale in tui-design.html.</sem-tldr>
 
 <sem-section>
 <h2>1 How the pane reads a document</h2>
@@ -53,7 +53,7 @@
 - Section focus: breadcrumb (source › ancestors › leaf), captured blocks (## headings, ▌ quotes, paragraphs), the node's own render, then interactive/npl descendants through the registry, then nav row ◂ outline · ◂ prev · ▸ next.
 - Quiz/flashcards runner: meter ▰▱ position/total (quiz adds score), prompt, ▢ a)–d) options with ✓/✗ grading and next, or 🃏 flip (hotkey f) for flashcards; end state shows set complete.
 - Toggle row: compact outline ↔ expanded view, plus collapse-all/expand-all over every card key.
-- Width: pane body columns, falling back to viewport columns, then a 72-column assumption; all rows truncate to width with … on a code-point basis.
+- Width: pane body columns, falling back to viewport columns, then a 72-column assumption; prose rows wrap at word boundaries and every row still ends in … on a code-point basis when a cut happens.
 </sem-list>
 </sem-section>
 
@@ -69,7 +69,7 @@
 | MAX_BLOCKS | 32 | p/heading captures per node |
 | MAX_FACT_ITEMS | 50 | quiz/flashcard items per set |
 | MAX_WIDGETS | 10 | interactive descendants drawn per section focus |
-| wrap width | pane width − indent | hard cut at width (no word-boundary wrap) — open defect |
+| wrap width | pane width − indent | prose wraps at word boundaries (indent preserved; break whitespace consumed); tokens wider than the width and code/pre bodies hard-cut, tables truncate cells (v0.5.2) |
 </sem-table>
 </sem-section>
 
@@ -98,11 +98,17 @@
 | Outline selected marker reuses ▸ | the compact outline marks the selected row with the collapse glyph | dedicated ❯ selection glyph in the leftmost column (GLYPHS.selected, selectedMark); ▸/▾ stay toggle/nav glyphs only |
 </sem-table>
 
+<h3>Fixed in v0.5.2</h3>
+<sem-table label="v0.5.2 fixes">
+| Defect | Was | Fix |
+| --- | --- | --- |
+| wrapLines cuts mid-word | long prose splits anywhere inside the width (the reported case cut "first pass" inside "first") | word-boundary wrap for prose: each row breaks after the last whole word that fits, break whitespace is consumed, leading indentation survives; only tokens wider than the width hard-cut, and code/pre bodies pass the char mode so source lines never reflow (tables truncate cells and never reach wrapLines); width still counts code points, so double-width emoji behave exactly as before |
+</sem-table>
+
 <h3>Open defects (documented, not fixed)</h3>
 <sem-table label="Open defects">
 | Defect | Impact | Why deferred |
 | --- | --- | --- |
-| wrapLines cuts mid-word | long prose splits anywhere inside the width | word-boundary wrap changes row counts everywhere; needs its own pass |
 | MAX_TEXT cut without marker | bodies over 4000 chars end silently | needs an ellipsis contract change |
 | Procedure steps = direct children only | sem-step nested in sub-groups missed | spec does not define step grouping yet |
 | v0.8 vocabulary without TUI render | sem-list, sem-break, sem-progress, sem-chronology, sem-threat-model, sem-rubric, sem-eval, sem-mockup, sem-philosophy, sem-browser, sem-site-tree, sem-file-tree, sem-data-*, sem-alternatives/variant, agent-kit-*, semext-* render generic head + text | interactive/JS chrome cannot be reproduced in a TUI by design; generic flow keeps text visible |
@@ -111,7 +117,7 @@
 </sem-table>
 </sem-section>
 
-<sem-summary>This reference describes the pane exactly as of v0.5.1: three render roles, one registry entry per tag family, flat Trinity friction sections, flat unclosed note/step/fact siblings, children never silently dropped. When adding an element kind: one glyphOf mapping, one RENDERERS entry, and — if its children should stay visible — an expandedRoleOf decision. The defect ledger above is the backlog; fixed rows cite the v0.5/v0.5.1 releases.</sem-summary>
+<sem-summary>This reference describes the pane exactly as of v0.5.2: three render roles, one registry entry per tag family, flat Trinity friction sections, flat unclosed note/step/fact siblings, word-boundary prose wrap, children never silently dropped. When adding an element kind: one glyphOf mapping, one RENDERERS entry, and — if its children should stay visible — an expandedRoleOf decision. The defect ledger above is the backlog; fixed rows cite the v0.5–v0.5.2 releases.</sem-summary>
 
 </sem-enhanced-document>
 </body>

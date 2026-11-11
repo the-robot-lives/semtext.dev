@@ -468,17 +468,62 @@ export function truncateCell(value: string, width: number): string {
 }
 
 /**
- * Splits `value` into at most `maxLines` rows of `width` code points, cutting
- * the last row short with `…` when content remains. Code-point safe.
+ * Splits `value` into at most `maxLines` rows of at most `width` code points.
+ * Word mode (default) wraps prose at whitespace: each row breaks after the
+ * last whole word that fits and the break's whitespace run is consumed, while
+ * leading indentation survives and a token longer than the width hard-cuts.
+ * Char mode keeps the raw fixed-width slicing — code/pre bodies pass it so
+ * source lines never reflow (tables truncate cells instead and never reach
+ * this helper). The final row ends in `…` when content remains. Width counts
+ * code points like truncateCell — an emoji is one unit, so double-width
+ * glyphs still misalign by one cell (accepted, tracked in the defect ledger).
  */
-export function wrapLines(value: string, width: number, maxLines: number): string[] {
+export function wrapLines(
+  value: string,
+  width: number,
+  maxLines: number,
+  mode: 'word' | 'char' = 'word',
+): string[] {
   const cells = Math.max(1, width)
   const chars = Array.from(value)
   const out: string[] = []
+  const isSpace = (ch: string): boolean => ch === ' ' || ch === '\t' || ch === '\n'
   let at = 0
   while (at < chars.length && out.length < maxLines) {
-    out.push(chars.slice(at, at + cells).join(''))
-    at += cells
+    const rest = chars.length - at
+    if (rest <= cells) {
+      out.push(chars.slice(at).join(''))
+      at += rest
+      break
+    }
+    const window = chars.slice(at, at + cells)
+    // Last whitespace inside the window: the wrap point (word mode only).
+    let brk = -1
+    if (mode === 'word') {
+      for (let i = window.length - 1; i >= 0; i--) {
+        if (isSpace(window[i]!)) {
+          brk = i
+          break
+        }
+      }
+    }
+    if (brk > 0) {
+      out.push(window.slice(0, brk).join(''))
+      at += brk
+      // The whole run at the break is the boundary — consume it so the next
+      // row starts on a word character.
+      while (at < chars.length && isSpace(chars[at]!)) at++
+    } else if (brk === 0 && at > 0) {
+      // The window opens on whitespace mid-text: it is the boundary left
+      // hanging from the previous row — skip it and keep filling this row.
+      while (at < chars.length && isSpace(chars[at]!)) at++
+    } else {
+      // No usable break (a token longer than the width, or leading
+      // indentation at the very start): hard-cut the window. Leading
+      // indentation survives the cut, so the first row keeps its prefix.
+      out.push(window.join(''))
+      at += cells
+    }
   }
   if (at < chars.length && out.length > 0) {
     const last = out.length - 1
@@ -796,6 +841,7 @@ function framedBody(
   badge: string,
   align: 'left' | 'right',
   tabExpand = false,
+  mode: 'word' | 'char' = 'word',
 ): { element: RenderElement | null; hidden: number } {
   const room = roomOf(ctx)
   if (room <= 2 || body === '') return { element: null, hidden: 0 }
@@ -806,7 +852,7 @@ function framedBody(
   const shown: string[] = []
   for (const line of text.split('\n')) {
     if (shown.length >= maxBody) break
-    for (const part of wrapLines(line, inner - 4, maxBody - shown.length)) {
+    for (const part of wrapLines(line, inner - 4, maxBody - shown.length, mode)) {
       if (shown.length >= maxBody) break
       shown.push(part)
     }
@@ -986,7 +1032,9 @@ const codeRenderer: ElementRenderer = (node, ctx) => {
   const lang = content?.kind === 'code' ? content.lang : (node.attrs['lang'] ?? '')
   if (content?.kind !== 'code') return genericRenderer(node, ctx)
   const badge = `${GLYPHS.kind.code}${lang !== '' ? ` ${sanitize(lang)}` : ''}`
-  const frame = framedBody(ctx, body, badge, 'right', true)
+  // Code never reflows: lines keep their column layout and hard-cut at the
+  // frame edge (word mode is for prose only).
+  const frame = framedBody(ctx, body, badge, 'right', true, 'char')
   if (frame.element === null) return EMPTY(ctx)
   return frame.element
 }
