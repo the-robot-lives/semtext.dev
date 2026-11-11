@@ -34,18 +34,24 @@ import {
   expandedRoleOf,
   firstWords,
   frameLines,
+  codeLineParts,
+  codeRows,
   glyphOf,
   headingBlock,
   headingStyle,
   lineCount,
   meterLine,
   outlineTree,
+  parseMarkAttr,
   progressBar,
   propertyLines,
   proseLines,
   selectedMark,
   setAllExpanded,
   setOutlineMode,
+  splitInline,
+  strWidth,
+  tableAligns,
   tableCells,
   treePrefix,
   truncateCell,
@@ -491,18 +497,25 @@ test('tableCells splits pipes, tabs and plain lines; drawTable frames', async ()
     [
       ['name', 'value'],
       ['ttl', '3600'],
-      ['mode', 'fast'],
+      ['mode', '60'],
     ],
     40,
     10,
   )
-  // ┌─┬─┐ top, header row, ├─┼─┤, two body rows, └─┴─┘ bottom.
+  // ┏━┳━┓ top, header row, ┝━┿━┥, two body rows, ┗━┻━┛ bottom (heavy grid).
   expect(lines.length).toBe(6)
-  expect(lines[0]!.startsWith(`${GLYPHS.frame.tl}`)).toBe(true)
-  expect(lines[0]!.endsWith(GLYPHS.frame.tr)).toBe(true)
-  expect(lines[0]!.includes(GLYPHS.frame.teeDown)).toBe(true)
-  expect(lines[2]!.includes(GLYPHS.frame.cross)).toBe(true)
-  expect(lines[5]!.startsWith(GLYPHS.frame.bl)).toBe(true)
+  expect(lines[0]!.startsWith(GLYPHS.frame.htl)).toBe(true)
+  expect(lines[0]!.endsWith(GLYPHS.frame.htr)).toBe(true)
+  expect(lines[0]!.includes(GLYPHS.frame.hteeDown)).toBe(true)
+  expect(lines[2]!.startsWith(GLYPHS.frame.hteeLeft)).toBe(true)
+  expect(lines[2]!.endsWith(GLYPHS.frame.hteeRight)).toBe(true)
+  expect(lines[2]!.includes(GLYPHS.frame.hcross)).toBe(true)
+  expect(lines[5]!.startsWith(GLYPHS.frame.hbl)).toBe(true)
+  expect(lines[3]!.startsWith(GLYPHS.frame.hv)).toBe(true)
+  // Numeric body columns right-align when no delimiter row authors otherwise:
+  // `3600` hugs the right wall while the left column pads right.
+  expect(lines[3]!.includes(` 3600 ${GLYPHS.frame.hv}`)).toBe(true)
+  expect(lines[3]!.includes(`3600  ${GLYPHS.frame.hv}`)).toBe(false)
   expect(headerRows).toBe(1)
   expect(hidden).toBe(0)
   expect(lines[1]).toContain('name')
@@ -523,9 +536,24 @@ test('tableCells splits pipes, tabs and plain lines; drawTable frames', async ()
   expect(capped.lines.some(line => line.includes(`(+1)`))).toBe(false) // marker drawn by the pane, not the table
   expect(capped.lines.length).toBe(6) // top + header + separator + 2 body + bottom
 
-  // Long cells truncate with … inside their column.
+  // Column cap: columns that cannot keep the 3-cell floor drop off the right
+  // edge and report as hiddenCols (`… (+N cols)` is drawn by the pane).
+  const crowded = drawTable(
+    [
+      ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+      ['1', '2', '3', '4', '5', '6', '7'],
+    ],
+    20,
+    10,
+  )
+  expect(crowded.hiddenCols).toBeGreaterThan(0)
+  expect(crowded.lines[0]!.startsWith(GLYPHS.frame.htl)).toBe(true)
+  expect(crowded.lines.every(line => strWidth(line) <= 22)).toBe(true)
+
+  // Long cells wrap: the row grows tall, the frame stays within width.
   const wide = drawTable([['header'], ['x'.repeat(50)]], 20, 10)
-  expect(Array.from(wide.lines[1]!).length).toBeLessThanOrEqual(20)
+  expect(wide.lines.every(line => strWidth(line) <= 22)).toBe(true)
+  expect(wide.lines.length).toBeGreaterThan(4)
 })
 
 test('progressBar and meterLine draw the ▰▱ meter', async () => {
@@ -1425,4 +1453,192 @@ test('fixture: lists, dl and tasks draw inside the section frame (webpage-like)'
   expect(json).toContain('Scope')
   expect(json).toContain('One screen, no chrome.')
   expect(json).toContain('☑ landed')
+})
+
+// --- v0.7.0: code cards, table grids, inline tags ---
+
+test('splitInline pairs the inline-tag delimiters into styled spans', async () => {
+  expect(splitInline('plain prose row')).toBeUndefined()
+  const hl = splitInline('see ⟦Authorization⟧ header')!
+  expect(hl[0]).toEqual({ text: 'see ' })
+  expect(hl[1]).toEqual({ color: 'cyan', text: '⟦Authorization⟧' })
+  const mixed = splitInline('keep **this** `x` ~~gone~~ *soft*')!
+  expect(mixed[1]).toEqual({ bold: true, text: '**this**' })
+  expect(mixed[3]).toEqual({ color: 'green', text: '`x`' })
+  expect(mixed[5]).toEqual({ dim: true, text: '~~gone~~' })
+  expect(mixed[7]).toEqual({ italic: true, text: '*soft*' })
+  // Unpaired markers never drop text.
+  expect(splitInline('a * lone star')!.map(p => p.text).join('')).toBe('a * lone star')
+})
+
+test('codeLineParts tints keywords blue, strings green, comments dim', async () => {
+  const parts = codeLineParts('const a = "hi" // done', 'ts')!
+  expect(parts[0]).toEqual({ color: 'blue', text: 'const' })
+  expect(parts.map(p => p.text).join('')).toBe('const a = "hi" // done')
+  expect(parts.at(-1)).toEqual({ dim: true, italic: true, text: '// done' })
+  expect(parts.find(p => p.color === 'green')!.text).toBe('"hi"')
+  // No tintable content → undefined (row draws plainly dim); unknown lang ditto.
+  expect(codeLineParts('plain = 1', 'ts')).toBeUndefined()
+  expect(codeLineParts('def x; end', 'mermaid')).toBeUndefined()
+  // A `//` inside a string is string, not comment.
+  const url = codeLineParts('const u = "https://x.y"', 'ts')!
+  expect(url.find(p => p.color === 'green')!.text).toBe('"https://x.y"')
+  // `#` comments tint for the shell family (ts has no `#` comments).
+  const sh = codeLineParts('echo "hi" # real comment', 'bash')!
+  expect(sh.find(p => p.color === 'green')!.text).toBe('"hi"')
+  expect(sh.at(-1)).toEqual({ dim: true, italic: true, text: '# real comment' })
+})
+
+test('parseMarkAttr reads "2,4-5" line sets', async () => {
+  expect([...parseMarkAttr('2,4-5')]).toEqual([2, 4, 5])
+  expect([...parseMarkAttr('')]).toEqual([])
+  expect([...parseMarkAttr('7')]).toEqual([7])
+})
+
+test('codeRows draws the dim gutter, ▌ marks, ↪ wrap and … truncate', async () => {
+  const plain = codeRows('const a = 1\nlet b = 2', 'ts', {
+    wrap: false,
+    width: 40,
+    maxRows: 10,
+  })
+  expect(plain.rows.map(row => row.text)).toEqual(['1 │ const a = 1', '2 │ let b = 2'])
+  expect(plain.rows[0]!.parts![0]).toEqual({ dim: true, text: '1 │ ' })
+  expect(plain.rows[0]!.parts![1]).toEqual({ color: 'blue', text: 'const' })
+  expect(plain.hidden).toBe(0)
+
+  const marked = codeRows('a\nb\nc', '', { mark: parseMarkAttr('2'), wrap: false, width: 30, maxRows: 10 })
+  expect(marked.rows[1]!.text).toBe('2▌│ b')
+  expect(marked.rows[1]!.bold).toBe(true)
+  expect(marked.rows[0]!.text).toBe('1 │ a')
+
+  const long = 'x'.repeat(60)
+  const cut = codeRows(long, '', { wrap: false, width: 30, maxRows: 10 })
+  expect(cut.rows.length).toBe(1)
+  expect(cut.rows[0]!.text.endsWith('…')).toBe(true)
+
+  const wrapped = codeRows(long, '', { wrap: true, width: 30, maxRows: 10 })
+  expect(wrapped.rows.length).toBeGreaterThan(1)
+  expect(wrapped.rows[1]!.text).toContain('↪')
+  expect(wrapped.rows[0]!.text.startsWith('1 │ ')).toBe(true)
+})
+
+test('inline tags capture as pair delimiters and stay registered', async () => {
+  const parsed = parseSemText(
+    '<sem-doc>' +
+      '<sem-note>keep <strong>this</strong> <highlight>secret</highlight></sem-note>' +
+      '<sem-highlight>solo</sem-highlight>' +
+      '</sem-doc>',
+  )!
+  // sem-highlight is registered (only the never-known sem-doc container warns).
+  expect(parsed.unknownElements).toEqual(['sem-doc'])
+  const json = drawJSON(parsed.roots)
+  expect(json).toContain('keep ')
+  expect(json).toContain('**this**')
+  expect(json).toContain('⟦secret⟧')
+  // Element-form sem-highlight renders as its own registered card.
+  expect(json).toContain('sem-highlight')
+  expect(json).toContain('solo')
+  // The drawn prose carries the styles as parts.
+  expect(json).toContain('"color":"cyan"')
+  expect(json).toContain('"bold":true')
+})
+
+test('container text decodes inline markup (list items never leak tags)', async () => {
+  const parsed = parseSemText(
+    '<sem-section><ul>' +
+      '<li>has <strong>bold</strong> text</li>' +
+      '<li>span <span class="sem-highlight">alias</span> too</li>' +
+      '<li>code <code>ls -1</code> inline</li>' +
+      '</ul></sem-section>',
+  )!
+  const json = drawJSON(parsed.roots)
+  expect(json).toContain('• has ')
+  expect(json).toContain('**bold**')
+  expect(json).toContain('⟦alias⟧')
+  expect(json).toContain('`ls -1`')
+  expect(json.includes('<strong>')).toBe(false)
+  expect(json.includes('<span')).toBe(false)
+})
+
+test('sem-code renders the code card: entities, filename badge, gutter', async () => {
+  const parsed = parseSemText(
+    '<sem-code lang="ts" filename="src/rotate.ts" mark="2" controls="copy,wrap">' +
+      'const a = "x" &lt; 2\n// rotate the ring</sem-code>',
+  )!
+  const json = drawJSON(parsed.roots)
+  expect(json).toContain('⌨ ts · src/rotate.ts')
+  expect(json).toContain('const') // entities decoded, verbatim
+  expect(json.includes('\\"x\\"')).toBe(true)
+  expect(json).toContain(' < 2')
+  expect(json).toContain('1 │ ')
+  expect(json).toContain('2▌│ ')
+  expect(json).toContain('"color":"green"') // tinted spans present
+})
+
+test('table grids draw heavy, aligned, wrapped and capped', async () => {
+  // Caption header + delimiter alignment + br-in-cell + entities.
+  const doc =
+    '<sem-table><caption>Token lifetimes</caption>' +
+    '| name | size | notes |\n' +
+    '| ---: | :---: | :--- |\n' +
+    '| ttl | 3600 | two&lt;rows<br/>second |\n' +
+    '</sem-table>'
+  const parsed = parseSemText(doc)!
+  const json = drawJSON(parsed.roots)
+  expect(json).toContain('▦ Token lifetimes')
+  expect(json).toContain('┏')
+  expect(json).toContain('┝')
+  expect(json).toContain('┥')
+  expect(json).toContain('┃')
+  expect(json).toContain('two<rows') // entities decoded in cells
+  expect(json.includes('⏎')).toBe(false) // the sentinel splits, never draws
+  // The wrapped cell grew the row: `ttl` row shows two text lines in notes col.
+  expect(json).toContain('second')
+
+  // Column cap at a narrow width reports the dropped columns.
+  const crowded = parseSemText(
+    '<sem-table>| a | b | c | d | e | f | g |\n| 1 | 2 | 3 | 4 | 5 | 6 | 7 |</sem-table>',
+  )!
+  const narrow = drawJSON(crowded.roots, { ...INITIAL_VIEWER }, 34)
+  expect(narrow).toContain('cols)')
+})
+
+test('tableAligns reads the delimiter row; drawTable centers per spec', async () => {
+  expect(tableAligns(['| a | b |', '| :--- | ---: |', '| 1 | 2 |'])).toEqual(['left', 'right'])
+  expect(tableAligns(['| a | b |', '| 1 | 2 |'])).toBeUndefined()
+  const { lines } = drawTable(
+    [
+      ['a', 'b'],
+      ['1', '2'],
+    ],
+    40,
+    10,
+    { aligns: ['center', 'right'] },
+  )
+  // '2' right-aligned into a 1-wide column adds no padding; 'a' centers in 1.
+  expect(lines[3]).toContain(' 1 ')
+  expect(lines[3]).toContain(' 2 ')
+})
+
+test('note variants pair with their emoji', async () => {
+  const badge = (variant: string): string =>
+    drawJSON(
+      parseSemText(`<sem-note variant="${variant}">body</sem-note>`)!.roots,
+    ).split('\n').find(line => line.includes('note')) ?? ''
+  expect(badge('tip')).toContain('💡')
+  expect(badge('danger')).toContain('⛔')
+  expect(badge('info')).toContain('ℹ️')
+  expect(badge('success')).toContain('✅')
+  expect(badge('note')).toContain('📝')
+  expect(badge('warning')).toContain('⚠')
+  // Unlisted variants and no variant keep the plain note glyph.
+  const plain = drawJSON(parseSemText('<sem-note>body</sem-note>')!.roots)
+  expect(plain).toContain('📌 note')
+  expect(badge('weird')).toContain('📌')
+})
+
+test('strWidth counts emoji double for content-width columns', async () => {
+  expect(strWidth('abc')).toBe(3)
+  expect(strWidth('🃏x')).toBe(3)
+  expect(strWidth('界x')).toBe(3)
 })

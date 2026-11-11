@@ -33,6 +33,45 @@ export function sanitize(value: string): string {
   return value.replace(ANSI_OR_CONTROL, '')
 }
 
+const NAMED_ENTITY: Record<string, string> = {
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: ' ',
+  copy: '©',
+  reg: '®',
+  hellip: '…',
+  mdash: '—',
+  ndash: '–',
+}
+
+/**
+ * Decodes the HTML entities a verbatim listing or table cell is authored
+ * with (`&lt;` in source code means a literal `<`). Numeric forms included;
+ * `&amp;` decodes LAST so `&amp;lt;` stays the literal text `&lt;`.
+ */
+export function decodeEntities(value: string): string {
+  return value
+    .replace(/&([a-z]+);/gi, (name: string, word: string) => NAMED_ENTITY[word.toLowerCase()] ?? name)
+    .replace(/&#(\d+);/g, (_, digits: string) => {
+      const point = Number(digits)
+      return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : _
+    })
+    .replace(/&amp;/g, '&')
+}
+
+/** East-Asian and emoji code points draw two terminal columns wide. */
+const WIDE_CHAR =
+  /[\u{1100}-\u{115F}\u{2E80}-\u{303E}\u{3041}-\u{33FF}\u{3400}-\u{4DBF}\u{4E00}-\u{9FFF}\u{A000}-\u{A4CF}\u{A960}-\u{A97F}\u{AC00}-\u{D7A3}\u{F900}-\u{FAFF}\u{FE10}-\u{FE19}\u{FE30}-\u{FE6F}\u{FF00}-\u{FF60}\u{FFE0}-\u{FFE6}\u{1F000}-\u{1F0FF}\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{27BF}]/u
+
+/** Display width of `value`: emoji/CJK count 2 columns, everything else 1. */
+export function strWidth(value: string): number {
+  let width = 0
+  for (const ch of value) width += WIDE_CHAR.test(ch) ? 2 : 1
+  return width
+}
+
 export function collapseWhitespace(value: string): string {
   return value.replace(/\s+/g, ' ').trim()
 }
@@ -376,8 +415,23 @@ export const GLYPHS = {
     cross: '┼',
     teeLeft: '├',
     teeRight: '┤',
+    // Heavy set: table grids draw with the heavier frame so a grid reads as
+    // a table, not another card (┝━┿━┥ under the header row).
+    htl: '┏',
+    htr: '┓',
+    hbl: '┗',
+    hbr: '┛',
+    hh: '━',
+    hv: '┃',
+    hteeDown: '┳',
+    hteeUp: '┻',
+    hcross: '┿',
+    hteeLeft: '┝',
+    hteeRight: '┥',
   },
 } as const
+
+const hHeavyRule = (n: number): string => GLYPHS.frame.hh.repeat(Math.max(0, n))
 
 /** A run of `n` box-drawing horizontals. */
 const hRule = (n: number): string => GLYPHS.frame.h.repeat(Math.max(0, n))
@@ -471,6 +525,113 @@ export function labelOf(node: SemTextNode): string {
 }
 
 // --- pure drawing helpers ---
+
+/** One styled span of a drawn row (inline-tag capture keeps these pairs). */
+export type InlinePart = {
+  text: string
+  bold?: boolean
+  italic?: boolean
+  dim?: boolean
+  color?: string
+}
+
+const INLINE_TOKEN = /⟦|⟧|\*\*|\*|~~|`/g
+
+/**
+ * Splits a marked-up row into styled spans. The parser marks the inline-tag
+ * family with visible pair delimiters — `⟦…⟧` highlight/mark (accent cyan),
+ * `**…**` strong/bold, `*…*` em/italic, `` `…` `` inline code (green),
+ * `~~…~~` struck (dim) — and this turns them into `<Text>` spans so the TUI
+ * colors and weights the emphasis the way the web renderer does. Unpaired
+ * markers stay visible as literal characters (no text is ever dropped).
+ */
+export function splitInline(value: string): InlinePart[] | undefined {
+  if (!/[⟦*~`]/.test(value)) return undefined
+  const parts: InlinePart[] = []
+  let plain = ''
+  let last = 0
+  const style = { highlight: false, bold: false, italic: false, code: false, struck: false }
+  const current = (): InlinePart => {
+    const part: InlinePart = {}
+    if (style.highlight) part.color = 'cyan'
+    if (style.bold) part.bold = true
+    if (style.italic) part.italic = true
+    if (style.code) part.color = 'green'
+    if (style.struck) part.dim = true
+    return part
+  }
+  const push = (): void => {
+    if (plain === '') return
+    const part = current()
+    parts.push(Object.keys(part).length === 0 ? { text: plain } : { ...part, text: plain })
+    plain = ''
+  }
+  for (const token of value.matchAll(INLINE_TOKEN)) {
+    plain += value.slice(last, token.index)
+    last = token.index + token[0]!.length
+    const mark = token[0]!
+    // An opener joins the styled span that follows; a closer joins the span
+    // it closes — the delimiters always stay visible inside their span.
+    if (mark === '⟦') {
+      push()
+      style.highlight = true
+      plain += mark
+    } else if (mark === '⟧') {
+      plain += mark
+      push()
+      style.highlight = false
+    } else if (mark === '**') {
+      if (style.bold) {
+        plain += mark
+        push()
+        style.bold = false
+      } else {
+        push()
+        style.bold = true
+        plain += mark
+      }
+    } else if (mark === '~~') {
+      if (style.struck) {
+        plain += mark
+        push()
+        style.struck = false
+      } else {
+        push()
+        style.struck = true
+        plain += mark
+      }
+    } else if (mark === '`') {
+      if (style.code) {
+        plain += mark
+        push()
+        style.code = false
+      } else {
+        push()
+        style.code = true
+        plain += mark
+      }
+    } else {
+      if (style.italic) {
+        plain += mark
+        push()
+        style.italic = false
+      } else {
+        push()
+        style.italic = true
+        plain += mark
+      }
+    }
+  }
+  plain += value.slice(last)
+  push()
+  if (parts.length === 0) return undefined
+  // A row of all-plain parts draws as a plain string (keeps JSON snapshots
+  // and dim defaults unchanged when markers never actually open).
+  if (parts.every(part => part.color === undefined && part.bold !== true && part.italic !== true && part.dim !== true)) {
+    return undefined
+  }
+  return parts
+}
 
 /**
  * Fits `value` into `width` code points, cutting with `…` (which counts as a
@@ -605,7 +766,7 @@ export function tableCells(rows: readonly string[]): string[][] {
       : line.includes('\t')
         ? line.split('\t')
         : [line]
-    cells = cells.map(cell => collapseWhitespace(sanitize(cell)))
+    cells = cells.map(cell => collapseWhitespace(decodeEntities(sanitize(cell))))
     if (cells.length > 1 && cells[0] === '') cells = cells.slice(1)
     if (cells.length > 1 && cells[cells.length - 1] === '') {
       cells = cells.slice(0, -1)
@@ -618,15 +779,16 @@ export function tableCells(rows: readonly string[]): string[][] {
 }
 
 /**
- * Per-column widths of `cells`: the widest cell each, shrunk one code point at
- * a time from the widest column until the drawn row (`│ ` + cells + ` │`, i.e.
- * sum + 3·cols + 1 cells) fits `maxTotal` (3-cell floor per column).
+ * Per-column widths of `cells`: the widest cell each (emoji-aware), shrunk
+ * one column at a time from the widest until the drawn row (`┃ ` + cells +
+ * ` ┃`, i.e. sum + 3·cols + 1 cells) fits `maxTotal` (3-cell floor per
+ * column).
  */
 export function columnWidths(cells: readonly string[][], maxTotal: number): number[] {
   const cols = cells.reduce((max, row) => Math.max(max, row.length), 0)
   if (cols === 0) return []
   const widths = Array.from({ length: cols }, (_, c) =>
-    cells.reduce((max, row) => Math.max(max, cpLen(row[c] ?? '')), 1),
+    cells.reduce((max, row) => Math.max(max, strWidth(row[c] ?? '')), 1),
   )
   const min = 3
   const budget = Math.max(cols * min, maxTotal - (3 * cols + 1))
@@ -646,37 +808,112 @@ export function columnWidths(cells: readonly string[][], maxTotal: number): numb
   return widths
 }
 
+export type TableAlign = 'left' | 'right' | 'center'
+
 /**
- * A box-drawn table: `┌─┬─┐` top, the first row the header, `├─┼─┤` under it,
- * at most `maxRows` rows in all, `└─┴─┘` bottom. Cells truncate with `…`.
+ * Column alignment authored as the markdown delimiter row (`| :--- | ---: |`)
+ * anywhere before the body — the first all-delimiter row wins, order is not
+ * assumed. Undefined when the rows carry no delimiter row.
+ */
+export function tableAligns(rows: readonly string[]): TableAlign[] | undefined {
+  for (const raw of rows) {
+    const line = raw.trim()
+    if (line === '') continue
+    let cells = line.includes('|')
+      ? line.split('|')
+      : line.includes('\t')
+        ? line.split('\t')
+        : [line]
+    cells = cells.map(cell => cell.trim())
+    if (cells.length > 1 && cells[0] === '') cells = cells.slice(1)
+    if (cells.length > 1 && cells[cells.length - 1] === '') cells = cells.slice(0, -1)
+    if (cells.length > 0 && cells.every(cell => DELIM_CELL.test(cell))) {
+      return cells.map(cell =>
+        cell.startsWith(':') && cell.endsWith(':')
+          ? 'center'
+          : cell.endsWith(':')
+            ? 'right'
+            : 'left',
+      )
+    }
+  }
+  return undefined
+}
+
+/** A cell value is numeric — such columns right-align when unauthored. */
+const NUMERIC_CELL = /^[$€£¥]?-?\d[\d,.]*%?$/
+
+/**
+ * A box-drawn table grid, heavy-set so a table reads as a table and not as
+ * another card: `┏━┳━┓` top, the first row the header, `┝━┿━┥` under it,
+ * `┃` column walls, `┗━┻━┛` bottom. Columns size to their content (emoji
+ * count double) and shrink to fit the frame; cells word-wrap so a row grows
+ * tall (an authored `<br>` in a cell is a hard in-cell break, captured as
+ * `⏎`); alignment comes from the delimiter row, else numeric columns
+ * right-align. Columns that cannot keep a 3-cell floor drop off the right
+ * edge and report as `hiddenCols` (`… (+N cols)` is drawn by the pane).
  */
 export function drawTable(
   cells: readonly string[][],
   width: number,
   maxRows: number,
-): { lines: string[]; headerRows: number; hidden: number } {
-  if (cells.length === 0 || width < 6) return { lines: [], headerRows: 0, hidden: 0 }
-  const cols = cells.reduce((max, row) => Math.max(max, row.length), 0)
-  const grid = cells.map(row =>
-    Array.from({ length: cols }, (_, c) => row[c] ?? ''),
-  )
+  opts: { aligns?: readonly TableAlign[] } = {},
+): { lines: string[]; headerRows: number; hidden: number; hiddenCols: number } {
+  if (cells.length === 0 || width < 8) {
+    return { lines: [], headerRows: 0, hidden: 0, hiddenCols: 0 }
+  }
+  let cols = cells.reduce((max, row) => Math.max(max, row.length), 0)
+  let hiddenCols = 0
+  while (cols > 1 && 6 * cols + 1 > width) {
+    cols -= 1
+    hiddenCols += 1
+  }
+  const grid = cells.map(row => Array.from({ length: cols }, (_, c) => row[c] ?? ''))
   const widths = columnWidths(grid, width - 2)
+  const body = grid.slice(1)
+  const align: TableAlign[] = Array.from({ length: cols }, (_, c) => {
+    const spec = opts.aligns?.[c]
+    if (spec !== undefined && spec !== 'left') return spec
+    const numeric =
+      body.length > 0 && body.every(row => NUMERIC_CELL.test((row[c] ?? '').trim()))
+    return numeric ? 'right' : 'left'
+  })
+  const cellLines = (value: string, w: number): string[] => {
+    const segs = value.split('⏎').flatMap(seg => wrapLines(seg, Math.max(1, w), 3))
+    return segs.length > 0 ? segs : ['']
+  }
+  const pad = (value: string, w: number, a: TableAlign): string => {
+    const gap = Math.max(0, w - strWidth(value))
+    if (a === 'right') return `${' '.repeat(gap)}${value}`
+    if (a === 'center') {
+      const lead = Math.floor(gap / 2)
+      return `${' '.repeat(lead)}${value}${' '.repeat(gap - lead)}`
+    }
+    return `${value}${' '.repeat(gap)}`
+  }
   const rule = (joiner: string, left: string, right: string): string =>
-    `${left}${widths.map(w => hRule(w + 2)).join(joiner)}${right}`
-  const rowLine = (row: readonly string[]): string =>
-    `${GLYPHS.frame.v} ${widths
-      .map((w, c) => truncateCell(row[c] ?? '', w).padEnd(w))
-      .join(` ${GLYPHS.frame.v} `)} ${GLYPHS.frame.v}`
+    `${left}${widths.map(w => hHeavyRule(w + 2)).join(joiner)}${right}`
+  const rowLines = (row: readonly string[]): string[] => {
+    const perCell = row.map((cell, c) => cellLines(cell, widths[c]!))
+    const tall = Math.max(1, ...perCell.map(cell => cell.length))
+    return Array.from({ length: tall }, (_, k) =>
+      `${GLYPHS.frame.hv} ${perCell
+        .map((cell, c) => pad(cell[k] ?? '', widths[c]!, align[c]!))
+        .join(` ${GLYPHS.frame.hv} `)} ${GLYPHS.frame.hv}`,
+    )
+  }
+  const f = GLYPHS.frame
   const cap = Math.max(1, maxRows)
   const shown = grid.slice(0, cap)
   const hidden = Math.max(0, grid.length - shown.length)
-  const lines: string[] = [rule(GLYPHS.frame.teeDown, GLYPHS.frame.tl, GLYPHS.frame.tr)]
+  const lines: string[] = [rule(f.hteeDown, f.htl, f.htr)]
   shown.forEach((row, i) => {
-    if (i === 1) lines.push(rule(GLYPHS.frame.cross, GLYPHS.frame.teeLeft, GLYPHS.frame.teeRight))
-    lines.push(rowLine(row))
+    if (i === 1) lines.push(rule(f.hcross, f.hteeLeft, f.hteeRight))
+    lines.push(...rowLines(row))
   })
-  lines.push(rule(GLYPHS.frame.teeUp, GLYPHS.frame.bl, GLYPHS.frame.br))
-  return { lines, headerRows: 1, hidden }
+  lines.push(rule(f.hteeUp, f.hbl, f.hbr))
+  const headerLines = shown.length > 0 ? rowLines(shown[0]!).length : 0
+  return { lines, headerRows: headerLines, hidden, hiddenCols }
 }
 
 /**
@@ -1113,6 +1350,156 @@ export function lineCount(value: string): number {
 
 // --- the card: one presentation for every framed element ---
 
+/** Light per-language tint rules: where comments start, which words color. */
+type CodeLangStyle = { comment: RegExp | null; keywords: RegExp | null }
+const TS_KEYWORDS =
+  /\b(const|let|var|function|return|if|else|for|while|import|export|from|class|extends|new|async|await|type|interface|enum|this)\b/g
+const SHELL_KEYWORDS =
+  /\b(if|then|else|elif|fi|for|while|do|done|case|esac|function|echo|export|local|return|source)\b/g
+const EX_KEYWORDS =
+  /\b(def|defp|defmodule|defmacro|defstruct|defprotocol|defimpl|defoverridable|do|end|if|else|unless|case|cond|fn|alias|import|require|use|with)\b/g
+const CODE_LANGS: Record<string, CodeLangStyle> = {
+  ts: { comment: /\/\/|\/\*/, keywords: TS_KEYWORDS },
+  tsx: { comment: /\/\/|\/\*/, keywords: TS_KEYWORDS },
+  js: { comment: /\/\/|\/\*/, keywords: TS_KEYWORDS },
+  jsx: { comment: /\/\/|\/\*/, keywords: TS_KEYWORDS },
+  json: { comment: null, keywords: /\b(true|false|null)\b/g },
+  jsonc: { comment: /\/\/|\/\*/, keywords: /\b(true|false|null)\b/g },
+  yaml: { comment: /#/, keywords: null },
+  yml: { comment: /#/, keywords: null },
+  html: { comment: /<!--/, keywords: null },
+  xml: { comment: /<!--/, keywords: null },
+  bash: { comment: /#/, keywords: SHELL_KEYWORDS },
+  sh: { comment: /#/, keywords: SHELL_KEYWORDS },
+  shell: { comment: /#/, keywords: SHELL_KEYWORDS },
+  zsh: { comment: /#/, keywords: SHELL_KEYWORDS },
+  elixir: { comment: /#/, keywords: EX_KEYWORDS },
+  ex: { comment: /#/, keywords: EX_KEYWORDS },
+  exs: { comment: /#/, keywords: EX_KEYWORDS },
+}
+const CODE_STRING = /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`/g
+
+/**
+ * Tints one drawn code line: string literals green, language keywords blue,
+ * comments dim italic — regex-light, zero dependencies. Returns undefined
+ * when the line carries nothing tintable (the row then draws plainly dim).
+ */
+export function codeLineParts(value: string, lang: string): InlinePart[] | undefined {
+  const style = CODE_LANGS[lang.toLowerCase()]
+  if (style === undefined || value === '') return undefined
+  const parts: InlinePart[] = []
+  const push = (text: string, part: InlinePart): void => {
+    if (text !== '') parts.push({ ...part, text })
+  }
+  // `segment` runs between string literals: keywords color, the tail after
+  // the comment opener dims to end of line.
+  const walk = (segment: string): void => {
+    let cut = segment.length
+    if (style.comment !== null) {
+      const at = segment.search(style.comment)
+      if (at >= 0) cut = at
+    }
+    const pre = segment.slice(0, cut)
+    const comment = segment.slice(cut)
+    if (style.keywords !== null) {
+      let last = 0
+      for (const word of pre.matchAll(style.keywords)) {
+        push(pre.slice(last, word.index), {})
+        push(word[0]!, { color: 'blue' })
+        last = word.index + word[0]!.length
+      }
+      push(pre.slice(last), {})
+    } else {
+      push(pre, {})
+    }
+    if (comment !== '') push(comment, { dim: true, italic: true })
+  }
+  let last = 0
+  for (const str of value.matchAll(CODE_STRING)) {
+    walk(value.slice(last, str.index))
+    push(str[0]!, { color: 'green' })
+    last = str.index + str[0]!.length
+  }
+  walk(value.slice(last))
+  // Nothing tintable (no keyword/string/comment hit) → undefined: the row
+  // draws plainly dim instead of carrying one unstyled span.
+  if (parts.every(part => part.color === undefined && part.dim !== true && part.italic !== true)) {
+    return undefined
+  }
+  return parts.length > 0 ? parts : undefined
+}
+
+/**
+ * Parses the `mark="2,4-5"` line-highlight attribute into a 1-based line set.
+ */
+export function parseMarkAttr(value: string): ReadonlySet<number> {
+  const out = new Set<number>()
+  for (const part of value.split(',')) {
+    const spec = part.trim()
+    const range = /^(\d+)-(\d+)$/.exec(spec)
+    if (range !== null) {
+      const from = Number(range[1])
+      const to = Math.min(Number(range[2]), from + 500)
+      for (let n = from; n <= to; n++) out.add(n)
+    } else if (/^\d+$/.test(spec)) {
+      out.add(Number(spec))
+    }
+  }
+  return out
+}
+
+/**
+ * Verbatim code rows for the code card: dim line-number gutter (`12 │`),
+ * `▌` marking authored `mark="2,4-5"` lines (bold), `↪` continuations when
+ * `controls="wrap"`, `…` hard truncation otherwise, and the light syntax
+ * tint as row parts. Source lines are never reflowed or re-indented.
+ */
+export function codeRows(
+  body: string,
+  lang: string,
+  opts: { mark?: ReadonlySet<number>; wrap: boolean; width: number; maxRows: number },
+): { rows: StyledRow[]; hidden: number } {
+  const lines = body.split('\n')
+  const gw = Math.max(1, String(lines.length).length)
+  const width = Math.max(12, opts.width)
+  const avail = Math.max(4, width - gw - 4)
+  const rows: StyledRow[] = []
+  for (let i = 0; i < lines.length; i++) {
+    if (rows.length >= opts.maxRows) break
+    const marked = opts.mark?.has(i + 1) ?? false
+    const sep = marked ? '▌' : ' '
+    const head = `${String(i + 1).padStart(gw)}${sep}│ `
+    const line = lines[i]!.replace(/\t/g, '  ')
+    if (opts.wrap) {
+      const wrapped = wrapLines(line, Math.max(4, avail - 2), Math.max(1, opts.maxRows - rows.length))
+      wrapped.forEach((seg, k) => {
+        if (rows.length >= opts.maxRows) return
+        const prefix = k === 0 ? head : `${' '.repeat(gw)}  ↪ `
+        const parts = codeLineParts(seg, lang)
+        rows.push({
+          text: `${prefix}${seg}`,
+          bold: marked || undefined,
+          dim: parts === undefined ? true : false,
+          parts: parts === undefined ? undefined : [{ dim: true, text: prefix }, ...parts],
+        })
+      })
+    } else {
+      const cut = cpLen(line) > avail - 1
+      const shown = cut ? `${truncateCell(line, avail - 1)}${GLYPHS.more}` : line
+      const parts = codeLineParts(shown, lang)
+      rows.push({
+        text: `${head}${shown}`,
+        bold: marked || undefined,
+        dim: parts === undefined ? true : false,
+        parts: parts === undefined ? undefined : [{ dim: true, text: head }, ...parts],
+      })
+    }
+  }
+  return { rows, hidden: Math.max(0, lines.length - rows.length) }
+}
+
+// --- the card: one presentation for every framed element ---
+
 type CardOpts = {
   /** Outline key path (drives viewer.expanded + the toggle press). */
   key: string
@@ -1124,6 +1511,8 @@ type CardOpts = {
   body?: string
   /** Verbatim lines (code): no trim, no blank-collapse, hard-cut at the frame. */
   rawLines?: readonly string[]
+  /** Code card body: gutter, tint, mark lines, wrap/truncate (codeRows). */
+  code?: { body: string; lang: string; mark?: ReadonlySet<number>; wrap: boolean }
   /** Prebuilt body rows (procedure steps) drawn dim. */
   rows?: readonly string[]
   /** Captured blocks (headings bold + rule, quotes, prose). */
@@ -1204,6 +1593,13 @@ function cardBlock(ctx: RenderCtx, opts: CardOpts): RenderElement {
   let bodyRows: StyledRow[] = []
   if (opts.blocks !== undefined && opts.blocks.length > 0) {
     bodyRows = blocksRows(opts.blocks, Math.max(6, innerW - 4), 400)
+  } else if (opts.code !== undefined) {
+    bodyRows = codeRows(opts.code.body, opts.code.lang, {
+      mark: opts.code.mark,
+      wrap: opts.code.wrap,
+      width: Math.max(12, innerW - 4),
+      maxRows: 400,
+    }).rows
   } else if (opts.rawLines !== undefined) {
     for (const line of opts.rawLines) {
       if (bodyRows.length >= 400) break
@@ -1220,6 +1616,13 @@ function cardBlock(ctx: RenderCtx, opts: CardOpts): RenderElement {
   const fits = bodyRows.length <= room - (opts.footer !== undefined && opts.footer !== '' ? 1 : 0)
   const fitted = fits ? bodyRows : bodyRows.slice(0, Math.max(0, room - 1))
   const hiddenRows = bodyRows.length - fitted.length
+  // Inline-tag capture leaves pair delimiters in the row text (⟦…⟧, **…**,
+  // `…`, ~~…~~): split them into styled spans once, at draw time.
+  const styled: StyledRow[] = fitted.map(row => {
+    if (row.parts !== undefined) return row
+    const parts = splitInline(row.text)
+    return parts !== undefined ? { ...row, parts } : row
+  })
   const footer = [
     opts.footer !== undefined && opts.footer !== '' ? opts.footer : '',
     hiddenRows > 0 ? `${GLYPHS.more} (+${hiddenRows} rows)` : '',
@@ -1244,10 +1647,37 @@ function cardBlock(ctx: RenderCtx, opts: CardOpts): RenderElement {
     <Box flexDirection="column">
       {headerEl}
       {gutter.map((line, i) => {
-        const style = fitted[i] ?? { text: line }
+        const style = styled[i] ?? { text: line }
+        // Inline-tag / code-tint rows draw as styled spans; the frame chrome
+        // (left wall + right pad) wraps them as dim bookends so the parts row
+        // still aligns with its plain siblings. Plain rows keep one string.
+        const spans =
+          style.parts !== undefined && style.parts.length > 0
+            ? [
+                ...(narrow || line.length <= 2
+                  ? []
+                  : [h(ctx.el.Text, { key: 'cl', dimColor: true }, line.slice(0, 2))]),
+                ...style.parts.map((part, j) =>
+                  h(
+                    ctx.el.Text,
+                    {
+                      key: `p${j}`,
+                      color: part.color,
+                      bold: part.bold,
+                      italic: part.italic,
+                      dimColor: part.dim ?? false,
+                    },
+                    part.text,
+                  ),
+                ),
+                ...(narrow
+                  ? []
+                  : [h(ctx.el.Text, { key: 'cr', dimColor: true }, line.slice(2 + cpLen(style.text)))]),
+              ]
+            : line
         return (
           <Text key={`g${i}`} bold={style.bold} dimColor={style.dim ?? true}>
-            {line}
+            {spans}
           </Text>
         )
       })}
@@ -1262,12 +1692,32 @@ function cardBlock(ctx: RenderCtx, opts: CardOpts): RenderElement {
 
 // --- per-kind renderers ---
 
+/**
+ * Variant → glyph pairing: the emoji says the variant, the accent color the
+ * web renderer draws is carried by the note card's styled body. Unlisted
+ * variants fall back to the plain 📌 note glyph.
+ */
+const NOTE_VARIANT_GLYPH: Record<string, string> = {
+  info: 'ℹ️',
+  warning: '⚠️',
+  tip: '💡',
+  danger: '⛔',
+  success: '✅',
+  note: '📝',
+}
+
 const noteRenderer: ElementRenderer = (node, ctx) => {
   const content = node.content
   if (content?.kind !== 'note') return genericRenderer(node, ctx)
-  const warn =
-    (node.attrs['kind'] ?? node.attrs['data-kind'] ?? node.attrs['variant']) === 'warning'
-  const glyph = warn ? GLYPHS.kind.warning : GLYPHS.kind.note
+  const variant = (
+    node.attrs['kind'] ??
+    node.attrs['data-kind'] ??
+    node.attrs['variant'] ??
+    ''
+  )
+    .toString()
+    .toLowerCase()
+  const glyph = NOTE_VARIANT_GLYPH[variant] ?? GLYPHS.kind.note
   // Notes default open: the body shows inline inside its card frame; the
   // header IS the toggle (no separate hide row).
   return cardBlock(ctx, {
@@ -1351,23 +1801,37 @@ const tableRenderer: ElementRenderer = (node, ctx) => {
   const cells = tableCells(content.rows)
   if (cells.length === 0) return EMPTY(ctx)
   const cols = cells.reduce((max, row) => Math.max(max, row.length), 0)
-  const maxRows = Math.max(2, room - 1) // one row for the caption
-  const { lines, hidden } = drawTable(cells, Math.max(12, widthOf(ctx) - 2), maxRows)
-  spend(ctx, 1 + lines.length + (hidden > 0 ? 1 : 0))
+  const maxRows = Math.max(2, room - 2) // badge + notes row keep budget
+  const { lines, headerRows, hidden, hiddenCols } = drawTable(
+    cells,
+    Math.max(12, widthOf(ctx) - 2),
+    maxRows,
+    { aligns: tableAligns(content.rows) },
+  )
+  const caption =
+    content.caption !== undefined && content.caption !== ''
+      ? content.caption
+      : `table · ${cells.length} rows × ${cols} cols`
+  const notes = [
+    hidden > 0 ? `${GLYPHS.more} (+${hidden} rows)` : '',
+    hiddenCols > 0 ? `${GLYPHS.more} (+${hiddenCols} cols)` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+  spend(ctx, 1 + lines.length + (notes !== '' ? 1 : 0))
   return (
     <Box flexDirection="column">
-      <Text dimColor>
-        {pad(ctx, `${GLYPHS.kind.table} table · ${cells.length} rows × ${cols} cols`)}
-      </Text>
-      {/* lines[1] is the header row: emphasized; borders and body dim. */}
-      {lines.map((line, i) =>
-        i === 1
-          ? h(ctx.el.Text, { key: `tb${i}`, bold: true }, pad(ctx, line))
-          : h(ctx.el.Text, { key: `tb${i}`, dimColor: true }, pad(ctx, line)),
-      )}
-      {hidden > 0 ? (
-        <Text dimColor>{pad(ctx, `${GLYPHS.more} (+${hidden} rows)`)}</Text>
-      ) : null}
+      <Text dimColor>{pad(ctx, `${GLYPHS.kind.table} ${caption}`)}</Text>
+      {/* Header-row lines bold; walls and body dim. */}
+      {lines.map((line, i) => {
+        const headerLine = i >= 1 && i < 1 + headerRows
+        return h(
+          ctx.el.Text,
+          { key: `tb${i}`, bold: headerLine || undefined, dimColor: !headerLine },
+          pad(ctx, line),
+        )
+      })}
+      {notes !== '' ? <Text dimColor>{pad(ctx, notes)}</Text> : null}
     </Box>
   )
 }
@@ -1376,15 +1840,19 @@ const codeRenderer: ElementRenderer = (node, ctx) => {
   const content = node.content
   if (content?.kind !== 'code') return genericRenderer(node, ctx)
   const lang = sanitize(content.lang !== '' ? content.lang : (node.attrs['lang'] ?? ''))
-  // Code never reflows: lines keep their column layout and hard-cut at the
-  // frame edge (word mode is for prose only). C3 adds the dedicated code
-  // renderer (gutter, tinting, markers); the card frame is already here.
+  const file = sanitize(node.attrs['filename'] ?? node.attrs['data-filename'] ?? '')
+  const badge = `${GLYPHS.kind.code}${lang !== '' ? ` ${lang}` : ''}${file !== '' ? ` · ${file}` : ''}`
+  // Code never reflows: lines keep their column layout, wrap only when
+  // `controls="wrap"` (↪ continuations), else hard-cut with `…`. The gutter
+  // numbers dim, `mark="2,4-5"` lines carry ▌ + bold, entities decode.
+  const wrap = /\bwrap\b/.test(sanitize(node.attrs['controls'] ?? ''))
+  const mark = parseMarkAttr(sanitize(node.attrs['mark'] ?? ''))
   return cardBlock(ctx, {
     key: ctx.wkey,
-    badge: `${GLYPHS.kind.code}${lang !== '' ? ` ${lang}` : ''}`,
+    badge,
     open: ctx.viewer.expanded[ctx.wkey] ?? true,
     hint: `${content.body.split('\n').length} lines`,
-    rawLines: content.body.split('\n'),
+    code: { body: content.body, lang, mark, wrap },
   })
 }
 
