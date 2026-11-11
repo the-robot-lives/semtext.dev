@@ -3,7 +3,7 @@
 - stable: 0.9.6
 - latest: 0.9.6
 - this unversioned directory mirrors stable 0.9.6
-- last sync: 2026-11-11T03:44:02.000Z (epoch 1794368642), source ../../../../../npl-enhanced-content/.claude/worktrees/vendor-096/dist
+- last sync: 2026-11-11T06:28:39.000Z (epoch 1794378519), source ../../../../../npl-enhanced-content/.claude/worktrees/epic-merge/dist
 
 URL scheme: `/semtext/v<semver>/` is an immutable per-release snapshot;
 `/semtext/stable/` and `/semtext/latest/` are refreshable mirrors;

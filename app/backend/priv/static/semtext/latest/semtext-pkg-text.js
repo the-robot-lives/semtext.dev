@@ -38,17 +38,29 @@ function Q(e, s) {
           h.out(u.usage);
           return;
         }
-        return l().then((p) => {
-          if (!p) {
+        h.err(`loading ${e.name}…`);
+        const p = h.err, b = h.exit;
+        let g = !1, I = !1;
+        const S = () => {
+          h.err = p, h.exit = b, I || b(g ? 1 : 0);
+        };
+        return l().then((y) => {
+          if (!y) {
             h.err(`${u.name}: package chunk failed to load (${t})`), h.exit(1);
             return;
           }
-          const b = d();
-          if (b === void 0) {
+          const v = d();
+          if (v === void 0) {
             h.err(`${u.name}: package chunk ${t} does not provide it`), h.exit(70);
             return;
           }
-          return b.run(h);
+          return h.err = (w) => {
+            g = !0, p(w);
+          }, h.exit = (w) => {
+            I = !0, b(w);
+          }, Promise.resolve(v.run(h)).then(S, (w) => {
+            throw S(), w;
+          });
         });
       },
       complete(h) {
@@ -273,16 +285,16 @@ const j = {
   ]
 };
 Q(j, () => X("text"));
-const w = (e) => j.commands.find((s) => s.name === e).usage;
-function E(e) {
+const N = (e) => j.commands.find((s) => s.name === e).usage;
+function k(e) {
   if (e === "") return [];
   const s = e.split(`
 `);
   return e.endsWith(`
 `) ? s.slice(0, -1) : s;
 }
-const _ = new TextEncoder(), H = (e) => _.encode(e).length, S = (e) => [...e];
-function N(e, s) {
+const _ = new TextEncoder(), H = (e) => _.encode(e).length, $ = (e) => [...e];
+function E(e, s) {
   const t = [];
   let o = !1;
   for (const a of e) {
@@ -297,7 +309,7 @@ function N(e, s) {
   }
   return t;
 }
-function A(e, s, t, o = 1) {
+function M(e, s, t, o = 1) {
   const a = [];
   let i = !1;
   if (t.length === 0)
@@ -405,9 +417,9 @@ function se(e, s) {
 }
 const re = {
   name: "grep",
-  usage: w("grep"),
+  usage: N("grep"),
   run(e) {
-    const s = N(e.args, "ABC"), t = {
+    const s = E(e.args, "ABC"), t = {
       E: !1,
       F: !1,
       i: !1,
@@ -428,9 +440,9 @@ const re = {
       before: 0
     }, o = [];
     for (let m = 0; m < s.length; m++) {
-      const p = s[m], b = (y) => {
-        const M = s[++m], $ = Number(M);
-        return M === void 0 || M === "" || !Number.isInteger($) || $ < 0 ? (e.err(`grep: ${y}: invalid context length argument`), e.exit(2), !1) : (y === "A" ? t.after = $ : (y === "B" || (t.after = $), t.before = $), !0);
+      const p = s[m], b = (g) => {
+        const I = s[++m], S = Number(I);
+        return I === void 0 || I === "" || !Number.isInteger(S) || S < 0 ? (e.err(`grep: ${g}: invalid context length argument`), e.exit(2), !1) : (g === "A" ? t.after = S : (g === "B" || (t.after = S), t.before = S), !0);
       };
       if (p === "-E" || p === "--extended-regexp") t.E = !0;
       else if (p === "-F" || p === "--fixed-strings") t.F = !0;
@@ -502,69 +514,69 @@ const re = {
           e.err(`grep: ${m}: Is a directory`), n = !0;
           continue;
         }
-        const y = (M, $) => {
-          for (const g of [...M.children].sort((v, k) => v.name.localeCompare(k.name))) {
-            const v = `${$}/${g.name}`;
-            g.kind === "dir" ? y(g, v) : l.push({ label: v, text: g.content });
+        const g = (I, S) => {
+          for (const y of [...I.children].sort((v, w) => v.name.localeCompare(w.name))) {
+            const v = `${S}/${y.name}`;
+            y.kind === "dir" ? g(y, v) : l.push({ label: v, text: y.content });
           }
         };
-        y(b, m.replace(/\/+$/, ""));
+        g(b, m.replace(/\/+$/, ""));
       }
     const u = l.length > 1 || l.some((m) => m.label !== null);
     let d = !1;
     const h = new RegExp(f.source, f.flags + "g");
     for (const m of l) {
-      const p = E(m.text), b = p.map((g) => {
-        const v = f.test(g);
+      const p = k(m.text), b = p.map((y) => {
+        const v = f.test(y);
         return t.v ? !v : v;
-      }), y = b.some(Boolean);
-      if (y && (d = !0), t.l || t.L) {
-        t.l === y && e.out(m.label ?? "(standard input)");
+      }), g = b.some(Boolean);
+      if (g && (d = !0), t.l || t.L) {
+        t.l === g && e.out(m.label ?? "(standard input)");
         continue;
       }
       if (t.c) {
-        const g = b.filter(Boolean).length;
-        e.out(u && m.label !== null ? `${m.label}:${g}` : String(g));
+        const y = b.filter(Boolean).length;
+        e.out(u && m.label !== null ? `${m.label}:${y}` : String(y));
         continue;
       }
-      const M = (g, v) => {
-        const k = [];
-        if (u && m.label !== null && k.push(c ? te + m.label + R : m.label), t.n) {
-          const P = String(g + 1);
-          k.push(c ? (v === "match" ? ee : B) + P + R : P);
+      const I = (y, v) => {
+        const w = [];
+        if (u && m.label !== null && w.push(c ? te + m.label + R : m.label), t.n) {
+          const P = String(y + 1);
+          w.push(c ? (v === "match" ? ee : B) + P + R : P);
         }
-        const I = v === "match" ? ":" : "-";
-        return k.length === 0 ? "" : k.join(I) + I;
+        const A = v === "match" ? ":" : "-";
+        return w.length === 0 ? "" : w.join(A) + A;
       };
       if (t.o && !t.v) {
-        for (let g = 0; g < p.length; g++) {
-          if (!b[g]) continue;
+        for (let y = 0; y < p.length; y++) {
+          if (!b[y]) continue;
           h.lastIndex = 0;
           let v;
-          for (; (v = h.exec(p[g])) !== null; )
-            e.out(M(g, "match") + (c ? F + v[0] + R : v[0])), v[0] === "" && h.lastIndex++;
+          for (; (v = h.exec(p[y])) !== null; )
+            e.out(I(y, "match") + (c ? F + v[0] + R : v[0])), v[0] === "" && h.lastIndex++;
         }
         continue;
       }
       if (t.o) continue;
-      const $ = [];
-      for (let g = 0; g < p.length; g++) {
-        if (!b[g]) continue;
-        const v = Math.max(0, g - t.before), k = Math.min(p.length - 1, g + t.after), I = $[$.length - 1], P = I === void 0 ? -1 : I[I.length - 1][0];
-        if (I !== void 0 && v <= P + 1)
-          for (let T = P + 1; T <= k; T++)
-            I.push([T, b[T] ? "match" : "context"]);
+      const S = [];
+      for (let y = 0; y < p.length; y++) {
+        if (!b[y]) continue;
+        const v = Math.max(0, y - t.before), w = Math.min(p.length - 1, y + t.after), A = S[S.length - 1], P = A === void 0 ? -1 : A[A.length - 1][0];
+        if (A !== void 0 && v <= P + 1)
+          for (let T = P + 1; T <= w; T++)
+            A.push([T, b[T] ? "match" : "context"]);
         else {
           const T = [];
-          for (let q = v; q <= k; q++) T.push([q, b[q] ? "match" : "context"]);
-          $.push(T);
+          for (let q = v; q <= w; q++) T.push([q, b[q] ? "match" : "context"]);
+          S.push(T);
         }
       }
-      for (let g = 0; g < $.length; g++) {
-        g > 0 && e.out(c ? B + "--" + R : "--");
-        for (const [v, k] of $[g]) {
-          const I = p[v], P = c && k === "match" ? I.replace(h, F + "$&" + R) : I;
-          e.out(M(v, k) + P);
+      for (let y = 0; y < S.length; y++) {
+        y > 0 && e.out(c ? B + "--" + R : "--");
+        for (const [v, w] of S[y]) {
+          const A = p[v], P = c && w === "match" ? A.replace(h, F + "$&" + R) : A;
+          e.out(I(v, w) + P);
         }
       }
     }
@@ -601,7 +613,7 @@ function W(e, s, t) {
     const f = Math.min(s.to, o.length) - 1;
     i = o.slice(a, f + 1).join(t ?? " ");
   }
-  return s.fromChar !== void 0 && s.fromChar > 0 ? i = S(i).slice(s.fromChar - 1).join("") : s.toChar !== void 0 && s.toChar > 0 && s.to !== void 0 && s.to === s.from && (i = S(i).slice(0, s.toChar).join("")), i;
+  return s.fromChar !== void 0 && s.fromChar > 0 ? i = $(i).slice(s.fromChar - 1).join("") : s.toChar !== void 0 && s.toChar > 0 && s.to !== void 0 && s.to === s.from && (i = $(i).slice(0, s.toChar).join("")), i;
 }
 const le = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/;
 function G(e) {
@@ -644,9 +656,9 @@ function O(e, s, t) {
 }
 const fe = {
   name: "sort",
-  usage: w("sort"),
+  usage: N("sort"),
   run(e) {
-    const s = N(e.args, "kt"), t = { numeric: !1, reverse: !1, unique: !1, human: !1, version: !1, tab: null, keys: [] }, o = [];
+    const s = E(e.args, "kt"), t = { numeric: !1, reverse: !1, unique: !1, human: !1, version: !1, tab: null, keys: [] }, o = [];
     for (let n = 0; n < s.length; n++) {
       const u = s[n];
       if (u === "-n") t.numeric = !0;
@@ -661,7 +673,7 @@ const fe = {
           return;
         }
         const h = C(d);
-        if (S(h).length !== 1) {
+        if ($(h).length !== 1) {
           e.err("sort: multi-character tab"), e.exit(2);
           return;
         }
@@ -689,10 +701,10 @@ const fe = {
         } else o.push(u);
       }
     }
-    const a = A(e, "sort", o, 2);
+    const a = M(e, "sort", o, 2);
     if (a === null) return;
     const i = [];
-    for (const n of a) i.push(...E(n.text));
+    for (const n of a) i.push(...k(n.text));
     const f = t.numeric ? "numeric" : t.human ? "human" : t.version ? "version" : "plain", c = i.map((n) => ({
       line: n,
       keys: t.keys.map((u) => W(n, u, t.tab))
@@ -723,9 +735,9 @@ const fe = {
   }
 }, ce = {
   name: "uniq",
-  usage: w("uniq"),
+  usage: N("uniq"),
   run(e) {
-    const s = N(e.args, ""), t = { c: !1, d: !1, u: !1, i: !1 }, o = [];
+    const s = E(e.args, ""), t = { c: !1, d: !1, u: !1, i: !1 }, o = [];
     for (const r of s)
       if (r === "-c" || r === "--count") t.c = !0;
       else if (r === "-d" || r === "--repeated") t.d = !0;
@@ -741,10 +753,10 @@ const fe = {
           return;
         } else o.push(r);
       }
-    const a = A(e, "uniq", o);
+    const a = M(e, "uniq", o);
     if (a === null) return;
     const i = [];
-    for (const r of a) i.push(...E(r.text));
+    for (const r of a) i.push(...k(r.text));
     const f = (r) => t.i ? r.toLowerCase() : r;
     let c = 0;
     for (; c < i.length; ) {
@@ -755,9 +767,9 @@ const fe = {
   }
 }, de = {
   name: "wc",
-  usage: w("wc"),
+  usage: N("wc"),
   run(e) {
-    const s = N(e.args, ""), t = { l: !1, w: !1, c: !1, m: !1 }, o = [];
+    const s = E(e.args, ""), t = { l: !1, w: !1, c: !1, m: !1 }, o = [];
     for (const r of s)
       if (r !== "--")
         if (r.startsWith("--")) {
@@ -774,14 +786,14 @@ const fe = {
               return;
             }
         else o.push(r);
-    const i = t.l || t.w || t.c || t.m ? ["l", "w", "m", "c"].filter((r) => t[r]) : ["l", "w", "c"], f = A(e, "wc", o);
+    const i = t.l || t.w || t.c || t.m ? ["l", "w", "m", "c"].filter((r) => t[r]) : ["l", "w", "c"], f = M(e, "wc", o);
     if (f === null) return;
     const c = { l: 0, w: 0, m: 0, c: 0 };
     for (const r of f) {
       const l = {
-        l: E(r.text).length,
+        l: k(r.text).length,
         w: r.text.trim() === "" ? 0 : r.text.trim().split(/\s+/).length,
-        m: S(r.text).length,
+        m: $(r.text).length,
         c: H(r.text)
       };
       c.l += l.l, c.w += l.w, c.m += l.m, c.c += l.c;
@@ -804,7 +816,7 @@ function U(e, s, t) {
 function K(e) {
   const s = e ? "tail" : "head";
   return (t) => {
-    const o = N(t.args, "nc");
+    const o = E(t.args, "nc");
     let a = 10, i = null, f = !1, c = !1;
     const r = [];
     for (let n = 0; n < o.length; n++) {
@@ -813,8 +825,8 @@ function K(e) {
           return t.err(`${s}: option -${h === "lines" ? "n" : "c"} requires an argument`), t.exit(1), null;
         let p = m, b = !1;
         e && p.startsWith("+") ? (b = !0, p = p.slice(1)) : !e && p.startsWith("+") && (p = p.slice(1));
-        const y = U(p, s, h);
-        return typeof y == "string" ? (t.err(y), t.exit(1), null) : (h === "lines" ? (a = y, f = b) : (i = y, c = b), y);
+        const g = U(p, s, h);
+        return typeof g == "string" ? (t.err(g), t.exit(1), null) : (h === "lines" ? (a = g, f = b) : (i = g, c = b), g);
       };
       if (u === "-n") {
         if (d("lines", o[++n]) === null) return;
@@ -838,7 +850,7 @@ function K(e) {
         } else r.push(u);
       }
     }
-    const l = A(t, s, r);
+    const l = M(t, s, r);
     if (l !== null)
       for (let n = 0; n < l.length; n++) {
         const u = l[n];
@@ -849,16 +861,16 @@ function K(e) {
 `)) t.out(p);
           continue;
         }
-        const d = E(u.text), h = e ? f ? d.slice(Math.max(0, a - 1)) : a === 0 ? [] : d.slice(-a) : d.slice(0, a);
+        const d = k(u.text), h = e ? f ? d.slice(Math.max(0, a - 1)) : a === 0 ? [] : d.slice(-a) : d.slice(0, a);
         for (const m of h) t.out(m);
       }
   };
 }
-const he = { name: "head", usage: w("head"), run: K(!1) }, pe = { name: "tail", usage: w("tail"), run: K(!0) }, me = {
+const he = { name: "head", usage: N("head"), run: K(!1) }, pe = { name: "tail", usage: N("tail"), run: K(!0) }, me = {
   name: "cut",
-  usage: w("cut"),
+  usage: N("cut"),
   run(e) {
-    const s = N(e.args, "dfc");
+    const s = E(e.args, "dfc");
     let t = "	", o = null, a = null, i = !1;
     const f = [];
     for (let n = 0; n < s.length; n++) {
@@ -869,7 +881,7 @@ const he = { name: "head", usage: w("head"), run: K(!1) }, pe = { name: "tail", 
           e.err("cut: option -d requires an argument"), e.exit(1);
           return;
         }
-        if (i = !0, t = C(d), S(t).length !== 1) {
+        if (i = !0, t = C(d), $(t).length !== 1) {
           e.err("cut: the delimiter must be a single character"), e.exit(1);
           return;
         }
@@ -913,10 +925,10 @@ const he = { name: "head", usage: w("head"), run: K(!1) }, pe = { name: "tail", 
       e.err(`cut: invalid range: ${r}`), e.exit(1);
       return;
     }
-    const l = A(e, "cut", f);
+    const l = M(e, "cut", f);
     if (l !== null)
       for (const n of l)
-        for (const u of E(n.text))
+        for (const u of k(n.text))
           if (o !== null) {
             if (!u.includes(t)) {
               e.out(u);
@@ -927,7 +939,7 @@ const he = { name: "head", usage: w("head"), run: K(!1) }, pe = { name: "tail", 
               z(r, m) && h.push(d[m - 1]);
             e.out(h.join(t));
           } else {
-            const d = S(u);
+            const d = $(u);
             let h = "";
             for (let m = 1; m <= d.length; m++)
               z(r, m) && (h += d[m - 1]);
@@ -980,9 +992,9 @@ function V(e) {
 }
 const ye = {
   name: "tr",
-  usage: w("tr"),
+  usage: N("tr"),
   run(e) {
-    const s = N(e.args, ""), t = { d: !1, s: !1, c: !1 }, o = [];
+    const s = E(e.args, ""), t = { d: !1, s: !1, c: !1 }, o = [];
     for (const n of s)
       if (n === "-d") t.d = !0;
       else if (n === "-s" || n === "--squeeze-repeats") t.s = !0;
@@ -1041,10 +1053,10 @@ const ye = {
         c.set(i[n], f[Math.min(n, f.length - 1)]);
     const r = (n) => t.c ? !i.includes(n) : i.includes(n);
     let l = e.stdin;
-    if (t.d ? l = S(l).filter((n) => !r(n)).join("") : l = S(l).map((n) => c.get(n) ?? n).join(""), t.s) {
+    if (t.d ? l = $(l).filter((n) => !r(n)).join("") : l = $(l).map((n) => c.get(n) ?? n).join(""), t.s) {
       const n = (d) => t.d || o.length < 2 || t.c ? r(d) : f.includes(d);
       let u = "";
-      for (const d of S(l))
+      for (const d of $(l))
         d === u[u.length - 1] && n(d) || (u += d);
       l = u;
     }
@@ -1054,9 +1066,9 @@ const ye = {
   }
 }, be = {
   name: "tee",
-  usage: w("tee"),
+  usage: N("tee"),
   run(e) {
-    const s = N(e.args, "");
+    const s = E(e.args, "");
     let t = !1;
     const o = [];
     for (const i of s)
@@ -1075,7 +1087,7 @@ const ye = {
       e.err("tee: no input (pipe one in)"), e.exit(1);
       return;
     }
-    for (const i of E(e.stdin)) e.out(i);
+    for (const i of k(e.stdin)) e.out(i);
     let a = !1;
     for (const i of o) {
       const f = e.vfs.resolve(e.state.cwd, i), c = e.vfs.backendFor(f);
@@ -1099,9 +1111,9 @@ const ye = {
   }
 }, ve = {
   name: "xargs",
-  usage: w("xargs"),
+  usage: N("xargs"),
   run(e) {
-    const s = N(e.args, "nI"), t = { zero: !1, max: null, repl: null, noRunIfEmpty: !1 }, o = [];
+    const s = E(e.args, "nI"), t = { zero: !1, max: null, repl: null, noRunIfEmpty: !1 }, o = [];
     let a = !1;
     for (let d = 0; d < s.length; d++) {
       const h = s[d];
@@ -1152,19 +1164,19 @@ const ye = {
         state: e.state,
         color: !1,
         commands: e.commands,
-        out: (y) => e.out(y),
-        err: (y) => {
-          m++, e.err(y);
+        out: (g) => e.out(g),
+        err: (g) => {
+          m++, e.err(g);
         },
-        emit: (y) => e.emit(y),
-        exit: (y) => {
-          h = y;
+        emit: (g) => e.emit(g),
+        exit: (g) => {
+          h = g;
         }
       };
       try {
         l.run(p);
-      } catch (y) {
-        e.err(`xargs: ${c}: ${y instanceof Error ? y.message : String(y)}`), h = 1;
+      } catch (g) {
+        e.err(`xargs: ${c}: ${g instanceof Error ? g.message : String(g)}`), h = 1;
       }
       const b = h !== 0 ? h : m > 0 ? 1 : 0;
       b >= 1 && b <= 125 && (n = !0);
@@ -1184,9 +1196,9 @@ const ye = {
   }
 }, we = {
   name: "nl",
-  usage: w("nl"),
+  usage: N("nl"),
   run(e) {
-    const s = N(e.args, "bws");
+    const s = E(e.args, "bws");
     let t = "t", o = 6, a = "	";
     const i = [];
     for (let r = 0; r < s.length; r++) {
@@ -1217,20 +1229,20 @@ const ye = {
         return;
       } else i.push(l);
     }
-    const f = A(e, "nl", i);
+    const f = M(e, "nl", i);
     if (f === null) return;
     let c = 0;
     for (const r of f)
-      for (const l of E(r.text)) {
+      for (const l of k(r.text)) {
         const n = t === "a" || l !== "";
         n && c++, e.out(n ? `${String(c).padStart(o)}${a}${l}` : l);
       }
   }
 }, Se = {
   name: "rev",
-  usage: w("rev"),
+  usage: N("rev"),
   run(e) {
-    const s = N(e.args, ""), t = [];
+    const s = E(e.args, ""), t = [];
     for (const a of s) {
       if (a.startsWith("-") && a !== "-" && a !== "--") {
         e.err(`rev: invalid option -- '${a[1]}'`), e.exit(2);
@@ -1238,17 +1250,17 @@ const ye = {
       }
       a !== "--" && t.push(a);
     }
-    const o = A(e, "rev", t);
+    const o = M(e, "rev", t);
     if (o !== null)
       for (const a of o)
-        for (const i of E(a.text))
-          e.out(S(i).reverse().join(""));
+        for (const i of k(a.text))
+          e.out($(i).reverse().join(""));
   }
 }, Ne = {
   name: "paste",
-  usage: w("paste"),
+  usage: N("paste"),
   run(e) {
-    const s = N(e.args, "d");
+    const s = E(e.args, "d");
     let t = ["	"], o = !1;
     const a = [];
     for (let l = 0; l < s.length; l++) {
@@ -1259,7 +1271,7 @@ const ye = {
           e.err("paste: option -d requires an argument"), e.exit(1);
           return;
         }
-        t = S(C(u)), t.length === 0 && (t = ["	"]);
+        t = $(C(u)), t.length === 0 && (t = ["	"]);
       } else if (n === "-s" || n === "--serial") o = !0;
       else {
         if (n === "--") continue;
@@ -1277,7 +1289,7 @@ const ye = {
       return;
     }
     const i = [], f = (l) => {
-      i.push(E(l));
+      i.push(k(l));
     };
     if (a.length === 0)
       f(e.stdin);
@@ -1314,9 +1326,9 @@ const ye = {
   }
 }, $e = {
   name: "column",
-  usage: w("column"),
+  usage: N("column"),
   run(e) {
-    const s = N(e.args, "");
+    const s = E(e.args, "");
     let t = !1;
     const o = [];
     for (const r of s)
@@ -1332,11 +1344,11 @@ const ye = {
       e.err("column: only -t is supported in this emulation"), e.exit(2);
       return;
     }
-    const a = A(e, "column", o);
+    const a = M(e, "column", o);
     if (a === null) return;
     const i = [];
     for (const r of a)
-      for (const l of E(r.text)) {
+      for (const l of k(r.text)) {
         const n = l.trim();
         i.push(n === "" ? [] : n.split(/\s+/));
       }
@@ -1344,7 +1356,7 @@ const ye = {
     for (let r = 0; r < f; r++) {
       let l = 0;
       for (const n of i)
-        n[r] !== void 0 && (l = Math.max(l, S(n[r]).length));
+        n[r] !== void 0 && (l = Math.max(l, $(n[r]).length));
       c.push(l);
     }
     for (const r of i) {
@@ -1355,16 +1367,16 @@ const ye = {
       let l = "";
       for (let n = 0; n < r.length; n++) {
         const u = r[n];
-        l += u, n < r.length - 1 && (l += " ".repeat(Math.max(2, c[n] - S(u).length + 2)));
+        l += u, n < r.length - 1 && (l += " ".repeat(Math.max(2, c[n] - $(u).length + 2)));
       }
       e.out(l);
     }
   }
 }, Ee = {
   name: "fold",
-  usage: w("fold"),
+  usage: N("fold"),
   run(e) {
-    const s = N(e.args, "w");
+    const s = E(e.args, "w");
     let t = 80, o = !1;
     const a = [];
     for (let f = 0; f < s.length; f++) {
@@ -1382,11 +1394,11 @@ const ye = {
         return;
       } else a.push(c);
     }
-    const i = A(e, "fold", a);
+    const i = M(e, "fold", a);
     if (i !== null)
       for (const f of i)
-        for (const c of E(f.text)) {
-          const r = S(c);
+        for (const c of k(f.text)) {
+          const r = $(c);
           let l = 0;
           for (; r.length - l > t; ) {
             let n = l + t;
@@ -1403,9 +1415,9 @@ const ye = {
   }
 }, ke = {
   name: "expand",
-  usage: w("expand"),
+  usage: N("expand"),
   run(e) {
-    const s = N(e.args, "t");
+    const s = E(e.args, "t");
     let t = null;
     const o = [], a = (c) => {
       const l = c.split(/[,\s]+/).filter((n) => n !== "").map((n) => Number(n));
@@ -1438,7 +1450,7 @@ const ye = {
         } else o.push(r);
       }
     }
-    const i = A(e, "expand", o);
+    const i = M(e, "expand", o);
     if (i === null) return;
     const f = (c) => {
       if (t === null || t.length === 1) {
@@ -1451,9 +1463,9 @@ const ye = {
       return r + (Math.floor((c - r) / l) + 1) * l;
     };
     for (const c of i)
-      for (const r of E(c.text)) {
+      for (const r of k(c.text)) {
         let l = "", n = 0;
-        for (const u of S(r))
+        for (const u of $(r))
           if (u === "	") {
             const d = f(n);
             l += " ".repeat(Math.max(1, d - n)), n = d;
