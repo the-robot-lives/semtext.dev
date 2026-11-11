@@ -17,7 +17,7 @@
 <sem-section>
 <h2>1 The row model</h2>
 <p>The pane is a *file tree with inline content*. Every parsed element owns one outline row: tree prefix (├── / └── with │ spines), a kind glyph from the fixed vocabulary, a label (named attr else tag, plus #id), and a dim child count. Under that row, the node's content renders inline, indented by the tree prefix with the branch glyphs blanked — spines stay so nesting stays readable.</p>
-<p>Rows are clickable everywhere: in the overviews they focus the section; inside focus the nav row moves prev/next. The current overview mode (compact outline vs expanded) is remembered and restored by ◂ outline.</p>
+<p>Rows are clickable everywhere: in the overviews they focus the section; inside focus the nav row moves prev/next. The focused row is marked by the dedicated ❯ in the leftmost column — ▸/▾ stay toggle/nav glyphs and never mean selection. The current overview mode (compact outline vs expanded) is remembered and restored by ◂ outline.</p>
 </sem-section>
 
 <sem-section>
@@ -27,7 +27,7 @@
 <sem-property key="Headings (§)">Semantically a section marker: row only, never a body. sem-section/summary/tldr draw the heading row and their children plan below — a heading never consumes or hides anything.</sem-property>
 <sem-property key="Prose and flow">Unknown tags and generic containers draw their captured p/heading blocks (## dim marker, ▌ for quotes) or, for childless leaves, their own text — dim, wrapped, indented. Text is never dropped just because a tag has no renderer.</sem-property>
 <sem-property key="Cards (collapsible)">note/reveal/facts/views/properties/npl draw a toggle row when shut (glyph + summary or head + ▸) and their body when open. Default open (v0.4+); an authored collapsed attribute keeps a card shut; an explicit hide always wins and survives expand-all/collapse-all.</sem-property>
-<sem-property key="Friction blocks (NPL)">Same card renderer for the whole npl family plus the four Trinity markers (name uppercased, glyph per tag). Body framed, dim, under a header badge carrying the first three attributes. Flat siblings by parser contract — one card per phase item, never nested.</sem-property>
+<sem-property key="Friction blocks (NPL)">Same card renderer for the whole npl family plus the four Trinity markers (name uppercased, glyph per tag). Body framed, dim, under a header badge carrying the first three attributes. Flat siblings by parser contract — one card per phase item, never nested. The same-name implied-end rule also covers the loose leaves sem-note/sem-step/sem-fact, so back-to-back unclosed items stay siblings.</sem-property>
 <sem-property key="Tables">Caption row (▦ rows × cols), then a box-drawn table: ┌─┬─┐ top, bold header, ├─┼─┤, dim body, └─┴─┘. Markdown delimiter rows are separator decoration, never data. Columns shrink from the widest until the frame fits the width; cells truncate with ….</sem-property>
 <sem-property key="Code">Framed body with the ⌨ lang badge top-right. Content dim, tab-expanded, capped at 40 lines with an explicit (+N lines) footer. Raw text only — code never nests elements.</sem-property>
 <sem-property key="Procedures">Framed list of numbered steps (1 → text), title in the badge, overflow as (+N steps). One line per step, truncated to width.</sem-property>
@@ -58,7 +58,7 @@
 | --- | --- |
 | Kinds | 📌 note · ⚠ warning · 🧭 procedure · → step · ▦ table · ⌨ code · ❓ facts · 🃏 flashcards · 💡 reveal · 🔑 property · 🗂 properties · 👁 views · ◦ view · 📖 reader · ◫ source · § section · ❍ fact · · misc |
 | NPL | ◆ mindread · ◇ thought · ≈ hormones · → intent · ↗ ref · ▣ block · ▲ wedge · ▼ shadow · ✕ critic · ◎ weego · Ⓐ agent · ➤ directive/poa · ☰ section · ◈ rubric · ⚑ critique · ❝ declaration · ✦ example · ⚐ flag(s) · ▧ mode · ⋇ mood · ◍ vos · ⬢ artifact · ⋯ cot |
-| Chrome | ├─└│ tree · ▸▾ toggles · ▌ quote · ▢ option · ▰▱ meter · ✓ ✗ verdicts · … overflow · ● active · ◂▸ nav · › breadcrumb |
+| Chrome | ├─└│ tree · ▸▾ toggles · ❯ selected · ▌ quote · ▢ option · ▰▱ meter · ✓ ✗ verdicts · … overflow · ● active · ◂▸ nav · › breadcrumb |
 </sem-table>
 </sem-section>
 
