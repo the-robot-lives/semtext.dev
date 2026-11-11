@@ -2,12 +2,12 @@
 <html lang="en" data-sem-theme="minimal-tech-light">
 <head>
 <meta charset="utf-8">
-<title>SemText mod render reference — v0.6.1 vocabulary audit</title>
+<title>SemText mod render reference — v0.7.0 vocabulary audit</title>
 </head>
 <body>
 <sem-enhanced-document>
 
-<sem-tldr>*Every tag the semtext pane knows, how each one parses, glyphs, and renders across the view modes, plus the defect ledger.* Reference for the Claude Code pane at mods/semtext (v0.6.1). Screens live in tui-screens.html; design rationale in tui-design.html.</sem-tldr>
+<sem-tldr>*Every tag the semtext pane knows, how each one parses, glyphs, and renders across the view modes, plus the defect ledger.* Reference for the Claude Code pane at mods/semtext (v0.7.0). Screens live in tui-screens.html; design rationale in tui-design.html.</sem-tldr>
 
 <sem-section>
 <h2>1 How the pane reads a document</h2>
@@ -24,17 +24,18 @@
 <sem-table label="Render registry — sem-* families">
 | Tags | Glyph | Expanded view | Default | Children |
 | --- | --- | --- | --- | --- |
-| sem-note | 📌 (⚠ when kind/variant=warning) | card — framed body; header row is the toggle (no hide row since v0.6) | open | consumed (drawn inside the frame) |
+| sem-note | 📌 (ℹ️ ⚠️ 💡 ⛔ ✅ 📝 by kind/variant) | card — framed body; header row is the toggle (no hide row since v0.6) | open | consumed (drawn inside the frame) |
 | sem-reveal sem-detail sem-details | 💡 | card — summary row; body as dim wrapped rows when open | open unless collapsed attr | consumed |
 | sem-facts sem-faq sem-faqs sem-question | ❓ (🃏 for flashcards) | list: inline item lines; quiz/flashcards: run button | list unless view-as | consumed (sem-fact items) |
-| sem-table | ▦ | caption row then box-drawn table, header bold, body dim | always drawn | consumed (raw rows) |
-| sem-code sem-md | ⌨ + lang badge | framed body, badge top-right, tabs expanded | always drawn | consumed (raw body) |
+| sem-table | ▦ | heavy box-drawn grid (v0.7.0) — caption as header, content-width columns, delimiter/numeric alignment, counted row/col overflow | always drawn | consumed (rows + caption) |
+| sem-code sem-md | ⌨ lang · file | code card (v0.7.0) — dim line-number gutter, keyword/string/comment tint, verbatim lines, wrap ↪ or … cut, mark ▌ | always drawn | consumed (entity-decoded body) |
 | sem-properties | 🗂 | head row then 🔑 key ──▸ value aligned rows | always drawn | consumed (sem-property) |
 | sem-views | 👁 | tab row [● A │ B] then active view body | captured initial | consumed (sem-view) |
 | sem-procedure sem-howto sem-runbook sem-workflow sem-plan sem-tsg sem-tsgs | 🧭 | framed numbered steps (→), title badge; overflow (+N steps) | always drawn | consumed (direct sem-step) |
 | sem-step | → | one text row per step | always drawn | leaf only |
 | sem-fact | ❍ | one text row | always drawn | leaf only |
 | HTML lists (ul/ol/li/dl/dt/dd) | (structure) | list blocks inside the containing card: •/◦/▪ bullets by depth, ordered 1./a./i. labels (start/type attrs, right-aligned 3-char gutter), ☐/☑ tasks, bold dl terms + indented defs; rows hang-indent | always drawn | captured as list blocks (v0.6.1) |
+| HTML inline tags (strong/b, em/i, code, del/s/strike, mark, highlight, span/div.sem-highlight) | (inline) | styling inside prose lines: bold / italic / strike-dim plus color, visible paired delimiters (⟦⟧ highlight family, backticks for code — v0.7.0); unpaired delimiters stay literal; the element form of sem-highlight draws its own generic card | always drawn | leaf text only |
 | sem-source sem-reader sem-kb sem-data-source sem-reference sem-references sem-api-call | ◫ / 📖 | framed body, badge = glyph + tag name | always drawn | consumed (flattened body) |
 | sem-section sem-summary sem-tldr sem-conclusion | § | card — title in the frame header (bold), blocks and children as nested frames inside | open | consumed (drawn inside the frame) |
 | npl-mindread npl-thought npl-block npl-ref npl-hormones npl-intent npl-agent npl-directive npl-section npl-rubric npl-critique npl-declaration npl-example npl-flag npl-flags npl-mode npl-mood npl-poa npl-vos npl-artifact npl-cot | per-tag (◆ ◇ ▣ ↗ ≈ → Ⓐ ➤ ☰ ◈ ⚑ ❝ ✦ ⚐ ▧ ⋇ ➤ ◍ ⬢ ⋯) | card — framed body of own text; attrs shown in header (first 3) | open unless collapsed attr | consumed (drawn inside the frame) |
@@ -42,7 +43,7 @@
 | anything else (unknown tags, sem-enhanced-document, sem-break, sem-list, …) | · | flow — row plus captured blocks or leaf text; never dropped | always drawn | planned |
 </sem-table>
 
-<sem-reveal summary="Capture rules — when a card has real content vs falls back">Content capture happens per tag in contentFor: sem-facts needs at least one sem-fact child; sem-reveal needs non-empty body; sem-note captures whenever its body is non-empty (v0.6 — every note is a card; the collapsed attribute only biases the default toggle state); sem-views needs a sem-view child; sem-properties needs a sem-property child; sem-table takes raw pipe/tab/plain rows capped at 10 (markdown delimiter rows are dropped since v0.5); sem-code takes the raw body capped at 40 lines. A renderer that finds no captured content falls back to a dim head row inside a frame — text stays visible either way.</sem-reveal>
+<sem-reveal summary="Capture rules — when a card has real content vs falls back">Content capture happens per tag in contentFor: sem-facts needs at least one sem-fact child; sem-reveal needs non-empty body; sem-note captures whenever its body is non-empty (v0.6 — every note is a card; the collapsed attribute only biases the default toggle state); sem-views needs a sem-view child; sem-properties needs a sem-property child; sem-table takes raw pipe/tab/plain rows capped at 10 (markdown delimiter rows are dropped since v0.5) plus the authored caption as the header; sem-code takes the raw body capped at 40 lines, HTML-entity decoded since v0.7.0. A renderer that finds no captured content falls back to a dim head row inside a frame — text stays visible either way.</sem-reveal>
 
 <sem-reveal summary="Trinity marker notes — what actually arrives in a response">Real answers emit the friction phase as markdown-escaped, unclosed markers: &lt;WEDGE&gt; body … &lt;SHADOW&gt; body … The parser lowercases names, tolerates the backslash-escaped form (the &gt; sits inside the tag src, the escape backslash is stripped from captured bodies), and the implied-end rule keeps the four markers flat siblings so each gets its own outline row and card. npl-mindread and friends normally arrive closed; an unclosed one now also renders as its own card instead of being consumed by its parent.</sem-reveal>
 </sem-section>
@@ -67,7 +68,7 @@
 | --- | --- | --- |
 | MAX_TEXT | 4000 chars per node | cut bodies keep a visible `… (+N chars)` marker on the card (v0.6 — was a silent cut) |
 | MAX_CODE_LINES | 40 lines | sem-code body cap, frame hides the rest with a count |
-| MAX_TABLE_ROWS | 10 rows | drawn table hides overflow with (+N rows) |
+| MAX_TABLE_ROWS | 10 rows | drawn table hides overflow with (+N rows); columns under the 3-cell floor drop with (+N cols) |
 | MAX_BLOCKS | 32 | p/heading captures per node |
 | MAX_FACT_ITEMS | 50 | quiz/flashcard items per set |
 | wrap width | pane width − indent | prose wraps at word boundaries (indent preserved; break whitespace consumed); tokens wider than the width and code/pre bodies hard-cut, tables truncate cells (v0.5.2) |
@@ -128,6 +129,19 @@
 | sem-list drew generic only | the sem-list element's inner lists had no structure | its HTML lists capture as blocks and draw as real lists inside the generic card |
 </sem-table>
 
+<h3>Fixed in v0.7.0</h3>
+<sem-table label="v0.7.0 fixes">
+| Defect | Was | Fix |
+| --- | --- | --- |
+| Code drew as boxed prose | sem-code bodies rendered as dim wrapped rows beside a lang badge — no gutter, no tint, long lines hard-cut with no wrap option | dedicated code card: `⌨ ts · src/rotate.ts` badge, dim line-number gutter (`12 │`), verbatim lines that never reflow, `controls="wrap"` ↪ continuations or a … cut at the frame edge, `mark="2,4-5"` ▌ gutter marker + bold, light regex tint (keywords blue, strings green, comments dim italic) for ts/js/tsx/jsx/json(y/c)/yaml(ml)/html/xml/bash/sh/shell/zsh/elixir(ex/exs) — no new dependencies |
+| Entities rendered raw | `&lt;` and `&amp;` showed literally in code bodies and table cells | named + numeric entity decode in sem-code bodies, child raws and table cells; decode runs on the tagged source so authored `&amp;lt;` still reads as the literal text |
+| Tables drew as padded rows | pipe tables drew light frames with fixed columns; alignment ignored; emoji skewed widths; multi-line cells impossible | heavy grid ┏━┳┝┥┗ with content-width columns (emoji count two cells), cell wrap grows row height, an authored br in a cell is a hard in-cell break, alignment from the delimiter row (numeric columns right-align when unauthored), 3-cell column floor with a counted `… (+N cols)` |
+| Inline tags stripped silently | strong/em/code/del/mark inside prose vanished with the tag-strip pass | paired inline spans: bold/italic/strike-dim plus color, visible ⟦⟧ for the highlight family and kept backticks for code; span/div with a sem-highlight class aliases to it; unpaired delimiters stay literal, never dropped |
+| sem-highlight warned as unknown | the spec's sem-highlight element warn-matched as unknown vocabulary | registered; the element form draws its own generic card, the bare inline and span/div forms go inline |
+| Table caption dropped | authored caption text was stripped with the tags or drew as a plain row | caption captured on the node and drawn as the table header (`▦ caption`), else the badge counts rows × cols |
+| Note variants all 📌 | kind="tip" or kind="danger" still drew 📌 | variant glyph set: ℹ️ info · ⚠️ warning · 💡 tip · ⛔ danger · ✅ success · 📝 note (📌 default) |
+</sem-table>
+
 <h3>Open defects (documented, not fixed)</h3>
 <sem-table label="Open defects">
 | Defect | Impact | Why deferred |
@@ -136,10 +150,12 @@
 | Markdown fences and `##` headings are not parsed | a top-level ``` fence or markdown heading outside any element is dropped (inside an open element it lands in the body text) | parser-level feature, pre-v0.6; docs are sem-* HTML by spec |
 | Gap capture inside open p containers dropped | prose between an unclosed p and a sem element is lost | rare in practice |
 | Emoji glyphs are double-width | 📌 🃏 👁 🗂 misalign box borders by one cell in most terminals | cosmetic; would need a width-aware glyph set or emoji-free outline glyphs |
+| Column overflow drops cells | columns that cannot keep the 3-cell floor drop off the right edge, counted as … (+N cols); the dropped cells are not reachable anywhere in the TUI | horizontal pan is a viewer-level feature; the counted footer keeps the drop honest |
+| Element-form sem-highlight draws boxed | the registered sem-highlight element renders as its own generic card, while the bare inline form and span/div.sem-highlight alias render inline | the element carries children, not a span-level capture; inline styling for the element form needs a parser pass — documented choice for v0.7.0 |
 </sem-table>
 </sem-section>
 
-<sem-summary>This reference describes the pane exactly as of v0.6.1: two render roles, framed cards for every element kind nested inside their parents (the header row is the toggle), flat Trinity friction sections, flat unclosed note/step/fact siblings, word-boundary prose wrap with real line breaks, counted cuts at capture and at the budget. When adding an element kind: one glyphOf mapping, one RENDERERS entry, and an expandedRoleOf decision (flow plans children below, card draws them inside the frame). The defect ledger above is the backlog; fixed rows cite the v0.5–v0.6.1 releases.</sem-summary>
+<sem-summary>This reference describes the pane exactly as of v0.7.0: two render roles, framed cards for every element kind nested inside their parents (the header row is the toggle), a dedicated code card with gutter, tint and wrap, heavy box-drawn table grids with caption headers and alignment, paired inline-tag styling, flat Trinity friction sections, flat unclosed note/step/fact siblings, word-boundary prose wrap with real line breaks, counted cuts at capture and at the budget. When adding an element kind: one glyphOf mapping, one RENDERERS entry, and an expandedRoleOf decision (flow plans children below, card draws them inside the frame). The defect ledger above is the backlog; fixed rows cite the v0.5–v0.7.0 releases.</sem-summary>
 
 </sem-enhanced-document>
 </body>
