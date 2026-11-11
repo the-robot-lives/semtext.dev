@@ -54,6 +54,21 @@ parameter — it is `data-*` in both forms.
   — on the `sem-table` or on a plain `<table>` — additionally sticks the
   first column on horizontal scroll (CSS only).
 
+### Markdown pipe form (v0.6 extension layer)
+
+Instead of an authored `<table>`, the element's text may be a markdown
+pipe table (header row, delimiter row `---` / `:--` / `--:` / `:-:`, body
+rows) — `semtext/latest/semtext.js` upgrades it into the real `<table>`
+above and stamps the element `data-sem-v06`. The pipe form splits every
+row on `|` before cells are parsed (no `\|` escape, unlike `sem-md`), and
+in that form the **cell text** (header and body) carries the same inline
+sugar as `sem-list` item text (spec/schema/sem-list.md): `` `code` `` →
+`<code>` (the closing backtick run exactly as long as the opening one;
+span content literal), `**bold**` → `<strong>`, `*text*` → `<em>`;
+everything else — unclosed markers included — is literal text, and cells
+are built as DOM nodes, never HTML-parsed. An authored `<table>` is
+untouched by this pass; there authors write real `<code>`/`<strong>`.
+
 ## Rendered form
 
 ### Enhanced (reading handler, `src/reading/table.ts`; the Lit

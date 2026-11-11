@@ -35,7 +35,7 @@ Class-form alias (conventions Appendix A spirit): `div.sem-list[data-ordered]` /
   choosing `<ol>` vs `<ul>`. Absent ⇒ `unordered`. Both present is an
   authoring error; `data-ordered` / `data-unordered` are the alias
   spellings and follow the global dual-spelling rules.
-- Content: **plain text lines only**. A line is one item:
+- Content: one item per **text line**. A line is one item:
   - `- item` / `* item` — unordered item;
   - `1. item` (any `\d+.`) — ordered item;
   - two leading spaces per extra nesting level indent the item one level
@@ -43,6 +43,21 @@ Class-form alias (conventions Appendix A spirit): `div.sem-list[data-ordered]` /
     nested list inside item 2);
   - blank lines separate but create nothing.
 - Lines that start none of the markers continue the previous item's text.
+- **Inline sugar** in item text (rendered by the extension layer):
+  - `` `code` `` → `<code>` — the closing backtick run must be exactly as
+    long as the opening one (the `sem-md` code-span rule,
+    spec/schema/sem-md.md: a span opened by a two-backtick run closes
+    only on the next two-backtick run, so single backticks inside it are
+    content), and one leading plus trailing space of the span content is
+    stripped; the span's content is literal, so `*` and `**` inside it
+    are text;
+  - `**bold**` → `<strong>` (content non-empty and not edge-spaced);
+  - `*text*` → `<em>` (conventions.md §3 — the shared emphasis pass,
+    unchanged).
+  Everything else is literal text: an unclosed `` ` `` run or `**` stays
+  as written, and the layer never HTML-parses item text — a literal `<`
+  arriving as text (authored `&lt;`, entities decode before parsing, as
+  in `sem-md`) renders as the character `<`, never as markup.
 - **Compat:** a `sem-list` whose children already are real `<ul>`/`<ol>`
   elements keeps parsing — the runtime leaves it untouched (an authored
   `<ul>`/`<ol>` child always wins over the text lines).
@@ -54,6 +69,9 @@ Class-form alias (conventions Appendix A spirit): `div.sem-list[data-ordered]` /
 - Parses the text lines and builds real `<ul>`/`<ol>`/`<li>` as the
   element's children, then marks the element `data-sem-v06` (idempotent;
   a marked element is never re-parsed).
+- Item text runs through the shared inline pass above: `<li>` children
+  are built DOM nodes (text, `<code>`, `<strong>`) — never HTML-parsed —
+  and the `*text*` emphasis pass then runs over them as over any prose.
 - Nesting deeper than the marker grammar implies is clamped to one level
   per two spaces, in document order.
 - The element carries `data-sem-v06` once rendered.
