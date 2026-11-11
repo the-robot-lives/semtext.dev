@@ -135,6 +135,22 @@ function mirrorDir(srcDir, dstDir, label) {
   }
 }
 
+/** Copy dist-root files matching a pattern (the shell's lazy chunks live at
+ *  the root, not in a chunk dir): nano-app.js, semtext-pkg-*.js, worker-*.js.
+ *  Without these the live site's nano / jq / awk / git / … fail to load. */
+function copyRootGlob(srcBase, dstBase, re, label) {
+  if (!existsSync(srcBase)) {
+    plan.push(`skip   ${label} (absent in --from)`);
+    return;
+  }
+  const names = readdirSync(srcBase).filter((n) => re.test(n));
+  if (names.length === 0) {
+    plan.push(`skip   ${label} (no matching files in --from)`);
+    return;
+  }
+  for (const name of names) copyFile(join(srcBase, name), join(dstBase, name), `${label}/${name}`);
+}
+
 /** The runtime set one URL family carries: full bundles + lazy loaders +
  *  manifests + chunk dirs + stylesheets. `srcBase` is a dist root (the
  *  upstream build layout); `dstBase` is the directory serving it. */
@@ -163,6 +179,10 @@ function copyRuntimeSet(srcBase, dstBase, label) {
     copyFile(join(srcBase, f), join(dstBase, f), `${label}/${f}`);
   }
   mirrorDir(join(srcBase, 'chunks'), join(dstBase, 'chunks'), `${label}/chunks`);
+  // The shell's lazy chunks sit at the dist root: the nano editor body, one
+  // chunk per command package, and the wasm worker (§1.4 — these were never
+  // vendored, so every package command and nano failed on the live site).
+  copyRootGlob(srcBase, dstBase, /^(nano-app\.js|semtext-pkg-.*\.js|worker-.*\.js)$/, `${label}/shell-chunks`);
   mirrorDir(join(srcBase, 'npl-chunks'), join(dstBase, 'npl-chunks'), `${label}/npl-chunks`);
   mirrorDir(join(srcBase, 'semext-chunks'), join(dstBase, 'semext-chunks'), `${label}/semext-chunks`);
   mirrorDir(join(srcBase, 'agent-kit-chunks'), join(dstBase, 'agent-kit-chunks'), `${label}/agent-kit-chunks`);
