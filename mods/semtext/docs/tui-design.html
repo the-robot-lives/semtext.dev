@@ -7,7 +7,7 @@
 <body>
 <sem-enhanced-document>
 
-<sem-tldr>*The intended TUI presentation for every component class in the semtext pane: one streamlined view, every element a framed card, children nested inside their parent's frame, the header row is the toggle.* This is the design the v0.6.1 renderer implements; where reality differs, the gap is named and tracked in the defect ledger of render-reference.html.</sem-tldr>
+<sem-tldr>*The intended TUI presentation for every component class in the semtext pane: one streamlined view, every element a framed card, children nested inside their parent's frame, the header row is the toggle.* This is the design the v0.7.0 renderer implements; where reality differs, the gap is named and tracked in the defect ledger of render-reference.html.</sem-tldr>
 
 <sem-guard-rails>
 <sem-guard-rail severity="block" scope="pane rendering">Content never contributes glyphs. Every decoration character comes from the GLYPHS vocabulary; content strings are control-stripped and truncated before drawing.</sem-guard-rail>
@@ -30,9 +30,10 @@
 <sem-property key="Headings">Bold with underline rules, never color-only: h1 gets a full-width ══ rule, h2 a full-width ── rule, h3 a ┄ rule exactly under its wrapped text, h4–h6 bold with no rule (h5/h6 dim). Rules span the card's inner width (insets respected) and measure by code points so emoji do not skew them. A blank row sits above a heading unless it opens its frame; a section's title lives in the frame header — never duplicated as a heading row inside.</sem-property>
 <sem-property key="Prose">Boxed in the frame, dim, wrapped at word boundaries (indent preserved, over-width tokens hard-cut, code/pre verbatim). `br` variants and literal newlines are hard row breaks; runs of blank lines collapse to one. Text is never dropped just because a tag has no renderer — unknown tags draw their blocks or leaf text in a frame of their own.</sem-property>
 <sem-property key="Lists">HTML lists render like the page (v0.6.1): unordered bullets by depth — • top level, ◦ nested, ▪ deeper; ordered items numbered per the ol's start/type attrs as `1.`, `a.`, `i.` with the label right-aligned in a 3-char gutter; task items show ☐/☑ from a checkbox input or a task-list class; dl terms draw bold with their definitions indented under them. Every list row hangs (continuation lines align under the text column, never under the marker), nested lists draw in document order beneath their parent item, and block content inside an item (paragraphs, quotes) keeps its own rows.</sem-property>
+<sem-property key="Inline tags">The inline emphasis family renders inside prose like the web page does (v0.7.0): highlight/sem-highlight/mark (and the span/div.sem-highlight alias) draw cyan, strong/b bold, em/i italic, inline `code` green, del/s struck dim — the TUI pairs each family with its color the way the web renderer pairs it with an accent. sem-highlight is a registered element (it never counts as unknown); unpaired delimiters stay visible as literal characters, never dropped.</sem-property>
 <sem-property key="Friction blocks (NPL)">Same card builder for the whole npl family plus the four Trinity markers (name uppercased, glyph per tag, first attributes in the badge — internal state like collapsed never echoes). Flat siblings by parser contract — one card per phase item, never nested into each other; the same-name implied-end rule also covers the loose leaves sem-note/sem-step/sem-fact.</sem-property>
-<sem-property key="Tables">Caption row (▦ rows × cols), then a box-drawn table: ┌─┬─┐ top, bold header, ├─┼─┤, dim body, └─┴─┘. Markdown delimiter rows are separator decoration, never data. Columns shrink from the widest until the frame fits the width; cells truncate with ….</sem-property>
-<sem-property key="Code">Framed body with the ⌨ lang badge top-right. Content dim, tab-expanded, capped at 40 lines with an explicit (+N lines) footer. Raw text only — code never nests elements.</sem-property>
+<sem-property key="Tables">A box-drawn table grid in the heavy frame set (v0.7.0): ┏━┳━┓ top, bold header rows, ┝━┿━┥ under the header, ┃ column walls, ┗━┻━┛ bottom. The authored <caption> is the table's header (▦ caption), else the badge counts rows × cols. Columns size to their content (emoji count two columns) and shrink to fit the frame; cells word-wrap so a row grows tall (an authored br inside a cell is a hard in-cell break); alignment comes from the markdown delimiter row (:--- / ---: / :---:), numeric columns right-align when unauthored, and columns that cannot keep a 3-cell floor drop off the right edge with a counted `… (+N cols)`. Row overflow keeps the counted `… (+N rows)` footer. Entities decode in cells; markdown delimiter rows are separator decoration, never data.</sem-property>
+<sem-property key="Code">A dedicated code card (v0.7.0): the badge names lang and provenance (`⌨ ts · src/rotate.ts`), a dim line-number gutter runs down the left (`12 │`), and lines keep their column layout — code never reflows. `controls="wrap"` word-wraps over-long lines with dim ↪ continuations; without it lines hard-cut with … at the frame edge. Authored `mark="2,4-5"` lines carry a ▌ gutter marker and bold. A light regex tint (no dependencies) colors keywords blue, string literals green and dims comments for the common families (ts/js/tsx/jsx/json/yaml/html/bash/elixir); unknown langs draw plainly dim. Entities decode so authored `&lt;` reads as a literal &lt;. Past the budget the shared counted footer reports the hidden lines.</sem-property>
 <sem-property key="Procedures">Framed list of numbered steps (1 → text), title in the badge, overflow as (+N steps). One line per step, truncated to width.</sem-property>
 <sem-property key="Key/values">Properties draw 🗂 head then aligned 🔑 key ──▸ value rows — one visual unit, not collapsible (already the terse form).</sem-property>
 <sem-property key="Fact sets">quiz/flashcards draw their run button inside the facts frame; the runner owns the full pane (meter ▰▱, prompt, ▢ a)–d) options, ✓/✗ grading, or 🃏 flip) and returns via ◂ outline / ◂ section.</sem-property>
@@ -60,9 +61,9 @@
 <sem-table label="Glyph map">
 | Family | Glyphs |
 | --- | --- |
-| Kinds | 📌 note · ⚠ warning · 🧭 procedure · → step · ▦ table · ⌨ code · ❓ facts · 🃏 flashcards · 💡 reveal · 🔑 property · 🗂 properties · 👁 views · ◦ view · 📖 reader · ◫ source · § section · ❍ fact · · misc |
+| Kinds | 📌 note (variants: ℹ️ info · ⚠️ warning · 💡 tip · ⛔ danger · ✅ success · 📝 note) · 🧭 procedure · → step · ▦ table · ⌨ code · ❓ facts · 🃏 flashcards · 💡 reveal · 🔑 property · 🗂 properties · 👁 views · ◦ view · 📖 reader · ◫ source · § section · ❍ fact · · misc |
 | NPL | ◆ mindread · ◇ thought · ≈ hormones · → intent · ↗ ref · ▣ block · ▲ wedge · ▼ shadow · ✕ critic · ◎ weego · Ⓐ agent · ➤ directive/poa · ☰ section · ◈ rubric · ⚑ critique · ❝ declaration · ✦ example · ⚐ flag(s) · ▧ mode · ⋇ mood · ◍ vos · ⬢ artifact · ⋯ cot |
-| Chrome | ▸▾ header toggles · ❯ selected · ▌ quote · ▢ option · ▰▱ meter · ✓ ✗ verdicts · … overflow · ● active · ◂▸ nav · › breadcrumb · ┌┐└┘│─┄┄ frames and rules |
+| Chrome | ▸▾ header toggles · ❯ selected · ▌ quote · ▢ option · ▰▱ meter · ✓ ✗ verdicts · … overflow · ● active · ◂▸ nav · › breadcrumb · ┌┐└┘│─┄┄ frames and rules · ┏┓┗┛┃━┳┻┿┝┥ heavy table grid · ⟦⟧ inline highlight · ↪ code continuation · ▌ marked line |
 </sem-table>
 </sem-section>
 
@@ -71,7 +72,7 @@
 <sem-list>
 - dimColor = secondary: bodies, borders, rules below h2, labels, captions, child counts. If a row is content the user asked to see, it is not dimmed twice.
 - bold = the one thing to read first: every heading level (h5/h6 also dim), section badges, table header rows.
-- success/error color only inside quiz grading; warning color only on the unknown-elements header row. No other colors — emphasis is never color-only (bold/rules/dim carry it); the pane stays quiet next to the chat.
+- success/error color only inside quiz grading; warning color only on the unknown-elements header row. The v0.7.0 inline/code tints (cyan highlight, green strings, blue keywords) are the one colored-content exception: they mirror what the web renderer colors, never color alone (the paired delimiters/weights carry the emphasis); the pane stays quiet next to the chat.
 - Truncation always ends in … and a counted footer (`… (+N rows)` from the frame, `… (+N chars)` at capture). Nothing disappears without arithmetic.
 </sem-list>
 </sem-section>

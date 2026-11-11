@@ -64,7 +64,7 @@ export type SemNodeContent =
   | { kind: 'note'; collapsed: true; summary: string; body: string }
   | { kind: 'views'; views: readonly { name: string; body: string }[]; initial: number }
   | { kind: 'properties'; properties: readonly { key: string; value: string }[] }
-  | { kind: 'table'; rows: readonly string[] }
+  | { kind: 'table'; rows: readonly string[]; caption?: string }
   | { kind: 'code'; lang: string; body: string }
 
 /** Viewer + runner state of the pane; every write goes through update(). */
