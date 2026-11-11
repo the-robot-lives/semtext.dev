@@ -1,5 +1,5 @@
-const L = [1518500249, 1859775393, 2400959708, 3395469782];
-function se(e) {
+const W = [1518500249, 1859775393, 2400959708, 3395469782];
+function oe(e) {
   const n = e.length, t = Math.ceil((n + 1 + 8) / 64) * 64, r = new Uint8Array(t);
   r.set(e), r[n] = 128;
   const s = new DataView(r.buffer), o = n * 8;
@@ -15,16 +15,16 @@ function se(e) {
     let c = a, h = l, p = f, w = u, b = d;
     for (let m = 0; m < 80; m++) {
       let $, y;
-      m < 20 ? ($ = h & p | ~h & w, y = L[0]) : m < 40 ? ($ = h ^ p ^ w, y = L[1]) : m < 60 ? ($ = h & p | h & w | p & w, y = L[2]) : ($ = h ^ p ^ w, y = L[3]);
-      const O = (c << 5 | c >>> 27) + $ + b + y + i[m] | 0;
-      b = w, w = p, p = h << 30 | h >>> 2, h = c, c = O;
+      m < 20 ? ($ = h & p | ~h & w, y = W[0]) : m < 40 ? ($ = h ^ p ^ w, y = W[1]) : m < 60 ? ($ = h & p | h & w | p & w, y = W[2]) : ($ = h ^ p ^ w, y = W[3]);
+      const S = (c << 5 | c >>> 27) + $ + b + y + i[m] | 0;
+      b = w, w = p, p = h << 30 | h >>> 2, h = c, c = S;
     }
     a = a + c | 0, l = l + h | 0, f = f + p | 0, u = u + w | 0, d = d + b | 0;
   }
   return [a, l, f, u, d].map((g) => (g >>> 0).toString(16).padStart(8, "0")).join("");
 }
 new TextEncoder();
-const oe = 4e3;
+const re = 4e3;
 function N(e) {
   if (e === "") return { lines: [], endsWithNewline: !0 };
   const n = e.endsWith(`
@@ -32,12 +32,12 @@ function N(e) {
 `);
   return n && t.pop(), { lines: t, endsWithNewline: n };
 }
-function re(e, n, t, r, s, o) {
+function ie(e, n, t, r, s, o) {
   const i = r - t, a = o - s;
   if (i === 0 && a === 0) return [];
   if (i === 0) return n.slice(s, o).map((w, b) => ({ type: "add", bLine: s + b, text: w }));
   if (a === 0) return e.slice(t, r).map((w, b) => ({ type: "del", aLine: t + b, text: w }));
-  if (i + a > oe)
+  if (i + a > re)
     return [
       ...e.slice(t, r).map((w, b) => ({ type: "del", aLine: t + b, text: w })),
       ...n.slice(s, o).map((w, b) => ({ type: "add", bLine: s + b, text: w }))
@@ -62,8 +62,8 @@ function re(e, n, t, r, s, o) {
   const c = [];
   let h = i, p = a;
   for (let w = g; w > 0; w--) {
-    const b = d[w], m = h - p, $ = m === -w || m !== w && b[f + m - 1] < b[f + m + 1] ? m + 1 : m - 1, y = b[f + $], O = y - $;
-    for (; h > y && p > O; )
+    const b = d[w], m = h - p, $ = m === -w || m !== w && b[f + m - 1] < b[f + m + 1] ? m + 1 : m - 1, y = b[f + $], S = y - $;
+    for (; h > y && p > S; )
       h--, p--, c.push({ type: "eq", aLine: t + h, bLine: s + p, text: e[t + h] });
     h === y ? (p--, c.push({ type: "add", bLine: s + p, text: n[s + p] })) : (h--, c.push({ type: "del", aLine: t + h, text: e[t + h] }));
   }
@@ -75,7 +75,7 @@ function re(e, n, t, r, s, o) {
     p--, c.push({ type: "add", bLine: s + p, text: n[s + p] });
   return c.reverse(), c;
 }
-function C(e, n) {
+function I(e, n) {
   let t = 0;
   const r = Math.min(e.length, n.length);
   for (; t < r && e[t] === n[t]; ) t++;
@@ -84,19 +84,19 @@ function C(e, n) {
     s--, o--;
   const i = [];
   for (let a = 0; a < t; a++) i.push({ type: "eq", aLine: a, bLine: a, text: e[a] });
-  i.push(...re(e, n, t, s, t, o));
+  i.push(...ie(e, n, t, s, t, o));
   for (let a = s; a < e.length; a++)
     i.push({ type: "eq", aLine: a, bLine: o + (a - s), text: e[a] });
   return i;
 }
-function z(e) {
+function G(e) {
   let n = 0, t = 0;
   for (const r of e)
     r.type === "add" ? n++ : r.type === "del" && t++;
   return { adds: n, dels: t };
 }
-const U = "\\ No newline at end of file";
-function ie(e, n, t) {
+const H = "\\ No newline at end of file";
+function ae(e, n, t) {
   const r = [];
   for (let l = 0; l < e.length; l++) e[l].type !== "eq" && r.push(l);
   if (r.length === 0) return [];
@@ -118,29 +118,29 @@ function ie(e, n, t) {
       `@@ -${g === 0 ? 0 : h + 1},${g} +${c === 0 ? 0 : p + 1},${c} @@`
     );
     for (const { marker: b, op: m } of w)
-      a.push(b + m.text), (b === "-" && !t.aEndsNewline && m.aLine === t.aLen - 1 || b === "+" && !t.bEndsNewline && m.bLine === t.bLen - 1) && a.push(U);
+      a.push(b + m.text), (b === "-" && !t.aEndsNewline && m.aLine === t.aLen - 1 || b === "+" && !t.bEndsNewline && m.bLine === t.bLen - 1) && a.push(H);
   }
   return a;
 }
-const ae = new TextEncoder(), le = new TextDecoder();
-function S(e) {
-  return ae.encode(e);
+const le = new TextEncoder(), ue = new TextDecoder();
+function O(e) {
+  return le.encode(e);
 }
 function A(e) {
-  return le.decode(e);
+  return ue.decode(e);
 }
-function ue(e) {
+function fe(e) {
   let n = "";
   for (let t = 0; t < e.length; t += 8192)
     n += String.fromCharCode(...e.subarray(t, t + 8192));
   return btoa(n);
 }
-function fe(e) {
+function ce(e) {
   const n = atob(e), t = new Uint8Array(n.length);
   for (let r = 0; r < n.length; r++) t[r] = n.charCodeAt(r);
   return t;
 }
-function ce(e, n) {
+function he(e, n) {
   const t = e.startsWith("/") ? e : "/" + e, r = n === "" ? t : n.startsWith("/") ? n : t + "/" + n, s = [];
   for (const o of r.split("/"))
     if (!(o === "" || o === ".")) {
@@ -152,26 +152,26 @@ function ce(e, n) {
     }
   return "/" + s.join("/");
 }
-function G(e, n) {
-  const t = S(`${e} ${n.length}\0`), r = new Uint8Array(t.length + n.length);
+function V(e, n) {
+  const t = O(`${e} ${n.length}\0`), r = new Uint8Array(t.length + n.length);
   return r.set(t), r.set(n, t.length), r;
 }
-function V(e, n) {
-  return se(G(e, n));
+function _(e, n) {
+  return oe(V(e, n));
 }
-function D(e) {
-  return V("blob", S(e));
+function L(e) {
+  return _("blob", O(e));
 }
-const W = "100644", E = "40000";
-function he(e) {
+const E = "100644", P = "40000";
+function de(e) {
   const n = [...e].sort((i, a) => {
-    const l = i.mode === E ? i.name + "/" : i.name, f = a.mode === E ? a.name + "/" : a.name;
+    const l = i.mode === P ? i.name + "/" : i.name, f = a.mode === P ? a.name + "/" : a.name;
     return l < f ? -1 : l > f ? 1 : 0;
   }), t = [];
   let r = 0;
   for (const i of n) {
-    const a = S(`${i.mode} ${i.name}\0`);
-    t.push(a, de(i.sha)), r += a.length + 20;
+    const a = O(`${i.mode} ${i.name}\0`);
+    t.push(a, me(i.sha)), r += a.length + 20;
   }
   const s = new Uint8Array(r);
   let o = 0;
@@ -179,12 +179,12 @@ function he(e) {
     s.set(i, o), o += i.length;
   return s;
 }
-function de(e) {
+function me(e) {
   const n = new Uint8Array(20);
   for (let t = 0; t < 20; t++) n[t] = parseInt(e.slice(t * 2, t * 2 + 2), 16);
   return n;
 }
-function me(e) {
+function ge(e) {
   const n = [];
   let t = 0;
   for (; t < e.length; ) {
@@ -199,8 +199,8 @@ function me(e) {
   }
   return n;
 }
-function ge(e) {
-  const n = `${e.name} <${e.email}> ${e.when} ${_(e.offset)}`;
+function pe(e) {
+  const n = `${e.name} <${e.email}> ${e.when} ${J(e.offset)}`;
   let t = `tree ${e.tree}
 `;
   for (const r of e.parents) t += `parent ${r}
@@ -210,7 +210,7 @@ committer ${n}
 
 ${e.message}`, t.endsWith(`
 `) || (t += `
-`), S(t);
+`), O(t);
 }
 function T(e, n) {
   const t = A(n), r = t.indexOf(`
@@ -222,7 +222,7 @@ function T(e, n) {
   for (const d of s.split(`
 `))
     d.startsWith("tree ") ? i = d.slice(5) : d.startsWith("parent ") ? a.push(d.slice(7)) : d.startsWith("author ") ? l = d.slice(7) : d.startsWith("committer ") && (f = d.slice(10));
-  const u = P(l);
+  const u = C(l);
   return {
     sha: e,
     tree: i,
@@ -231,12 +231,12 @@ function T(e, n) {
     authorEmail: u.email,
     authorWhen: u.when,
     authorOffset: u.offset,
-    committerName: P(f).name,
-    committerEmail: P(f).email,
+    committerName: C(f).name,
+    committerEmail: C(f).email,
     message: o
   };
 }
-function P(e) {
+function C(e) {
   const n = e.lastIndexOf(" <"), t = e.indexOf("> ", n);
   if (n === -1 || t === -1) return { name: e, email: "", when: 0, offset: 0 };
   const r = e.slice(t + 2).trim().split(/\s+/);
@@ -244,28 +244,28 @@ function P(e) {
     name: e.slice(0, n),
     email: e.slice(n + 2, t),
     when: Number(r[0] ?? 0),
-    offset: pe(r[1] ?? "+0000")
+    offset: we(r[1] ?? "+0000")
   };
 }
-function _(e) {
+function J(e) {
   const n = e < 0 ? "-" : "+", t = Math.abs(e);
   return n + String(Math.floor(t / 60)).padStart(2, "0") + String(t % 60).padStart(2, "0");
 }
-function pe(e) {
+function we(e) {
   const n = /^([+-])(\d{2})(\d{2})$/.exec(e);
   if (!n) return 0;
   const t = Number(n[2]) * 60 + Number(n[3]);
   return n[1] === "-" ? -t : t;
 }
-const we = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], be = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-function J(e, n) {
+const be = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], $e = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function K(e, n) {
   const t = new Date((e + n * 60) * 1e3), r = (s) => String(s).padStart(2, "0");
-  return `${we[t.getUTCDay()]} ${be[t.getUTCMonth()]} ${r(t.getUTCDate())} ${r(t.getUTCHours())}:${r(t.getUTCMinutes())}:${r(t.getUTCSeconds())} ${t.getUTCFullYear()} ${_(n)}`;
+  return `${be[t.getUTCDay()]} ${$e[t.getUTCMonth()]} ${r(t.getUTCDate())} ${r(t.getUTCHours())}:${r(t.getUTCMinutes())}:${r(t.getUTCSeconds())} ${t.getUTCFullYear()} ${J(n)}`;
 }
-function $e() {
+function ke() {
   return -(/* @__PURE__ */ new Date()).getTimezoneOffset();
 }
-const ke = "fatal: not a git repository (or any of the parent directories): .git";
+const ye = "fatal: not a git repository (or any of the parent directories): .git";
 class M {
   constructor(n, t) {
     this.vfs = n, this.root = t, this.homeOverride = null;
@@ -297,7 +297,7 @@ class M {
     ), new M(n, t);
   }
   static notFound() {
-    return ke;
+    return ye;
   }
   /** `.git`-relative path → absolute VFS path. */
   gitPath(n) {
@@ -320,15 +320,15 @@ class M {
   readObject(n) {
     const t = this.gitPath(`objects/${n.slice(0, 2)}/${n.slice(2)}`), r = this.vfs.read(t);
     if (r === null) return null;
-    const s = fe(r), o = s.indexOf(0);
+    const s = ce(r), o = s.indexOf(0);
     return { type: A(s.subarray(0, o)).split(" ")[0], payload: s.subarray(o + 1) };
   }
   writeObject(n, t) {
-    const r = V(n, t), s = this.gitPath(`objects/${r.slice(0, 2)}`), o = `${s}/${r.slice(2)}`;
-    return this.vfs.nodeAt(o) === null && (this.vfs.nodeAt(s) === null && this.vfs.mkdir(s, { parents: !0 }), this.vfs.mountFile(o, ue(G(n, t)))), r;
+    const r = _(n, t), s = this.gitPath(`objects/${r.slice(0, 2)}`), o = `${s}/${r.slice(2)}`;
+    return this.vfs.nodeAt(o) === null && (this.vfs.nodeAt(s) === null && this.vfs.mkdir(s, { parents: !0 }), this.vfs.mountFile(o, fe(V(n, t)))), r;
   }
   writeBlob(n) {
-    return this.writeObject("blob", S(n));
+    return this.writeObject("blob", O(n));
   }
   objectText(n) {
     const t = this.readObject(n);
@@ -397,9 +397,9 @@ class M {
   flattenTree(n, t = "") {
     const r = /* @__PURE__ */ new Map(), s = this.readObject(n);
     if (s === null) return r;
-    for (const o of me(s.payload)) {
+    for (const o of ge(s.payload)) {
       const i = t + o.name;
-      if (o.mode === E)
+      if (o.mode === P)
         for (const [a, l] of this.flattenTree(o.sha, i + "/")) r.set(a, l);
       else
         r.set(i, o.sha);
@@ -425,13 +425,13 @@ class M {
         let u = a.dirs.get(f);
         u || (u = { files: [], dirs: /* @__PURE__ */ new Map() }, a.dirs.set(f, u)), a = u;
       }
-      a.files.push({ mode: W, name: i[i.length - 1], sha: o.sha });
+      a.files.push({ mode: E, name: i[i.length - 1], sha: o.sha });
     }
     const r = (s) => {
       const o = [...s.files];
       for (const [i, a] of s.dirs)
-        o.push({ mode: E, name: i, sha: r(a) });
-      return this.writeObject("tree", he(o));
+        o.push({ mode: P, name: i, sha: r(a) });
+      return this.writeObject("tree", de(o));
     };
     return r(t);
   }
@@ -450,13 +450,13 @@ class M {
   }
   /** Blob sha of a worktree file without writing the object. */
   worktreeSha(n) {
-    return D(n);
+    return L(n);
   }
   /* status */
   status() {
     const n = this.commitTree(this.headSha()), t = this.readIndex(), r = this.worktree(), s = [], o = [], i = [], a = /* @__PURE__ */ new Set([...n.keys(), ...t.keys(), ...r.keys()]);
     for (const l of [...a].sort()) {
-      const f = n.get(l), u = t.get(l)?.sha, d = r.get(l), g = d === void 0 ? void 0 : D(d);
+      const f = n.get(l), u = t.get(l)?.sha, d = r.get(l), g = d === void 0 ? void 0 : L(d);
       f !== u && (f === void 0 ? s.push({ path: l, kind: "added" }) : u === void 0 ? s.push({ path: l, kind: "deleted" }) : s.push({ path: l, kind: "modified" })), u !== g && (u === void 0 ? i.push(l) : g === void 0 ? o.push({ path: l, kind: "deleted" }) : o.push({ path: l, kind: "modified" }));
     }
     return { staged: s, unstaged: o, untracked: i };
@@ -466,7 +466,7 @@ class M {
     const n = this.readIndex(), t = this.worktree();
     for (const [r, s] of n) {
       const o = t.get(r);
-      o === void 0 ? n.delete(r) : D(o) !== s.sha && n.set(r, { sha: this.writeBlob(o), size: S(o).length });
+      o === void 0 ? n.delete(r) : L(o) !== s.sha && n.set(r, { sha: this.writeBlob(o), size: O(o).length });
     }
     this.writeIndex(n);
   }
@@ -520,20 +520,20 @@ class M {
   /* config */
   /** Read one config key (`section.key`); repo config first, then $HOME/.gitconfig. */
   configGet(n) {
-    const t = H(this.vfs.read(this.gitPath("config")) ?? "", n);
+    const t = R(this.vfs.read(this.gitPath("config")) ?? "", n);
     if (t !== null) return t;
     const r = this.vfs.resolve("/", this.homeDir() + "/.gitconfig");
-    return H(this.vfs.read(r) ?? "", n);
+    return R(this.vfs.read(r) ?? "", n);
   }
   homeDir() {
     return this.homeOverride ?? "/home";
   }
   configSet(n, t, r) {
-    const s = r ? ce("/", this.homeDir() + "/.gitconfig") : this.gitPath("config"), o = this.vfs.read(s) ?? "";
-    this.vfs.mountFile(s, ye(o, n, t));
+    const s = r ? he("/", this.homeDir() + "/.gitconfig") : this.gitPath("config"), o = this.vfs.read(s) ?? "";
+    this.vfs.mountFile(s, ve(o, n, t));
   }
   configList() {
-    return K(this.vfs.read(this.gitPath("config")) ?? "");
+    return Y(this.vfs.read(this.gitPath("config")) ?? "");
   }
   /* diffs (worktree/index/commits) */
   /**
@@ -544,10 +544,10 @@ class M {
    */
   fileDiff(n, t, r) {
     const s = N(t.text ?? ""), o = N(r.text ?? ""), i = [`diff --git a/${n} b/${n}`];
-    if (t.sha === null ? (i.push("new file mode " + W), i.push(`index ${"0".repeat(7)}..${j(r.sha)}`), i.push("--- /dev/null"), i.push(`+++ b/${n}`)) : r.sha === null ? (i.push("deleted file mode " + W), i.push(`index ${j(t.sha)}..${"0".repeat(7)}`), i.push(`--- a/${n}`), i.push("+++ /dev/null")) : (i.push(`index ${j(t.sha)}..${j(r.sha)} ${W}`), i.push(`--- a/${n}`), i.push(`+++ b/${n}`)), t.text !== r.text) {
-      const l = C(s.lines, o.lines);
+    if (t.sha === null ? (i.push("new file mode " + E), i.push(`index ${"0".repeat(7)}..${j(r.sha)}`), i.push("--- /dev/null"), i.push(`+++ b/${n}`)) : r.sha === null ? (i.push("deleted file mode " + E), i.push(`index ${j(t.sha)}..${"0".repeat(7)}`), i.push(`--- a/${n}`), i.push("+++ /dev/null")) : (i.push(`index ${j(t.sha)}..${j(r.sha)} ${E}`), i.push(`--- a/${n}`), i.push(`+++ b/${n}`)), t.text !== r.text) {
+      const l = I(s.lines, o.lines);
       i.push(
-        ...ie(l, 3, {
+        ...ae(l, 3, {
           aLen: s.lines.length,
           aEndsNewline: s.endsWithNewline,
           bLen: o.lines.length,
@@ -555,14 +555,14 @@ class M {
         })
       );
     }
-    const a = z(C(s.lines, o.lines));
+    const a = G(I(s.lines, o.lines));
     return { rows: i, adds: a.adds, dels: a.dels };
   }
 }
 function j(e) {
   return e.slice(0, 7);
 }
-function K(e) {
+function Y(e) {
   const n = [];
   let t = "";
   for (const r of e.split(`
@@ -586,12 +586,12 @@ function K(e) {
   }
   return n;
 }
-function H(e, n) {
+function R(e, n) {
   const t = n.toLowerCase();
-  for (const [r, s] of K(e)) if (r === t) return s;
+  for (const [r, s] of Y(e)) if (r === t) return s;
   return null;
 }
-function ye(e, n, t) {
+function ve(e, n, t) {
   const r = n.indexOf("."), s = n.slice(0, r).toLowerCase(), o = n.slice(r + 1).toLowerCase(), i = e.split(`
 `);
   let a = !1, l = !1;
@@ -623,22 +623,22 @@ function ye(e, n, t) {
   return i.join(`
 `);
 }
-function Y(e) {
+function X(e) {
   return `semtext-pkg-${e}.js`;
 }
-function ve(e) {
+function Se(e) {
   return import(
     /* @vite-ignore */
-    new URL(Y(e), import.meta.url).href
+    new URL(X(e), import.meta.url).href
   ).then(
     (n) => n
   );
 }
-function Se(e) {
+function Oe(e) {
   return e.includes("--help") || e.includes("-h");
 }
-function Oe(e, n) {
-  const t = Y(e.name), r = /* @__PURE__ */ new Map(), s = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map();
+function Ae(e, n) {
+  const t = X(e.name), r = /* @__PURE__ */ new Map(), s = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map();
   for (const d of e.commands)
     d.man !== void 0 && o.set(d.name, d.man);
   let i = !1, a = !1, l = null;
@@ -659,21 +659,33 @@ function Oe(e, n) {
         const h = g();
         if (h !== void 0)
           return h.run(c);
-        if (Se(c.args)) {
+        if (Oe(c.args)) {
           c.out(d.usage);
           return;
         }
-        return f().then((p) => {
-          if (!p) {
+        c.err(`loading ${e.name}…`);
+        const p = c.err, w = c.exit;
+        let b = !1, m = !1;
+        const $ = () => {
+          c.err = p, c.exit = w, m || w(b ? 1 : 0);
+        };
+        return f().then((y) => {
+          if (!y) {
             c.err(`${d.name}: package chunk failed to load (${t})`), c.exit(1);
             return;
           }
-          const w = g();
-          if (w === void 0) {
+          const S = g();
+          if (S === void 0) {
             c.err(`${d.name}: package chunk ${t} does not provide it`), c.exit(70);
             return;
           }
-          return w.run(c);
+          return c.err = (D) => {
+            b = !0, p(D);
+          }, c.exit = (D) => {
+            m = !0, w(D);
+          }, Promise.resolve(S.run(c)).then($, (D) => {
+            throw $(), D;
+          });
         });
       },
       complete(c) {
@@ -695,7 +707,7 @@ function Oe(e, n) {
     supersedes: new Set(e.supersedes ?? [])
   };
 }
-const X = {
+const Q = {
   name: "git",
   commands: [
     {
@@ -712,8 +724,8 @@ const X = {
     }
   ]
 };
-Oe(X, () => ve("git"));
-const Q = (e) => X.commands.find((n) => n.name === e).usage, Ae = "git version 2.43.0.semtext", Z = [
+Ae(Q, () => Se("git"));
+const Z = (e) => Q.commands.find((n) => n.name === e).usage, Te = "git version 2.43.0.semtext", x = [
   ["init", "create an empty repository"],
   ["add", "stage file contents for the next commit"],
   ["status", "show working-tree and index state"],
@@ -726,7 +738,7 @@ const Q = (e) => X.commands.find((n) => n.name === e).usage, Ae = "git version 2
   ["show", "show one commit with its diff"],
   ["config", "get or set repository or global options"],
   ["rev-parse", "resolve a revision to a commit sha"]
-], Te = /* @__PURE__ */ new Set(["clone", "push", "pull", "fetch", "remote", "submodule"]);
+], Me = /* @__PURE__ */ new Set(["clone", "push", "pull", "fetch", "remote", "submodule"]);
 function k(e, n, t = 128) {
   e.err(n), e.exit(t);
 }
@@ -734,17 +746,17 @@ function v(e) {
   const n = M.discover(e.vfs, e.state.cwd);
   return n === null ? (k(e, "fatal: not a git repository (or any of the parent directories): .git"), null) : n;
 }
-function x(e, n, t) {
+function ee(e, n, t) {
   const r = e.vfs.resolve(n, t);
   return !r.startsWith(e.root === "/" ? "/" : e.root + "/") && r !== e.root ? null : r;
 }
-function ee(e, n) {
+function te(e, n) {
   return e.relOf(n);
 }
-function te(e) {
+function ne(e) {
   return e.length > 0 && !e.startsWith("-") && !e.endsWith("/") && !e.endsWith(".") && !e.endsWith(".lock") && !e.includes("..") && !e.includes("//") && !e.includes("@{") && !e.includes(" ") && !/[\x00-\x1f\x7f~^:?*[\\]/.test(e);
 }
-function F(e, n, t) {
+function U(e, n, t) {
   const r = [], s = /* @__PURE__ */ new Set([...e.keys(), ...n.keys()]);
   for (const o of [...s].sort()) {
     const i = e.get(o) ?? null, a = n.get(o) ?? null;
@@ -756,12 +768,12 @@ function F(e, n, t) {
   }
   return r;
 }
-function ne(e) {
+function se(e) {
   const n = [];
   let t = 0, r = 0, s = 0;
   const o = [];
   for (const l of e) {
-    const f = C(N(l.old.text ?? "").lines, N(l.neu.text ?? "").lines), u = z(f);
+    const f = I(N(l.old.text ?? "").lines, N(l.neu.text ?? "").lines), u = G(f);
     t += u.adds, r += u.dels, s = Math.max(s, l.path.length), o.push({ label: l.path, count: u.adds + u.dels, a: u.adds, d: u.dels });
   }
   for (const l of o) {
@@ -773,7 +785,7 @@ function ne(e) {
   const i = o.length, a = [`${i} file${i === 1 ? "" : "s"} changed`];
   return t > 0 && a.push(`${t} insertion${t === 1 ? "" : "s"}(+)`), r > 0 && a.push(`${r} deletion${r === 1 ? "" : "s"}(-)`), i > 0 && n.push(" " + a.join(", ")), n;
 }
-function Me(e, n) {
+function De(e, n) {
   let t = !1;
   const r = [];
   for (const a of n)
@@ -794,7 +806,7 @@ function Me(e, n) {
   }
   e.exit(0);
 }
-function De(e, n, t) {
+function Le(e, n, t) {
   let r = !1, s = !1;
   const o = [];
   for (const u of n)
@@ -810,16 +822,16 @@ function De(e, n, t) {
   const i = r || o.length === 0 ? [""] : o, a = t.readIndex(), l = t.worktree();
   let f = !1;
   for (const u of i) {
-    const d = x(t, e.state.cwd, u);
+    const d = ee(t, e.state.cwd, u);
     if (d === null) {
       k(e, `fatal: ${u}: '${u}' is outside repository at '${t.root}'`);
       return;
     }
-    const g = ee(t, d), c = t.vfs.nodeAt(d);
+    const g = te(t, d), c = t.vfs.nodeAt(d);
     if (c !== null && c.kind === "dir")
-      f = !0, Le(t, g, a, l, s);
+      f = !0, We(t, g, a, l, s);
     else if (c !== null && c.kind === "file")
-      f = !0, I(t, a, g, c.content);
+      f = !0, B(t, a, g, c.content);
     else if (a.has(g) || g === "")
       g !== "" && (f = !0, a.delete(g));
     else if (!(s && !a.has(g))) {
@@ -834,30 +846,30 @@ hint: Maybe you wanted to say 'git add .'?`);
   }
   t.writeIndex(a), e.exit(0);
 }
-function Le(e, n, t, r, s) {
+function We(e, n, t, r, s) {
   const o = n === "" ? "" : n + "/";
   if (s) {
     for (const i of [...t.keys()]) {
       if (!i.startsWith(o)) continue;
       const a = r.get(i);
-      a === void 0 ? t.delete(i) : I(e, t, i, a);
+      a === void 0 ? t.delete(i) : B(e, t, i, a);
     }
     return;
   }
   for (const [i, a] of r)
-    i.startsWith(o) && I(e, t, i, a);
+    i.startsWith(o) && B(e, t, i, a);
   for (const i of [...t.keys()])
     i.startsWith(o) && !r.has(i) && t.delete(i);
 }
-function I(e, n, t, r) {
-  n.set(t, { sha: e.writeBlob(r), size: S(r).length });
+function B(e, n, t, r) {
+  n.set(t, { sha: e.writeBlob(r), size: O(r).length });
 }
-const R = {
+const q = {
   added: "new file:   ",
   modified: "modified:   ",
   deleted: "deleted:    "
 };
-function q(e, n) {
+function z(e, n) {
   const t = /* @__PURE__ */ new Set();
   for (const o of e.readIndex().keys()) t.add(o);
   for (const o of e.commitTree(e.headSha()).keys()) t.add(o);
@@ -880,7 +892,7 @@ function q(e, n) {
   }
   return [...s].sort();
 }
-function We(e, n, t) {
+function Ee(e, n, t) {
   const r = n.includes("--short") || n.includes("-s"), s = t.status(), o = t.currentBranch();
   if (r) {
     const i = { added: "A", modified: "M", deleted: "D" }, a = { added: "A", modified: "M", deleted: "D" }, l = /* @__PURE__ */ new Set();
@@ -891,21 +903,21 @@ function We(e, n, t) {
     }
     for (const f of s.unstaged)
       l.has(f.path) || e.out(` ${a[f.kind]} ${f.path}`);
-    for (const f of q(t, s.untracked)) e.out(`?? ${f}`);
+    for (const f of z(t, s.untracked)) e.out(`?? ${f}`);
     e.exit(0);
     return;
   }
   if (e.out(o !== "" ? `On branch ${o}` : "HEAD detached"), t.headSha() === null && (e.out(""), e.out("No commits yet")), s.staged.length > 0) {
     e.out(""), e.out("Changes to be committed:"), e.out('  (use "git restore --staged <file>..." to unstage)');
-    for (const i of s.staged) e.out(`	${R[i.kind]}${i.path}`);
+    for (const i of s.staged) e.out(`	${q[i.kind]}${i.path}`);
   }
   if (s.unstaged.length > 0) {
     e.out(""), e.out("Changes not staged for commit:"), e.out('  (use "git add <file>..." to update what will be committed)'), e.out('  (use "git restore <file>..." to discard changes in working directory)');
-    for (const i of s.unstaged) e.out(`	${R[i.kind]}${i.path}`);
+    for (const i of s.unstaged) e.out(`	${q[i.kind]}${i.path}`);
   }
   if (s.untracked.length > 0) {
     e.out(""), e.out("Untracked files:"), e.out('  (use "git add <file>..." to include in what will be committed)');
-    for (const i of q(t, s.untracked)) e.out(`	${i}`);
+    for (const i of z(t, s.untracked)) e.out(`	${i}`);
   }
   s.staged.length === 0 && s.unstaged.length === 0 && s.untracked.length === 0 ? (e.out(""), e.out("nothing to commit, working tree clean")) : s.staged.length === 0 && s.unstaged.length === 0 && (e.out(""), e.out('nothing added to commit but untracked files present (use "git add" to track)')), e.exit(0);
 }
@@ -921,8 +933,8 @@ function Ne(e, n, t) {
       r = n[++$];
     else if (/^-[a-z]+$/i.test(y) && y.includes("m")) {
       o === !1 && (o = y.slice(1).includes("a"));
-      const O = y.slice(y.indexOf("m") + 1);
-      O.length > 0 ? r = O : $ + 1 < n.length && (r = n[++$]);
+      const S = y.slice(y.indexOf("m") + 1);
+      S.length > 0 ? r = S : $ + 1 < n.length && (r = n[++$]);
     } else if (y.startsWith("-m") && y.length > 2)
       r = y.slice(2);
     else if (y === "--amend")
@@ -954,7 +966,7 @@ hint: semtext git cannot open an editor — pass -m <message>`);
     k(e, "fatal: --amend: no commit to amend (the branch has no history)");
     return;
   }
-  const f = s ? T(l, t.readObject(l).payload).parents[0] ?? null : l, u = t.commitTree(f), d = t.readIndex(), g = F(
+  const f = s ? T(l, t.readObject(l).payload).parents[0] ?? null : l, u = t.commitTree(f), d = t.readIndex(), g = U(
     u,
     new Map([...d].map(([$, y]) => [$, y.sha])),
     ($) => t.objectText($)
@@ -963,9 +975,9 @@ hint: semtext git cannot open an editor — pass -m <message>`);
     e.out(`On branch ${t.currentBranch()}`), e.out("nothing to commit, working tree clean"), e.exit(1);
     return;
   }
-  const c = t.writeTreeFromIndex(d), h = Math.floor(Date.now() / 1e3), p = $e(), w = t.writeObject(
+  const c = t.writeTreeFromIndex(d), h = Math.floor(Date.now() / 1e3), p = ke(), w = t.writeObject(
     "commit",
-    ge({
+    pe({
       tree: c,
       parents: f === null ? [] : [f],
       name: a.name,
@@ -979,13 +991,13 @@ hint: semtext git cannot open an editor — pass -m <message>`);
   const b = t.currentBranch(), m = f === null ? " (root-commit)" : "";
   if (e.out(`[${b}${m} ${w.slice(0, 7)}] ${r.split(`
 `)[0]}`), g.length > 0) {
-    for (const $ of ne(g)) e.out($);
+    for (const $ of se(g)) e.out($);
     for (const $ of g)
       $.old.sha === null && e.out(` create mode 100644 ${$.path}`), $.neu.sha === null && e.out(` delete mode 100644 ${$.path}`);
   }
   e.exit(0);
 }
-function Ee(e, n, t) {
+function Pe(e, n, t) {
   let r = !1, s = 1 / 0, o = null;
   for (let f = 0; f < n.length; f++) {
     const u = n[f];
@@ -1019,7 +1031,7 @@ function Ee(e, n, t) {
     else {
       e.out(`commit ${l}`), e.out(
         `Author: ${f.authorName} <${f.authorEmail}>`
-      ), e.out(`Date:   ${J(f.authorWhen, f.authorOffset)}`), e.out("");
+      ), e.out(`Date:   ${K(f.authorWhen, f.authorOffset)}`), e.out("");
       for (const u of f.message.replace(/\n$/, "").split(`
 `)) e.out(`    ${u}`);
       e.out("");
@@ -1028,7 +1040,7 @@ function Ee(e, n, t) {
   }
   e.exit(0);
 }
-function Pe(e, n, t) {
+function Ce(e, n, t) {
   let r = !1;
   const s = [];
   for (const c of n)
@@ -1066,10 +1078,10 @@ Use '--' to separate paths from revisions, like this:
     f = i, u = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Map();
     for (const [c, h] of i) {
       const p = l.get(c);
-      p !== void 0 && (u.set(c, D(p)), d.set(c, p));
+      p !== void 0 && (u.set(c, L(p)), d.set(c, p));
     }
   }
-  const g = F(f, u, o);
+  const g = U(f, u, o);
   if (d !== null)
     for (const c of g) {
       const h = d.get(c.path);
@@ -1077,12 +1089,12 @@ Use '--' to separate paths from revisions, like this:
     }
   return { changes: g, textOf: o };
 }
-function Ce(e, n, t) {
-  const r = Pe(e, n, t);
+function Ie(e, n, t) {
+  const r = Ce(e, n, t);
   if (r === null) return;
   const { changes: s } = r, o = n.includes("--stat"), i = n.includes("--exit-code");
   if (o)
-    for (const a of ne(s)) e.out(a);
+    for (const a of se(s)) e.out(a);
   else
     for (const a of s) {
       const l = t.fileDiff(a.path, a.old, a.neu);
@@ -1090,7 +1102,7 @@ function Ce(e, n, t) {
     }
   e.exit(i && s.length > 0 ? 1 : 0);
 }
-function Ie(e, n, t) {
+function Be(e, n, t) {
   const s = n.filter((f) => !f.startsWith("-"))[0] ?? "HEAD", o = t.revParse(s);
   if (o === null) {
     k(
@@ -1104,18 +1116,18 @@ Use '--' to separate paths from revisions, like this:
   const i = T(o, t.readObject(o).payload);
   e.out(`commit ${o}`);
   for (const f of i.parents) e.out(`Merge: ${f.slice(0, 7)}`);
-  e.out(`Author: ${i.authorName} <${i.authorEmail}>`), e.out(`Date:   ${J(i.authorWhen, i.authorOffset)}`), e.out("");
+  e.out(`Author: ${i.authorName} <${i.authorEmail}>`), e.out(`Date:   ${K(i.authorWhen, i.authorOffset)}`), e.out("");
   for (const f of i.message.replace(/\n$/, "").split(`
 `)) e.out(`    ${f}`);
   e.out("");
   const a = t.commitTree(i.parents[0] ?? null), l = t.commitTree(o);
-  for (const f of F(a, l, (u) => t.objectText(u))) {
+  for (const f of U(a, l, (u) => t.objectText(u))) {
     const u = t.fileDiff(f.path, f.old, f.neu);
     for (const d of u.rows) e.out(d);
   }
   e.exit(0);
 }
-function Be(e, n, t) {
+function Fe(e, n, t) {
   let r = !1;
   const s = [];
   for (const a of n)
@@ -1135,7 +1147,7 @@ function Be(e, n, t) {
         k(e, `error: branch '${a}' not found.`, 1);
         return;
       }
-      if (!Fe(t, l)) {
+      if (!Ue(t, l)) {
         e.err(`error: the branch '${a}' is not fully merged.`), e.err("hint: If you are sure you want to delete it, run 'git branch -D <branch-name>'."), e.exit(1);
         return;
       }
@@ -1155,7 +1167,7 @@ function Be(e, n, t) {
     k(e, `fatal: not a valid object name: '${s[1] ?? "HEAD"}'`);
     return;
   }
-  if (!te(o)) {
+  if (!ne(o)) {
     k(e, `fatal: '${o}' is not a valid branch name`);
     return;
   }
@@ -1165,7 +1177,7 @@ function Be(e, n, t) {
   }
   t.writeRef(o, i), e.exit(0);
 }
-function Fe(e, n) {
+function Ue(e, n) {
   const t = /* @__PURE__ */ new Set();
   let r = e.headSha();
   for (; r !== null && !t.has(r); ) {
@@ -1177,8 +1189,8 @@ function Fe(e, n) {
   }
   return !1;
 }
-function B(e, n, t, r, s) {
-  if (!te(t))
+function F(e, n, t, r, s) {
+  if (!ne(t))
     return k(e, `fatal: '${t}' is not a valid branch name`), !1;
   let o;
   if (r)
@@ -1204,7 +1216,7 @@ function B(e, n, t, r, s) {
   for (const h of g) {
     const p = i.get(h), w = a.get(h);
     if (p === w) continue;
-    const b = f.get(h)?.sha, m = l.get(h), $ = m === void 0 ? void 0 : D(m);
+    const b = f.get(h)?.sha, m = l.get(h), $ = m === void 0 ? void 0 : L(m);
     if (p === void 0 && b === void 0 && $ !== void 0) {
       d.push(h);
       continue;
@@ -1232,20 +1244,20 @@ function B(e, n, t, r, s) {
   for (const [h, p] of a)
     n.vfs.mountFile(n.workPath(h), n.objectText(p) ?? "");
   const c = /* @__PURE__ */ new Map();
-  for (const [h, p] of a) c.set(h, { sha: p, size: S(n.objectText(p) ?? "").length });
+  for (const [h, p] of a) c.set(h, { sha: p, size: O(n.objectText(p) ?? "").length });
   return n.writeIndex(c), n.vfs.mountFile(n.gitPath("HEAD"), `ref: refs/heads/${t}
 `), e.out(r ? `Switched to a new branch '${t}'` : `Switched to branch '${t}'`), e.exit(0), !0;
 }
-function Ue(e, n, t) {
+function He(e, n, t) {
   const r = n.readIndex();
   let s = !1;
   for (const o of t) {
-    const i = x(n, e.state.cwd, o);
+    const i = ee(n, e.state.cwd, o);
     if (i === null) {
       k(e, `error: pathspec '${o}' did not match any file(s) known to git`, 1), s = !0;
       continue;
     }
-    const a = ee(n, i), l = r.get(a);
+    const a = te(n, i), l = r.get(a);
     if (l === void 0) {
       e.err(`error: pathspec '${o}' did not match any file(s) known to git`), e.exit(1), s = !0;
       continue;
@@ -1254,7 +1266,7 @@ function Ue(e, n, t) {
   }
   return !s;
 }
-function He(e, n, t) {
+function Re(e, n, t) {
   let r = !1, s = !1;
   const o = [];
   let i = !1;
@@ -1282,7 +1294,7 @@ function He(e, n, t) {
       k(e, "fatal: missing branch name with -b");
       return;
     }
-    B(e, t, l, !0, s);
+    F(e, t, l, !0, s);
     return;
   }
   if (o.length === 0) {
@@ -1291,12 +1303,12 @@ function He(e, n, t) {
   }
   const a = o[0];
   if (o.length === 1 && t.refSha(a) !== null) {
-    B(e, t, a, !1, s);
+    F(e, t, a, !1, s);
     return;
   }
-  Ue(e, t, o) && e.exit(0);
+  He(e, t, o) && e.exit(0);
 }
-function Re(e, n, t) {
+function qe(e, n, t) {
   let r = !1;
   const s = [];
   for (const i of n)
@@ -1311,9 +1323,9 @@ function Re(e, n, t) {
     k(e, "fatal: missing branch or commit operand");
     return;
   }
-  B(e, t, o, r, !1);
+  F(e, t, o, r, !1);
 }
-function qe(e, n, t) {
+function ze(e, n, t) {
   let r = !1, s = !1, o = !1;
   const i = [];
   for (const l of n)
@@ -1349,7 +1361,7 @@ function qe(e, n, t) {
   }
   t.configSet(a, i.slice(1).join(" "), r), e.exit(0);
 }
-function ze(e, n, t) {
+function Ge(e, n, t) {
   const r = n.includes("--short"), s = n.filter((i) => !i.startsWith("-"));
   if (s.length === 0) {
     k(e, "usage: git rev-parse [--short] <revision>...");
@@ -1368,10 +1380,10 @@ function ze(e, n, t) {
   }
   e.exit(o ? 128 : 0);
 }
-function Ge(e) {
+function Ve(e) {
   const n = e.args, t = (o) => {
-    e.out(Q("git")), e.out("");
-    for (const [i, a] of Z) e.out(`   ${i.padEnd(12)} ${a}`);
+    e.out(Z("git")), e.out("");
+    for (const [i, a] of x) e.out(`   ${i.padEnd(12)} ${a}`);
     e.exit(o);
   };
   if (n.length === 0) {
@@ -1384,10 +1396,10 @@ function Ge(e) {
     return;
   }
   if (r === "--version" || r === "version") {
-    e.out(Ae), e.exit(0);
+    e.out(Te), e.exit(0);
     return;
   }
-  if (Te.has(r)) {
+  if (Me.has(r)) {
     e.err(
       `git: '${r}' is not supported in semtext-sh — there is no CORS-capable git transport over the VFS. Local history (init/add/commit/log/diff/branch/checkout) works everywhere.`
     ), e.exit(1);
@@ -1395,16 +1407,16 @@ function Ge(e) {
   }
   switch (r) {
     case "init":
-      Me(e, s);
+      De(e, s);
       return;
     case "add": {
       const o = v(e);
-      o !== null && De(e, s, o);
+      o !== null && Le(e, s, o);
       return;
     }
     case "status": {
       const o = v(e);
-      o !== null && We(e, s, o);
+      o !== null && Ee(e, s, o);
       return;
     }
     case "commit": {
@@ -1414,72 +1426,72 @@ function Ge(e) {
     }
     case "log": {
       const o = v(e);
-      o !== null && Ee(e, s, o);
+      o !== null && Pe(e, s, o);
       return;
     }
     case "diff": {
       const o = v(e);
-      o !== null && Ce(e, s, o);
+      o !== null && Ie(e, s, o);
       return;
     }
     case "show": {
       const o = v(e);
-      o !== null && Ie(e, s, o);
+      o !== null && Be(e, s, o);
       return;
     }
     case "branch": {
       const o = v(e);
-      o !== null && Be(e, s, o);
+      o !== null && Fe(e, s, o);
       return;
     }
     case "checkout": {
       const o = v(e);
-      o !== null && He(e, s, o);
+      o !== null && Re(e, s, o);
       return;
     }
     case "switch": {
       const o = v(e);
-      o !== null && Re(e, s, o);
+      o !== null && qe(e, s, o);
       return;
     }
     case "config": {
       const o = v(e);
-      o !== null && qe(e, s, o);
+      o !== null && ze(e, s, o);
       return;
     }
     case "rev-parse": {
       const o = v(e);
-      o !== null && ze(e, s, o);
+      o !== null && Ge(e, s, o);
       return;
     }
     default:
       e.err(`git: '${r}' is not a git command. See 'git --help'.`), e.exit(1);
   }
 }
-function Ve(e) {
+function _e(e) {
   const n = e.word.lastIndexOf("/"), t = n === -1 ? "" : e.word.slice(0, n + 1), r = n === -1 ? e.word : e.word.slice(n + 1), s = e.vfs.resolve(e.cwd, t === "" ? "." : t), o = [];
   for (const i of e.vfs.list(s))
     !i.name.startsWith(r) || i.name === ".git" || o.push(t + i.name + (i.kind === "dir" ? "/" : ""));
   return o;
 }
-function _e(e) {
+function Je(e) {
   const n = M.discover(e.vfs, e.cwd);
   return n === null ? [] : n.listBranches().filter((t) => t.startsWith(e.word));
 }
-const Je = {
+const Ke = {
   name: "git",
-  usage: Q("git"),
-  run: Ge,
+  usage: Z("git"),
+  run: Ve,
   complete(e) {
-    if (e.args.length === 0) return Z.map(([t]) => t).filter((t) => t.startsWith(e.word));
+    if (e.args.length === 0) return x.map(([t]) => t).filter((t) => t.startsWith(e.word));
     const n = e.args[0];
-    return n === "checkout" || n === "switch" || n === "branch" ? [..._e(e), ...Ke(n).filter((t) => t.startsWith(e.word))] : (n === "add" || n === "status" || n === "diff" || n === "show" || n === "restore") && e.args.length >= 1 ? Ve(e) : [];
+    return n === "checkout" || n === "switch" || n === "branch" ? [...Je(e), ...Ye(n).filter((t) => t.startsWith(e.word))] : (n === "add" || n === "status" || n === "diff" || n === "show" || n === "restore") && e.args.length >= 1 ? _e(e) : [];
   }
 };
-function Ke(e) {
+function Ye(e) {
   return e === "checkout" ? ["-b", "-B", "--"] : e === "switch" ? ["-c", "-C"] : e === "branch" ? ["-d", "--delete", "-a", "--all"] : [];
 }
-const Ye = [Je], Xe = {
+const Xe = [Ke], Qe = {
   git: [
     "GIT(1)                    semtext-sh manual",
     "",
@@ -1523,9 +1535,9 @@ const Ye = [Je], Xe = {
     "",
     "SEMTEXT-SH                 2026-10-17                    GIT(1)"
   ]
-}, Qe = { commands: Ye, manPages: Xe };
+}, Ze = { commands: Xe, manPages: Qe };
 export {
-  Ye as commands,
-  Xe as manPages,
-  Qe as pkg
+  Xe as commands,
+  Qe as manPages,
+  Ze as pkg
 };

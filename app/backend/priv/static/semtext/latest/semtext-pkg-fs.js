@@ -16,46 +16,58 @@ function se(e, n) {
   const s = H(e.name), t = /* @__PURE__ */ new Map(), r = /* @__PURE__ */ new Map(), a = /* @__PURE__ */ new Map();
   for (const l of e.commands)
     l.man !== void 0 && a.set(l.name, l.man);
-  let u = !1, h = !1, d = null;
-  const c = () => (d ??= n().then(
+  let u = !1, h = !1, m = null;
+  const c = () => (m ??= n().then(
     (l) => {
       for (const o of l.commands) t.set(o.name, o);
-      for (const [o, m] of Object.entries(l.manPages ?? {})) r.set(o, m);
+      for (const [o, d] of Object.entries(l.manPages ?? {})) r.set(o, d);
       return u = !0, !0;
     },
     () => (h = !0, !1)
-  ), d), i = (l) => {
+  ), m), i = (l) => {
     const o = () => t.get(l.name);
     return {
       name: l.name,
       // Help/completion surfaces read the stub's line — never the chunk.
       usage: l.usage,
-      run(m) {
+      run(d) {
         const f = o();
         if (f !== void 0)
-          return f.run(m);
-        if (ne(m.args)) {
-          m.out(l.usage);
+          return f.run(d);
+        if (ne(d.args)) {
+          d.out(l.usage);
           return;
         }
-        return c().then((p) => {
-          if (!p) {
-            m.err(`${l.name}: package chunk failed to load (${s})`), m.exit(1);
+        d.err(`loading ${e.name}…`);
+        const p = d.err, g = d.exit;
+        let N = !1, M = !1;
+        const E = () => {
+          d.err = p, d.exit = g, M || g(N ? 1 : 0);
+        };
+        return c().then((T) => {
+          if (!T) {
+            d.err(`${l.name}: package chunk failed to load (${s})`), d.exit(1);
             return;
           }
-          const y = o();
-          if (y === void 0) {
-            m.err(`${l.name}: package chunk ${s} does not provide it`), m.exit(70);
+          const v = o();
+          if (v === void 0) {
+            d.err(`${l.name}: package chunk ${s} does not provide it`), d.exit(70);
             return;
           }
-          return y.run(m);
+          return d.err = (b) => {
+            N = !0, p(b);
+          }, d.exit = (b) => {
+            M = !0, g(b);
+          }, Promise.resolve(v.run(d)).then(E, (b) => {
+            throw E(), b;
+          });
         });
       },
-      complete(m) {
-        return o()?.complete?.(m) ?? [];
+      complete(d) {
+        return o()?.complete?.(d) ?? [];
       },
-      app(m) {
-        return o()?.app?.(m) ?? null;
+      app(d) {
+        return o()?.app?.(d) ?? null;
       }
     };
   };
@@ -328,8 +340,8 @@ const K = {
   ]
 };
 se(K, () => te("fs"));
-const g = (e) => K.commands.find((n) => n.name === e).usage, re = new TextEncoder(), L = (e) => re.encode(e).length;
-function x(e) {
+const y = (e) => K.commands.find((n) => n.name === e).usage, re = new TextEncoder(), L = (e) => re.encode(e).length;
+function B(e) {
   if (Math.abs(e) < 1024) return String(e);
   const s = ["K", "M", "G", "T", "P", "E"];
   let t = e, r = "";
@@ -339,58 +351,58 @@ function x(e) {
   }
   return `${Math.abs(t) < 10 ? Math.round(t * 10) / 10 : Math.round(t)}${r}`;
 }
-const I = (e, n) => {
+const k = (e, n) => {
   e.err(`Try '${n} --help' for more information.`);
 };
-function v(e, n, s, t) {
-  const { flagLetters: r = "", valueLetters: a = "", longFlags: u = [], longValues: h = [] } = t, d = /* @__PURE__ */ new Set(), c = /* @__PURE__ */ new Map(), i = [], l = (f, p) => (e.err(`${n}: ${f}${p === "" ? "" : ` '${p}'`}`), I(e, n), e.exit(1), null);
-  let o = 0, m = !1;
+function w(e, n, s, t) {
+  const { flagLetters: r = "", valueLetters: a = "", longFlags: u = [], longValues: h = [] } = t, m = /* @__PURE__ */ new Set(), c = /* @__PURE__ */ new Map(), i = [], l = (f, p) => (e.err(`${n}: ${f}${p === "" ? "" : ` '${p}'`}`), k(e, n), e.exit(1), null);
+  let o = 0, d = !1;
   for (; o < s.length; ) {
     const f = s[o];
-    if (m || f === "-" || /^-\d/.test(f) || /^-\.\d/.test(f) || !f.startsWith("-")) {
+    if (d || f === "-" || /^-\d/.test(f) || /^-\.\d/.test(f) || !f.startsWith("-")) {
       i.push(f), o++;
       continue;
     }
     if (f === "--") {
-      m = !0, o++;
+      d = !0, o++;
       continue;
     }
     if (f === "--help") {
-      d.add("--help"), o++;
+      m.add("--help"), o++;
       continue;
     }
     if (f.startsWith("--")) {
-      const p = f.indexOf("="), y = p === -1 ? f : f.slice(0, p);
-      if (h.includes(y)) {
+      const p = f.indexOf("="), g = p === -1 ? f : f.slice(0, p);
+      if (h.includes(g)) {
         const N = p !== -1 ? f.slice(p + 1) : s[++o];
-        if (N === void 0) return l(`option '${y}' requires an argument`, y);
-        c.set(y, N);
-      } else if (u.includes(y))
-        d.add(y);
+        if (N === void 0) return l(`option '${g}' requires an argument`, g);
+        c.set(g, N);
+      } else if (u.includes(g))
+        m.add(g);
       else
         return l("unrecognized option", f);
       o++;
       continue;
     }
     for (let p = 1; p < f.length; p++) {
-      const y = f[p];
-      if (a.includes(y)) {
+      const g = f[p];
+      if (a.includes(g)) {
         const N = f.slice(p + 1), M = N !== "" ? N : s[++o];
-        if (M === void 0) return l(`option requires an argument -- '${y}'`, "");
-        c.set("-" + y, M);
+        if (M === void 0) return l(`option requires an argument -- '${g}'`, "");
+        c.set("-" + g, M);
         break;
       }
-      if (r.includes(y))
-        d.add("-" + y);
+      if (r.includes(g))
+        m.add("-" + g);
       else
-        return l(`invalid option -- '${y}'`, "");
+        return l(`invalid option -- '${g}'`, "");
     }
     o++;
   }
-  return { flags: d, values: c, operands: i };
+  return { flags: m, values: c, operands: i };
 }
-const b = (e, n) => e.vfs.resolve(e.state.cwd, n), ae = (e, n) => e.vfs.nodeAt(b(e, n));
-function B(e, n, s, t = "cannot access") {
+const A = (e, n) => e.vfs.resolve(e.state.cwd, n), ae = (e, n) => e.vfs.nodeAt(A(e, n));
+function j(e, n, s, t = "cannot access") {
   e.err(`${n}: ${t} '${s}': No such file or directory`);
 }
 const O = /* @__PURE__ */ new Map(), oe = (e, n, s) => O.get(n) ?? (s.kind === "dir" ? 493 : 420);
@@ -402,8 +414,8 @@ function ie(e) {
   return n(6) + n(3) + n(0);
 }
 const le = (e) => e.toString(8).padStart(4, "0");
-function j(e, n) {
-  const s = e.vfs.backendFor(b(e, n));
+function x(e, n) {
+  const s = e.vfs.backendFor(A(e, n));
   return s ? { id: s.id, mountpoint: s.mountpoint } : { id: "memory", mountpoint: "/" };
 }
 function J(e, n) {
@@ -412,15 +424,15 @@ function J(e, n) {
 }
 const ue = {
   name: "mv",
-  usage: g("mv"),
+  usage: y("mv"),
   complete: (e) => ["-f", "-n", "-v", "--help"].filter((n) => n.startsWith(e.word)),
   run(e) {
-    const n = v(e, "mv", e.args, { flagLetters: "fnv" });
+    const n = w(e, "mv", e.args, { flagLetters: "fnv" });
     if (n === null) return;
     const { flags: s, operands: t } = n;
     if (s.has("--help")) {
       for (const c of [
-        g("mv"),
+        y("mv"),
         "",
         "Move (rename) SOURCE to DEST, or move every SOURCE into an",
         "existing DEST directory. -n skips existing destinations (this",
@@ -437,26 +449,26 @@ const ue = {
       e.err(`mv: missing destination file operand after '${t[0]}'`), e.exit(1);
       return;
     }
-    const r = t[t.length - 1], a = b(e, r), u = t.slice(0, -1), h = e.vfs.nodeAt(a);
+    const r = t[t.length - 1], a = A(e, r), u = t.slice(0, -1), h = e.vfs.nodeAt(a);
     if (u.length > 1 && h?.kind !== "dir") {
       e.err(`mv: target '${r}' is not a directory`), e.exit(1);
       return;
     }
-    let d = !1;
+    let m = !1;
     for (const c of u) {
-      const i = b(e, c), l = e.vfs.nodeAt(i);
+      const i = A(e, c), l = e.vfs.nodeAt(i);
       if (l === null) {
-        B(e, "mv", c, "cannot stat"), d = !0;
+        j(e, "mv", c, "cannot stat"), m = !0;
         continue;
       }
       const o = h?.kind === "dir" ? e.vfs.resolve(a, l.name) : a;
       if (o === i) {
-        e.err(`mv: '${c}' and '${r}' are the same file`), d = !0;
+        e.err(`mv: '${c}' and '${r}' are the same file`), m = !0;
         continue;
       }
       if (s.has("-n") && e.vfs.nodeAt(o) !== null) continue;
       if (e.vfs.nodeAt(e.vfs.resolve(o, ".."))?.kind !== "dir") {
-        e.err(`mv: cannot move '${c}' to '${r}': No such file or directory`), d = !0;
+        e.err(`mv: cannot move '${c}' to '${r}': No such file or directory`), m = !0;
         continue;
       }
       try {
@@ -468,21 +480,21 @@ const ue = {
         f !== void 0 && (O.delete(i), O.set(o, f));
       } catch (f) {
         const p = f instanceof Error ? f.message : String(f);
-        e.err(`mv: cannot move '${c}' to '${r}': ${p}`), d = !0;
+        e.err(`mv: cannot move '${c}' to '${r}': ${p}`), m = !0;
       }
     }
-    d && e.exit(1);
+    m && e.exit(1);
   }
 }, de = {
   name: "ln",
-  usage: g("ln"),
+  usage: y("ln"),
   complete: (e) => ["-s", "-f", "--help"].filter((n) => n.startsWith(e.word)),
   run(e) {
-    const n = v(e, "ln", e.args, { flagLetters: "sf" });
+    const n = w(e, "ln", e.args, { flagLetters: "sf" });
     if (n === null) return;
     const { flags: s, operands: t } = n;
     if (s.has("--help")) {
-      e.out(g("ln"));
+      e.out(y("ln"));
       return;
     }
     if (t.length === 0) {
@@ -498,14 +510,14 @@ const ue = {
   }
 }, me = {
   name: "readlink",
-  usage: g("readlink"),
+  usage: y("readlink"),
   complete: (e) => ["-f", "--help"].filter((n) => n.startsWith(e.word)),
   run(e) {
-    const n = v(e, "readlink", e.args, { flagLetters: "f" });
+    const n = w(e, "readlink", e.args, { flagLetters: "f" });
     if (n === null) return;
     const { flags: s, operands: t } = n;
     if (s.has("--help")) {
-      e.out(g("readlink"));
+      e.out(y("readlink"));
       return;
     }
     if (t.length === 0) {
@@ -514,7 +526,7 @@ const ue = {
     }
     if (s.has("-f")) {
       for (const r of t) {
-        const a = b(e, r);
+        const a = A(e, r);
         if (e.vfs.nodeAt(e.vfs.resolve(a, ".."))?.kind !== "dir") {
           e.err(`readlink: ${r}: No such file or directory`), e.exit(1);
           return;
@@ -527,15 +539,15 @@ const ue = {
   }
 }, he = {
   name: "chmod",
-  usage: g("chmod"),
+  usage: y("chmod"),
   complete: (e) => ["-R", "--help"].filter((n) => n.startsWith(e.word)),
   run(e) {
-    const n = v(e, "chmod", e.args, { flagLetters: "R" });
+    const n = w(e, "chmod", e.args, { flagLetters: "R" });
     if (n === null) return;
     const { flags: s, operands: t } = n;
     if (s.has("--help")) {
       for (const i of [
-        g("chmod"),
+        y("chmod"),
         "",
         "Octal modes only (0644-style). The VFS has no permission",
         "metadata: the mode is recorded in a SESSION-SCOPED map that",
@@ -544,7 +556,7 @@ const ue = {
       return;
     }
     if (t.length === 0) {
-      e.err("chmod: missing operand"), I(e, "chmod"), e.exit(1);
+      e.err("chmod: missing operand"), k(e, "chmod"), e.exit(1);
       return;
     }
     const r = t[0], a = t.slice(1);
@@ -558,106 +570,106 @@ const ue = {
       return;
     }
     const h = parseInt(u[1], 8) & 511;
-    let d = !1;
+    let m = !1;
     const c = (i, l) => {
       const o = e.vfs.nodeAt(i);
       if (o === null) {
-        B(e, "chmod", l), d = !0;
+        j(e, "chmod", l), m = !0;
         return;
       }
       if (O.set(i, h), s.has("-R") && o.kind === "dir")
-        for (const m of e.vfs.list(i)) c(e.vfs.resolve(i, m.name), `${l.replace(/\/+$/, "")}/${m.name}`);
+        for (const d of e.vfs.list(i)) c(e.vfs.resolve(i, d.name), `${l.replace(/\/+$/, "")}/${d.name}`);
     };
-    for (const i of a) c(b(e, i), i);
-    d && e.exit(1);
+    for (const i of a) c(A(e, i), i);
+    m && e.exit(1);
   }
 }, fe = {
   name: "stat",
-  usage: g("stat"),
+  usage: y("stat"),
   run(e) {
-    const n = v(e, "stat", e.args, {});
+    const n = w(e, "stat", e.args, {});
     if (n === null) return;
     const { flags: s, operands: t } = n;
     if (s.has("--help")) {
-      e.out(g("stat"));
+      e.out(y("stat"));
       return;
     }
     if (t.length === 0) {
-      e.err("stat: missing operand"), I(e, "stat"), e.exit(1);
+      e.err("stat: missing operand"), k(e, "stat"), e.exit(1);
       return;
     }
     let r = !1;
     t.forEach((a, u) => {
-      const h = b(e, a), d = e.vfs.nodeAt(h);
-      if (d === null) {
+      const h = A(e, a), m = e.vfs.nodeAt(h);
+      if (m === null) {
         e.err(`stat: cannot stat '${a}': No such file or directory`), r = !0;
         return;
       }
       u > 0 && e.out("");
-      const c = d.kind === "file" ? L(d.content) : 4096, i = d.kind === "dir" ? "directory" : "regular file", l = oe(e, h, d), o = j(e, h);
+      const c = m.kind === "file" ? L(m.content) : 4096, i = m.kind === "dir" ? "directory" : "regular file", l = oe(e, h, m), o = x(e, h);
       e.out(`  File: ${h}`), e.out(`  Size: ${c}${" ".repeat(Math.max(1, 13 - String(c).length))}Kind: ${i}`), e.out(`Access: (${le(l)}/${ie(l)})`), e.out(`Backend: ${o.id} (${o.mountpoint})`);
     }), r && e.exit(1);
   }
 }, ce = {
   name: "tree",
-  usage: g("tree"),
+  usage: y("tree"),
   complete: (e) => ["-a", "-d", "-L", "--help"].filter((n) => n.startsWith(e.word)),
   run(e) {
-    const n = v(e, "tree", e.args, { flagLetters: "ad", valueLetters: "L" });
+    const n = w(e, "tree", e.args, { flagLetters: "ad", valueLetters: "L" });
     if (n === null) return;
     const { flags: s, values: t, operands: r } = n;
     if (s.has("--help")) {
-      for (const d of [
-        g("tree"),
+      for (const m of [
+        y("tree"),
         "",
         "Recursively lists each DIR (default .). Dot entries hide",
         "until -a; -d lists directories only; -L LEVEL caps the depth",
         "(1 = immediate children). Ends with a summary line."
-      ]) e.out(d);
+      ]) e.out(m);
       return;
     }
     let a = 1 / 0;
     if (t.has("-L")) {
-      const d = Number(t.get("-L"));
-      if (!Number.isInteger(d) || d < 1) {
+      const m = Number(t.get("-L"));
+      if (!Number.isInteger(m) || m < 1) {
         e.err("tree: Invalid level, must be greater than 0."), e.exit(1);
         return;
       }
-      a = d;
+      a = m;
     }
     const u = r.length > 0 ? r : ["."];
     let h = !1;
-    for (const d of u) {
-      const c = b(e, d), i = e.vfs.nodeAt(c);
+    for (const m of u) {
+      const c = A(e, m), i = e.vfs.nodeAt(c);
       if (i === null) {
-        e.err(`tree: ${d}: No such file or directory`), h = !0;
+        e.err(`tree: ${m}: No such file or directory`), h = !0;
         continue;
       }
       let l = 0, o = 0;
-      const m = (N) => (s.has("-a") || !N.name.startsWith(".")) && (!s.has("-d") || N.kind === "dir"), f = (N, M, E) => {
-        const k = N.children.filter(m).sort((w, A) => w.name.localeCompare(A.name));
-        k.forEach((w, A) => {
-          const $ = A === k.length - 1;
-          e.out(M + ($ ? "└── " : "├── ") + w.name + (w.kind === "dir" ? "/" : "")), w.kind === "file" ? o++ : l++, w.kind === "dir" && E + 1 < a && f(w, M + ($ ? "    " : "│   "), E + 1);
+      const d = (N) => (s.has("-a") || !N.name.startsWith(".")) && (!s.has("-d") || N.kind === "dir"), f = (N, M, E) => {
+        const T = N.children.filter(d).sort((v, b) => v.name.localeCompare(b.name));
+        T.forEach((v, b) => {
+          const $ = b === T.length - 1;
+          e.out(M + ($ ? "└── " : "├── ") + v.name + (v.kind === "dir" ? "/" : "")), v.kind === "file" ? o++ : l++, v.kind === "dir" && E + 1 < a && f(v, M + ($ ? "    " : "│   "), E + 1);
         });
       };
-      e.out(d), i.kind === "dir" && f(i, "", 1);
-      const p = l === 1 ? "directory" : "directories", y = o === 1 ? "file" : "files";
-      e.out(`${l} ${p}, ${o} ${y}`);
+      e.out(m), i.kind === "dir" && f(i, "", 1);
+      const p = l === 1 ? "directory" : "directories", g = o === 1 ? "file" : "files";
+      e.out(`${l} ${p}, ${o} ${g}`);
     }
     h && e.exit(1);
   }
 }, pe = {
   name: "du",
-  usage: g("du"),
+  usage: y("du"),
   complete: (e) => ["-a", "-s", "-h", "--help"].filter((n) => n.startsWith(e.word)),
   run(e) {
-    const n = v(e, "du", e.args, { flagLetters: "ash" });
+    const n = w(e, "du", e.args, { flagLetters: "ash" });
     if (n === null) return;
     const { flags: s, operands: t } = n;
     if (s.has("--help")) {
       for (const i of [
-        g("du"),
+        y("du"),
         "",
         "Sums content BYTES (no disk blocks exist in the VFS).",
         "Without -s every subdirectory prints post-order, then the",
@@ -670,45 +682,45 @@ const ue = {
     let a = !1, u = "";
     const h = (i) => {
       const l = e.vfs.nodeAt(i);
-      return l === null ? -1 : l.kind === "file" ? L(l.content) : l.children.reduce((o, m) => o + Math.max(0, h(e.vfs.resolve(i, m.name))), 0);
-    }, d = (i, l) => {
+      return l === null ? -1 : l.kind === "file" ? L(l.content) : l.children.reduce((o, d) => o + Math.max(0, h(e.vfs.resolve(i, d.name))), 0);
+    }, m = (i, l) => {
       const o = h(i);
       if (o < 0) {
         e.err(`du: cannot access '${l}': No such file or directory`), a = !0;
         return;
       }
-      e.out(`${s.has("-h") ? x(o) : String(o)}	${l}`);
+      e.out(`${s.has("-h") ? B(o) : String(o)}	${l}`);
     }, c = (i, l) => {
       const o = e.vfs.nodeAt(i);
       if (o === null) {
-        d(i, l);
+        m(i, l);
         return;
       }
       if (o.kind === "file") {
-        (l === u || s.has("-a")) && d(i, l);
+        (l === u || s.has("-a")) && m(i, l);
         return;
       }
-      for (const m of o.children)
-        c(e.vfs.resolve(i, m.name), l + (l.endsWith("/") ? "" : "/") + m.name);
-      d(i, l);
+      for (const d of o.children)
+        c(e.vfs.resolve(i, d.name), l + (l.endsWith("/") ? "" : "/") + d.name);
+      m(i, l);
     };
     for (const i of r) {
-      const l = b(e, i);
-      s.has("-s") ? d(l, i) : (u = i, c(l, i));
+      const l = A(e, i);
+      s.has("-s") ? m(l, i) : (u = i, c(l, i));
     }
     a && e.exit(1);
   }
 }, ge = {
   name: "df",
-  usage: g("df"),
+  usage: y("df"),
   complete: (e) => ["-h", "--help"].filter((n) => n.startsWith(e.word)),
   run(e) {
-    const n = v(e, "df", e.args, { flagLetters: "h" });
+    const n = w(e, "df", e.args, { flagLetters: "h" });
     if (n === null) return;
     const { flags: s, operands: t } = n;
     if (s.has("--help")) {
       for (const i of [
-        g("df"),
+        y("df"),
         "",
         "One line per mounted backend (or the backend covering each",
         "PATH): id, Used bytes, and '-' for Avail/Capacity — no backend",
@@ -720,7 +732,7 @@ const ue = {
     const r = /* @__PURE__ */ new Map();
     if (t.length > 0)
       for (const i of t) {
-        const l = j(e, i);
+        const l = x(e, i);
         r.set(l.mountpoint, l);
       }
     else {
@@ -728,10 +740,10 @@ const ue = {
         r.set(i, { id: l.id, mountpoint: i });
       r.size === 0 && r.set("/", { id: "memory", mountpoint: "/" });
     }
-    const a = [...r.values()].map((i) => ({ ...i, used: J(e, i.mountpoint) })), u = (i) => s.has("-h") ? x(i) : String(i), h = (i, l) => i + " ".repeat(Math.max(1, l - i.length)), d = Math.max(10, ...a.map((i) => i.id.length)), c = Math.max(4, ...a.map((i) => u(i.used).length));
-    e.out(h("Filesystem", d + 2) + h("Used", c + 2) + "Avail Capacity Mounted on");
+    const a = [...r.values()].map((i) => ({ ...i, used: J(e, i.mountpoint) })), u = (i) => s.has("-h") ? B(i) : String(i), h = (i, l) => i + " ".repeat(Math.max(1, l - i.length)), m = Math.max(10, ...a.map((i) => i.id.length)), c = Math.max(4, ...a.map((i) => u(i.used).length));
+    e.out(h("Filesystem", m + 2) + h("Used", c + 2) + "Avail Capacity Mounted on");
     for (const i of a)
-      e.out(h(i.id, d + 2) + h(u(i.used), c + 2) + h("-", 6) + h("-", 9) + i.mountpoint);
+      e.out(h(i.id, m + 2) + h(u(i.used), c + 2) + h("-", 6) + h("-", 9) + i.mountpoint);
   }
 }, ye = `PNG\r
 
@@ -765,18 +777,18 @@ function X(e, n) {
 }
 const ve = {
   name: "file",
-  usage: g("file"),
+  usage: y("file"),
   complete: (e) => ["-b", "--help"].filter((n) => n.startsWith(e.word)),
   run(e) {
-    const n = v(e, "file", e.args, { flagLetters: "b" });
+    const n = w(e, "file", e.args, { flagLetters: "b" });
     if (n === null) return;
     const { flags: s, operands: t } = n;
     if (s.has("--help")) {
-      e.out(g("file"));
+      e.out(y("file"));
       return;
     }
     if (t.length === 0) {
-      e.err("file: missing operand"), I(e, "file"), e.exit(1);
+      e.err("file: missing operand"), k(e, "file"), e.exit(1);
       return;
     }
     for (const r of t) {
@@ -801,11 +813,11 @@ const ve = {
   }
 }, be = {
   name: "realpath",
-  usage: g("realpath"),
+  usage: y("realpath"),
   run(e) {
     const n = e.args.filter((t) => t !== "--help");
     if (e.args.includes("--help")) {
-      e.out(g("realpath"));
+      e.out(y("realpath"));
       return;
     }
     if (n.length === 0) {
@@ -814,7 +826,7 @@ const ve = {
     }
     let s = !1;
     for (const t of n) {
-      const r = b(e, t);
+      const r = A(e, t);
       if (e.vfs.nodeAt(r) === null) {
         e.err(`realpath: ${t}: No such file or directory`), s = !0;
         continue;
@@ -825,18 +837,18 @@ const ve = {
   }
 }, we = {
   name: "basename",
-  usage: g("basename"),
+  usage: y("basename"),
   run(e) {
-    const n = v(e, "basename", e.args, { flagLetters: "a", valueLetters: "s" });
+    const n = w(e, "basename", e.args, { flagLetters: "a", valueLetters: "s" });
     if (n === null) return;
     const { flags: s, values: t, operands: r } = n;
     if (s.has("--help")) {
-      e.out(g("basename"));
+      e.out(y("basename"));
       return;
     }
     const a = s.has("-a") || t.has("-s") ? r : r.slice(0, 1), u = t.get("-s") ?? (s.has("-a") ? void 0 : r[1]);
     if (a.length === 0) {
-      e.err("basename: missing operand"), I(e, "basename"), e.exit(1);
+      e.err("basename: missing operand"), k(e, "basename"), e.exit(1);
       return;
     }
     if (!s.has("-a") && !t.has("-s") && r.length > 2) {
@@ -844,23 +856,23 @@ const ve = {
       return;
     }
     for (const h of a) {
-      let d = h.replace(/\/+$/, "");
-      d === "" && (d = "/");
-      const c = d.lastIndexOf("/");
-      d = c === -1 ? d : d.slice(c + 1), d === "" && (d = "/"), u !== void 0 && u !== "" && d !== u && d.endsWith(u) && (d = d.slice(0, -u.length)), e.out(d);
+      let m = h.replace(/\/+$/, "");
+      m === "" && (m = "/");
+      const c = m.lastIndexOf("/");
+      m = c === -1 ? m : m.slice(c + 1), m === "" && (m = "/"), u !== void 0 && u !== "" && m !== u && m.endsWith(u) && (m = m.slice(0, -u.length)), e.out(m);
     }
   }
 }, Me = {
   name: "dirname",
-  usage: g("dirname"),
+  usage: y("dirname"),
   run(e) {
     const n = e.args.filter((s) => s !== "--help");
     if (e.args.includes("--help")) {
-      e.out(g("dirname"));
+      e.out(y("dirname"));
       return;
     }
     if (n.length === 0) {
-      e.err("dirname: missing operand"), I(e, "dirname"), e.exit(1);
+      e.err("dirname: missing operand"), k(e, "dirname"), e.exit(1);
       return;
     }
     for (const s of n) {
@@ -877,18 +889,18 @@ const ve = {
   }
 }, Y = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", Ae = {
   name: "mktemp",
-  usage: g("mktemp"),
+  usage: y("mktemp"),
   complete: (e) => ["-d", "-p", "--help"].filter((n) => n.startsWith(e.word)),
   run(e) {
-    const n = v(e, "mktemp", e.args, { flagLetters: "d", valueLetters: "p" });
+    const n = w(e, "mktemp", e.args, { flagLetters: "d", valueLetters: "p" });
     if (n === null) return;
     const { flags: s, values: t, operands: r } = n;
     if (s.has("--help")) {
-      e.out(g("mktemp"));
+      e.out(y("mktemp"));
       return;
     }
     if (r.length > 1) {
-      e.err("mktemp: too many templates"), I(e, "mktemp"), e.exit(1);
+      e.err("mktemp: too many templates"), k(e, "mktemp"), e.exit(1);
       return;
     }
     let a = r[0] ?? "tmp.XXXXXXXXXX";
@@ -897,8 +909,8 @@ const ve = {
       e.err(`mktemp: too few X's in template '${a}'`), e.exit(1);
       return;
     }
-    const d = r[0] === void 0 && t.get("-p") === void 0;
-    a.includes("/") || (a = `${(t.get("-p") ?? "/tmp").replace(/\/+$/, "")}/${a}`, d && e.vfs.nodeAt("/tmp") === null && e.vfs.mkdir("/tmp"));
+    const m = r[0] === void 0 && t.get("-p") === void 0;
+    a.includes("/") || (a = `${(t.get("-p") ?? "/tmp").replace(/\/+$/, "")}/${a}`, m && e.vfs.nodeAt("/tmp") === null && e.vfs.mkdir("/tmp"));
     const c = s.has("-d");
     for (let i = 0; i < 100; i++) {
       const l = a.replace(h[0], () => {
@@ -906,7 +918,7 @@ const ve = {
         for (let p = 0; p < h[0].length; p++)
           f += Y[Math.floor(Math.random() * Y.length)];
         return f;
-      }), o = b(e, l);
+      }), o = A(e, l);
       if (e.vfs.nodeAt(o) !== null) continue;
       if (e.vfs.nodeAt(e.vfs.resolve(o, ".."))?.kind !== "dir") {
         e.err(`mktemp: Failed to create file via template '${a}': No such file or directory`), e.exit(1);
@@ -919,15 +931,15 @@ const ve = {
   }
 }, Te = {
   name: "type",
-  usage: g("type"),
+  usage: y("type"),
   complete: (e) => ["-a", "--help"].filter((n) => n.startsWith(e.word)),
   run(e) {
-    const n = v(e, "type", e.args, { flagLetters: "a" });
+    const n = w(e, "type", e.args, { flagLetters: "a" });
     if (n === null) return;
     const { operands: s } = n;
     if (Ie(s, n.flags)) {
       for (const r of [
-        g("type"),
+        y("type"),
         "",
         "Prints what the shell would run for each NAME: an alias",
         "('NAME is aliased to `expansion`') and/or a registered",
@@ -975,7 +987,7 @@ function _(e) {
   }
 }
 function $e(e, n, s) {
-  const t = Z(e, n), r = n ? Date.UTC(t.y, 0, 1) : new Date(t.y, 0, 1).getTime(), a = Math.floor((e.getTime() - r) / 864e5) + 1, u = n ? 0 : -e.getTimezoneOffset(), h = u < 0 ? "-" : "+", d = Math.abs(u), c = t.h % 12 === 0 ? 12 : t.h % 12, i = {
+  const t = Z(e, n), r = n ? Date.UTC(t.y, 0, 1) : new Date(t.y, 0, 1).getTime(), a = Math.floor((e.getTime() - r) / 864e5) + 1, u = n ? 0 : -e.getTimezoneOffset(), h = u < 0 ? "-" : "+", m = Math.abs(u), c = t.h % 12 === 0 ? 12 : t.h % 12, i = {
     Y: String(t.y),
     C: S(Math.floor(t.y / 100)),
     y: S(t.y % 100),
@@ -997,7 +1009,7 @@ function $e(e, n, s) {
     u: String(t.w === 0 ? 7 : t.w),
     w: String(t.w),
     Z: _(n),
-    z: `${h}${S(Math.floor(d / 60))}${S(d % 60)}`,
+    z: `${h}${S(Math.floor(m / 60))}${S(m % 60)}`,
     s: String(Math.floor(e.getTime() / 1e3)),
     n: `
 `,
@@ -1017,12 +1029,12 @@ function $e(e, n, s) {
       l += s[o];
       continue;
     }
-    const m = s[o + 1];
-    if (m === void 0) {
+    const d = s[o + 1];
+    if (d === void 0) {
       l += "%";
       break;
     }
-    l += i[m] ?? `%${m}`, o++;
+    l += i[d] ?? `%${d}`, o++;
   }
   return l;
 }
@@ -1034,22 +1046,22 @@ function Oe(e, n) {
   if (t !== null) {
     const a = Number(t[1]), u = Number(t[2]) - 1, h = Number(t[3]);
     if (t[4] === void 0) return new Date(Date.UTC(a, u, h));
-    const d = Number(t[4]), c = Number(t[5]), i = Number(t[6] ?? 0);
-    return n ? new Date(Date.UTC(a, u, h, d, c, i)) : new Date(a, u, h, d, c, i);
+    const m = Number(t[4]), c = Number(t[5]), i = Number(t[6] ?? 0);
+    return n ? new Date(Date.UTC(a, u, h, m, c, i)) : new Date(a, u, h, m, c, i);
   }
   const r = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(e);
   return r !== null ? new Date(Date.UTC(Number(r[1]), Number(r[2]) - 1, Number(r[3]))) : null;
 }
 const Pe = {
   name: "date",
-  usage: g("date"),
+  usage: y("date"),
   complete: (e) => ["-u", "-d", "--help"].filter((n) => n.startsWith(e.word)),
   run(e) {
-    const n = v(e, "date", e.args, { flagLetters: "u", valueLetters: "d" });
+    const n = w(e, "date", e.args, { flagLetters: "u", valueLetters: "d" });
     if (n === null) return;
     const { flags: s, values: t, operands: r } = n;
     if (r.length === 0 && s.has("--help")) {
-      e.out(g("date"));
+      e.out(y("date"));
       return;
     }
     const a = s.has("-u");
@@ -1067,8 +1079,8 @@ const Pe = {
       e.out($e(u, a, h.slice(1)));
       return;
     }
-    const d = Z(u, a);
-    e.out(`${C[d.w]} ${P[d.m]} ${S(d.d)} ${S(d.h)}:${S(d.min)}:${S(d.s)} ${_(a)} ${d.y}`);
+    const m = Z(u, a);
+    e.out(`${C[m.w]} ${P[m.m]} ${S(m.d)} ${S(m.h)}:${S(m.min)}:${S(m.s)} ${_(a)} ${m.y}`);
   }
 };
 function R(e, n) {
@@ -1103,11 +1115,11 @@ function W(e) {
 }
 const De = {
   name: "cal",
-  usage: g("cal"),
+  usage: y("cal"),
   run(e) {
     const n = e.args.filter((a) => a !== "--help");
     if (e.args.includes("--help")) {
-      e.out(g("cal"));
+      e.out(y("cal"));
       return;
     }
     const s = /* @__PURE__ */ new Date();
@@ -1143,12 +1155,12 @@ const De = {
   }
 }, Le = {
   name: "sleep",
-  usage: g("sleep"),
+  usage: y("sleep"),
   run(e) {
     const n = e.args.filter((s) => s !== "--help");
     if (e.args.includes("--help")) {
       for (const s of [
-        g("sleep"),
+        y("sleep"),
         "",
         "Accepts the GNU spellings (decimals, s/m/h/d suffixes) and",
         "then RETURNS AT ONCE: the shell executes commands",
@@ -1157,7 +1169,7 @@ const De = {
       return;
     }
     if (n.length === 0) {
-      e.err("sleep: missing operand"), I(e, "sleep"), e.exit(1);
+      e.err("sleep: missing operand"), k(e, "sleep"), e.exit(1);
       return;
     }
     for (const s of n)
@@ -1178,14 +1190,14 @@ function z(e, n) {
 }
 const Ce = {
   name: "seq",
-  usage: g("seq"),
+  usage: y("seq"),
   complete: (e) => ["-w", "-f", "-s", "--help"].filter((n) => n.startsWith(e.word)),
   run(e) {
-    const n = v(e, "seq", e.args, { flagLetters: "w", valueLetters: "fs" });
+    const n = w(e, "seq", e.args, { flagLetters: "w", valueLetters: "fs" });
     if (n === null) return;
     const { flags: s, values: t, operands: r } = n;
     if (r.length === 0 && s.has("--help")) {
-      e.out(g("seq"));
+      e.out(y("seq"));
       return;
     }
     if (r.length === 0 || r.length > 3) {
@@ -1193,11 +1205,11 @@ const Ce = {
       return;
     }
     const a = r.map((E) => {
-      const k = Number(E);
-      return E === "" || Number.isNaN(k) ? (e.err(`seq: invalid floating point argument '${E}'`), e.exit(1), null) : k;
+      const T = Number(E);
+      return E === "" || Number.isNaN(T) ? (e.err(`seq: invalid floating point argument '${E}'`), e.exit(1), null) : T;
     });
     if (a.some((E) => E === null)) return;
-    const [u, h, d] = a.length === 1 ? [1, 1, a[0]] : a.length === 2 ? [a[0], 1, a[1]] : [a[0], a[1], a[2]];
+    const [u, h, m] = a.length === 1 ? [1, 1, a[0]] : a.length === 2 ? [a[0], 1, a[1]] : [a[0], a[1], a[2]];
     if (h === 0) {
       e.err("seq: invalid Zero increment value: '0'"), e.exit(1);
       return;
@@ -1207,33 +1219,33 @@ const Ce = {
       e.err(`seq: invalid format '${c}'`), e.exit(1);
       return;
     }
-    const i = Math.max(D(u).length, D(d).length), l = (E) => {
+    const i = Math.max(D(u).length, D(m).length), l = (E) => {
       if (c !== void 0) return z(c, E);
-      const k = D(E), [w, A] = k.split("."), $ = w.startsWith("-"), Q = $ ? w.slice(1) : w, ee = Math.max(
+      const T = D(E), [v, b] = T.split("."), $ = v.startsWith("-"), Q = $ ? v.slice(1) : v, ee = Math.max(
         1,
-        i - ($ ? 1 : 0) - (A !== void 0 ? A.length + 1 : 0)
+        i - ($ ? 1 : 0) - (b !== void 0 ? b.length + 1 : 0)
       );
-      return ($ ? "-" : "") + Q.padStart(ee, "0") + (A !== void 0 ? "." + A : "");
+      return ($ ? "-" : "") + Q.padStart(ee, "0") + (b !== void 0 ? "." + b : "");
     }, o = t.get("-s") ?? `
-`, m = o === `
+`, d = o === `
 `;
     let f = "";
     const p = (E) => {
-      m ? e.out(l(E)) : f = f === "" ? l(E) : f + o + l(E);
+      d ? e.out(l(E)) : f = f === "" ? l(E) : f + o + l(E);
     };
-    let y = 0;
-    const N = d + Number.EPSILON * Math.abs(d), M = d - Number.EPSILON * Math.abs(d);
+    let g = 0;
+    const N = m + Number.EPSILON * Math.abs(m), M = m - Number.EPSILON * Math.abs(m);
     if (h > 0)
       for (let E = u; E <= N; E += h) {
-        if (++y > F) return G(e);
+        if (++g > F) return G(e);
         p(E);
       }
     else
       for (let E = u; E >= M; E += h) {
-        if (++y > F) return G(e);
+        if (++g > F) return G(e);
         p(E);
       }
-    !m && f !== "" && e.out(f);
+    !d && f !== "" && e.out(f);
   }
 };
 function G(e) {
@@ -1241,11 +1253,11 @@ function G(e) {
 }
 const q = 1e3, Fe = {
   name: "yes",
-  usage: g("yes"),
+  usage: y("yes"),
   run(e) {
     if (e.args.includes("--help")) {
       for (const t of [
-        g("yes"),
+        y("yes"),
         "",
         "Prints STRING (default y) repeatedly — capped at 1000 lines:",
         "stages run synchronously on buffered strings, so a true",
@@ -1257,7 +1269,7 @@ const q = 1e3, Fe = {
     for (let t = 0; t < q; t++) e.out(s);
     e.err(`yes: emission budget reached (${q} lines) — the sync shell cannot stream forever`), e.exit(0);
   }
-}, T = (e) => /^[+-]?\d+$/.test(e.trim());
+}, I = (e) => /^[+-]?\d+$/.test(e.trim());
 function Ue(e) {
   const n = /[.*+?^${}()|[\]\\]/, s = e.replace(/\x00/g, "\\x00").replace(/\x01/g, "\\x01");
   let t = "";
@@ -1286,73 +1298,73 @@ function Xe(e) {
     let o = a();
     for (; s() === "|"; ) {
       t();
-      const m = a();
-      o = o !== "" && o !== "0" ? o : m;
+      const d = a();
+      o = o !== "" && o !== "0" ? o : d;
     }
     return o;
   }, a = () => {
     let o = u();
     for (; s() === "&"; ) {
       t();
-      const m = u();
-      o = o !== "" && o !== "0" && m !== "" && m !== "0" ? o : "0";
+      const d = u();
+      o = o !== "" && o !== "0" && d !== "" && d !== "0" ? o : "0";
     }
     return o;
   }, u = () => {
     let o = h();
     for (; ["=", "==", "!=", "<", "<=", ">", ">="].includes(s() ?? ""); ) {
-      const m = t(), f = h(), p = T(o) && T(f), y = p ? Number(o.trim()) : o, N = p ? Number(f.trim()) : f;
-      o = (m === "=" || m === "==" ? y === N : m === "!=" ? y !== N : m === "<" ? y < N : m === "<=" ? y <= N : m === ">" ? y > N : y >= N) ? "1" : "0";
+      const d = t(), f = h(), p = I(o) && I(f), g = p ? Number(o.trim()) : o, N = p ? Number(f.trim()) : f;
+      o = (d === "=" || d === "==" ? g === N : d === "!=" ? g !== N : d === "<" ? g < N : d === "<=" ? g <= N : d === ">" ? g > N : g >= N) ? "1" : "0";
     }
     return o;
   }, h = () => {
-    let o = d();
+    let o = m();
     for (; s() === "+" || s() === "-"; ) {
-      const m = t(), f = d();
-      if (!T(o) || !T(f)) throw new Error("non-integer argument");
-      const p = Number(o.trim()), y = Number(f.trim());
-      o = String(m === "+" ? p + y : p - y);
+      const d = t(), f = m();
+      if (!I(o) || !I(f)) throw new Error("non-integer argument");
+      const p = Number(o.trim()), g = Number(f.trim());
+      o = String(d === "+" ? p + g : p - g);
     }
     return o;
-  }, d = () => {
+  }, m = () => {
     let o = c();
     for (; s() === "*" || s() === "/" || s() === "%"; ) {
-      const m = t(), f = c();
-      if (!T(o) || !T(f)) throw new Error("non-integer argument");
-      const p = Number(o.trim()), y = Number(f.trim());
-      if ((m === "/" || m === "%") && y === 0) throw new Error("division by zero");
-      o = String(m === "*" ? p * y : m === "/" ? Math.trunc(p / y) : p - Math.trunc(p / y) * y);
+      const d = t(), f = c();
+      if (!I(o) || !I(f)) throw new Error("non-integer argument");
+      const p = Number(o.trim()), g = Number(f.trim());
+      if ((d === "/" || d === "%") && g === 0) throw new Error("division by zero");
+      o = String(d === "*" ? p * g : d === "/" ? Math.trunc(p / g) : p - Math.trunc(p / g) * g);
     }
     return o;
   }, c = () => {
     let o = i();
     for (; s() === ":" || s() === "match"; ) {
       t();
-      const m = i();
-      o = V(o, m);
+      const d = i();
+      o = V(o, d);
     }
     return o;
   }, i = () => {
     const o = t();
     if (o === "") throw new Error("syntax error");
     if (o === "(") {
-      const m = r();
+      const d = r();
       if (t() !== ")") throw new Error("syntax error");
-      return m;
+      return d;
     }
     if (o === "length") return String([...i()].length);
     if (o === "match") {
-      const m = i(), f = i();
-      return V(m, f);
+      const d = i(), f = i();
+      return V(d, f);
     }
     if (o === "substr") {
-      const m = i(), f = i(), p = i();
-      if (!T(f) || !T(p)) throw new Error("non-integer argument");
-      const y = [...m], N = Number(f.trim()), M = Number(p.trim()), E = Math.max(0, N - 1);
-      return y.slice(E, E + Math.max(0, M)).join("");
+      const d = i(), f = i(), p = i();
+      if (!I(f) || !I(p)) throw new Error("non-integer argument");
+      const g = [...d], N = Number(f.trim()), M = Number(p.trim()), E = Math.max(0, N - 1);
+      return g.slice(E, E + Math.max(0, M)).join("");
     }
     if (o === "index") {
-      const m = i(), f = i(), p = [...m].findIndex((y) => [...f].includes(y));
+      const d = i(), f = i(), p = [...d].findIndex((g) => [...f].includes(g));
       return String(p + 1);
     }
     if (["|", "&", ")", ":"].includes(o)) throw new Error("syntax error");
@@ -1363,11 +1375,11 @@ function Xe(e) {
 }
 const Ye = {
   name: "expr",
-  usage: g("expr"),
+  usage: y("expr"),
   run(e) {
     if (e.args.includes("--help")) {
       for (const t of [
-        g("expr"),
+        y("expr"),
         "",
         "Integer arithmetic (+ - * / %), comparisons, | & with GNU",
         "precedence and ( ) grouping; string ops length, substr,",
@@ -1393,7 +1405,7 @@ const Ye = {
   }
 };
 function We(e, n, s) {
-  const t = e.vfs.nodeAt(b(e, s));
+  const t = e.vfs.nodeAt(A(e, s));
   switch (n) {
     case "-e":
       return t !== null;
@@ -1407,7 +1419,7 @@ function We(e, n, s) {
       return t !== null;
     case "-w": {
       if (t === null) return !1;
-      const r = e.vfs.backendFor(b(e, s));
+      const r = e.vfs.backendFor(A(e, s));
       return r === null || r.writable;
     }
     case "-x":
@@ -1432,31 +1444,31 @@ function ze(e, n) {
     for (; t() === "-a"; )
       c(), l = h() && l;
     return l;
-  }, h = () => t() === "!" ? (c(), !h()) : d(), d = () => {
+  }, h = () => t() === "!" ? (c(), !h()) : m(), m = () => {
     const l = r();
     if (l === "(") {
-      const m = a();
+      const d = a();
       if (s >= n.length || n[s++] !== ")") throw new Error("')' expected");
-      return m;
+      return d;
     }
     const o = t();
     if (o !== void 0 && ["=", "!="].includes(o)) {
       c();
-      const m = r();
-      return o === "=" ? l === m : l !== m;
+      const d = r();
+      return o === "=" ? l === d : l !== d;
     }
     if (o !== void 0 && ["-eq", "-ne", "-lt", "-le", "-gt", "-ge"].includes(o)) {
       c();
-      const m = r();
-      if (!/^[+-]?\d+$/.test(l) || !/^[+-]?\d+$/.test(m)) throw new Error("integer expression expected");
-      const f = Number(l), p = Number(m);
+      const d = r();
+      if (!/^[+-]?\d+$/.test(l) || !/^[+-]?\d+$/.test(d)) throw new Error("integer expression expected");
+      const f = Number(l), p = Number(d);
       return o === "-eq" ? f === p : o === "-ne" ? f !== p : o === "-lt" ? f < p : o === "-le" ? f <= p : o === "-gt" ? f > p : f >= p;
     }
     if (["-e", "-f", "-d", "-s", "-r", "-w", "-x"].includes(l))
       return We(e, l, r());
     if (["-z", "-n"].includes(l)) {
-      const m = r();
-      return l === "-z" ? m === "" : m !== "";
+      const d = r();
+      return l === "-z" ? d === "" : d !== "";
     }
     if (o !== void 0 && o.startsWith("-"))
       throw new Error(`${o}: unary operator expected`);
@@ -1467,13 +1479,13 @@ function ze(e, n) {
 }
 const Ge = {
   name: "test",
-  usage: g("test"),
+  usage: y("test"),
   complete: (e) => ["-e", "-f", "-d", "-z", "-n", "--help"].filter((n) => n.startsWith(e.word)),
   run(e) {
     const n = e.args.filter((t) => t !== "--help");
     if (e.args.includes("--help") && n.length === 0) {
       for (const t of [
-        g("test"),
+        y("test"),
         "",
         "File tests: -e -f -d -s, plus -r (exists), -w (backend",
         "writable) and -x (directories only). Strings: -z -n, = !=.",

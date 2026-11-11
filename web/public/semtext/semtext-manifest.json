@@ -20,6 +20,7 @@
   "sem-kb": "chunks/sem-kb.js",
   "sem-md": "chunks/sem-md.js",
   "sem-media-gallery": "chunks/sem-media-gallery.js",
+  "sem-media-prompt": "chunks/sem-media-prompt.js",
   "sem-mockup": "chunks/sem-mockup.js",
   "sem-note": "chunks/sem-note.js",
   "sem-philosophy": "chunks/sem-philosophy.js",
@@ -64,6 +65,7 @@
   "sem-tldr": "chunks/sem-tldr.js",
   "sem-tsgs": "chunks/sem-tsgs.js",
   "sem-tsg": "chunks/sem-tsgs.js",
+  "sem-tui": "chunks/sem-tui.js",
   "sem-upload-drop": "chunks/sem-upload-drop.js",
   "sem-workflow": "chunks/sem-workflow.js"
 }
