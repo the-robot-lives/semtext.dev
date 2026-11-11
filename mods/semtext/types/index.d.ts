@@ -55,7 +55,14 @@ export type SemNodeContent =
 
 /** Viewer + runner state of the pane; every write goes through update(). */
 export type SemTextViewer = {
-  mode: 'outline' | 'section' | 'quiz'
+  /**
+   * What the pane draws: 'expanded' (the default — whole outline tree
+   * top-to-bottom, every card open inline), 'outline' (the compact clickable
+   * list), 'section' (one focused element) or 'quiz' (the runner).
+   */
+  mode: 'outline' | 'expanded' | 'section' | 'quiz'
+  /** Overview the outline nav returns to: 'outline' or 'expanded'. */
+  outlineMode: 'outline' | 'expanded'
   /** Key path (outline row key) of the section in section/quiz mode. */
   focusedSection: string | null
   /** Key path of the facts set the runner is on. */
