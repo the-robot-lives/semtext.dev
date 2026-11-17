@@ -124,8 +124,8 @@ defmodule SemtextWeb.Docs.Showcase do
         label: "Draftamo",
         href: "https://draftamo.com",
         note:
-          "live app; mockups and UML renders from hosted projects or local XML is the planned add-on",
-        planned: true
+          "live app; diagrams embed inline through the semext-draftamo-diagram element",
+        planned: false
       }
     ]
   end

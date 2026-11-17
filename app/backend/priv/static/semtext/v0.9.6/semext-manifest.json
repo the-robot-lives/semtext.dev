@@ -1,6 +1,7 @@
 {
   "semext-annotate": "semext-chunks/semext-annotate.js",
   "semext-docptr": "semext-chunks/semext-docptr.js",
+  "semext-draftamo-diagram": "semext-chunks/semext-draftamo-diagram.js",
   "semext-media-prompt": "semext-chunks/semext-media-prompt.js",
   "semext-sig-logs": "semext-chunks/semext-sig-logs.js",
   "semext-sig-metrics": "semext-chunks/semext-sig-metrics.js",

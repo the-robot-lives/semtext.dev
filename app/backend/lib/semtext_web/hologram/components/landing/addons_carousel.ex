@@ -120,28 +120,15 @@ defmodule SemtextWeb.Hologram.Components.Landing.AddonsCarousel do
           <li data-carousel-card="4">
             <article class="flex h-full flex-col rounded-xl border border-code-border bg-slateink-panel p-5" aria-labelledby="addon-draftamo-renders-h">
               <h3 id="addon-draftamo-renders-h" class="text-lg font-semibold text-ink">Draftamo mockups &amp; UML</h3>
-              <p class="mt-2 text-sm leading-relaxed text-ink-mute">Mockups and UML renders from Draftamo-hosted projects, or from local Draftamo XML.</p>
+              <p class="mt-2 text-sm leading-relaxed text-ink-mute">Mockups and UML drawn inline: the diagram XML sits in the page or chat message itself, with no hosted link.</p>
               <div class="mt-4">
                 <div class="rounded-lg border border-code-border bg-slateink p-3">
-                  <svg viewBox="0 0 330 66" role="img" aria-label="UML render: sem-doc to reader to records" class="w-full">
-                    <g fill="none" stroke="var(--code-border)" stroke-width="1">
-                      <rect x="4" y="18" width="90" height="30" rx="6"></rect>
-                      <rect x="120" y="18" width="90" height="30" rx="6"></rect>
-                      <rect x="236" y="18" width="90" height="30" rx="6"></rect>
-                    </g>
-                    <g fill="var(--ink-mute)" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" text-anchor="middle">
-                      <text x="49" y="37">sem-doc</text>
-                      <text x="165" y="37">reader</text>
-                      <text x="281" y="37">records</text>
-                    </g>
-                    <g stroke="var(--accent)" stroke-width="1" fill="none">
-                      <path d="M94 33 H116"></path>
-                      <path d="M116 33 l-5 -3 v6 z" fill="var(--accent)"></path>
-                      <path d="M210 33 H232"></path>
-                      <path d="M232 33 l-5 -3 v6 z" fill="var(--accent)"></path>
-                    </g>
-                  </svg>
-                  <p class="mt-2 font-mono text-[0.65rem] text-ink-faint">checkout-flow.uml · rendered by Draftamo</p>
+                  <semext-draftamo-diagram kind="uml-class" label="sem-doc to reader to records">
+                    <semext-draftamo-node id="a">sem-doc</semext-draftamo-node><semext-draftamo-edge from="a" to="b"></semext-draftamo-edge>
+                    <semext-draftamo-node id="b">reader</semext-draftamo-node><semext-draftamo-edge from="b" to="c"></semext-draftamo-edge>
+                    <semext-draftamo-node id="c">records</semext-draftamo-node>
+                  </semext-draftamo-diagram>
+                  <p class="mt-2 font-mono text-[0.65rem] text-ink-faint">inline XML · semext-draftamo-diagram</p>
                 </div>
               </div>
             </article>
