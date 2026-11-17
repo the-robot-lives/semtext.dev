@@ -1,3 +1,4 @@
+<!-- 〚📁:𐦛𔐫𔁥𓵦〛 conventions spec :: Normative format spec and conventions for the SemText XHTML vocabulary (draft v0.7, Lit-only surface, tag form canonical). -->
 # SemText -- Format Spec & Conventions
 
 **DRAFT v0.7 -- Lit-only surface, tag form canonical.** v0.7 renames the fact child
@@ -42,14 +43,14 @@ listed with its full entry in [SS5](#5-element-entries).
 | Bucket | Elements | What it covers |
 | :-- | :-- | :-- |
 | **Document & structure** | `sem-enhanced-document`, `sem-reader`, `sem-audiences` / `sem-profile`, `agent` | The root wrapper, reading chrome, audience declarations and document-level metadata that frame a SemText document |
-| **Prose & code** | `sem-md`, `sem-note`, `sem-thought`, `sem-code`, `sem-browser` | Content blocks beyond plain HTML -- Markdown bodies, callouts, typed thought bubbles and source listings with provenance |
+| **Prose & code** | `sem-md`, `sem-note`, `sem-code`, `sem-browser` | Content blocks beyond plain HTML -- Markdown bodies, callouts and source listings with provenance |
 | **Disclosure & views** | `sem-details` / `sem-detail`, `highlight`, `sem-reveal`, `sem-source`, `sem-views` / `sem-view` | The same content under different reading interactions -- occluded detail, Q-A reveal, markup flip, perspective tabs |
 | **Facts & recall** | `sem-facts` / `sem-fact`, `statement`, `conclusion`, `incorrect-statement`, `sem-question` / `sem-option` | Assertable statement/conclusion pairs -- the citable unit -- with the quiz candidates and distractors built on them |
 | **Data & tables** | `sem-table`, `sem-data-visualizer`, `sem-data-source`, `sem-data-join`, `sem-data-query` | Authored tables and the data-visualizer's named buckets, joins and editable queries |
 | **Sequences & progress** | `sem-chronology` / `sem-event`, `sem-procedure` / `sem-step`, `sem-progress` | Ordered, status-annotated content -- timelines, procedures and completion meters |
 | **Interactive containers** | `sem-workflow` / `sem-step`, `sem-site-tree` / `node`, `sem-file-tree` / `node` | Steps with gate/check/if-no branches, and site/file trees (structured or text-authored) with collapse, filter and find |
 | **Agent-kit records** | `agent-kit-issue` / `-epic` / `-bug` / `-user-story` / `-task` / `-sub-task`, `agent-kit-ticket-ref`, `agent-kit-user-persona` / `agent-kit-agent-persona`, `agent-kit-acceptance-criteria` / `agent-kit-criterion`, `agent-kit-custom-assert`, `agent-kit-board`, `agent-kit-organization` / `agent-kit-project`, `agent-kit-chatroom`, `agent-kit-asset` / `agent-kit-artifact` / `agent-kit-review`, `agent-kit-test-suite` / `agent-kit-test-case` / `agent-kit-cypress` / `agent-kit-cucumber` | Project-tracking records over cached snapshots -- tickets, personas, criteria, boards, chat logs, media and test results; `livePolicy: never`, JS-off == JS-on |
-| **Definitions & citations** | `sem-properties` / `sem-property`, `sem-references` / `sem-reference`, `sem-tag-def` / `sem-tag-attr`, `sem-api-call` / `sem-api-param`, `sem-component`, `sem-see-also` | Closed key/value assertions, the numbered works the prose cites, the reference-definition cards that document a vocabulary's tags and an API's endpoints, component-inventory cards over a `components/manifest.yaml` vocabulary, and related-reference entries (hover preview, shared modal, View all) |
+| **Definitions & citations** | `sem-properties` / `sem-property`, `sem-references` / `sem-reference`, `sem-tag-def` / `sem-tag-attr`, `sem-api-call` / `sem-api-param`, `sem-component`, `sem-see-also` | Closed key/value assertions, the numbered works the prose cites, the reference-definition cards that document a vocabulary's tags and an API's endpoints, and the related-reference affordances (component-inventory cards, see-also links with preview/modal) |
 | **NPL** | `npl-agent`, `npl-directive`, `npl-section`, `npl-rubric`, `npl-critique`, `npl-declaration`, `npl-example`, `npl-flag` / `npl-flags`, `npl-hormones`, `npl-mindread`, `npl-mode`, `npl-mood`, `npl-poa`, `npl-ref`, `npl-thought`, `npl-vos`, `npl-artifact`, `npl-cot`, `npl-intent` | NPL prompt-engineering elements; loaded by `npl.js` / `npl-lazy.js` on top of the SemText core |
 
 Every element's normative schema lives under `spec/schema/<element>.md`
@@ -255,7 +256,7 @@ both present; authors pick one per fact.
    Lit 3 IIFE, global `SemText`, it carries: the ten interactive Lit
    components (`sem-note`, `sem-facts`, `sem-details`, `sem-properties`,
    `sem-code`, `sem-references`, `sem-reader`, `sem-table`, `sem-source`,
-   `sem-md`, `sem-component`, `sem-see-also`); the vanilla core handlers for everything no component
+   `sem-md`); the vanilla core handlers for everything no component
    defines -- `view-as` switching, reveal toggles, `<highlight>` occlusion,
    quiz checking, audience gating, deep-link resolution, print disclosure;
    the prose-reading renderers (sem-code chrome, reference / glossary
@@ -401,19 +402,6 @@ reads as pre-wrapped text. Extraction keeps `source` **normalised**
 `.sem-note-body` to hide it); `view-as="margin"` => CSS-only right-gutter
 aside on wide viewports, inline otherwise. Light DOM, `role="note"`.
 
-**sem-thought** -- typed thought bubble; display-only, mints nothing.
-**Normative: `spec/schema/sem-thought.md`.**
-```html
-<sem-thought type="observation">The draft pulls one fact per section -- the outline says two.</sem-thought>
-<sem-thought type="mind-read">A skimming reader assumes rotation is automatic.</sem-thought>
-```
-`type="observation|reflection|assumption|mind-read|tangent|concern"`,
-optional -- no `type` is a plain bubble; an unknown `type` degrades to plain
-text (validator warning, not error). No collapsed state, no summary teaser,
-no events, no chrome: the body is the element's content; on upgrade the tier
-mirrors `type` to `data-type` and adds the class `sem-thought-<type>`.
-Light DOM, `role="note"`.
-
 **sem-code** -- verbatim listing with provenance and copy / wrap.
 **Normative: `spec/schema/sem-code.md`.**
 ```html
@@ -470,6 +458,19 @@ vocabulary tag's or an API endpoint's contract, authored once, rendered
 as a card (native table) for readers and extracted as one structured
 record for machines.
 **Normative: `spec/schema/sem-tag-def.md`, `spec/schema/sem-api-call.md`.**
+
+**sem-component** -- a component-inventory card: one entry of a
+component registry (tag, name, source, type, status, labels -- the
+`components/manifest.yaml` vocabulary) with the description as authored
+children. Cards read like any record: graders build the inventory from
+the attributes, readers get a card with head and meta chrome.
+**Normative: `spec/schema/sem-component.md`.**
+
+**sem-see-also** -- a related-reference affordance: one related target
+(section, component card, or file) rendered as a link with a hover
+preview, a click-to-modal clone, and a View-all-in-a-new-tab escape
+hatch. Deep link `#ref=<id>` opens a named see-also's modal directly.
+**Normative: `spec/schema/sem-see-also.md`.**
 
 **sem-reveal** -- Q-A disclosure, hidden until the reader acts.
 **Normative: `spec/schema/sem-reveal.md`.**
@@ -765,36 +766,6 @@ previews on citing anchors (`.sem-references-ref`, popover
 N"`) and an external link. Citations mint nothing; print shows `(href)`
 inside the block only.
 
-**sem-component** -- a component-inventory card over the
-`components/manifest.yaml` vocabulary (tag, name, description, source,
-type, status, labels).
-**Normative: `spec/schema/sem-component.md`.**
-```html
-<sem-component id="c-waitlist" tag="noizu-waitlist" name="Waitlist"
-  type="form" status="live" source="src/components/waitlist/noizu-waitlist.ts">
-  Collects waitlist signups against the Authentik edge.
-</sem-component>
-```
-The authored children are the description (the JS-off record); the script
-prepends the tag/name/status head and appends the type/source/labels
-meta. `status` takes the manifest vocabulary (`planned|wip|live|deprecated`).
-`sem-see-also reference="component"` resolves its target against
-these cards' tags.
-
-**sem-see-also** -- a related-reference entry: hover shows a preview of
-the target (the shared popover), click opens it in the shared modal shell
-(`role="dialog"`), and the View-all affordance (`↗`, `target="_blank"`)
-opens the real thing in a new tab.
-**Normative: `spec/schema/sem-see-also.md`.**
-```html
-<sem-see-also id="sa-bands" reference="section" target="#bands">Score bands</sem-see-also>
-```
-`reference` names what `target` points at (`section` id, `component` tag,
-`file` path); `insert-as="inline"` embeds the target in place instead.
-Deep link: `#ref=<see-also-id>` opens the entry's modal once per page
-load, alongside the `#dv=` scheme. A section/component target resolving
-to nothing warns (`dangling-fragment`).
-
 ### NPL
 
 
@@ -966,7 +937,6 @@ exception: `<incorrect-statement>`'s class form is the unprefixed
 | `<sem-enhanced-document>` | `div.sem-enhanced-document` |
 | `<agent>` + name/bio/instructions | `div.sem-agent` > `.sem-agent-name/-bio/-instructions` |
 | `<sem-note variant="warning">` body | `div.sem-note[data-variant="warning"]` > `.sem-note-body`; `collapsed` attr |
-| `<sem-thought type>` body | `div.sem-thought[data-type]`; unknown `type` degrades to plain text |
 | `<sem-audiences>` / `<sem-profile id label implies>` | `div.sem-audiences` > `div.sem-profile[id][data-label][data-implies]`; `audience="..."` - `data-audience` |
 | `<sem-facts view-as="quiz">` | `div.sem-facts[data-view-as="quiz"]` |
 | `<sem-fact>` > `<statement>` / `<conclusion>` | `div.sem-fact` > `.sem-statement`, `.sem-conclusion` |
@@ -984,8 +954,8 @@ exception: `<incorrect-statement>`'s class form is the unprefixed
 | `<sem-chronology view-as>` / `<sem-event when until status>` | `div.sem-chronology[data-view-as]` > `div.sem-event[data-when][data-until][data-status]` (+ `<time datetime>`) |
 | `<sem-code lang filename mark wrap controls>` > `<pre><code>` | `div.sem-code[data-lang][data-filename][data-mark][data-controls]` > `<pre><code>` |
 | `<sem-references kind>` / `<sem-reference id href cite>` | `div.sem-references[data-kind]` > `div.sem-reference[id][data-href][data-cite]`; citations are plain `<a href="#id">` |
-| `<sem-component tag name type status source labels>` body | `div.sem-component[data-sem-component-tag]`; head `div.sem-component-head` (tag/name/status), meta `div.sem-component-meta` (type/source/labels); authored children stay between them |
-| `<sem-see-also reference target preview insert-as>` label | `div.sem-see-also[data-reference][data-target]`; link `a.sem-see-also-link`, view-all `a.sem-see-also-view`, inline `div.sem-see-also-inline` |
+| `<sem-component tag name source type status labels>` | `div.sem-component[data-sem-component-tag][role=article]`; head `.sem-component-head` + meta `.sem-component-meta` chrome (script tier) |
+| `<sem-see-also reference target preview insert-as href>` | `div.sem-see-also[data-insert-as]` > `.sem-see-also-link` + `.sem-see-also-view` chrome (script tier); authored children stay as the JS-off label |
 | `<sem-source label view-as="html\|source">` > any content | `div.sem-source[data-label][data-view-as]` > any content; transparent wrapper, mints nothing |
 | `<sem-reader controls outline-depth>` > optional `<nav aria-label="Contents">` | `div.sem-reader[data-controls][data-outline-depth]` > same optional nav; chrome, mints nothing |
 | `<sem-md label view-as="rendered\|raw" controls>` > Markdown text | `div.sem-md[data-label][data-view-as][data-controls]` > Markdown text |

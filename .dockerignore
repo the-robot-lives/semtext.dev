@@ -1,14 +1,8 @@
 .git
 .github
 .claude
-**/node_modules
-landing/.next
-landing/out
-web/.next
-web/out
-web/cypress
+node_modules
 dist
-coverage
 test/screenshots
 test/videos
 helm

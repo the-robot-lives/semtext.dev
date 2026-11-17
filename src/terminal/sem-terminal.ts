@@ -1,0 +1,1870 @@
+import { html, nothing, type PropertyValues, type TemplateResult } from 'lit';
+import { ansiSpans, type AnsiSpan } from './ansi/index.js';
+import { SemElement } from '../lit/base.js';
+import {
+  TerminalCore,
+  type ExecResult,
+  type ShellLine,
+  type TabAction,
+  type WindowAction,
+} from './terminal-core.js';
+import {
+  parseScriptAttribute,
+  startPlayback,
+  type PlaybackDriver,
+  type PlaybackHandle,
+  type PlaybackStep,
+} from './playback.js';
+import {
+  createTuiState,
+  tuiCloseFilter,
+  tuiIsClose,
+  tuiMove,
+  tuiOpenFilter,
+  tuiPosition,
+  tuiSetFilter,
+  tuiToggle,
+  type TuiAction,
+  type TuiState,
+} from './tui.js';
+import { attachLocalStorage } from './backends/local-storage.js';
+import { createS3Backend } from './backends/s3.js';
+import { Screen, lineText } from './screen/screen.js';
+import { COLS_MAX, COLS_MIN, ROWS_MAX, ROWS_MIN } from './screen/types.js';
+import { abbreviateHome } from './line/discipline.js';
+import { TabModel, type ShellTab } from './tabs/tabs-model.js';
+import { TerminalSession, type SessionHost } from './tabs/session.js';
+import { TitleFeed } from './title/title-feed.js';
+import { Vfs } from './vfs.js';
+import { onEnvFeed } from './env/direnv.js';
+import { InputModel } from './input/index.js';
+import {
+  ContextMenuController,
+  MENU_DOM_CSS,
+  nullViewControl,
+  openPlainTranscript,
+  selectAllRange,
+  type DomMenuViewControl,
+  type MenuHost,
+} from './menu/index.js';
+import { createCanvasRenderer } from './render/canvas.js';
+import { DOMMirror } from './render/mirror.js';
+import { screenView, type PaintScreen, type Rgb } from './render/screen-shape.js';
+import type { CanvasRenderer } from './render/canvas.js';
+import type { CellMetrics, ScreenRenderer } from './render/types.js';
+import { renderTabStrip, renderWindowTitlebar, tabDomId } from '../shared/window-chrome.js';
+import '../shared/sem-scroll.js'; // side-effect: register <sem-scroll> (§10)
+import {
+  clampDpr,
+  DEFAULT_CELL_HEIGHT,
+  DEFAULT_CELL_WIDTH,
+  fitCounts,
+  measureCellMetrics,
+  type MeasuringContext,
+} from './render/metrics.js';
+import type { KeyEvent } from './screen/types.js';
+import type { AppSpawnAction } from './terminal-core.js';
+
+/** THEROB-187: bounded surface re-check window (ticks per connection
+ * cycle) — re-armed in connectedCallback so each fresh attach gets a
+ * fresh budget; never a poll loop. */
+const SURFACE_RETRY_BUDGET = 3;
+
+/**
+ * sem-terminal — the reusable terminal core: input, history, transcript,
+ * prompt, command dispatch. Knows nothing about SemText; its commands come
+ * from plugins.
+ *
+ * Plugins arrive two ways, per src/terminal/PLUGINS.md:
+ *
+ *   - programmatically: `el.core.mountPlugin(manifestObject)` — bundled
+ *     JS-object manifests, no fetch;
+ *   - declaratively: the `plugins` attribute, a space-separated list of
+ *     manifest URLs (an integrity hash rides the URL as a fragment:
+ *     `…manifest.json#sha256-<hex>`). Each URL loads independently — one
+ *     failing prints a stderr line and lands in `core.loadErrors` without
+ *     touching the others.
+ *
+ * Scripted playback: the `script` attribute (a JSON array of steps) or the
+ * `playback` property (the array itself) makes the terminal demo itself on
+ * open — typing, keys, waits, notes. Escape hands the terminal back to the
+ * user; a replay button restarts the script. Skipped when neither is set.
+ * `prefers-reduced-motion` runs the whole script instantly.
+ *
+ * Light DOM per PRD §4 rule 5 / SemElement: `themes/_vocabulary.css`
+ * styles the `.sem-shell-*` classes; no shadow root, no `static styles`.
+ * Transcript lines render through Lit text bindings only (auto-escaped) —
+ * ANSI color from commands like `bat`/`ls` becomes styled spans via
+ * the streaming ANSI tokeniser; no HTML is ever built from command output or user input.
+ *
+ * Zero-JS contract: whatever is authored inside the element is the static
+ * transcript (a role="log" div with past lines, NO input element); the
+ * first connect replaces it once. See web/demo/shell.html, whose build
+ * also emits a script-stripped `.nojs.html` proving the fallback.
+ */
+/** Per-document prompt-input id sequence: three shells on one page (the
+ * landing tabs) must not share `id="sem-shell-input"` — duplicate ids break
+ * label/for association and every getElementById-style lookup. */
+let promptInputSeq = 0;
+
+export class SemTerminal extends SemElement {
+  static properties = {
+    cwd: { type: String, state: true },
+    lines: { type: Array, state: true },
+    plugins: { type: String },
+    /** JSON array of playback steps; plays on open. Absent → no playback. */
+    script: { type: String },
+    /** The playback steps as an array — the property form of `script`. */
+    playback: { type: Array },
+    playing: { type: Boolean, state: true },
+    /** A subclass-driven demo (start-script autostart) owns the input (§2.5). */
+    demoRunning: { type: Boolean, state: true },
+    tui: { type: Object, state: true },
+    /** A full-screen app owns the screen (§6.2) — prompt hidden, keys raw. */
+    appLive: { type: Boolean, state: true },
+    /** `tabs` — keep the tab strip visible even with a single tab (§11.3). */
+    tabs: { type: Boolean },
+  };
+
+  declare cwd: string;
+  declare lines: ShellLine[];
+  /**
+   * Space-separated manifest URLs to load on connect. Integrity rides the
+   * URL fragment: `https://cdn/…/manifest.json#sha256-<64 hex>`.
+   */
+  declare plugins: string;
+  declare script: string;
+  declare playback: PlaybackStep[] | null;
+  declare playing: boolean;
+  /** A subclass-driven demo (start-script autostart) owns the input (§2.5). */
+  declare demoRunning: boolean;
+  declare tui: TuiState | null;
+  declare appLive: boolean;
+  declare tabs: boolean;
+
+  /* -- shell-v3 tabs (§11.2, Epoch 3): per-tab sessions over one VFS -- */
+  /** The ONE virtual file system — files and mounts are common; state is not. */
+  readonly #vfs = new Vfs();
+  /** Every live session, oldest first (strip order mirrors the TabModel). */
+  readonly #sessions: TerminalSession[] = [];
+  /** This element's prompt input id — unique per instance (§2.3). */
+  readonly #panelId = `sem-shell-panel-${promptInputSeq + 1}`;
+  readonly #inputId = `sem-shell-input-${++promptInputSeq}`;
+  /** The session the strip points at — the source of every active-path read. */
+  #session: TerminalSession;
+  /** The session whose execLine is on the stack (direnv TAB_TITLE attribution). */
+  #executing: TerminalSession | null = null;
+  /** Plugin URLs from the `plugins` attribute — re-loaded per session core. */
+  #pluginUrls: string[] = [];
+  /** The element-side callbacks sessions call back through. */
+  readonly #sessionHost: SessionHost = {
+    pushLines: (session, lines) => this.#pushLines(session, lines),
+    execLine: (session, line) => this.#execLine(session, line),
+    clearViewport: (session) => this.#clearTranscript(session),
+    mirrorInput: (buffer, caret) => this.#mirrorInput(buffer, caret),
+    appExit: (session, code, crash) => this.#onAppExit(session, code, crash),
+    cwdLabel: (session) => abbreviateHome(session.core.state.cwd, session.core.state.env.HOME ?? '/'),
+  };
+
+  /** The ACTIVE session's core: per-tab cwd/env/history/aliases over the shared VFS. */
+  get core(): TerminalCore {
+    return this.#session.core;
+  }
+
+  /** The ACTIVE session's screen — its own scrollback ring and alt buffer. */
+  get screen(): Screen {
+    return this.#session.screen;
+  }
+
+  /** The ACTIVE session's OSC chrome feed (§11.1); titles scope to the tab. */
+  get titleFeed(): TitleFeed {
+    return this.#session.titleFeed;
+  }
+
+  #booted = false;
+  #readyFired = false;
+  /** localStorage key for persisted command history (set by the `local-storage` attribute). */
+  #historyKey: string | null = null;
+  #playbackHandle: PlaybackHandle | null = null;
+  #playbackStopped = false;
+  #hasScript = false;
+
+  /* -- shell-v2 canvas paint path (CORE-V2 §8; integration of r2-canvas) -- */
+  /** The canvas driver; null until first attach (or after a forced detach). */
+  #renderer: (CanvasRenderer & ScreenRenderer) | null = null;
+  /** Standalone mirror when the factory itself refused (forced-colors). */
+  #mirrorOnly: DOMMirror | null = null;
+  /** True when the mirror is the visible view (§8.5 promotion). */
+  #domView = false;
+  /**
+   * THEROB-187: bounded re-check budget for the deferred surface work
+   * (missing `.sem-term-surface`, or a surface whose layout has not
+   * landed — zero box). Each scheduled tick spends one unit; re-armed in
+   * connectedCallback so every connection cycle gets a fresh window;
+   * never a poll loop.
+   */
+  #retryBudget = 0;
+  /** Theme ANSI-16 RGB cache — invalidated whenever metrics change. */
+  #ansiCache: Array<Rgb | null> = [];
+
+  /* -- shell-v2 chrome (§11; osc-tabs XR-1/XR-3, env-direnv TAB_THEME) -- */
+  /** Tab model — ids are strip positions; sessions live in `#sessions`. */
+  readonly tabModel = new TabModel('shell');
+  /** TAB_TITLE/TAB_THEME from the direnv feed (§12 chrome vars). */
+  #tabTheme: string | null = null;
+  #offEnv: (() => void) | null = null;
+  #offTabs: (() => void) | null = null;
+  /** Confirm-close pending on this tab id (a live app owns its screen). */
+  #confirmingClose: number | null = null;
+  /** Cancels the confirm-close reminder timer. */
+  #confirmTimer: (() => void) | null = null;
+
+  /* -- shell-v2 context menu (§8.5; dom-menu integrate patch) -- */
+  #browserPassthroughArmed = false;
+  #menu = new ContextMenuController(this.#menuHost());
+  /** The surface the input model is attached to (attach is not idempotent). */
+  #inputSurface: HTMLElement | null = null;
+
+  /* -- shell-v2 core-screen wiring (CORE-V2 §4–§8) -- */
+  /**
+   * The ONE input path (§7.5): physical keys (via the input element's
+   * keydown), playback `pressKey`, and programmatic `sendKeys` all land in
+   * the same pipeline — routed to the ACTIVE session below. The DOM surface
+   * attach (hidden input, mouse, selection) stays OFF while the visible
+   * `<input>` is the IME surface — it flips on with the canvas renderer,
+   * whose canvas has no native input surface.
+   */
+  readonly #input = new InputModel({
+    dispatchKey: (ev) => this.#routeKey(ev),
+    exitApp: () => this.#exitActiveApp(),
+    isRawMode: () => this.appLive,
+    isAltScreen: () => this.screen.altScreen,
+    insertCooked: (text) => this.#insertCooked(text),
+    pasteRaw: (text) => {
+      if (this.appLive) this.#session.runner.paste(text);
+    },
+    dispatchMouse: (info) => {
+      this.#session.runner.mouse(info);
+    },
+    onWheelScroll: (dy) => {
+      // Consumed only when the viewport really moved — at a limit the page scrolls.
+      const before = this.screen.viewportTop();
+      this.screen.scrollBy(dy);
+      if (this.screen.viewportTop() === before) return false;
+      this.requestUpdate();
+      return true;
+    },
+    // Mouse selection moves between frames — refresh so the drag paints.
+    rowToAbsoluteLine: (row) => {
+      this.requestUpdate();
+      return row + this.screen.viewportTop();
+    },
+    // Only valid post-attach (canvas request 7); the placeholder covers
+    // the pre-attach window (happy-dom, first frames).
+    metrics: () => {
+      const live = this.#renderer?.metrics();
+      if (live !== undefined && live.cols > 0) {
+        return { cols: live.cols, rows: live.rows, cellWidth: live.cellWidth, cellHeight: live.cellHeight };
+      }
+      return { cols: this.screen.cols, rows: this.screen.rows, cellWidth: 8, cellHeight: 16 };
+    },
+    getLineText: (line) => {
+      const l = this.screen.lineAt(line);
+      return l === null ? '' : lineText(l);
+    },
+    openContextMenu: (anchor) => {
+      if (this.#browserPassthroughArmed) {
+        this.#browserPassthroughArmed = false;
+        return; // one-shot native-menu passthrough (§8.5c Browser menu…)
+      }
+      this.#menu.open(anchor);
+    },
+  });
+
+  constructor() {
+    super();
+    // Session 1 exists before anything reads `this.core`. The TabModel
+    // self-seeds its first tab (a shell always has a current session), so
+    // the seed session binds to THAT tab instead of adding another.
+    this.#session = this.#createSession('shell', this.tabModel.tabs[0]!);
+    this.cwd = this.core.state.cwd;
+    this.lines = [];
+    this.plugins = '';
+    this.script = '';
+    this.playback = null;
+    this.playing = false;
+    this.demoRunning = false;
+    this.tui = null;
+    this.appLive = false;
+    this.tabs = false;
+    // The strip's active tab IS the active session — the model's changes
+    // (add/close/activate/keys) repoint the element here.
+    this.#offTabs = this.tabModel.subscribe(() => {
+      const id = this.tabModel.activeId;
+      if (id !== null) this.#repointSession(id);
+      this.requestUpdate();
+    });
+  }
+
+  /* ---------------------------------------------------------------- *
+   * per-tab sessions (§11.2, Epoch 3)
+   * ---------------------------------------------------------------- */
+
+  /** Build a session over an EXISTING tab entry (the model owns tab ids). */
+  #createSession(label: string, tab: ShellTab): TerminalSession {
+    const session = new TerminalSession(this.#vfs, label, this.#sessionHost);
+    session.tabId = tab.id;
+    this.#setupCoreBase(session);
+    this.#sessions.push(session);
+    this.#bindHistory(session);
+    return session;
+  }
+
+  /** Non-virtual per-session wiring: s3 kind, core lines, OSC titles. */
+  #setupCoreBase(session: TerminalSession): void {
+    session.core.mountKinds.set('s3', {
+      id: 's3',
+      help: 'S3 bucket over https (read-only unless the page sets a signer)',
+      create: (args: string[]) => createS3Backend(args, session.core.s3Signer ?? undefined),
+    });
+    // Shared-VFS errors route to whichever tab is on screen.
+    this.#vfs.onError = (error) => {
+      this.#pushLines(this.#session, [{ kind: 'stderr', text: `${error.backend}: ${error.path}: ${error.message}` }]);
+    };
+    session.offCoreLine = session.core.onLine((line) => this.#pushLines(session, [line]));
+    // Per-tab titles (§11.3): the session's OSC 0/2 title (and TAB_TITLE
+    // via setTitle) names its strip entry; the active feed also paints the
+    // title bar, so its changes re-render.
+    session.offTitle = session.titleFeed.subscribe(() => {
+      this.tabModel.setTitle(session.tabId, session.label);
+      if (session === this.#session) this.requestUpdate();
+    });
+  }
+
+  /**
+   * Per-session command setup. The base class loads nothing; hosts with
+   * bundled plugins mount them on EVERY session core (sem-shell overrides
+   * this), and the `plugins` attribute URLs re-load per session. `emit`
+   * appends transcript lines to THIS session (hook time may precede the
+   * session becoming active, so `appendLines` would land elsewhere).
+   * Called once per session, after it becomes addressable.
+   */
+  protected configureSessionCore(_core: TerminalCore, _emit: (lines: ShellLine[]) => void): void {
+    void _core;
+    void _emit;
+  }
+
+  /** Run the (virtual) command setup + the `plugins` attribute URLs. */
+  #hookSession(session: TerminalSession): void {
+    this.configureSessionCore(session.core, (lines) => this.#pushLines(session, lines));
+    for (const url of this.#pluginUrls) {
+      void session.core.loadPluginFromUrl(url).then((result) => {
+        if (result.ok && result.plugin) {
+          this.#pushLines(session, [{ kind: 'stdout', text: `plugin loaded: ${result.plugin.name} ${result.plugin.version}` }]);
+        } else {
+          this.#pushLines(session, [{ kind: 'stderr', text: `plugin ${url}: ${result.error}` }]);
+        }
+      });
+    }
+  }
+
+  /** Transcript + paint append for ONE session (background-safe). */
+  #pushLines(session: TerminalSession, newLines: ShellLine[]): void {
+    // Every shell-emitted kind streams onto the session's grid — the canvas
+    // is the paint path (§8); texts carry no separators: each ends CRLF.
+    for (const line of newLines) {
+      session.feed.write(`${line.text}\r\n`);
+    }
+    session.lines = [...session.lines, ...newLines];
+    if (session.lines.length > MAX_TRANSCRIPT_LINES) session.lines = session.lines.slice(-MAX_TRANSCRIPT_LINES);
+    if (session === this.#session) this.lines = session.lines;
+  }
+
+  /** Default accessible name/role when the author gave none (WCAG). The
+   * subclass overrides to supply its own default label. */
+  protected applyAccessibleDefaults(): void {
+    if (!this.hasAttribute('aria-label')) this.setAttribute('aria-label', 'Terminal');
+    if (!this.hasAttribute('role')) this.setAttribute('role', 'region');
+  }
+
+  /**
+   * THE single paint-state write (§8.5): records `data-paint` AND toggles
+   * the transcript's `aria-hidden`. Once JS paint is up, the mirror is the
+   * one accessible log (exactly one `role=log` in the a11y tree — WCAG);
+   * with no paint (no JS) the authored transcript stays the readable view.
+   */
+  #setPaint(paint: 'canvas' | 'dom'): void {
+    this.dataset.paint = paint;
+    const transcript = this.querySelector('.sem-shell-transcript');
+    transcript?.setAttribute('aria-hidden', 'true');
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    // Accessible surface (WCAG): an author-supplied name/role wins; the
+    // defaults only fill the gap so the region is exposed with a name.
+    // SemShell overrides this hook with its own default — the base must
+    // NOT write first, or the subclass guard never sees the gap.
+    this.applyAccessibleDefaults();
+    // .envrc chrome feeds — TAB_TITLE titles the tab whose cd loaded it
+    // (attributed through #executing), TAB_THEME the tab strip (§11.3/§12).
+    this.#offEnv?.();
+    this.#offEnv = onEnvFeed((feed) => {
+      const session = this.#executing ?? this.#session;
+      const title = feed.vars.TAB_TITLE;
+      if (title !== undefined) session.titleFeed.setTitle(title);
+      const theme = feed.vars.TAB_THEME;
+      if (theme !== undefined) this.#applyTabTheme(theme);
+    });
+    if (!this.#booted) {
+      this.#booted = true;
+      this.replaceChildren(); // the authored zero-JS transcript is replaced
+      this.lines = [{ kind: 'stdout', text: 'sem-terminal — type help.' }];
+      this.#pluginUrls = this.plugins.split(/\s+/).filter((url) => url !== '');
+      this.#attachStorage();
+      this.#hookSession(this.#session); // bundled plugins + attribute URLs
+      this.#maybeStartPlayback();
+    }
+    // THEROB-187 (review r1): every connection cycle re-arms the bounded
+    // surface re-check window — a surface (or its layout) that mounts late
+    // gets a fresh budget per fresh attach, instead of a spent window from
+    // an earlier cycle hiding it forever.
+    this.#retryBudget = SURFACE_RETRY_BUDGET;
+    // The canvas surface needs a rendered frame first; reconnects re-run
+    // this and the guard makes it idempotent (§8 attach).
+    void this.updateComplete.then(() => {
+      this.#ensureRenderer();
+      if (!this.#readyFired) {
+        this.#readyFired = true;
+        this.dispatchEvent(new CustomEvent('sem-shell-ready', { bubbles: true, composed: true, detail: { element: this } }));
+      }
+    });
+    this.#watchForcedColors();
+    this.#applyTabTheme();
+    this.#menu.attach();
+    this.#injectMenuCss();
+  }
+
+  /** Forced-colors can flip while mounted (OS high-contrast toggle): re-check, swap renderer. */
+  #forcedMq: MediaQueryList | null = null;
+  #onForcedChange = (event: { matches: boolean }): void => {
+    // Already on the right paint path? (mirror-only ⇔ forced.)
+    if (event.matches === (this.#mirrorOnly !== null)) return;
+    this.#renderer?.detach();
+    this.#renderer = null;
+    this.#mirrorOnly?.detach();
+    this.#mirrorOnly = null;
+    this.#domView = false;
+    this.#ensureRenderer();
+    this.requestUpdate();
+  };
+
+  #watchForcedColors(): void {
+    if (this.#forcedMq !== null) return;
+    const view = this.ownerDocument?.defaultView;
+    if (!view || typeof view.matchMedia !== 'function') return;
+    const mq = view.matchMedia('(forced-colors: active)');
+    if (typeof mq?.addEventListener !== 'function') return;
+    mq.addEventListener('change', this.#onForcedChange);
+    this.#forcedMq = mq;
+  }
+
+  disconnectedCallback(): void {
+    this.#stopPlayback(false);
+    this.#menu.detach();
+    this.#forcedMq?.removeEventListener('change', this.#onForcedChange);
+    this.#forcedMq = null;
+    this.#input.detach();
+    this.#inputSurface = null;
+    this.#offEnv?.();
+    this.#offEnv = null;
+    // Per-session subscriptions (core lines, OSC titles) and the TabModel
+    // subscription live for the element's lifetime — sessions and the
+    // model outlive a disconnect, so nothing is torn down here.
+    // Reconnect re-attaches: the guard + firstUpdated cover both paths.
+    this.#renderer?.detach();
+    this.#renderer = null;
+    this.#mirrorOnly?.detach();
+    this.#mirrorOnly = null;
+    this.#domView = false;
+    super.disconnectedCallback();
+  }
+
+  protected firstUpdated(): void {
+    this.#ensureRenderer();
+  }
+
+  /** Drain the screen's damage batch after every render (§8: per frame). */
+  protected override updated(_changed: PropertyValues): void {
+    this.#drain();
+  }
+
+  /**
+   * The `local-storage` attribute: persist this shell's tree under
+   * `semtext:shell:v1:<key>`. Bare attribute → the element's id is the
+   * key; no id → one stderr warning, no persistence. Seeding vs restore
+   * waits for a microtask so plugins mounted in subclass callbacks land
+   * first; the factory state is kept for `storage reset`.
+   */
+  #attachStorage(): void {
+    const attribute = this.getAttribute('local-storage');
+    if (attribute === null) return;
+    const key = attribute === '' ? this.id : attribute;
+    if (key === '') {
+      this.appendLines([
+        { kind: 'stderr', text: 'local-storage: give this element an id (or local-storage="key") — persistence off' },
+      ]);
+      return;
+    }
+    this.#historyKey = `semtext:shell:history:v1:${key}`;
+    for (const session of this.#sessions) this.#bindHistory(session);
+    const backend = attachLocalStorage(this.core.vfs, { key });
+    // Boot mounts re-seed storage (their flushes write the fresh tree);
+    // peek NOW, before any of that, so a reload restores the user's tree
+    // instead of the one the boot itself just seeded.
+    const stored = backend.peekStored();
+    queueMicrotask(() => {
+      const outcome = backend.restore(stored);
+      if (outcome === 'corrupt') {
+        this.appendLines([{ kind: 'stderr', text: 'local-storage: stored state was unreadable — re-seeded' }]);
+      }
+    });
+  }
+
+  /** Restore persisted command history into a session and persist on change. */
+  #bindHistory(session: TerminalSession): void {
+    const key = this.#historyKey;
+    if (key === null) return;
+    const store = (): Storage | null => {
+      try {
+        return (this.ownerDocument?.defaultView ?? window).localStorage;
+      } catch {
+        return null;
+      }
+    };
+    try {
+      const raw = store()?.getItem(key);
+      if (raw) {
+        const parsed: unknown = JSON.parse(raw);
+        if (Array.isArray(parsed)) session.cooked.loadHistory(parsed as string[]);
+      }
+    } catch {
+      // unreadable history is dropped silently — it is a convenience, not state
+    }
+    session.cooked.onHistory = (history) => {
+      try {
+        store()?.setItem(key, JSON.stringify(history));
+      } catch {
+        // quota / privacy mode — history just stops persisting
+      }
+    };
+  }
+
+  /* ---------------------------------------------------------------- *
+   * scripted playback
+   * ---------------------------------------------------------------- */
+
+  /** The steps to play: the property wins over the `script` attribute. */
+  #scriptSteps(): PlaybackStep[] | null {
+    if (this.playback && this.playback.length > 0) return this.playback;
+    return parseScriptAttribute(this.getAttribute('script'));
+  }
+
+  #maybeStartPlayback(): void {
+    const steps = this.#scriptSteps();
+    if (!steps) return;
+    this.markScripted();
+    const view = this.ownerDocument?.defaultView ?? window;
+    // Let the plugin mount lines land before the typing begins.
+    view.setTimeout(() => this.#startPlayback(steps), 350);
+  }
+
+  #reducedMotion(): boolean {
+    const view = this.ownerDocument?.defaultView ?? window;
+    return typeof view.matchMedia === 'function' && view.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  #startPlayback(steps: PlaybackStep[]): void {
+    this.#teardownPlayback();
+    this.#playbackStopped = false;
+    const input = this.#inputEl();
+    if (input) {
+      input.value = '';
+      input.readOnly = true; // the script owns the keyboard until Escape
+    }
+    this.playing = true;
+    const view = this.ownerDocument?.defaultView ?? window;
+    this.#playbackHandle = startPlayback(steps, this.#driver(), {
+      reducedMotion: this.#reducedMotion(),
+      schedule: (fn, ms) => view.setTimeout(fn, ms),
+      onDone: () => {
+        this.playing = false; // the script finished on its own
+        this.#releaseInput(false);
+      },
+    });
+  }
+
+  /** Escape (or the element going away): the user takes over. */
+  #stopPlayback(announce: boolean): void {
+    const wasPlaying = this.playing;
+    this.#teardownPlayback();
+    this.#playbackStopped = true;
+    if (wasPlaying) this.#releaseInput(announce);
+  }
+
+  #teardownPlayback(): void {
+    this.#playbackHandle?.stop();
+    this.#playbackHandle = null;
+    this.playing = false;
+  }
+
+  #releaseInput(announce: boolean): void {
+    const input = this.#inputEl();
+    if (input) {
+      input.value = '';
+      input.readOnly = false;
+      this.refocusIfEngaged();
+    }
+    if (announce) this.appendLines([{ kind: 'comment', text: 'playback stopped — the terminal is yours.' }]);
+  }
+
+  /**
+   * Re-focus the prompt ONLY when the reader is already inside the shell
+   * (§2.5, WCAG 2.4.3 / 3.2.1): a demo that ends while the reader has
+   * scrolled on must not yank the page back or pop a soft keyboard.
+   */
+  protected refocusIfEngaged(): void {
+    const doc = this.ownerDocument;
+    if (doc !== null && this.contains(doc.activeElement)) this.#inputEl()?.focus();
+  }
+
+  /**
+   * Stop whatever demo is running and hand the terminal back. The base
+   * stops boot playback; SemShell overrides to stop its start-script
+   * autostart first. Public so the visible "stop demo" control can call it.
+   */
+  stopDemo(): void {
+    this.demoRunning = false;
+    this.#stopPlayback(true);
+  }
+
+  #driver(): PlaybackDriver {
+    return {
+      type: (text) => {
+        const input = this.#inputEl();
+        if (input) input.value += text;
+      },
+      run: () => this.#submitInput(),
+      pressKey: (key) => this.#playbackKey(key),
+      comment: (text) => this.appendLines([{ kind: 'comment', text }]),
+      open: () => this.tui !== null,
+      stopped: () => this.#playbackStopped,
+    };
+  }
+
+  /** Where a playback key lands: the TUI when open, else the input path —
+   * the SAME pipeline physical keys take (§7.5). */
+  #playbackKey(key: string): void {
+    if (this.tui) {
+      this.#tuiKey(key);
+      return;
+    }
+    this.#input.handleSingleKey(key);
+  }
+
+  /** Programmatic keys (§7.5): the sendKeys grammar — typing's twin. */
+  sendKeys(spec: string): void {
+    this.#input.sendKeys(spec);
+  }
+
+  /** The InputHost dispatch seam: raw → the active app (it claims every
+   * key), cooked → its discipline (which may leave Tab unclaimed so the
+   * browser keeps its focus meaning). */
+  #routeKey(ev: KeyEvent): boolean {
+    if (this.appLive) {
+      this.#session.runner.key(ev);
+      this.#touchApp();
+      return true;
+    }
+    const input = this.#inputEl();
+    if (input) {
+      const caret = input.selectionStart ?? input.value.length;
+      this.#session.cooked.syncFrom(input.value, caret);
+    }
+    const claimed = this.#session.cooked.key(ev);
+    this.#mirrorInput(this.#session.cooked.buffer, this.#session.cooked.caret);
+    return claimed;
+  }
+
+  /** F6 while an app is live: exit cleanly (§7.1) — the app's own teardown
+   * path, not the interrupt ladder. */
+  #exitActiveApp(): void {
+    if (this.appLive) this.#session.runner.requestExit();
+  }
+
+  /** Cooked paste/composition insert: one key event per code point. */
+  #insertCooked(text: string): void {
+    for (const char of text) {
+      this.#session.cooked.key({ key: char, ctrl: false, alt: false, shift: false, meta: false });
+    }
+    this.#mirrorInput(this.#session.cooked.buffer, this.#session.cooked.caret);
+  }
+
+  /** The replay button: stop where it is, start over. */
+  #restartPlayback(): void {
+    const steps = this.#scriptSteps();
+    if (!steps) return;
+    this.#startPlayback(steps);
+  }
+
+  /**
+   * The replay button: stop where it is, start over. A subclass may replay
+   * through a different channel — sem-shell's start-script autostart keeps
+   * its own handle and re-attaches it here.
+   */
+  protected replayScript(): void {
+    this.#restartPlayback();
+  }
+
+  /**
+   * The element has a replayable script — the boot `script`/`playback` flow
+   * marks itself; a subclass channel (start-script, fetched or inline) calls
+   * this so the replay button renders for it too (r2 follow-up: the FETCH
+   * flow never saw `#hasScript`).
+   */
+  protected markScripted(): void {
+    if (!this.#hasScript) {
+      this.#hasScript = true;
+      this.requestUpdate();
+    }
+  }
+
+  /** Whether a replayable script is attached — the replay button's state. */
+  protected get replayable(): boolean {
+    return this.#hasScript;
+  }
+
+  /* ---------------------------------------------------------------- *
+   * render
+   * ---------------------------------------------------------------- */
+
+  /** Replay / stop control — lives in the title bar's actions slot (never over the tab strip). */
+  #scriptActions(): TemplateResult | null {
+    if (!this.#hasScript) return null;
+    return this.playing || this.demoRunning
+      ? html`<span class="sem-shell-demo-hint">Esc to take over</span
+          ><button type="button" class="sem-shell-stop" aria-label="Stop the scripted demo" @click=${() => this.stopDemo()}>
+            stop demo
+          </button>`
+      : html`<button type="button" class="sem-shell-replay" aria-label="Replay the scripted demo" @click=${() => this.replayScript()}>
+          replay
+        </button>`;
+  }
+
+  render(): TemplateResult {
+    const tabs = this.tabModel.tabs;
+    const tabbed = tabs.length > 1 || this.tabs;
+    const activeTab = tabs.find((tab) => tab.id === this.tabModel.activeId);
+    // Alt screen: no scrollback — total==visible hides the scrollbar (§10).
+    const total = this.screen.altScreen ? this.screen.rows : this.screen.totalLines();
+    return html`
+      <div class="sem-shell-frame" @click=${this.#focusInput} @keydown=${this.#onFrameKeydown}>
+        ${renderWindowTitlebar({
+          title: this.titleFeed.title || 'sem shell',
+          tone: this.titleFeed.status.tone,
+          actions: this.#scriptActions(),
+        })}
+        ${tabs.length > 1 || this.tabs
+          ? html`<div class="sem-term-tabs" @click=${this.#onTabStripClick} @keydown=${this.#onTabStripKeydown}>
+              ${renderTabStrip({
+                tabs: tabs.map((tab) => ({
+                  id: String(tab.id),
+                  title: tab.id === this.#confirmingClose ? `${tab.title} — confirm close?` : tab.title,
+                  active: tab.id === this.tabModel.activeId,
+                })),
+                label: 'Shell tabs',
+                closable: true,
+                idPrefix: this.#inputId,
+                panelId: this.#panelId,
+              })}
+              <button
+                type="button"
+                class="sem-window-tab-new"
+                aria-label="New tab"
+                title="New tab (Ctrl+Shift+T)"
+                @click=${() => this.#newTab()}
+              >
+                +
+              </button>
+            </div>`
+          : null}
+        <div
+          class="sem-shell-panel"
+          style="display: contents"
+          id=${this.#panelId}
+          role=${tabbed ? 'tabpanel' : nothing}
+          aria-labelledby=${tabbed && activeTab !== undefined ? tabDomId(this.#inputId, String(activeTab.id)) : nothing}
+        >
+        <div class="sem-term-surface">
+          <sem-scroll
+            class="sem-term-scrollbar"
+            .total=${total}
+            .visible=${this.screen.rows}
+            .offset=${this.screen.viewportTop()}
+            .onscrollto=${(row: number) => this.#onScrollTo(row)}
+          ></sem-scroll>
+        </div>
+        <div class="sem-shell-transcript" role="log" aria-live="polite" aria-label="Shell transcript">
+          ${this.lines.map((line) => this.#renderLine(line))}
+        </div>
+        </div>
+        ${this.appLive ? null : this.tui ? this.#renderTui() : this.#renderPrompt()}
+      </div>
+    `;
+  }
+
+  #renderPrompt(): TemplateResult {
+    return html`
+      <form class="sem-shell-prompt" @submit=${this.#onSubmit}>
+        <label class="sem-shell-ps1" for=${this.#inputId}>${this.cwd} $</label>
+        <input
+          id=${this.#inputId}
+          class="sem-shell-input"
+          type="text"
+          spellcheck="false"
+          autocomplete="off"
+          autocapitalize="off"
+          aria-label="Shell command"
+          @keydown=${this.#onKeydown}
+        />
+      </form>
+    `;
+  }
+
+  /** The flashcard view: boxed panels, keyboard-driven, read-only. */
+  #renderTui(): TemplateResult {
+    const state = this.tui!;
+    const card = state.cards[state.index] ?? null;
+    return html`
+      <div class="sem-tui" role="group" aria-label="SemText cards — read-only view" tabindex="0" @keydown=${this.#onTuiOverlayKeydown}>
+        <div class="sem-tui-head">
+          tui — ${state.title} · ${tuiPosition(state)}${state.filter !== '' ? ` · filter: ${state.filter}` : ''}
+        </div>
+        ${card === null
+          ? html`<div class="sem-tui-front sem-tui-empty">no cards match the filter</div>`
+          : html`
+              <div class="sem-tui-card sem-tui-front">${card.front}</div>
+              ${state.expanded
+                ? html`
+                    <div class="sem-tui-card sem-tui-back">${card.back}</div>
+                    ${card.meta !== '' ? html`<div class="sem-tui-meta">${card.meta}</div>` : null}
+                  `
+                : null}
+            `}
+        ${state.filtering
+          ? html`<input
+              class="sem-tui-filter"
+              placeholder="filter cards…"
+              aria-label="Filter cards"
+              .value=${state.filter}
+              @input=${this.#onTuiFilterInput}
+              @keydown=${this.#onTuiFilterKeydown}
+            />`
+          : null}
+        <div class="sem-tui-hint">&#8593;/k &#8595;/j move &middot; Enter expand &middot; / filter &middot; q close</div>
+      </div>
+    `;
+  }
+
+  #renderLine(line: ShellLine): TemplateResult {
+    const cls =
+      line.kind === 'cmd'
+        ? 'sem-shell-line sem-shell-cmd'
+        : line.kind === 'stderr'
+          ? 'sem-shell-line sem-shell-error'
+          : line.kind === 'status'
+            ? 'sem-shell-line sem-shell-status'
+            : line.kind === 'comment'
+              ? 'sem-shell-line sem-shell-comment'
+              : 'sem-shell-line';
+    // stdout/stderr stream through the ANSI tokeniser — the ACTIVE session's
+    // own machine, so attributes persist across its lines like a real
+    // terminal (and never leak across tabs). Every other kind is shell
+    // chrome: bypass the parser, render verbatim.
+    if (line.kind !== 'stdout' && line.kind !== 'stderr') {
+      return html`<div class=${cls}>${line.text}</div>`;
+    }
+    const spans = ansiSpans(line.text, this.#session.ansi);
+    return html`<div class=${cls}>
+      ${spans.map(
+        (span) =>
+          span.classes.length === 0 && span.style === ''
+            ? html`${span.text}`
+            : html`<span class=${span.classes.join(' ')} style=${span.style}>${span.text}</span>`,
+      )}
+    </div>`;
+  }
+
+  appendLines(newLines: ShellLine[]): void {
+    this.#pushLines(this.#session, newLines);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * canvas paint path (§8) — the r2-canvas integration
+   * ---------------------------------------------------------------- */
+
+  /**
+   * THEROB-187 (review r2): the one bounded re-check primitive, shared by
+   * the deferred-mount (null surface) and zero-geometry (no layout) paths.
+   * Anchored on requestAnimationFrame — an idle element resolves
+   * updateComplete in back-to-back microtasks, which would burn the whole
+   * window without a render or a layout pass ever landing, and a surface
+   * that mounts later would be missed. rAF is one tick per frame; the
+   * fallback keeps updateComplete only where rAF is unavailable (old
+   * engines). Each spend schedules exactly one tick, dropped when the
+   * element has disconnected, rejections surfaced as a warning.
+   */
+  #boundedRecheck(action: () => void): void {
+    if (this.#retryBudget <= 0) return;
+    this.#retryBudget -= 1;
+    const run = (): void => {
+      try {
+        if (!this.isConnected) return; // disconnected — drop the tick
+        action();
+      } catch (error) {
+        console.warn('sem-terminal: deferred surface re-check failed', error);
+      }
+    };
+    const view = this.ownerDocument?.defaultView;
+    const raf = view?.requestAnimationFrame?.bind(view);
+    if (typeof raf === 'function') {
+      raf(run);
+      return;
+    }
+    void this.updateComplete.then(run).catch((error: unknown) => {
+      console.warn('sem-terminal: deferred surface re-check failed', error);
+    });
+  }
+
+  /** Attach the renderer once the surface appears; idempotent on reconnect. */
+  #ensureRenderer(): void {
+    if (this.#renderer !== null || this.#domView) return;
+    const surface = this.querySelector('.sem-term-surface');
+    if (!(surface instanceof HTMLElement)) {
+      // THEROB-187: a surface that mounts after first paint used to leave
+      // the seed (80×24) as the final geometry — the bail was silent and
+      // nothing ever re-checked. #boundedRecheck: rAF-anchored (an idle
+      // element must not burn the window on microtasks), bounded,
+      // isConnected-guarded, rejections warn.
+      this.#boundedRecheck(() => this.#ensureRenderer());
+      return;
+    }
+    this.#retryBudget = SURFACE_RETRY_BUDGET;
+    const result = createCanvasRenderer({
+      onUnavailable: () => {
+        // §8.5: the mirror IS the a11y tree; promote it to the view. The
+        // renderer mounts its own mirror at attach, so useDomView is all.
+        this.#domView = true;
+        this.#renderer?.useDomView();
+        this.#setPaint('dom');
+        this.#markCanvasUnavailable();
+      },
+      onMetricsChange: (metrics) => this.#onMetrics(metrics),
+    });
+    if (!result.ok) {
+      this.#markCanvasUnavailable();
+      this.#startMirrorOnly(surface, result.reason);
+      return;
+    }
+    const renderer = result.renderer;
+    // Bridge sem-shell's §8.5 view preference onto the live renderer —
+    // BEFORE markCanvasAvailable re-resolves and applies the choice. An
+    // author-installed delegate (or the shell's test seam) wins untouched.
+    const shell = this as {
+      viewDelegate?: (choice: 'canvas' | 'dom') => void;
+      markCanvasAvailable?: () => void;
+    };
+    if (shell.viewDelegate == null) {
+      shell.viewDelegate = (choice) => {
+        if (choice === 'dom') {
+          renderer.useDomView();
+          this.#setPaint('dom');
+        } else {
+          renderer.useCanvasView();
+          this.#setPaint('canvas');
+        }
+      };
+    }
+    this.#renderer = renderer;
+    renderer.attach(this.#paintScreenFor(this.#session), surface);
+    this.#setPaint('canvas');
+    shell.markCanvasAvailable?.();
+    // The paint path owns the input surface from here on (bat lane's
+    // required flip — core-screen deviation 2): hidden input (IME/paste),
+    // mouse/selection, wheel, and the context menu all ride the surface.
+    this.#ensureInputAttached(surface);
+    const metrics = renderer.metrics();
+    this.#onMetrics(metrics);
+    // THEROB-187: a renderer that could not measure (no 2d context — the
+    // mirror is the view) reports degenerate metrics; #onMetrics returns
+    // early and the 80×24 seed survives first paint. Refit from the
+    // surface box instead (same clamped resize path).
+    if (!(metrics.cols > 0) || !(metrics.rows > 0)) this.#refitToSurface();
+  }
+
+  /** §8.5a: the shell (when present) learns the canvas proved available. */
+  #markCanvasAvailable(): void {
+    (this as { markCanvasAvailable?: () => void }).markCanvasAvailable?.();
+  }
+
+  #markCanvasUnavailable(): void {
+    (this as { markCanvasUnavailable?: () => void }).markCanvasUnavailable?.();
+  }
+
+  /**
+   * Factory refused (forced-colors): mount a standalone mirror as the
+   * visible view; #drain drives it directly.
+   */
+  #startMirrorOnly(surface: HTMLElement, reason: 'forced-colors' | 'no-2d-context'): void {
+    void reason; // the state attribute records it; the paint is the same
+    const view = this.ownerDocument?.defaultView ?? undefined;
+    const mirror = new DOMMirror({
+      schedule: (fn, ms) => {
+        if (view === undefined) {
+          fn();
+          return () => {};
+        }
+        const id = view.setTimeout(fn, ms);
+        return () => view.clearTimeout(id);
+      },
+      now: () => (view !== undefined && typeof view.performance?.now === 'function' ? view.performance.now() : Date.now()),
+    });
+    mirror.attach(this.#paintScreenFor(this.#session), surface);
+    mirror.setVisible(true);
+    this.#mirrorOnly = mirror;
+    this.#domView = true;
+    this.#setPaint('dom');
+    // The mirror-only fallback paints the same surface — the input rides it
+    // there too (wheel, selection, context menu have no canvas to lean on).
+    this.#ensureInputAttached(surface);
+    // THEROB-187: the mirror-only path had no metrics source (DOMMirror does
+    // not measure), so the 80×24 seed survived first paint here too. Measure
+    // the surface once at mount; later size changes are out of scope for the
+    // standalone mirror.
+    this.#refitToSurface();
+  }
+
+  /**
+   * THEROB-187: measure `.sem-term-surface` and refit the screen through
+   * `#onMetrics` — the same clamped resize the canvas path uses. Used by
+   * the mirror-only path, which has no renderer metrics callback; a zero
+   * box (surface not laid out) leaves the geometry untouched.
+   */
+  #refitToSurface(): void {
+    const surface = this.querySelector('.sem-term-surface');
+    if (!(surface instanceof HTMLElement)) return;
+    const width = surface.clientWidth;
+    const height = surface.clientHeight;
+    if (!(width > 0) || !(height > 0)) {
+      // THEROB-187 (review r1): layout may land after the mirror mounts
+      // (hidden tab, late CSS) — a zero box used to give up silently and
+      // the 80×24 seed survived. Same bounded re-check window as the
+      // deferred-mount path, so the refit lands when layout arrives.
+      this.#boundedRecheck(() => this.#refitToSurface());
+      return;
+    }
+    const cell = this.#probeCellBox();
+    const { cols, rows } = fitCounts(width, height, cell.cellWidth, cell.cellHeight);
+    const view = this.ownerDocument?.defaultView;
+    this.#onMetrics({
+      cols,
+      rows,
+      cellWidth: cell.cellWidth,
+      cellHeight: cell.cellHeight,
+      dpr: clampDpr(view?.devicePixelRatio ?? 1),
+    });
+    // A landed refit re-arms the window: each settled geometry gets a full
+    // re-check allowance, while a forever-zero surface never lands and so
+    // still exhausts bounded.
+    this.#retryBudget = SURFACE_RETRY_BUDGET;
+  }
+
+  /**
+   * THEROB-187: cell box for the mirror-only refit. A probe canvas measures
+   * when the document can (forced-colors keeps 2d contexts); without one
+   * (no-2d-context refusal), fall back to the §8.3 default 14px box.
+   */
+  #probeCellBox(): { cellWidth: number; cellHeight: number } {
+    const probe = this.ownerDocument?.createElement?.('canvas');
+    const ctx = probe?.getContext?.('2d') as MeasuringContext | null;
+    if (ctx !== null && ctx !== undefined) {
+      const raw = measureCellMetrics(ctx);
+      // THEROB-187 (review r1): a non-null but degenerate 2d context must
+      // not feed invalid geometry into fitCounts — validate, else fall
+      // through to the documented default cell box.
+      if (
+        Number.isFinite(raw.cellWidth) && raw.cellWidth > 0 &&
+        Number.isFinite(raw.cellHeight) && raw.cellHeight > 0
+      ) {
+        return { cellWidth: raw.cellWidth, cellHeight: raw.cellHeight };
+      }
+    }
+    return { cellWidth: DEFAULT_CELL_WIDTH, cellHeight: DEFAULT_CELL_HEIGHT };
+  }
+
+  /**
+   * Attach the input model to the paint surface exactly once per surface
+   * (InputModel.attach is not idempotent — double-attach leaks listeners).
+   */
+  #ensureInputAttached(surface: HTMLElement): void {
+    if (this.#inputSurface === surface) return;
+    this.#input.detach();
+    this.#input.attach(surface);
+    this.#inputSurface = surface;
+  }
+
+  /**
+   * The renderer's read-side adapter, built lazily PER SESSION — it reads
+   * that session's screen and truecolour map (the renderer re-attaches to
+   * the next session's adapter on tab switch; §11.2 switch = swap screens).
+   */
+  #paintScreenFor(session: TerminalSession): PaintScreen {
+    if (session.paintScreen === null) {
+      session.paintScreen = screenView(session.screen, {
+        truecolorAt: (slot) => session.feed.truecolor.at(slot),
+        ansiRgb: (index) => this.#themeAnsi(index),
+      });
+    }
+    return session.paintScreen;
+  }
+
+  /** Metrics settled (attach, font load, zoom): refit the screen (§8.3). */
+  #onMetrics(metrics: CellMetrics): void {
+    this.#ansiCache = [];
+    if (metrics.cols <= 0 || metrics.rows <= 0) return;
+    const cols = Math.max(COLS_MIN, Math.min(COLS_MAX, metrics.cols));
+    const rows = Math.max(ROWS_MIN, Math.min(ROWS_MAX, metrics.rows));
+    if (cols !== this.screen.cols || rows !== this.screen.rows) {
+      this.screen.resize(cols, rows);
+      this.#session.runner.onScreenResized(cols, rows);
+    }
+    // Keep the surface exactly rows tall: auto-height pages (the demo
+    // cards) wrap the terminal in normal flow, and the canvas is 100% of
+    // the surface box. Guarded so the resize observer settles, not loops.
+    const surface = this.querySelector('.sem-term-surface');
+    if (surface instanceof HTMLElement) {
+      const height = Math.round(rows * metrics.cellHeight);
+      if (Math.abs(surface.clientHeight - height) > 1) surface.style.height = `${height}px`;
+    }
+    this.requestUpdate();
+  }
+
+  /** The batched damage repaint — one call per frame (§8 drain). */
+  #drain(): void {
+    if (this.#renderer === null && this.#mirrorOnly === null) return;
+    const damage = this.screen.takeDamage();
+    if (this.#renderer !== null) this.#renderer.drain(damage);
+    else this.#mirrorOnly?.drain(damage);
+  }
+
+  /** Theme ANSI-16 from the --sem-term-ansi-N tokens, cached until metrics move. */
+  #themeAnsi(index: number): Rgb | null {
+    const cached = this.#ansiCache[index];
+    if (cached !== undefined) return cached;
+    const view = this.ownerDocument?.defaultView;
+    let rgb: Rgb | null = null;
+    if (view !== null && view !== undefined && typeof view.getComputedStyle === 'function') {
+      rgb = parseRgbToken(view.getComputedStyle(this).getPropertyValue(`--sem-term-ansi-${index}`).trim());
+    }
+    this.#ansiCache[index] = rgb;
+    return rgb;
+  }
+
+  /** TAB_THEME (§12): frame attribute hook — theming styles stay in the lane's CSS block. */
+  #applyTabTheme(theme?: string): void {
+    if (theme !== undefined) this.#tabTheme = theme;
+    const frame = this.querySelector('.sem-shell-frame');
+    if (frame !== null) frame.setAttribute('data-sem-tab-theme', this.#tabTheme ?? 'default');
+  }
+
+  /** Scrollbar request (§10): move the viewport, drain follows in updated(). */
+  #onScrollTo(row: number): void {
+    this.screen.scrollTo(row);
+    this.requestUpdate();
+  }
+
+  /* ---------------------------------------------------------------- *
+   * context menu (§8.5c) — the dom-menu lane's MenuHost seams
+   * ---------------------------------------------------------------- */
+
+  /** sem-shell's view control when present; a null object otherwise. */
+  #shellView(): DomMenuViewControl {
+    return (this as { semView?: DomMenuViewControl }).semView ?? nullViewControl;
+  }
+
+  #menuHost(): MenuHost {
+    const self = this;
+    return {
+      copySelection: () => self.#input.copySelection(),
+      selectAll: () => {
+        const range = selectAllRange(self.screen.totalLines());
+        if (range === null) return;
+        self.#input.selection.begin(0, 0, false);
+        self.#input.selection.extend(range.end.line, range.end.col);
+        self.screen.setSelection(range);
+      },
+      pasteFromClipboard: () => {
+        void navigator.clipboard
+          ?.readText()
+          .then((text) => self.#input.handlePaste(text))
+          .catch(() => self.appendLines([{ kind: 'stderr', text: 'clipboard read refused' }]));
+      },
+      activateFind: () => self.#session.runner.app?.find?.(),
+      clearTerminal: () => self.#execLine(self.#session, 'clear'),
+      openTranscript: () => {
+        const view = self.ownerDocument?.defaultView;
+        if (view !== null && view !== undefined) openPlainTranscript(self.screen.extractText(null), view);
+      },
+      currentView: () => self.#shellView().current(),
+      switchView: (to) => self.#shellView().switchTo(to),
+      canvasAvailable: () => self.#shellView().canvasAvailable(),
+      clipboardReadAvailable: () => typeof navigator.clipboard?.readText === 'function',
+      findAvailable: () => self.#session.runner.app?.find !== undefined,
+      armBrowserPassthrough: () => {
+        self.#browserPassthroughArmed = true;
+      },
+      surface: () => self,
+      focusReturnTarget: () => {
+        // The host element is not focusable — land on the prompt input, else
+        // the canvas lane's hidden input, else the host (tabindex fallback).
+        const target =
+          self.querySelector<HTMLElement>('.sem-shell-input') ??
+          self.querySelector<HTMLElement>('.sem-shell-hidden-input');
+        if (target !== null) return target;
+        if (!self.hasAttribute('tabindex')) self.setAttribute('tabindex', '-1');
+        return self;
+      },
+    };
+  }
+
+  /** The menu's stylesheet: one <style> per document, guarded by marker. */
+  #injectMenuCss(): void {
+    const doc = this.ownerDocument;
+    if (doc === null || typeof doc.createElement !== 'function') return;
+    const styles = doc.querySelectorAll('style');
+    for (const style of styles) {
+      if (style.textContent?.includes('── shell-v2-dom-menu ──')) return;
+    }
+    const sheet = doc.createElement('style');
+    sheet.textContent = MENU_DOM_CSS;
+    doc.head?.appendChild(sheet);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * tab strip + sessions (§11.2/§11.3, Epoch 3)
+   * ---------------------------------------------------------------- */
+
+  /** Strip clicks: close buttons by data-tab-close, else activate the tab. */
+  #onTabStripClick(event: Event): void {
+    const target = event.target as HTMLElement | null;
+    const close = target?.closest('[data-tab-close]');
+    if (close !== null) {
+      const id = Number((close as HTMLElement).getAttribute('data-tab-close'));
+      if (Number.isFinite(id)) void this.#closeTab(id);
+      return;
+    }
+    const tab = target?.closest('[role="tab"]');
+    const id = tab === null || tab === undefined ? Number.NaN : Number((tab as HTMLElement).getAttribute('data-tab-id'));
+    if (Number.isFinite(id)) this.#activateTab(id);
+  }
+
+  /** Strip keys (§11.2): roving focus — ArrowLeft/Right/Home/End. */
+  #onTabStripKeydown(event: KeyboardEvent): void {
+    const target = this.tabModel.stripKeyToTarget(event.key);
+    if (target === null) return;
+    event.preventDefault();
+    this.#activateTab(target);
+    (this.querySelector(`[data-tab-id="${target}"]`) as HTMLElement | null)?.focus();
+  }
+
+  #activateTab(id: number): void {
+    // The #offTabs subscription repoints the session + swaps the paint.
+    this.tabModel.activate(id);
+  }
+
+  /**
+   * Follow the TabModel's active tab: mirror the session's user-visible
+   * slice and move the paint path onto its screen. A background session
+   * keeps running — an app left behind writes into its own screen and is
+   * seen again on switch-back.
+   */
+  #repointSession(id: number): void {
+    const next = this.#sessions.find((session) => session.tabId === id);
+    if (next === undefined || next === this.#session) return;
+    const previous = this.#session;
+    // Drop the outgoing view's pending damage; the screen itself is kept.
+    previous.screen.takeDamage();
+    this.#session = next;
+    this.lines = next.lines;
+    this.cwd = next.core.state.cwd;
+    this.appLive = next.appLive;
+    this.tui = next.tui;
+    const surface = this.querySelector('.sem-term-surface');
+    if (surface instanceof HTMLElement) {
+      if (this.#renderer !== null) {
+        this.#renderer.detach();
+        this.#renderer.attach(this.#paintScreenFor(next), surface);
+        // Preserve the §8.5 view choice across the re-attach.
+        if (this.dataset.paint === 'dom') this.#renderer.useDomView();
+      } else if (this.#mirrorOnly !== null) {
+        this.#mirrorOnly.detach();
+        this.#mirrorOnly.attach(this.#paintScreenFor(next), surface);
+        this.#mirrorOnly.setVisible(true);
+      }
+    }
+    // The visible input adopts the session's own editing buffer.
+    const input = this.#inputEl();
+    if (input !== null) {
+      input.value = next.cooked.buffer;
+      try {
+        input.setSelectionRange(next.cooked.caret, next.cooked.caret);
+      } catch {
+        // input types without selection support — value is enough
+      }
+    }
+    this.requestUpdate();
+  }
+
+  /** New tab (Ctrl+Shift+T, the + button, `tab new`): a fresh session. */
+  #newTab(label?: string): void {
+    const name = label?.trim() ?? '';
+    const tab = this.tabModel.add(name === '' ? `shell ${this.tabModel.count + 1}` : name);
+    if (tab === null) {
+      this.#pushLines(this.#session, [{ kind: 'stderr', text: 'tab: the shell is at its 9-tab limit' }]);
+      return;
+    }
+    const session = this.#createSession(tab.title, tab);
+    this.#hookSession(session); // the new core gets the same command set
+    this.#repointSession(session.tabId);
+  }
+
+  /**
+   * Close by id. A full-screen app is asked first: the first ×/Ctrl+Shift+W
+   * on a live tab announces and arms a short confirm; the second acts
+   * (§11.2). The last tab never closes. Returns true when a tab closed.
+   */
+  #closeTab(id: number | null): boolean {
+    if (id === null || this.tabModel.count <= 1) return false;
+    const session = this.#sessions.find((entry) => entry.tabId === id);
+    if (session === undefined) return false;
+    if (session.appLive && this.#confirmingClose !== id) {
+      this.#confirmingClose = id;
+      this.#pushLines(session, [
+        { kind: 'comment', text: `tab: "${session.label}" is running a full-screen app — close again to confirm` },
+      ]);
+      const view = this.ownerDocument?.defaultView ?? window;
+      const timer = view.setTimeout(() => {
+        if (this.#confirmingClose === id) {
+          this.#confirmingClose = null;
+          this.requestUpdate();
+        }
+      }, 4_000);
+      this.#confirmTimer?.();
+      this.#confirmTimer = () => view.clearTimeout(timer);
+      this.requestUpdate();
+      return false;
+    }
+    this.#confirmingClose = null;
+    this.#confirmTimer?.();
+    this.#confirmTimer = null;
+    if (session.appLive) session.runner.requestInterrupt(); // exit 130, then close
+    if (!this.tabModel.close(id)) return false;
+    this.#disposeSession(session);
+    return true;
+  }
+
+  /** Drop a closed tab's session: unsubscribe, leave the strip order. */
+  #disposeSession(session: TerminalSession): void {
+    session.offCoreLine?.();
+    session.offTitle?.();
+    const index = this.#sessions.indexOf(session);
+    if (index !== -1) this.#sessions.splice(index, 1);
+  }
+
+  /** The `tab` builtin's action (the core stays DOM-free; data only). */
+  #onTabAction(session: TerminalSession, action: TabAction): void {
+    switch (action.op) {
+      case 'new': {
+        const before = this.tabModel.count;
+        this.#newTab(action.target);
+        if (this.tabModel.count > before) {
+          this.#pushLines(session, [{ kind: 'comment', text: `tab: opened ${this.#session.label}` }]);
+        }
+        return;
+      }
+      case 'close': {
+        const id = this.#tabIdFromPosition(action.target);
+        if (id === null) {
+          this.#pushLines(session, [{ kind: 'stderr', text: `tab close: no tab at position ${action.target ?? '(missing)'}` }]);
+          return;
+        }
+        const label = this.#sessions.find((entry) => entry.tabId === id)?.label ?? `tab ${id}`;
+        if (this.tabModel.count <= 1) {
+          this.#pushLines(session, [{ kind: 'stderr', text: 'tab close: the last tab stays open' }]);
+          return;
+        }
+        this.#confirmingClose = id; // an explicit command needs no double ask
+        this.#closeTab(id);
+        this.#pushLines(session, [{ kind: 'comment', text: `tab: closed ${label}` }]);
+        return;
+      }
+      case 'rename': {
+        const name = (action.target ?? '').trim();
+        const id = this.tabModel.activeId;
+        if (id === null || !this.tabModel.setTitle(id, name)) {
+          this.#pushLines(session, [{ kind: 'stderr', text: 'tab rename: give the active tab a new name (`tab rename <name>`)' }]);
+          return;
+        }
+        this.#pushLines(session, [{ kind: 'comment', text: `tab: renamed tab ${this.tabModel.indexOf(id) + 1} to "${name}"` }]);
+        return;
+      }
+      case 'list': {
+        const lines: ShellLine[] = [];
+        const tabs = this.tabModel.tabs;
+        for (let i = 0; i < tabs.length; i++) {
+          const tab = tabs[i]!;
+          const live = this.#sessions.some((entry) => entry.tabId === tab.id && entry.appLive);
+          const marker = tab.id === this.tabModel.activeId ? '*' : ' ';
+          lines.push({ kind: 'stdout', text: `${i + 1}${marker} ${tab.title}${live ? '  (app running)' : ''}` });
+        }
+        this.#pushLines(session, lines);
+        return;
+      }
+    }
+  }
+
+  /** `tab close [n]`: 1-based strip position → tab id; default the active. */
+  #tabIdFromPosition(position: string | undefined): number | null {
+    if (position === undefined) return this.tabModel.activeId;
+    const tab = this.tabModel.tabs[Number(position) - 1];
+    return tab?.id ?? null;
+  }
+
+  /* ---------------------------------------------------------------- *
+   * input handling
+   * ---------------------------------------------------------------- */
+
+  #focusInput(): void {
+    if (this.tui) return;
+    // An app owns the screen: the visible prompt is gone, so a click on the
+    // surface must land on the hidden input (the canvas has no focus of its own).
+    if (this.appLive) {
+      this.#input.focus();
+      return;
+    }
+    this.#inputEl()?.focus();
+  }
+
+  #inputEl(): HTMLInputElement | null {
+    return this.querySelector('.sem-shell-input') as HTMLInputElement | null;
+  }
+
+  #onSubmit(event: Event): void {
+    event.preventDefault();
+    this.#submitInput();
+  }
+
+  #submitInput(): void {
+    const input = this.#inputEl();
+    if (!input) return;
+    const value = input.value;
+    // The discipline owns history/draft; the form path submits externally.
+    const cooked = this.#session.cooked;
+    cooked.syncFrom(value, value.length);
+    cooked.onSubmit(value);
+    input.value = '';
+    this.#execLine(this.#session, value);
+  }
+
+  /**
+   * Run one line in ONE session (usually the active one). The `#executing`
+   * bracket attributes synchronous side channels fired inside the pipeline
+   * — the direnv TAB_TITLE feed — to the session whose `cd` caused them.
+   */
+  #execLine(session: TerminalSession, value: string): void {
+    this.#executing = session;
+    let outcome: ExecResult | Promise<ExecResult>;
+    try {
+      outcome = session.core.execLine(value);
+    } finally {
+      this.#executing = null;
+    }
+    // An async command (CORE-V2) resolves later: the sync side-channel
+    // bracket above covers only the synchronous prefix — side channels
+    // fired inside the continuation attribute to whoever runs then.
+    if (outcome instanceof Promise) {
+      void outcome.then((result) => this.#applyExecResult(session, result, value));
+      return;
+    }
+    this.#applyExecResult(session, outcome, value);
+  }
+
+  /**
+   * Embedder surface: run one command line in the active tab, exactly as if
+   * typed and submitted (the transcript echoes it). Fires `sem-shell-command`.
+   */
+  run(line: string): void {
+    this.#execLine(this.#session, String(line));
+  }
+
+  #applyExecResult(session: TerminalSession, result: ExecResult, line?: string): void {
+    if (line !== undefined) {
+      this.dispatchEvent(
+        new CustomEvent('sem-shell-command', {
+          bubbles: true,
+          composed: true,
+          detail: { line, tab: session.label, status: session.core.state.lastStatus },
+        }),
+      );
+    }
+    if (session === this.#session) this.cwd = result.state.cwd;
+    if (result.clear) {
+      this.#clearTranscript(session);
+    } else {
+      this.#pushLines(session, result.lines);
+    }
+    for (const action of result.actions) {
+      if (action.kind === 'window') this.#openWindow(action);
+      else if (action.kind === 'tui') this.#openTui(session, action);
+      else if (action.kind === 'app') this.#spawnApp(session, (action as AppSpawnAction).app);
+      else if (action.kind === 'tab') this.#onTabAction(session, action);
+    }
+  }
+
+  /**
+   * `clear` / Ctrl+L (§5.2): the DOM transcript empties, parser attribute
+   * state resets, and the SCREEN keeps its scrollback — only the viewport
+   * clears (§4.6), so the plain-transcript ring survives the wipe. The
+   * session owns each of those state pieces.
+   */
+  #clearTranscript(session: TerminalSession = this.#session): void {
+    session.lines = [];
+    session.ansi.reset();
+    session.feed.reset();
+    session.screen.clearViewport();
+    session.titleFeed.reset();
+    if (session === this.#session) this.lines = [];
+  }
+
+  /**
+   * The only side effects the core can request. `window`: content into a
+   * new window. The content is a stored virtual file — user-authored, so
+   * UNTRUSTED. A blob: URL is same-origin with the page (its scripts could
+   * read localStorage), so HTML is never opened directly: it is wrapped in a
+   * document holding an `<iframe sandbox="allow-scripts">` (no
+   * allow-same-origin → opaque origin, no storage/cookie/parent access).
+   * `noopener,noreferrer` cuts the window-opener channel both ways.
+   * `tui`: the read-only flashcard view over extracted records.
+   */
+  #openWindow(action: WindowAction): void {
+    const view = this.ownerDocument?.defaultView ?? window;
+    const html = action.contentType.toLowerCase().startsWith('text/html');
+    const body = html ? sandboxedHtmlDocument(action.blob, action.filename) : action.blob;
+    const url = view.URL.createObjectURL(new view.Blob([body], { type: action.contentType }));
+    const win = view.open(url, '_blank', 'noopener,noreferrer');
+    if (!win) {
+      this.appendLines([{ kind: 'stderr', text: `open: ${action.filename}: the browser blocked the pop-up window` }]);
+    }
+    view.setTimeout(() => view.URL.revokeObjectURL(url), 60_000);
+  }
+
+  #openTui(session: TerminalSession, action: TuiAction): void {
+    session.tui = createTuiState(action.cards, action.title);
+    this.tui = session.tui;
+    void this.updateComplete.then(() => (this.querySelector('.sem-tui') as HTMLElement | null)?.focus());
+  }
+
+  #touchTui(): void {
+    if (this.tui) {
+      this.tui = { ...this.tui }; // new reference → Lit re-renders
+      this.#session.tui = this.tui;
+    }
+  }
+
+  /**
+   * The §6.3 Escape ladder, raw-app aware: an attached app owns Escape
+   * first (its key), then the filter row, the TUI, then playback stop.
+   * Ctrl+C during an app interrupts it with exit 130 (§6.3).
+   */
+  #onFrameKeydown(event: KeyboardEvent): void {
+    // Tab chrome (§11.3) outranks everything, including the app ladder:
+    // Ctrl+Shift+T opens a tab, Ctrl+Shift+W closes the active one (a live
+    // app gets a confirm), Ctrl+PgUp/PgDn cycle, Alt+1..9 jump.
+    if (event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey) {
+      const key = event.key.toLowerCase();
+      if (key === 't') {
+        event.preventDefault();
+        this.#newTab();
+        return;
+      }
+      if (key === 'w') {
+        event.preventDefault();
+        this.#closeTab(this.tabModel.activeId);
+        return;
+      }
+    }
+    // Ctrl+PgUp/PgDn cycle, Alt+1..9 jump. Only meaningful past one tab.
+    // Not on macOS: Option+digit types symbols there — Alt+1..9 would hijack it.
+    if (this.tabModel.count > 1 && !(event.altKey && isMacPlatform())) {
+      const target = this.tabModel.keyToTarget({
+        key: event.key,
+        ctrlKey: event.ctrlKey,
+        altKey: event.altKey,
+        shiftKey: event.shiftKey,
+        metaKey: event.metaKey,
+      });
+      if (target !== null) {
+        event.preventDefault();
+        this.#activateTab(target);
+        return;
+      }
+    }
+    if (this.appLive) {
+      if (event.key === 'c' && event.ctrlKey && !event.altKey && !event.metaKey && this.#input.selection.isEmpty()) {
+        event.preventDefault();
+        this.#session.runner.requestInterrupt();
+        return;
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.#session.runner.key({ key: 'Escape', ctrl: false, alt: false, shift: false, meta: false });
+        this.#touchApp();
+      }
+      return;
+    }
+    if (event.key !== 'Escape') return;
+    if (this.tui?.filtering) return; // the filter input handles its own Escape
+    if (this.tui) {
+      event.preventDefault();
+      this.#closeTui(true);
+      return;
+    }
+    if (this.playing) {
+      event.preventDefault();
+      this.#stopPlayback(true);
+    }
+  }
+
+  /**
+   * Keys land in the CookedLine discipline (§5.2) — the v1 semantics,
+   * relocated: history-with-draft, completion, the control table. The
+   * visible input is adopted before each key (IME/drag stay native) and
+   * re-mirrored after. Raw mode hands keys to the app instead (§5.3).
+   */
+  #onKeydown(event: KeyboardEvent): void {
+    const input = event.target as HTMLInputElement;
+    if (this.appLive) {
+      event.preventDefault();
+      this.#input.handleKey(toKeyEvent(event));
+      this.#touchApp();
+      return;
+    }
+    const caret = input.selectionStart ?? input.value.length;
+    this.#session.cooked.syncFrom(input.value, caret);
+    if (this.#session.cooked.key(toKeyEvent(event))) {
+      event.preventDefault();
+      this.#mirrorInput(this.#session.cooked.buffer, this.#session.cooked.caret);
+    }
+  }
+
+  /** Push discipline state back into the visible input (the IME surface). */
+  #mirrorInput(buffer: string, caret: number): void {
+    const input = this.#inputEl();
+    if (!input || input.value === buffer) return;
+    input.value = buffer;
+    try {
+      input.setSelectionRange(caret, caret);
+    } catch {
+      // input types without selection support — value is enough
+    }
+  }
+
+  /* ---------------------------------------------------------------- *
+   * full-screen apps (§6)
+   * ---------------------------------------------------------------- */
+
+  /** Spawn an app action from the session's core: alt screen, raw keys. */
+  #spawnApp(session: TerminalSession, app: import('./screen/types.js').App): void {
+    if (!session.runner.spawn(app)) return;
+    session.appLive = true;
+    if (session === this.#session) this.appLive = true;
+    void this.updateComplete.then(() => {
+      this.#input.focus(); // the canvas has no native focus surface
+      this.#touchApp();
+    });
+  }
+
+  /** Runner exit callback: status line + `$?`, prompt restored (§6.2). */
+  #onAppExit(session: TerminalSession, code: number, crash: string | null): void {
+    session.appLive = false;
+    session.core.state.lastStatus = code;
+    const lines: ShellLine[] = [];
+    if (crash !== null) lines.push({ kind: 'stderr', text: `${crash}` });
+    lines.push({ kind: 'status', text: `exit ${code}` });
+    this.#pushLines(session, lines);
+    if (session === this.#session) {
+      this.appLive = false;
+      void this.updateComplete.then(() => this.refocusIfEngaged());
+    }
+  }
+
+  /** The screen changed under the app: repaint via drain + park the IME. */
+  #touchApp(): void {
+    this.requestUpdate();
+    const metrics = this.#renderer?.metrics();
+    if (metrics === undefined || metrics.cellHeight <= 0) return;
+    if (this.screen.altScreen && this.screen.cursor.visible) {
+      // IME caret parking (canvas request 7): sit at the app's cursor cell.
+      // Alt rows are the full viewport; clamp guards the scroll edge case.
+      const row = Math.max(0, Math.min(this.screen.rows - 1, this.screen.cursor.line - this.screen.viewportTop()));
+      const col = Math.max(0, Math.min(this.screen.cols - 1, this.screen.cursor.col));
+      this.#input.moveCursorHint(col * metrics.cellWidth, row * metrics.cellHeight);
+    }
+  }
+
+  /* ---------------------------------------------------------------- *
+   * the flashcard view
+   * ---------------------------------------------------------------- */
+
+  /** One TUI key, physical or from playback. Returns true when it closed. */
+  #tuiKey(key: string): boolean {
+    const state = this.tui;
+    if (!state) return false;
+    if (tuiIsClose(key)) {
+      this.#closeTui(false);
+      return true;
+    }
+    if (key === 'ArrowDown' || key === 'j') {
+      tuiMove(state, 1);
+      this.#touchTui();
+    } else if (key === 'ArrowUp' || key === 'k') {
+      tuiMove(state, -1);
+      this.#touchTui();
+    } else if (key === 'Enter') {
+      tuiToggle(state);
+      this.#touchTui();
+    } else if (key === '/') {
+      tuiOpenFilter(state);
+      this.#touchTui();
+      void this.updateComplete.then(() => (this.querySelector('.sem-tui-filter') as HTMLInputElement | null)?.focus());
+    }
+    return false;
+  }
+
+  #onTuiOverlayKeydown(event: KeyboardEvent): void {
+    const state = this.tui;
+    if (!state) return;
+    if ((event.target as HTMLElement | null)?.classList?.contains('sem-tui-filter')) return; // filter owns its keys
+    this.#tuiKey(event.key);
+    if (['ArrowDown', 'ArrowUp', 'Enter', '/', 'q', 'Escape'].includes(event.key)) event.preventDefault();
+  }
+
+  /** `userInitiated` (Escape) also stops a running script — `q` does not. */
+  #closeTui(userInitiated: boolean): void {
+    this.tui = null;
+    if (userInitiated && this.playing) this.#stopPlayback(true);
+    this.refocusIfEngaged();
+  }
+
+  #onTuiFilterInput(event: Event): void {
+    const state = this.tui;
+    if (!state) return;
+    tuiSetFilter(state, (event.target as HTMLInputElement).value);
+    this.#touchTui();
+  }
+
+  #onTuiFilterKeydown(event: KeyboardEvent): void {
+    const state = this.tui;
+    if (!state) return;
+    if (event.key === 'Enter' || event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      tuiCloseFilter(state);
+      this.#touchTui();
+      (this.querySelector('.sem-tui') as HTMLElement | null)?.focus();
+    }
+  }
+
+  /** Up/down through history; down past the newest restores the draft.
+   * Thin delegate — playback and tests drive this; the state of record
+   * lives in the CookedLine discipline (§5.2). */
+  #navigate(delta: number): void {
+    const input = this.#inputEl();
+    if (!input) return;
+    const caret = input.selectionStart ?? input.value.length;
+    const cooked = this.#session.cooked;
+    cooked.syncFrom(input.value, caret);
+    cooked.key({ key: delta < 0 ? 'ArrowUp' : 'ArrowDown', ctrl: false, alt: false, shift: false, meta: false });
+    this.#mirrorInput(cooked.buffer, cooked.caret);
+  }
+}
+
+SemElement.register('sem-terminal', SemTerminal);
+
+/** DOM KeyboardEvent → the normalized KeyEvent the discipline/app take (§7.1). */
+const escapeAttr = (text: string): string =>
+  text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/**
+ * Wrapper document for untrusted VFS HTML: the content lives in a srcdoc
+ * iframe sandboxed with allow-scripts ONLY (never allow-same-origin), so its
+ * scripts run in an opaque origin and cannot reach the host page's storage.
+ */
+export function sandboxedHtmlDocument(content: string, title: string): string {
+  return (
+    '<!doctype html><html><head><meta charset="utf-8">' +
+    `<title>${escapeAttr(title)}</title>` +
+    '<style>html,body{margin:0;height:100%}iframe{border:0;width:100%;height:100%}</style></head><body>' +
+    `<iframe sandbox="allow-scripts" title="${escapeAttr(title)}" srcdoc="${escapeAttr(content)}"></iframe>` +
+    '</body></html>'
+  );
+}
+
+/** Option+digit types symbols on macOS; Alt+1..9 tab jumps stay off there. */
+export function isMacPlatform(): boolean {
+  const nav = typeof navigator === 'undefined' ? null : navigator;
+  if (nav === null) return false;
+  return /mac|iphone|ipad/i.test(nav.platform || nav.userAgent || '');
+}
+
+/** Transcript cap per session — older lines scroll off the DOM list. */
+export const MAX_TRANSCRIPT_LINES = 5000;
+
+function toKeyEvent(event: KeyboardEvent): KeyEvent {
+  return { key: event.key, ctrl: event.ctrlKey, alt: event.altKey, shift: event.shiftKey, meta: event.metaKey };
+}
+
+/**
+ * A `--sem-ansi-N` token → RGB for the canvas palette: `#rgb`, `#rrggbb`,
+ * `rgb(r g b)` / `rgb(r, g, b)` (computed styles may normalize either way).
+ * Anything else → null (the renderer falls back to its default set).
+ */
+function parseRgbToken(token: string): Rgb | null {
+  const value = token.trim();
+  if (value === '') return null;
+  const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value);
+  if (hex !== null) {
+    const digits = hex[1] ?? '';
+    const expanded = digits.length === 3 ? digits.split('').map((c) => c + c).join('') : digits;
+    const n = Number.parseInt(expanded, 16);
+    return { r: (n >> 16) & 0xff, g: (n >> 8) & 0xff, b: n & 0xff };
+  }
+  const fn = /^rgba?\(\s*(\d{1,3})[ ,]+(\d{1,3})[ ,]+(\d{1,3})/.exec(value);
+  if (fn !== null) {
+    const r = Number(fn[1]);
+    const g = Number(fn[2]);
+    const b = Number(fn[3]);
+    if (r <= 255 && g <= 255 && b <= 255) return { r, g, b };
+  }
+  return null;
+}

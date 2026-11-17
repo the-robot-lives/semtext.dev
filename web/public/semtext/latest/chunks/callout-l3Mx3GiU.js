@@ -1,1 +1,0 @@
-import{S as t}from"./base-BKd1N4qP.js";class l extends t{calloutLabel(){return""}connectedCallback(){super.connectedCallback(),this.afterParse("callout",()=>{this.hasAttribute("role")||this.setAttribute("role","note"),this.hasAttribute("aria-label")||this.setAttribute("aria-label",this.calloutLabel())})}}export{l as S};

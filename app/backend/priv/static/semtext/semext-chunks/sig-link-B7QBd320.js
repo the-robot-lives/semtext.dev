@@ -1,1 +1,0 @@
-const o="https://apm.noizu.com/";function i(e={}){const t=new URLSearchParams;for(const[c,r]of Object.entries(e)){const s=(r??"").trim();s&&t.set(c,s)}const n=t.toString();return n?`${o}?${n}`:o}export{i as s};
