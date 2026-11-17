@@ -1344,6 +1344,18 @@
         "</semext-docptr>"
       ]
     },
+    "semext-draftamo-diagram": {
+      "source": "hand",
+      "code": [
+        "<semext-draftamo-diagram kind=\"uml-class\" label=\"Reader pipeline\">",
+        "  <semext-draftamo-node id=\"a\">sem-doc</semext-draftamo-node>",
+        "  <semext-draftamo-edge from=\"a\" to=\"b\"></semext-draftamo-edge>",
+        "  <semext-draftamo-node id=\"b\">reader</semext-draftamo-node>",
+        "  <semext-draftamo-edge from=\"b\" to=\"c\"></semext-draftamo-edge>",
+        "  <semext-draftamo-node id=\"c\">records</semext-draftamo-node>",
+        "</semext-draftamo-diagram>"
+      ]
+    },
     "semext-media-prompt": {
       "source": "seed",
       "code": [
