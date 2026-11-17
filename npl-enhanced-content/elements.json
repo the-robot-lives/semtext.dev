@@ -4,6 +4,7 @@
   "generatedFrom": [
     "spec/schema/sem-api-call.md",
     "spec/schema/sem-audiences.md",
+    "spec/schema/sem-badge.md",
     "spec/schema/sem-browser.md",
     "spec/schema/sem-changelogs.md",
     "spec/schema/sem-chronology.md",
@@ -22,6 +23,7 @@
     "spec/schema/sem-howto.md",
     "spec/schema/sem-kb.md",
     "spec/schema/sem-md.md",
+    "spec/schema/sem-media-prompt.md",
     "spec/schema/sem-mockup.md",
     "spec/schema/sem-note.md",
     "spec/schema/sem-philosophy.md",
@@ -69,6 +71,7 @@
     "spec/schema/npl/npl-vos.md",
     "spec/schema/semext/annotate.md",
     "spec/schema/semext/docptr.md",
+    "spec/schema/semext/draftamo-diagram.md",
     "spec/schema/semext/media-prompt.md",
     "spec/schema/semext/sig-logs.md",
     "spec/schema/semext/sig-metrics.md",
@@ -82,6 +85,7 @@
     "spec/schema/agent-kit/chatroom.md",
     "spec/schema/agent-kit/custom-assert.md",
     "spec/schema/agent-kit/personas.md",
+    "spec/schema/agent-kit/ref.md",
     "spec/schema/agent-kit/reference-cards.md",
     "spec/schema/agent-kit/review.md",
     "spec/schema/agent-kit/script-cards.md",
@@ -90,7 +94,7 @@
     "spec/schema/agent-kit/ticket-ref.md",
     "spec/schema/agent-kit/tickets.md"
   ],
-  "tagCount": 111,
+  "tagCount": 115,
   "tags": [
     {
       "name": "agent-kit-acceptance-criteria",
@@ -1062,6 +1066,61 @@
       ],
       "example": "<agent-kit-project org=\"acme\" key=\"semtext\">\n  <agent-kit-name>SemText</agent-kit-name>\n  <agent-kit-description>\n    The XHTML-first rich-content spec and component kit.\n  </agent-kit-description>\n</agent-kit-project>",
       "optionsIn": "agent-kit-organization"
+    },
+    {
+      "name": "agent-kit-ref",
+      "family": "agent-kit",
+      "source": "spec/schema/agent-kit/ref.md",
+      "summary": "An inline reference to a document or artifact record by UUID, whose authored text is the chip label and the JS-off view.",
+      "description": "An inline reference to a document or artifact record by UUID, whose authored text is the chip label and the JS-off view. Prose is normative; the BDD source of truth for `test/unit/agent-kit-ref.test.ts`. A reference element, not an embed: it carries no record content and fetches nothing.",
+      "attributes": [
+        {
+          "name": "kind",
+          "required": true,
+          "type": "",
+          "allowedValues": [
+            "token",
+            "doc",
+            "artifact"
+          ],
+          "default": null,
+          "description": "`token` — required. One of `doc` or `artifact`."
+        },
+        {
+          "name": "id",
+          "required": true,
+          "type": "string",
+          "allowedValues": [],
+          "default": null,
+          "description": "required. The referenced record's UUID."
+        },
+        {
+          "name": "org",
+          "required": null,
+          "type": "string",
+          "allowedValues": [],
+          "default": null,
+          "description": "the owning organization slug (informational)."
+        },
+        {
+          "name": "project",
+          "required": null,
+          "type": "string",
+          "allowedValues": [],
+          "default": null,
+          "description": "the project slug within the organization (informational)."
+        },
+        {
+          "name": "tags",
+          "required": null,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "per the global attribute catalog (conventions.md §2)"
+        }
+      ],
+      "children": [],
+      "example": "<agent-kit-ref kind=\"doc\" id=\"0b5d6f0e-2c4a-4d57-9d2a-5a9f3c1e7b11\">Release runbook</agent-kit-ref>"
     },
     {
       "name": "agent-kit-review",
@@ -2677,6 +2736,16 @@
       "example": "<sem-audiences>\n  <sem-profile id=\"reader\" label=\"Reader\"></sem-profile>\n  <sem-profile id=\"operator\" label=\"Operator\" implies=\"reader\"></sem-profile>\n</sem-audiences>"
     },
     {
+      "name": "sem-badge",
+      "family": "sem",
+      "source": "spec/schema/sem-badge.md",
+      "summary": "A small inline status chip: a glyph plus the authored text, never colour alone.",
+      "description": "A small inline status chip: a glyph plus the authored text, never colour alone. `variant` is `success` | `warning` | `danger` | `info` | `neutral` (default `neutral`); an unknown value renders as `neutral`. Light DOM, the text is the content. Presentation is vocabulary CSS only, so JS-off reads the same: `✓ success: train 6 live`. Not a record (status chrome, not a claim); the text is extracted as ordinary prose.",
+      "attributes": [],
+      "children": [],
+      "example": "<sem-badge variant=\"success\">train 6 live</sem-badge>\n<sem-badge variant=\"warning\">train 7 blocked</sem-badge>"
+    },
+    {
       "name": "sem-browser",
       "family": "sem",
       "source": "spec/schema/sem-browser.md",
@@ -3742,6 +3811,139 @@
       ],
       "children": [],
       "example": "<sem-md id=\"m-lifetimes\" label=\"Token lifetimes\" controls=\"toggle,copy\">\n  | Token   | Lifetime | Rotates |\n  | :------ | -------: | :-----: |\n  | access  | 15 min   | no      |\n  | refresh | 30 days  | yes     |\n</sem-md>"
+    },
+    {
+      "name": "sem-media-prompt",
+      "family": "sem",
+      "source": "spec/schema/sem-media-prompt.md",
+      "summary": "An ACTIVE media-generation prompt record: the authored `.media.prompt` YAML is the record, and — unlike its passive cached twin `semext-media-prompt` (livePolicy 'never') — this sem-tier sibling can r",
+      "description": "An ACTIVE media-generation prompt record: the authored `.media.prompt` YAML is the record, and — unlike its passive cached twin `semext-media-prompt` (livePolicy 'never') — this sem-tier sibling can run a generation through an author-controlled `endpoint` proxy, render the returned assets and evals, and edit the prompt in place. It holds no API keys and sets no auth headers: the browser's ambient credentials are all it ever sends, and nothing it sends or receives is persisted by the element. With no endpoint and no fixtures it is authored-only: it never fabricates a generation.",
+      "attributes": [
+        {
+          "name": "aspect",
+          "required": false,
+          "type": "string",
+          "allowedValues": [],
+          "default": null,
+          "description": "optional aspect token (`1:1`, `16:9`, `9:16`, `4:3`, `3:4`, `21:9`); the fallback when the YAML carries no `aspect`."
+        },
+        {
+          "name": "assets-dir",
+          "required": false,
+          "type": "string",
+          "allowedValues": [],
+          "default": "",
+          "description": "optional directory prefix joined onto relative asset paths returned by the endpoint (absolute URLs pass through untouched);"
+        },
+        {
+          "name": "edit-mode",
+          "required": null,
+          "type": "boolean",
+          "allowedValues": [],
+          "default": null,
+          "description": "renders the editable prompt textarea (see Edit mode); also honored through an ancestor `<sem-editor edit-mode>`."
+        },
+        {
+          "name": "endpoint",
+          "required": null,
+          "type": "string",
+          "allowedValues": [],
+          "default": null,
+          "description": "the POST target for Generate; no default — an unset endpoint means authored-only, never a URL invented here."
+        },
+        {
+          "name": "fixtures",
+          "required": false,
+          "type": "string",
+          "allowedValues": [],
+          "default": null,
+          "description": "optional fixture source: an inline JSON string or a same-origin path fetched once. While set, the element NEVER fetches `endpoint` (see Fixtures)."
+        },
+        {
+          "name": "key",
+          "required": null,
+          "type": "string",
+          "allowedValues": [],
+          "default": null,
+          "description": "the record key within the project (reference quartet; display-only for this element)."
+        },
+        {
+          "name": "model",
+          "required": false,
+          "type": "string",
+          "allowedValues": [],
+          "default": null,
+          "description": "optional generation model slug; passed through in the request body only when authored (an absent model sends no `model` key, so the server's default routing applies)."
+        },
+        {
+          "name": "org",
+          "required": null,
+          "type": "string",
+          "allowedValues": [],
+          "default": null,
+          "description": "the owning organization slug (reference quartet)."
+        },
+        {
+          "name": "project",
+          "required": null,
+          "type": "string",
+          "allowedValues": [],
+          "default": null,
+          "description": "the project slug within the organization (reference quartet)."
+        },
+        {
+          "name": "status",
+          "required": null,
+          "type": "",
+          "allowedValues": [
+            "idle",
+            "generating",
+            "generated",
+            "error"
+          ],
+          "default": null,
+          "description": "one of `idle`, `generating`, `generated`, `error` — lifecycle token, reflected; the runtime rewrites it as a run progresses (an authored value survives until the first action)."
+        },
+        {
+          "name": "id",
+          "required": null,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "per the global attribute catalog (conventions.md §2)"
+        },
+        {
+          "name": "kind",
+          "required": null,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "per the global attribute catalog (conventions.md §2)"
+        },
+        {
+          "name": "tags",
+          "required": null,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "per the global attribute catalog (conventions.md §2)"
+        }
+      ],
+      "children": [
+        {
+          "name": "sem-media-gallery",
+          "note": ""
+        },
+        {
+          "name": "sem-eval",
+          "note": ""
+        },
+        {
+          "name": "sem-rubric",
+          "note": ""
+        }
+      ],
+      "example": "<sem-media-prompt\n  id=\"hero-banner\"\n  model=\"z-image-turbo\"\n  aspect=\"16:9\"\n  assets-dir=\"assets/\"\n  endpoint=\"/api/media/generate\"\n  org=\"noizu\"\n  project=\"semtext-site\"\n  key=\"hero-banner-16x9\"\n  status=\"idle\"\n>\n  <pre><code class=\"language-yaml\">prompt: SemText vocabulary diagram, flat vector, indigo accent\nnegative: text artifacts\naspect: 16:9\nseed: 42\n</code></pre>\n  <sem-media-gallery items='[{\"src\":\"assets/hero-v1.png\",\"caption\":\"v1\",\"mime\":\"image/png\"}]'></sem-media-gallery>\n  <sem-eval kind=\"recall\" status=\"scored\">\n    <p>Brand palette fidelity — 4 / 5</p>\n  </sem-eval>\n  <script type=\"application/json\">\n    { \"model\": \"z-image-turbo\", \"aspect\": \"16:9\",\n      \"output\": { \"generated\": true,\n                  \"assets\": [ { \"path\": \"assets/hero-v1.png\", \"kind\": \"image\",\n                                \"mime\": \"image/png\", \"caption\": \"v1\" } ],\n                  \"evals\": [ { \"rubric\": \"brand-palette\", \"score\": 4, \"max\": 5 } ] } }\n  </script>\n</sem-media-prompt>"
     },
     {
       "name": "sem-mockup",
@@ -5136,6 +5338,49 @@
       "example": "<semext-docptr\n  id=\"ptr-shared-load\"\n  org=\"noizu\"\n  project=\"npl-enhanced-content\"\n  key=\"npl-enhanced-content:src/data/load.ts#resolveSource\"\n  uuid=\"1f0dc4bd-6b29-591d-b8e7-c8c55dd95a54\"\n  token=\"𓋹𓄿𓇳𓏏\"\n  last-refreshed=\"2026-10-17T09:14:00Z\"\n  status=\"fresh\"\n>\n  <script type=\"application/json\">\n    { \"pointers\": { \"1f0dc4bd-6b29-591d-b8e7-c8c55dd95a54\": {\n        \"uuid\": \"1f0dc4bd-6b29-591d-b8e7-c8c55dd95a54\",\n        \"marker\": \"〚🔧:𓋹𓄿𓇳𓏏〛\",\n        \"file_path\": \"src/data/load.ts\",\n        \"line\": 42,\n        \"kind\": \"function\",\n        \"function_name\": \"resolveSource\",\n        \"description\": \"Resolve an embed source with the shared source policy.\" } } }\n  </script>\n</semext-docptr>"
     },
     {
+      "name": "semext-draftamo-diagram",
+      "family": "semext",
+      "source": "spec/schema/semext/draftamo-diagram.md",
+      "summary": "An inline Draftamo diagram whose XML is the authored children of the element, so a document or chat message carries the whole diagram with no share link, iframe or fetch.",
+      "description": "An inline Draftamo diagram whose XML is the authored children of the element, so a document or chat message carries the whole diagram with no share link, iframe or fetch. The notation is the one Draftamo's studio uses (class diagrams today; sequence and wireframe follow). Prose is normative; the BDD source of truth for `test/unit/semext-draftamo-diagram.test.ts`.",
+      "attributes": [
+        {
+          "name": "kind",
+          "required": null,
+          "type": "",
+          "allowedValues": [],
+          "default": "uml-class",
+          "description": "`token` — The notation. Only the box-and-arrow form is rendered today; other kinds render the same way until their renderers land."
+        },
+        {
+          "name": "label",
+          "required": null,
+          "type": "string",
+          "allowedValues": [],
+          "default": "Diagram",
+          "description": "The accessible name prefix."
+        },
+        {
+          "name": "id",
+          "required": null,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "per the global attribute catalog (conventions.md §2)"
+        },
+        {
+          "name": "tags",
+          "required": null,
+          "type": "",
+          "allowedValues": [],
+          "default": null,
+          "description": "per the global attribute catalog (conventions.md §2)"
+        }
+      ],
+      "children": [],
+      "example": "<semext-draftamo-diagram kind=\"uml-class\" label=\"Hello world\">\n  <semext-draftamo-node id=\"a\">Hello</semext-draftamo-node>\n  <semext-draftamo-edge from=\"a\" to=\"b\"></semext-draftamo-edge>\n  <semext-draftamo-node id=\"b\">World</semext-draftamo-node>\n</semext-draftamo-diagram>"
+    },
+    {
       "name": "semext-media-prompt",
       "family": "semext",
       "source": "spec/schema/semext/media-prompt.md",
@@ -5491,6 +5736,12 @@
     }
   ],
   "gaps": [
+    {
+      "tag": "sem-badge",
+      "missing": [
+        "attributes"
+      ]
+    },
     {
       "tag": "sem-component",
       "missing": [
