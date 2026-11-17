@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-17
+
+- feat(draftamo): the real `semext-draftamo-diagram` element renders inline on semtext.dev, replacing the hand-drawn Draftamo UML mock (#260, THEROB-116). Vendors the npl-enhanced-content bundle, loads `semext.js` on landing, integrations and reference pages, carousel/showcase copy no longer says Draftamo-hosted, new reference entry (override, example, schema parts `semext-draftamo-node`/`-edge`).
+
 ## 2026-11-11
 
 - fix(vocabulary): the bare `<agent>` document-metadata block (direct child of `<sem-enhanced-document>`, children `<name>`/`<bio>`/`<instructions>` — the spec'd bare-tag form, Q1) now renders as the agent card instead of run-together inline text — `app/backend/priv/static/semtext/themes/_vocabulary.css` extends the card/child selectors (`:is(sem-agent, .sem-agent, sem-enhanced-document > agent)` + `:is(name, .sem-agent-name)`-family) and the display-block list with the scoped `sem-enhanced-document > agent` form so the custom-element default `display: inline` never applies; extraction and the runtime's `sem-agent` handling unchanged. Bundle rebuilt via `scripts/build-latest.mjs` (css 235.9 KB, `latest/themes/_vocabulary.css` regenerated); guard `latest-bundle.test.mjs` 5/5 green; spec/conventions.md "agent" entry corrected from "Machine-facing, unstyled" to "renders as the agent card, extraction unchanged"; headless-Chrome smoke: name/bio/instructions computed `display: block`, card border 1px, name weight 600. (#255) → stage (#257) → main (#258)
