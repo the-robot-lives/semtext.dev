@@ -1,11 +1,8 @@
 .git
 .github
 .claude
-**/node_modules
-landing/.next
-landing/out
+node_modules
 dist
-coverage
 test/screenshots
 test/videos
 helm

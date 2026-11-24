@@ -1,115 +1,57 @@
-# TEST-HEALTH — test tiers, CI lanes, and the e2e lane post-mortem
+# Test Health — npl-enhanced-content (SemText)
+_Last measured: 2026-10-07 · before develop@4df29ee · after develop@8a0be46_
 
-The referenced-by-everything map for how this repo tests: `vite.config.ts`
-(coverage ratchet), `app/README.md` (CI section), and both root workflows.
-Numbers below are **measured** (2026-11-11 unless noted), not aspirational.
+Two tiers, both in acceptance (no slow tier — the full suite fits the budget once sharded):
 
-## Tiers and where they run
+- **unit** — vitest, `test/unit/**` (45 tests, ~2s). Runs in CI job `unit` with the coverage gate.
+  Before this change these specs existed but **no CI job ran them**.
+- **e2e** — cypress against the built `dist/` (26 specs, 355 tests). Runs in CI job `test`,
+  split across 3 parallel shards by `scripts/cypress-shard.mjs` (every spec lands in exactly one
+  shard; new specs are picked up automatically).
 
-| Tier | Command | Count / wall | Where it runs | Notes |
-|---|---|---|---|---|
-| mod (Claude Code mod) | `npm run test:mod` → `claude plugin test mods/semtext` | 73 tests, <1s | **PR + develop push (`ci.yml: mod`) + nightly** | No credentials needed (see below). CLI installed in-job from npm, pinned `@anthropic-ai/claude-code@2.1.322`. |
-| unit (vitest) | `npm run test:unit` | 62 tests, ~3.5s | **PR + develop push (`ci.yml: unit`)** | Plain run — fast lane pays no coverage cost. |
-| unit + coverage gate | `npm run test:unit:cover` | ~same + instrumentation | **nightly only** (`full-suite`) | Threshold is the ratchet in `vite.config.ts` (lines: 16). Coverage artifact uploaded nightly. |
-| landing (Next.js) | `npx tsc --noEmit` + `npm run build` | — | **PR + develop push** (`ci.yml: test-landing`) | `landing/` static export. |
-| e2e (cypress) | `npx cypress run --e2e` | 28 specs, ~204s spec-time | **nightly only** (`full-suite`, unsharded) | Removed from the PR lane 2026-11-11 — see post-mortem. `npm test` / `test:open` still run it locally. |
-| smoke (cypress subset) | `npm run test:smoke` | 2 specs (standalone-lit, agent-surface) | **opt-in local / nightly-extra — never a gate** | Added 2026-11-11; wire into a lane deliberately, if ever. |
-| docker (PR fail-fast) | build-push-action, no push | — | PR only (`ci.yml: docker-build`) | Image steps untouched by the lane change. |
-| app backend (Hologram) | `mix test` via `app-ci.yml` | see that lane | app-ci.yml | **Out of scope for this file's lanes** — `app-ci.yml` and release triggers were not touched here. |
+| Metric | Before | After |
+|---|---|---|
+| CI PR wall-clock — critical path (warm / cold) | 3m16s (`test` job, single cypress run) | ~1m40s warm (1m38s–1m52s, slowest shard) / 1m42s cold — 3 e2e shards ‖ unit |
+| Main release build (warm / cold) | — / 4m31s (test 3m30s → build-push 51s → bump 6s; docker cache cold after a 16-day release gap) | ≈ 1m40s tests → build-push → bump (≈ 2m40s total, est.); gated on unit + all e2e shards; nightly warms `scope=web` |
+| CI acceptance test job (warm / cold) | e2e 3m16s (cypress step 2m53s); unit: not run | e2e shards 83–112s warm / 97–102s cold (npm ci 13s → 3–5s with the cypress-binary cache); unit 16–25s |
+| Local full-suite runtime (uptime load) | unit 2.3s (load 28) · e2e not run locally | unchanged (no test changes) |
+| Docker build (warm / cold) | — / 28s (19s of it is the gha cache export) | npm cache mount added; warm via nightly |
+| Tests in acceptance / slow tier | 355 e2e (+45 unit not in CI) / 0 | 400 / 0 |
+| Async modules / total | n/a (vitest + cypress; vitest files run in parallel workers by default) | n/a |
+| Coverage — acceptance pass (unit, lines, whole `src/ scripts/ bin/` tree) | not measured | 21.14% |
+| Coverage — full pass | not measured | same as acceptance (no slow tier); e2e is not instrumented |
+| Coverage gate | — | 16% lines (`vite.config.ts` → `test.coverage.thresholds.lines`) |
 
-PR/develop gate is now: `test-landing` + `unit` + `mod` (~4s of tests). The
-sandbox posture accepts e2e regressing reaching `develop` and being caught by
-nightly — the trade buys back a lane that hadn't executed a single spec since
-2026-10-20.
+Coverage is measured over the whole shipped tree (`src/**`, `scripts/**`, `bin/**`), not just the
+files unit specs import — so the number is honest. Most of `src/lit`, `src/reading`, `src/extract`,
+`src/md` is exercised only by cypress, which is not instrumented. Unit-imported files alone sit at
+~68% lines.
 
-## Is `claude plugin test` CI-runnable? Yes — no credentials
+## Caching status
+- GitHub Actions: deps (npm via setup-node) ✅ · build n/a (vite build ~1s) · npm ✅ · cypress binary ✅ (new `~/.cache/Cypress` cache) · .next/cache n/a · PLT n/a · develop-ref seeding ✅ (new `push: develop`)
+- Docker: buildx gha cache ✅ (`scope=web`, log-verified on the 2026-10-07 release — but it imported nothing: cold after a 16-day gap) · cache mounts ✅ (npm, new) · .dockerignore ✅ · release-cache warmer ✅ (new `nightly.yml` → `warm-docker-cache`)
 
-Verified 2026-11-11 in a clean `HOME` with `ANTHROPIC_API_KEY` and
-`CLAUDE_CODE_OAUTH_TOKEN` empty: all 73 mod tests pass in under a second.
-The mod test files run as plain children of the CLI binary (they import from
-`claude-code/testing`) — **no model call, no login, no network auth**. The
-suite also needs no `node_modules`; the CI job installs only the pinned CLI.
+## Slow tests (tier: nightly)
+None — every test stays in acceptance. Heaviest e2e specs (CI seconds): `spec-pages` 20s,
+`site` 12s, `sem-reader` 12s, `sem-source` 9s, `sem-table` 9s.
 
-CI cost is the `npm install -g @anthropic-ai/claude-code` step. When bumping
-the pin, re-run `npm run test:mod` locally first; if a future CLI ever starts
-requiring auth, quarantine the job (add it below) rather than deleting the
-tier.
+| Test | Time | Why slow | Fix idea |
+|---|---|---|---|
 
-## Post-mortem: the e2e lane, 101 consecutive failures (2026-10-20 → 2026-11-11)
+## Test debt
+| Item | Kind | Notes |
+|---|---|---|
+| `src/lit`, `src/reading`, `src/extract`, `src/md`, `src/shared` | coverage gap | Covered only by cypress e2e (uninstrumented). Either instrument cypress (`@cypress/code-coverage` + istanbul in the build) or grow vitest/happy-dom unit specs, then ratchet the 16% gate. |
+| Shard weights in `scripts/cypress-shard.mjs` | maintenance | Hand-measured from one CI run; a stale weight only unbalances shards, never drops a spec. Re-measure when a spec grows. |
+| ~2.5s browser relaunch per cypress spec | slow | 26 specs × ~2.5s ≈ 1 min of pure overhead in the unsharded run. `experimentalRunAllSpecs`/merging tiny specs would cut it; not done (test-structure change). |
 
-**Symptom.** Every CI run of the 3-way cypress shard matrix, and the nightly
-full-suite, died inside `cypress-io/github-action@v6` with
-`Socket closed before the connection was established` ~15ms after it began
-waiting on `http://localhost:4173/demo/index.html`. **Zero specs ever
-executed** — 101 consecutive failures across the lane, identical in nightly.
+## Nightly
+`.github/workflows/nightly.yml` — cron `17 7 * * *` + `workflow_dispatch`, on `main`:
+`full-suite` (unit + coverage report, unsharded cypress) and `warm-docker-cache` (build-only,
+`push: false`, same `scope=web` as release `build-push`). Scheduled workflows run from the default
+branch, so it activates once this reaches `main` with the next release.
 
-**Root cause.** The action's internal wait/socket plumbing, not this repo: the
-preview server it waited on was fine (the same URL answers instantly for the
-explicit node poll added below, and locally `npm run serve` + `npx cypress
-run` works). No spec change can make or unmake this failure mode; that is
-exactly why 101 runs burned with zero information.
-
-**Fix (2026-11-11).** No `cypress-io/github-action` anywhere. The nightly
-lane uses explicit steps: `npm ci` → `npm run build:strict` → background
-`nohup npm run serve` → node built-in-`fetch` poll of the old wait-on URL
-(1s ticks, 120s cap) → `npx cypress run --e2e` in the foreground (its exit
-code gates the job) → serve log dumped on failure. The PR/develop shards were
-**removed from `ci.yml`** (they only ever fed that broken action); e2e is a
-nightly tier. `docker-build`/`build-push` `needs:` no longer reference the
-removed `test` job; their image steps are byte-identical.
-
-**CYPRESS_INSTALL_BINARY.** The `unit` job sets it to `0` (no browser in the
-npm install). The nightly `full-suite` must leave it **unset** and restores
-`~/.cache/Cypress` from the actions cache — the binary download lives outside
-`~/.npm`. The `mod` jobs run no npm install at all, so the variable is moot
-there.
-
-## Quarantine / known-red
-
-- **`nightly.yml: warm-docker-cache` — real Next.js type error.** Distinct
-  from the e2e action breakage above: the nightly docker build fails on an
-  actual TypeScript error in the landing build path. Carried as known-red
-  since 2026-11-11; **not fixed by this lane change** (fixing it is product
-  work, not test-infra work). Track it where the fix will land, not here.
-- Nothing else quarantined: mod/unit/landing are green on the measured head.
-
-## Local commands
-
-```bash
-npm run test:unit          # 62 tests, ~3.5s
-npm run test:mod           # 73 mod tests, needs `claude` CLI on PATH; no login
-npm run test:unit:cover    # coverage gate, as nightly runs it
-npm test                   # full cypress e2e locally: needs `npm run build`
-                           #   first + `npm run serve` in another shell —
-                           #   repo policy: do NOT run the e2e suite routinely;
-                           #   nightly exercises it
-npm run test:smoke         # 2-spec cypress subset, opt-in only
-```
-
-Per-change loop is `test:unit` + `test:mod` (~4s together); slower tiers run
-on their lane, not in your terminal.
-
-## Shard weights are stale — re-measure before re-sharding
-
-`scripts/cypress-shard.mjs` stays in the tree (kept available; nothing in CI
-calls it now). Its `WEIGHTS` are CI wall seconds from the **2026-10-07** run —
-10 specs named, while the suite has since grown to 28, and no spec has been
-measured in CI since the lane died. Every unlisted spec gets
-`DEFAULT_WEIGHT = 5`, so shard balance is currently fiction (sharding can
-still never *drop* a spec — assignment is exhaustive). Before re-sharding
-anything, re-measure per-spec times and refresh the map.
-
-## App (Hologram backend) tier notes
-
-`app/.github/workflows/` (extracted to the repo root `.github/workflows/` on
-hydration by other apps) runs `mix test --cover` + a backend docker smoke
-build per PR. Template defaults: coverage gate in `backend/mix.exs`; PR runs
-restore caches only (develop/main/nightly save). `app-ci.yml` is untouched by
-the root-lane change above and is the source of truth for its own numbers.
-
-### Entity repo overrides call `super`
-
-The template's entity-repo `create`/`update`/`delete` overrides self-dispatched
-(sign-up's `Credentials.register/4` raised) until 2026-10-07; fixed in-template
-by delegating to `super`. Apps hydrated **before** 2026-10-07 need the same
-fix — see `app/README.md` (source of record) and hydrated-app changelogs.
+## Release gating
+`build-push` (image push → `bump-chart` → ArgoCD) now `needs: [unit, test]` — the unit tier and all
+three e2e shards. Before, only the single e2e job gated it and the unit specs never ran.
+`build-push` stays `if: push && refs/heads/main`; `develop` pushes run tests only.

@@ -1,38 +1,49 @@
-# semtext.dev — team operating prompt (npl-team ready)
+# CLAUDE.md — SemText
 
-Canonical template: `dotfiles/npl-claude-template.md` (monorepo). Derived from the master monorepo CLAUDE.md; keep lean — the deep rules live in the monorepo + the Accords.
+XHTML-first rich-content spec for NPL (Tier-0 schemas, Lit `SemNote` component + standalone demo, cypress e2e). Monorepo role: NPL-ecosystem spec + JS demo; couples to NPL framework and Libs Lit components.
 
-## FIRST ACTION — register session
+## Stack & commands
 
-`Session_Create {organization: "the-robot-lives", project: "semtext", slug: "sem-<workstream>", status: "active"}` — capture the UUID; attach it to every artifact, ticket, and room message. Resuming within ~4h returns `resumed: true` — reuse the slug for the same workstream.
+Node/Vite demo + cypress. `npm install` · `npm test` / e2e via `cypress.config.js` (see `package.json` scripts).
 
-## Identity + protocol
+## Layout
 
-- You are a persona team member of this repo's team (prefix `sem`), org the-robot-lives, project `semtext`.
-- Load persona + every KB entry via `Persona_Get` / `Persona_Knowledge_Get {organization, persona, entry: "<slug>"}` (house-rules first, then role-playbook). Your PRIMARY SKILL (see role-playbook) carries your runbooks/checklists/constraints — lean on it.
-- Read `../../protocols/the-trinity-protocol.summary.md` + `../../protocols/the-accords.summary.md` (relative to this repo in the monorepo checkout); Trinity (Orientation → Friction → Response) on every substantive response. Accords bind you.
+Top-level directories are domains — `spec/` (normative format specs),
+`src/` (`lit/`, `fallback/`, `extract/`, `shared/`), `themes/` (CSS, kept
+top-level as a subpath export + CDN asset), `web/` (`demo/`, `site/`),
+`test/` (cypress `e2e/` + `support/`), `scripts/`, `docs/`.
+Full tree: `docs/PROJ-LAYOUT.md` (summary: `docs/PROJ-LAYOUT.summary.md`).
 
-## Routing + mode
+Cypress runs against the BUILT pages in `dist/demo/`, not the marker sources
+in `web/demo/` — run `npm run build` before `npm test`.
 
-- BYPASS MODE / FULL AUTOMATION: you have no terminal user. Questions route UP THE CHAIN BY DOMAIN (DB → dba-1, QA gates → `sem-qa-1`, frontend → your team's frontend-N, infra → devops-1); leads ask agent-kit pm-1; pm-1 escalates to the owner ONLY for owner-class (2FA, credentials, irreversible). Otherwise: decide, ticket, proceed.
-- Models: glm everywhere (24/7); haiku executes, sonnet reviews/gates. Spawn members as npl-*-glm stubs that load their persona — never team-* tier stubs as subagents.
+## Universal rules (monorepo policy)
 
-## Work rules
+- **Trinity Protocol (REQUIRED)**: substantive responses follow Orientation (assumption table, minds-eye, mermaid plan) → Friction (WEDGE/SHADOW/CRITIC) → Response + meta-review. Full text: monorepo `protocols/the-trinity-protocol.md`.
+- **No shell in main thread** — delegate lookups/builds/greps to tasker subagents; batch and summarize.
+- **Worktrees (REQUIRED)**: canonical placement `.claude/worktrees/<name>/`, created from this repo's own `.git` off `develop`; `.claude/worktrees/` is gitignored — see **Worktrees — Canonical Convention** below.
 
-- Ticket-as-contract: assign → in-progress → review → qa evidence → done; transitions set on the ticket as they happen. Stories ≤5pt ideal, 8pt hard.
-- ALL work tracked: no write/update/delete without an assigned ticket (read-only exempt).
-- Grooming: relations, references, priority, points, assignee on tickets you create; untriaged = one "what's needed" comment to the owning lead.
-- Completion emits the SemText tag: `<agent-kit-issue org="the-robot-lives" project="semtext" key="<KEY>" state="done"><agent-kit-title><short title></agent-kit-title></agent-kit-issue>`
-- Releases: feature→develop squash PR, sandbox posture, qa gate before done; no destructive migrations without owner approval; schema verified before code.
-- Branches: this repo has its own remote — worktrees at `.claude/worktrees/<name>/` off develop; markdown-only changes commit direct to develop with explicit pathspec.
-- Members listen PROJECT-SCOPED: act only on tickets assigned to you in `semtext`.
-- Session task list mirrors the board: next ~20 stories, `KEY — title` lines.
+Monorepo-wide ops (secrets/dc, terraform, submodules, tiers): see `../../CLAUDE.md` at the trl-infra root.
 
-## Off-limits + spelling
+## Branch & PR Policy
 
-- Never touch jass/gnp/lacrosse paths; trackimo.com / Jetzy / OQO are not ours.
-- Family domains ("the robot …"): DERIVE, NEVER TYPE — `ls`/glob the exact dirname; typed compounds flip spelling (double-r) and probes against them report FALSE 404s. od-verify anything written to disk carrying a derived family string.
+- Submodules sit on **`develop`** — keep your checkout on `develop`.
+- All PRs target **`develop`** (feature/bug/task branches fork from `develop`).
+- **`main` is CI/CD-only**: CI/CD automation performs all merges into `main` (release path). Never merge to or push `main` by hand.
 
-## Launch
+## Worktrees — Canonical Convention (REQUIRED)
 
-`npl-team-lead semtext` from this repo's directory (launcher: random zai/zai-b, named zellij tab, bypass-active; bootstrap command `/team-lead-pager-call semtext`).
+All work happens on git worktrees, created from **this repo's own `.git`** — never work directly on a shared checkout of `develop`/`main`.
+
+- **Placement (fixed):** every worktree lives inside this repo's checkout at **`.claude/worktrees/<name>/`** — never siblings (`<repo>.worktrees/`), never ad-hoc paths. Matches Claude Code's native worktree tooling, so harness-created and manual worktrees coexist.
+- **Naming:** `<name>` = branch name with `/` → `-` (branch `feature/vfs-wave1` → `.claude/worktrees/feature-vfs-wave1`).
+- **Creation** — from this repo's own `.git`, based on `develop` (never `main`):
+
+  ```bash
+  git -C <this-repo> worktree add .claude/worktrees/<name> -b <branch> develop
+  ```
+
+- **Hygiene:** `.claude/worktrees/` is gitignored in this repo; never commit its contents. One worktree per task; remove it when the work lands (`git worktree remove .claude/worktrees/<name>` — keep the branch).
+- **Addressing:** `git -C <this-repo>/.claude/worktrees/<name> …`; verify branch + clean index before any git write; no `git stash`.
+- **Elixir projects:** the MAIN checkout owns `deps/` + `_build/`; each worktree symlinks `deps` (and `_build` where needed) to the canonical checkout by **absolute path** — no per-worktree re-fetch/recompile.
+- **Legacy placements** (`.worktrees/`, `.wt/`, `<repo>.worktrees/` siblings, `staging/`) are grandfathered — do not create new ones; migrate opportunistically. `staging/` remains local-only experiments (never pushed/submoduled).

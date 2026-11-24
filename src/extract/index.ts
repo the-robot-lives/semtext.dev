@@ -1,3 +1,4 @@
+// 〚📦:𔕱𓯩𓲞𓖤〛 extract :: Extraction entry point: structural/plain-text reduction contract (SemText.extractRecords / SemText.extractText); normative contract spec/extraction.md.
 /**
  * SemText — extraction entry point.
  *
@@ -9,9 +10,10 @@
  * No runtime dependencies, no fetch, no top-level await.
  */
 
-export type { SemRecord } from './records.js';
+export type { SemRecord, RecordPair } from './records.js';
 export {
   extractRecords,
+  extractRecordPairs,
   extractText,
   renderRecordsAsText,
   deriveSummary

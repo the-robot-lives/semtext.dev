@@ -1,4 +1,5 @@
 /// <reference types="vitest/config" />
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 /**
@@ -12,7 +13,7 @@ import { defineConfig } from 'vite';
  *
  * `vite preview` serves `dist/` as the web root, which is why the cypress
  * baseUrl resolves `/demo/index.html` to `dist/demo/index.html` — the BUILT
- * page, not the marker source in `demo/`.
+ * page, not the marker source in `web/demo/`.
  */
 export default defineConfig({
   build: { outDir: 'dist', target: 'es2022' },
@@ -25,18 +26,33 @@ export default defineConfig({
   // floored) — raise it as unit coverage grows; see docs/TEST-HEALTH.md.
   test: {
     include: ['test/unit/**/*.test.{ts,mjs,js}'],
+    // Every spec fails fast instead of hanging the shared fork worker —
+    // a sync loop cannot be interrupted by timers inside the test, but a
+    // 5s ceiling keeps any wedge to one red spec, not a stuck run
+    // (shell-v3 integration; see test/unit/shell-find-sed.test.ts).
+    testTimeout: 5_000,
+    alias: {
+      // The lazy loaders' tag→chunk manifests are injected virtually by the
+      // build (scripts/build.mjs, one plugin per namespace). The build
+      // never reads these files; under vitest the entry specs get stubs
+      // (test/unit/fixtures/*.stub.ts) whose chunks 404, so the entries'
+      // wiring specs exercise the failure-reporting path.
+      'virtual:semtext-manifest': fileURLToPath(
+        new URL('./test/unit/fixtures/lazy-manifest.stub.ts', import.meta.url),
+      ),
+      'virtual:npl-manifest': fileURLToPath(
+        new URL('./test/unit/fixtures/npl-manifest.stub.ts', import.meta.url),
+      ),
+      'virtual:semext-manifest': fileURLToPath(
+        new URL('./test/unit/fixtures/semext-manifest.stub.ts', import.meta.url),
+      ),
+      'virtual:agent-kit-manifest': fileURLToPath(
+        new URL('./test/unit/fixtures/agent-kit-manifest.stub.ts', import.meta.url),
+      ),
+    },
     coverage: {
       provider: 'v8',
       include: ['src/**', 'scripts/**', 'bin/**'],
-      // Hand-run bundle-sync tooling relocated from web/scripts/ when web/
-      // was retired (2026-11-11). It was never in the measured surface
-      // (web/ is not included above) and has no unit specs — keep it out so
-      // the relocation does not dilute the coverage ratchet.
-      exclude: [
-        'scripts/sync-bundles.mjs',
-        'scripts/build-bundle-map.mjs',
-        'scripts/gen-build-info.mjs',
-      ],
       reporter: ['text-summary', 'html', 'json-summary'],
       reportsDirectory: 'coverage',
       thresholds: { lines: 16 }
