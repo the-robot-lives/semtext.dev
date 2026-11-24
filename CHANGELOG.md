@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-24
+
+- feat(showcase): draftamo 3D demo page at `/showcase/draftamo` (#262, THEROB-171) — npl-enhanced-content subtree sync past upstream PR #113 (develop 947da769: draftamo-diagram native JSON export/rehydration, camera toolbar, terminal refit), semtext bundles rebuilt from the vendored copy (root/stable/latest/v0.9.6 refreshed), demo page carries the real 13-node/14-edge GraphDocument payload normalized from the holograph-m0-m1-walking-skeleton fixture, Showcase registry entry added, no-drift test nine → ten slugs; compile EXIT 0, semtext_web 253/253, dev render 200; interactive 3D hydration acceptance post-deploy vs live CDN viewer.
+
 ## 2026-11-17
 
 - feat(draftamo): the real `semext-draftamo-diagram` element renders inline on semtext.dev, replacing the hand-drawn Draftamo UML mock (#260, THEROB-116). Vendors the npl-enhanced-content bundle, loads `semext.js` on landing, integrations and reference pages, carousel/showcase copy no longer says Draftamo-hosted, new reference entry (override, example, schema parts `semext-draftamo-node`/`-edge`).
