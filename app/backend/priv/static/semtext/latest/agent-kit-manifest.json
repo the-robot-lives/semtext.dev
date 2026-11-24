@@ -11,6 +11,7 @@
   "agent-kit-issue": "agent-kit-chunks/agent-kit-issue.js",
   "agent-kit-organization": "agent-kit-chunks/agent-kit-organization.js",
   "agent-kit-project": "agent-kit-chunks/agent-kit-project.js",
+  "agent-kit-ref": "agent-kit-chunks/agent-kit-ref.js",
   "agent-kit-review": "agent-kit-chunks/agent-kit-review.js",
   "agent-kit-sub-task": "agent-kit-chunks/agent-kit-sub-task.js",
   "agent-kit-task": "agent-kit-chunks/agent-kit-task.js",

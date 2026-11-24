@@ -94,11 +94,11 @@ defmodule SemtextWeb.DocsDataTest do
   end
 
   describe "Showcase" do
-    test "items list all nine slug pages" do
+    test "items list all ten slug pages" do
       slugs = Enum.map(Showcase.items(), & &1.slug)
 
       assert Enum.sort(slugs) ==
-               Enum.sort(~w(claude-md documentation onboarding agent command skill data-viewer embedding sem-shell))
+               Enum.sort(~w(claude-md documentation onboarding agent command skill data-viewer embedding sem-shell draftamo))
     end
 
     test "every item has a label, note and /showcase href" do
@@ -115,12 +115,21 @@ defmodule SemtextWeb.DocsDataTest do
       assert Showcase.by_slug("nope") == nil
     end
 
-    test "integrations are the four planned portfolio origins" do
+    test "integrations are the four portfolio origins" do
       integrations = Showcase.integrations()
       assert length(integrations) == 4
 
+      # `planned` = the SemText hookup is still pending. Draftamo's shipped
+      # (the semext-draftamo-diagram element is live — THEROB-168), so its
+      # flag is false; the three add-on hooks remain planned.
+      by_label = Map.new(integrations, &{&1.label, &1})
+      assert by_label["The Robot Learns"].planned == true
+      assert by_label["The Robot Plans"].planned == true
+      assert by_label["The Robot Knows"].planned == true
+      assert by_label["Draftamo"].planned == false
+
       for i <- integrations do
-        assert i.planned == true
+        assert is_boolean(i.planned)
         assert String.starts_with?(i.href, "http")
       end
     end

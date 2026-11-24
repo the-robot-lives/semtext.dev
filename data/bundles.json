@@ -904,6 +904,11 @@
       "cssOnly": true,
       "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
     },
+    "semext-draftamo-diagram": {
+      "shipped": false,
+      "cssOnly": true,
+      "note": "no shipped runtime — the shipped theme CSS (themes/_vocabulary.css) paints the authored example"
+    },
     "semext-media-prompt": {
       "shipped": false,
       "cssOnly": true,

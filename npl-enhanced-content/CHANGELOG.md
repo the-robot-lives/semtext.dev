@@ -1,6 +1,60 @@
 # Changelog
 
+## 2026-11-24
+
+- **feat(semext): `semext-draftamo-diagram` native JSON export/rehydration (THEROB-170, epic THEROB-130).** The element syncs a hidden `<semext-draftamo-data>` payload child — the native, versioned graph JSON (`v: 1`, `kind`, optional `label`, `nodes`, `edges`) — as the LAST child of the host and outside the `data-sem-chrome` container, so an exported document keeps it through `serialize()` + `sanitizeHtml()` (element carrier, not script). Authored diagrams re-emit after every re-render (compare-before-write, no churn); with no authored children `parseDiagram` hydrates from the payload — authored children win over a stale one and re-sync it; an invalid payload warns once and renders nothing. New `graphToJson`/`graphFromJson` strict v1 codec (`draftamo-diagram-model.ts`): null on any invalid input, never throws. Extraction mints ONE `semext-draftamo-diagram` record whose `graph` field carries the same v1 JSON; the node/edge/data children mint nothing, so records are identical with JS on or off; JS-off the payload is `display:none` (vocabulary CSS). Spec `spec/schema/semext/draftamo-diagram.md` "Data payload (export & rehydration)". Tests: 8 new scenarios, 21/21 green (#113).
+- **feat(semext): `semext-draftamo-diagram` camera toolbar + input feed (THEROB-169, epic THEROB-130 S4).** The 3D view gains camera controls, every one feature-detected against the mounted bundle (`viewer-src` is version-pinned — a bundle predating a member hides that control instead of rendering a dead button): new `draftamo-diagram-camera-ui.ts` toolbar factory (reset pairs `resetCameraPose` with `frameTo(null)`; fit frames the whole model; fly/orbit toggle drives `setCameraMode` with `aria-pressed`; preset select gated on `setCameraPose`, which v0.2.0 does not export — hidden until a bundle ships it; `?` help hint, Escape closes scoped to the bar; `role=toolbar` + aria-labels). The bundle attaches zero DOM listeners, so the element feeds it: chrome keydown/keyup add/remove pressed `KeyboardEvent.code`s on `viewer.keys` (typing targets never feed; teardown detaches and clears), viewer-host wheel deltas go to `wheelFly` (passive). Viewer host is keyboard-reachable and named (`role=img` + the shared accessible name, `tabIndex=0`). `prefers-reduced-motion` forces `animate: false`; camera failures warn, never throw out of a click handler. Adapter `ViewerInstance` gains the all-optional camera block mirroring the real bundle API. Tests: 8 new S4 scenarios, 18/18 green (#112).
+
+## 2026-11-17
+
+- **feat(semext): `semext-draftamo-diagram` `viewer-src` — lazy 3D path (THEROB-168, epic THEROB-130 S3 slice 2).** Optional `viewer-src` attribute: the 2D SVG renders first (fallback stays warm), then the Draftamo viewer bundle is lazily imported and the native `GraphDocument` 3D view replaces it atomically (construction + `setDocument` + `start` all complete before the swap); import/construction failure warns once and the SVG simply remains; stale-mount token guards re-entrant loads; teardown on disconnect. New `draftamo-diagram-3d-adapter.ts` (DiagramModel → viewer `GraphDocument`, derived fields only: node kind `class`, zero metrics, `trd3d` position/dimensions from the shared 2D `layout()` boxes, edge `depends_on`; injectable importer for tests). No-`viewer-src` behavior was unchanged as of slice 2; slice 3 then made the absent attribute default to the release-published CDN bundle. The 3D bundle build + loader live in the draftamo repo (companion PR therobotdrafts#64). Adapter tests 4/4 (fixture on #105 namespaced parts), element tests 5/5. Bot-review round: mount rework — host attached before viewer construction (no zero-size canvas), no teardown between token capture and construction (failure warn can't be silenced), failure disposes the orphan and restores the 2D SVG, teardown before the SVG re-render so a mounted loop can't rAF against a wiped host. Slice 3: `viewer-src` now defaults to the release-pinned CDN bundle (`https://cdn.derobot.is/draftamo/v<release>/draftamo-viewer.js`, immutable object; bumps only in the release that publishes it — `latest/` stays reachable via explicit `viewer-src`); `viewer-src=""` forces 2D-only; a failed/blocked load warns once and the 2D SVG remains.
+- **feat(core): `sem-badge` — inline status chip (THEROB-188).** `<sem-badge variant="success|warning|danger|info|neutral">text</sem-badge>`: glyph + text, never colour alone; vocabulary CSS only so JS-off reads the same, unknown variant → `neutral`. Spec `spec/schema/sem-badge.md`, schema entry, element, `test/unit/sem-badge.test.ts`.
+- **feat(agent-kit): `agent-kit-ref` — inline doc/artifact reference (THEROB-116).** `<agent-kit-ref kind="doc|artifact" id="<uuid>">Title</agent-kit-ref>`: authored text is the chip label and JS-off view; upgraded it is `role="link"`, focusable, and emits `agent-kit:ref-follow` {kind, id} on click/Enter/Space; invalid kind or UUID stays inert with one warning; fetches and navigates nothing (the host decides). New `spec/schema/agent-kit/ref.md`, schema entry, `elements.json`, vocabulary CSS, demo line, `test/unit/agent-kit-ref.test.ts`. Named `agent-kit-*` rather than `sem-ref` because it is bound to tobor records (precedent: `agent-kit-ticket-ref`).
+
+- **fix(semext): `semext-draftamo-diagram` children are `<semext-draftamo-node>` / `<semext-draftamo-edge>` (THEROB-116).** Bare `<node>` is already a defined part of `sem-site-tree`/`sem-file-tree`, so inline diagrams drew orphan-part validator warnings; the diagram now declares its own namespaced parts in `semtext.schema.json` (`partOf`), and the vocabulary CSS, schema doc, demo and tests follow.
+
+- **feat(semext): `semext-draftamo-diagram` — inline Draftamo diagram (THEROB-116).** The diagram XML is the authored children (`<node id label?>text</node>`, `<edge from to label?>`); no share link, no iframe, no fetch. Enhanced: SVG box-and-arrow layout by rank in a `data-sem-chrome` container (`role=img`, name `Diagram (uml-class): Hello → World`), authored children hidden but kept for extraction. JS-off: children read `Hello → World`. New `spec/schema/semext/draftamo-diagram.md`, `semtext.schema.json` entry, `elements.json` regenerated, vocabulary CSS, `web/demo/semext.html` section, `test/unit/semext-draftamo-diagram.test.ts`.
+
 ## 2026-11-11
+
+- **fix(shell): clean prompt — no rule above the input, just a blinking cursor.** The `.sem-shell-input` `border-top` drew a horizontal rule above the command prompt; removed it (and the `:focus` border-colour rule) so the prompt is the `$` label and a blinking accent caret (`caret-color: var(--sem-term-accent)`), terminal-style.
+
+- **fix(vanilla/target): deep link resolves once, not on every mutation re-scan.** `settleTarget()` re-ran the hash-target `scrollIntoView({block:'start'})` on every 50ms enhancement re-scan; a page with live content (autoplaying `sem-shell` demos, carousels) mutates forever, so the reader was yanked to the hash target constantly. Latch the initial resolution (`resolved`): re-scans and pending settle timers no longer re-scroll once landed (or when there is no hash); `hashchange` resets the latch for a new target. Preserves the 0.9.1 slow-page retry (re-arms until the first successful resolution). +3 regression tests.
+
+- **shell element UX + theme batch (feature/shell-element).** Wheel/touch scroll passthrough, keyboard copy, history persistence + 5000-line cap, caret-preserving Tab completion, `run()` + `sem-shell-ready`/`sem-shell-command`, sandboxed `open`, forced-colors live swap, one `--sem-term-*` palette (4.5:1 tested), title-bar/tab/replay chrome fixes.
+
+- **shell docs reconciled with shipped code; DEFERRED.md added.** PLUGINS.md (async `run`, `app`/`tab` actions, packages + `supersede`, `vfs.attachBackend`/`vfs.storageErrors`, loader trust model + CDN policy), CORE-V2.md (status, async §6.5, lazy-chunk reality vs invariant 1, report-only budget, as-built paths), WASM-POC.md, `docs/arch/bundles.md`, ROADMAP shell size rows; new `docs/terminal/DEFERRED.md`. Docs only (feature/shell-docs).
+
+- **shell packages batch (feature/shell-packages):** lazy-load `loading <pkg>…` status line on first use (3.4); net defaults to fetch with `credentials: 'omit'` (sync XHR only as fallback, false cookie/boot comments fixed) (4.8); awk loop (1e6 iterations) and jq call-step (1e6) runaway budgets (4.9).
+
+- **shell storage — coalesced localStorage, paginated S3, OIDC popup handoff.** localStorage persists coalesce into one microtask per tick and skip subtrees owned by other mounted backends; S3 listings follow continuation tokens (recursive rm/hydrate complete past 1000 keys), reject NaN/non-positive caps, normalise the mountpoint; the `noopener` OIDC popup returns its code over a `semtext-s3-auth` BroadcastChannel (reference `web/demo/shell-oidc-redirect.html`).
+
+- **shell core — grouped help + did-you-mean, loader origin-policy fix, atomic mountPlugin, S3 mount attach restored (feature/shell-core).**
+  `help` groups by plugin and takes `<cmd>`; unknown commands suggest the nearest name; the loader classifies resolved URLs (HTTPS://, `/\host`, `//host` no longer bypass; cross-origin needs https + hex/SRI integrity, also for files[].src); mountPlugin validates before mounting, throwing completers and live `ctx.commands` closed; `mount` attaches the backend again (new `Vfs.seed` for hydration), refuses occupied/`/` mountpoints; writes to read-only mounts warn.
+- **shell 2.4 — menu focus return, tab/tabpanel ARIA, flashcard role (#102).**
+  Closing the context menu now focuses the prompt input (else the
+  hidden canvas input, else the host with a tabindex fallback) instead
+  of dropping to `<body>`; tab close buttons are siblings of the
+  `role=tab` (no nested interactive), tabs carry ids + `aria-controls`
+  and the shell content region is a `role=tabpanel` labelled by the
+  active tab; the inline flashcard widget is `role=group`, not dialog.
+
+- **sem-media-prompt — active media-generation prompt record.** New sem-tier
+  Lit component, the active sibling of the passive `semext-media-prompt`:
+  the authored `.media.prompt` YAML is the record (parsed with the refresh
+  CLI's own `parseMediaPrompt`, extracted to `src/shared/media-prompt.js`),
+  generations display through the existing `sem-media-gallery`, evals
+  through `sem-eval`. An author-pointed `endpoint` enables Generate
+  (POST `{model?,prompt,negative?,aspect?,seed?}` →
+  `{output:{assets,evals}}`, `sem-media-added` per asset, `status` reflected
+  idle→generating→generated|error); `fixtures` make it local-only and never
+  fetch; with neither it is authored-only — no fabricated output. Edit mode
+  adds a YAML textarea emitting `sem-media-prompt-change`; all chrome lives
+  in one extraction-skipped `data-sem-chrome` container, `renderText(opts)`
+  serves the tui driver. Lazy-chunk-only (8172B ≤ 8KB; core gains only the
+  record/chrome registration); spec at `spec/schema/sem-media-prompt.md`,
+  elements.json regenerated; `test:fast` npm script (vitest related,
+  coverage off) for the per-change fast lane.
 
 - **focus: nested markdown renders once.** `semtext focus --format md` on a
   document with nested headings emitted every child section twice — the

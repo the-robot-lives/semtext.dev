@@ -47,6 +47,7 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
   # /docs loads the SemText bundle without the off-switches so the page's
   # live SemText blocks auto-wire (the current next/script behavior).
   prop :load_semtext_bundle, :boolean, default: false
+  prop :load_semext_bundle, :boolean, default: false
   # /reference pages (port-reference lane): section CSS + the island bridge
   # (auto-boots the example render panes; runs the index filter).
   prop :reference_assets, :boolean, default: false
@@ -89,6 +90,9 @@ defmodule SemtextWeb.Hologram.Layouts.SiteLayout do
         <meta name="theme-color" content="#0f172a" />
         {%if @load_semtext_bundle}
           <script defer src="/semtext/semtext.js"></script>
+        {/if}
+        {%if @load_semext_bundle}
+          <script defer src="/semtext/semext.js"></script>
         {/if}
         <link rel="stylesheet" href="/semtext/themes/_vocabulary.css" />
         <link rel="stylesheet" href="/semtext/themes/minimal-tech-light.css" />

@@ -429,6 +429,10 @@
    "A doc-pointer card rendered from a cached snapshot.",
    "The snapshot mirrors the pointer registry so a page can cite a source location durably — the card survives line drift until a CLI refresh re-snapshots it."
   ],
+  "semext-draftamo-diagram": [
+   "An inline Draftamo diagram: boxes and arrows drawn from the XML in the element itself.",
+   "Write nodes and edges as children and the page carries the whole diagram: no share link, no iframe, no fetch. With JavaScript off it reads as plain text, for example Hello → World."
+  ],
   "semext-media-prompt": [
    "An authored media-generation prompt with an output cache region.",
    "The record is the prompt you write; the output region beside it is filled by the refresh CLI, not the element. The element never fetches and never generates — it only reports the region's state."

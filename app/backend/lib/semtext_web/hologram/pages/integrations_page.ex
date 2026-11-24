@@ -19,7 +19,8 @@ defmodule SemtextWeb.Hologram.Pages.IntegrationsPage do
     page_title: "Integrations — SemText",
     description:
       "The integrations catalog: ticket embedding, knowledge-base answers, courses and quizzes, Draftamo mockups and UML, issue submission — each wired to its real logic as it is built. The reading and extraction core stays free and static.",
-    canonical: "https://semtext.dev/integrations/"
+    canonical: "https://semtext.dev/integrations/",
+    load_semext_bundle: true
 
   def init(_params, component, _server) do
     put_state(component, integrations: Showcase.integrations())

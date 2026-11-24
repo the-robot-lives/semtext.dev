@@ -1,25 +1,25 @@
-import{C as m,s as i,A as o,b as n,d}from"./shared-qr2elKZA.js";function h(r){const e=r&&typeof r=="object"?r:{},s=e.threads??(Array.isArray(r)?r:[]),t=Array.isArray(s)?s.filter(a=>!!a&&typeof a=="object"):[];return{site:e.site,page:e.page,threads:t}}function p(r,e,s){const t=r.replace(/\/+$/,""),a=new URLSearchParams;e.trim()&&a.set("site",e.trim()),s.trim()&&a.set("page",s.trim());const c=a.toString();return`${t}/threads${c?`?${c}`:""}`}class l extends m{static{this.livePolicy="anonymous-read"}connectedCallback(){this.#e(),super.connectedCallback()}updated(e){super.updated(e),this.#e()}#e(){const e=(this.endpoint??"").trim();e&&!/\/threads(?:[?#]|$)/.test(e)&&(this.endpoint=p(e,i(this,"site")??"",i(this,"page")??""))}renderChrome(e){const{site:s,threads:t}=h(e),a=s??(i(this,"site")??"").trim();return n`
+import{s as i,A as o,b as n,d as m}from"./shared-DYgNPiGG.js";import{C as d}from"./cached-embed-USIB1p-Q.js";function h(r){const t=r&&typeof r=="object"?r:{},s=t.threads??(Array.isArray(r)?r:[]),e=Array.isArray(s)?s.filter(a=>!!a&&typeof a=="object"):[];return{site:t.site,page:t.page,threads:e}}function p(r,t,s){const e=r.replace(/\/+$/,""),a=new URLSearchParams;t.trim()&&a.set("site",t.trim()),s.trim()&&a.set("page",s.trim());const c=a.toString();return`${e}/threads${c?`?${c}`:""}`}class l extends d{static{this.livePolicy="anonymous-read"}connectedCallback(){this.#t(),super.connectedCallback()}updated(t){super.updated(t),this.#t()}#t(){const t=(this.endpoint??"").trim();t&&!/\/threads(?:[?#]|$)/.test(t)&&(this.endpoint=p(t,i(this,"site")??"",i(this,"page")??""))}renderChrome(t){const{site:s,threads:e}=h(t),a=s??(i(this,"site")??"").trim();return n`
       <div class="semext-annotate-chrome">
         <p class="semext-annotate-head">
-          Visitor threads — ${t.length}${a?n` on ${a}`:o}
+          Visitor threads — ${e.length}${a?n` on ${a}`:o}
         </p>
-        ${t.length===0?n`<p class="semext-annotate-empty">No comments on this page yet.</p>`:o}
-        ${t.map(c=>this.thread(c))}
+        ${e.length===0?n`<p class="semext-annotate-empty">No comments on this page yet.</p>`:o}
+        ${e.map(c=>this.thread(c))}
       </div>
-    `}thread(e){const s=Array.isArray(e.comments)?e.comments:[];return n`
-      <article class="semext-annotate-thread" data-status=${e.status??""}>
+    `}thread(t){const s=Array.isArray(t.comments)?t.comments:[];return n`
+      <article class="semext-annotate-thread" data-status=${t.status??""}>
         <header class="semext-annotate-thread-head">
-          <span class="semext-annotate-status">${e.status??"open"}</span>
-          <strong class="semext-annotate-title">${e.title||e.id||"Thread"}</strong>
-          ${e.author||e.createdAt?n`<span class="semext-annotate-meta"> — ${e.author??""}${e.author&&e.createdAt?", ":""}${e.createdAt??""}</span>`:o}
+          <span class="semext-annotate-status">${t.status??"open"}</span>
+          <strong class="semext-annotate-title">${t.title||t.id||"Thread"}</strong>
+          ${t.author||t.createdAt?n`<span class="semext-annotate-meta"> — ${t.author??""}${t.author&&t.createdAt?", ":""}${t.createdAt??""}</span>`:o}
         </header>
-        ${e.anchor?.text?n`<blockquote class="semext-annotate-anchor">${e.anchor.text}</blockquote>`:o}
-        ${s.map(t=>n`
+        ${t.anchor?.text?n`<blockquote class="semext-annotate-anchor">${t.anchor.text}</blockquote>`:o}
+        ${s.map(e=>n`
             <p class="semext-annotate-comment">
-              <span class="semext-annotate-author">${t.author??"visitor"}</span>
-              ${t.createdAt?n`<span class="semext-annotate-when"> ${t.createdAt}</span>`:o}
-              ${t.body?n`<span class="semext-annotate-body"> — ${t.body}</span>`:o}
+              <span class="semext-annotate-author">${e.author??"visitor"}</span>
+              ${e.createdAt?n`<span class="semext-annotate-when"> ${e.createdAt}</span>`:o}
+              ${e.body?n`<span class="semext-annotate-body"> — ${e.body}</span>`:o}
             </p>
           `)}
       </article>
-    `}}d("semext-annotate",l);
+    `}}m("semext-annotate",l);
