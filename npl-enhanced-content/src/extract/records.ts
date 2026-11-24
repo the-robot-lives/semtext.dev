@@ -22,6 +22,10 @@ import { normalizeMd } from '../shared/mdsource.js';
 import { parseMarks } from '../shared/marks.js';
 import { trimTrailingWs } from '../shared/trim.js';
 import { deriveReferenceId } from '../shared/reference-id.js';
+// THEROB-170 (spec/schema/semext/draftamo-diagram.md): the one deliberate
+// cross-layer import. draftamo-diagram-model.ts is the dependency-free pure
+// model (no imports of its own), so records.ts stays IIFE-safe.
+import { describe, graphToJson, parseDiagram } from '../lit/semext/draftamo-diagram-model.js';
 
 /** One extracted record. Shape is normative; see spec/extraction.md §2. */
 export interface SemRecord {
@@ -88,7 +92,15 @@ const RECORD_TYPES = [
   // the container mints the record; its row children
   // (sem-tag-attr / sem-api-param) are captured INSIDE it, never mint
   'sem-tag-def',
-  'sem-api-call'
+  'sem-api-call',
+  // active media-generation record (spec/schema/sem-media-prompt.md):
+  // the authored YAML + gallery + evals mint; the runtime chrome class
+  // below keeps the generated output extraction-invisible
+  'sem-media-prompt',
+  // Draftamo inline diagrams (spec/schema/semext/draftamo-diagram.md,
+  // THEROB-170): the diagram mints ONE record carrying the native v1 graph
+  // JSON; its node/edge/data children mint nothing.
+  'semext-draftamo-diagram'
 ] as const;
 
 /**
@@ -168,7 +180,11 @@ const CHROME_CLASSES = [
   // `sem-cached-embed-chrome` — both are chrome whole, so JS-off
   // extraction equals JS-on (the authored inner content is the record)
   'agent-kit-chrome',
-  'sem-cached-embed-chrome'
+  'sem-cached-embed-chrome',
+  // sem-media-prompt: the params line, Generate button, edit textarea,
+  // alert, runtime gallery and evals all live in this one container —
+  // the authored YAML / gallery / evals / snapshot stay the record
+  'sem-media-prompt-chrome'
 ];
 
 /** Highlight / cloze markers, in every authoring and runtime form. */
@@ -737,6 +753,30 @@ function buildApiCall(el: Element): Payload {
   return { fields: fields, text: name + ' — ' + method + ' ' + endpoint + (desc ? ' — ' + desc : '') };
 }
 
+/**
+ * Draftamo inline diagram (spec/schema/semext/draftamo-di draftamo-diagram.md, THEROB-170):
+ * ONE record per diagram. `graph` carries the native v1 JSON exactly as the
+ * `<semext-draftamo-data>` carrier writes it — same shape as rehydration input
+ * — plus node/edge counts; `text` is the arrow summary. Reads go through the
+ * shared pure model (parseDiagram hydrates when authored children are absent;
+ * authored children win), so the record is identical with JS on/off — the
+ * runtime chrome div mints nothing.
+ */
+function buildDraftamoDiagram(el: Element): Payload | null {
+  const model = parseDiagram(el);
+  // Empty model (invalid payload, no authored children) mints nothing — spec:
+  // an invalid payload is ignored.
+  if (model.nodes.length === 0 && model.edges.length === 0) return null;
+  return {
+    fields: {
+      graph: graphToJson(model, { kind: param(el, 'kind') ?? undefined, label: param(el, 'label') ?? undefined }),
+      nodes: model.nodes.length,
+      edges: model.edges.length
+    },
+    text: describe(model)
+  };
+}
+
 function buildContainer(el: Element): Payload {
   return { fields: {}, text: '' };
 }
@@ -745,7 +785,7 @@ function buildPlain(el: Element): Payload {
   return { fields: {}, text: prose(el) };
 }
 
-function payloadFor(type: string, el: Element): Payload {
+function payloadFor(type: string, el: Element): Payload | null {
   switch (type) {
     case 'sem-agent':
       return buildAgent(el);
@@ -783,6 +823,9 @@ function payloadFor(type: string, el: Element): Payload {
       return buildApiCall(el);
     case 'sem-table':
       return buildTable(el);
+    // Draftamo diagram (THEROB-170): ONE record, native v1 graph JSON in `graph`.
+    case 'semext-draftamo-diagram':
+      return buildDraftamoDiagram(el);
     case 'sem-facts':
     case 'sem-details':
     case 'sem-procedure':
@@ -850,6 +893,7 @@ export function extractRecordPairs(root: Document | Element): RecordPair[] {
 
     if (type !== null) {
       const payload = payloadFor(type, el);
+      if (payload !== null) {
       const record: SemRecord = {
         type: type,
         id: authoredId(el),
@@ -863,6 +907,7 @@ export function extractRecordPairs(root: Document | Element): RecordPair[] {
       };
       pairs.push({ el: el, record: record });
       index = record.sourceOrder;
+      }
     }
 
     const kids = el.children;

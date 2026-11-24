@@ -144,7 +144,7 @@ defmodule SemtextWeb.Hologram.Components.Site.AddonsCarousel do
             <article class="flex h-full flex-col rounded-xl border border-code-border bg-slateink-panel p-5" aria-labelledby="addon-draftamo-renders-h">
               <h3 id="addon-draftamo-renders-h" class="text-lg font-semibold text-ink">Draftamo mockups &amp; UML</h3>
               <p class="mt-2 text-sm leading-relaxed text-ink-mute">
-                Mockups and UML renders from Draftamo-hosted projects, or from local Draftamo XML.
+                Mockups and UML drawn inline: the diagram XML sits in the page or chat message itself, with no hosted link.
               </p>
               <div class="mt-4">
                 <DraftamoUml />

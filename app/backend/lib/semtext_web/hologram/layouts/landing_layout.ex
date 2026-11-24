@@ -84,6 +84,7 @@ defmodule SemtextWeb.Hologram.Layouts.LandingLayout do
         <script src="/js/keep-location.js"></script>
         <Hologram.UI.Runtime />
         <script defer="defer" src="/semtext/semtext.js"></script>
+        <script defer="defer" src="/semtext/semext.js"></script>
         <script defer="defer" src={@bootstrap_js}></script>
         <script async="async" src="https://www.googletagmanager.com/gtag/js?id=G-XZX7QMLD7H"></script>
         <script src="/js/gtag-init.js"></script>

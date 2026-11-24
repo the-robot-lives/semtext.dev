@@ -38,7 +38,8 @@ defmodule SemtextWeb.Hologram.Pages.ReferenceElementPage do
     reference_assets: true,
     # The definition card below is authored vocabulary (<sem-tag-def>):
     # the page-level stable bundle upgrades it in the browser.
-    load_semtext_bundle: true
+    load_semtext_bundle: true,
+    load_semext_bundle: true
 
   def init(%{element: slug}, component, _server) do
     case Tags.tag_by_slug(slug) do
