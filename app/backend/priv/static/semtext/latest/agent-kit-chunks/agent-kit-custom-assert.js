@@ -1,2 +1,2 @@
-import{C as a,a as r,b as i,c as s,d as n}from"./shared-CxbF3Zck.js";class o extends a{static{this.properties={...r}}updated(t){super.updated(t),this.afterParse("akit-assert-chrome",()=>{i(this,"agent-kit-assert-chrome",()=>{const e=this.querySelectorAll("agent-kit-assert-expr").length;return s`<span class="agent-kit-assert-chip" data-assert-count=${String(e)}>
-          Custom asserts · ${e}</span>`})})}renderChrome(t){return s``}}n("agent-kit-custom-assert",o);
+import{C as a,a as r,b as s,d as i}from"./shared-BFT5ldMs.js";import{a as n}from"./chrome-CW-g0rG5.js";class o extends a{static{this.properties={...r}}updated(t){super.updated(t),this.afterParse("akit-assert-chrome",()=>{n(this,"agent-kit-assert-chrome",()=>{const e=this.querySelectorAll("agent-kit-assert-expr").length;return s`<span class="agent-kit-assert-chip" data-assert-count=${String(e)}>
+          Custom asserts · ${e}</span>`})})}renderChrome(t){return s``}}i("agent-kit-custom-assert",o);

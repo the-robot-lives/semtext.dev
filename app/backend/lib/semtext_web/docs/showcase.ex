@@ -83,6 +83,13 @@ defmodule SemtextWeb.Docs.Showcase do
         href: "/showcase/sem-shell/",
         note: "the interactive terminal element over a virtual file system",
         planned: false
+      },
+      %{
+        slug: "draftamo",
+        label: "Draftamo diagram",
+        href: "/showcase/draftamo/",
+        note: "the real 13-node Draftamo document, native v1 payload, hydrated by the bundle",
+        planned: false
       }
     ]
   end

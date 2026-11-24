@@ -1674,6 +1674,8 @@ semext-draftamo-diagram:not([data-sem-upgraded]) > semext-draftamo-node,
 semext-draftamo-diagram:not([data-sem-upgraded]) > semext-draftamo-edge { display: inline; }
 semext-draftamo-diagram:not([data-sem-upgraded]) > semext-draftamo-node::before { content: attr(label); }
 semext-draftamo-diagram:not([data-sem-upgraded]) > semext-draftamo-edge::after { content: " \2192\00a0"; }
+/* THEROB-170 semext-draftamo-data payload child: carried data, never display content — hidden JS-off and upgraded alike (upgraded, the generic rule above already covers it). */
+semext-draftamo-diagram > semext-draftamo-data { display: none; }
 .semext-draftamo-diagram-chrome svg { max-width: 100%; height: auto; font: .875rem system-ui, sans-serif; }
 .semext-draftamo-diagram-box { fill: var(--sem-bg, Canvas); stroke: var(--sem-border, CanvasText); stroke-width: 1.5; }
 .semext-draftamo-diagram-text { fill: var(--sem-fg, CanvasText); }
@@ -3458,6 +3460,21 @@ agent-kit-ticket-ref[data-sem-upgraded], .agent-kit-ticket-ref[data-sem-upgraded
   border-color: var(--sem-accent, #2563eb);
   outline: none;
 }
+/* agent-kit-ref: inline chip for a doc/artifact reference; link affordance is behavior,
+   styled only under the upgrade claim. JS-off it reads as the authored label. */
+agent-kit-ref, .agent-kit-ref { display: inline; }
+agent-kit-ref[data-sem-upgraded][role="link"], .agent-kit-ref[data-sem-upgraded][role="link"] {
+  cursor: pointer;
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--sem-border, #e2e8f0);
+  background: var(--sem-bg, #fafafa);
+  color: var(--sem-accent, #2563eb);
+  font-size: 0.9em;
+}
+agent-kit-ref[data-sem-upgraded][role="link"]:hover,
+agent-kit-ref[data-sem-upgraded][role="link"]:focus-visible { border-color: var(--sem-accent, #2563eb); outline: none; }
 /* ── end agent-kit tickets ── */
 
 /* ── agent-kit personas ───────────────────────────────────────────
@@ -4326,6 +4343,25 @@ sem-tui sem-tui { margin: .75rem 0; }
   .sem-media-prompt-generate { transition: none; }
 }
 /* ── end sem-media-prompt ── */
+
+/* ── sem-badge — inline status chip: glyph + text, never colour alone ── */
+sem-badge, .sem-badge {
+  --sem-badge-c: var(--sem-muted);
+  display: inline-flex; align-items: baseline; gap: .3em;
+  padding: .05em .6em; border: 1px solid var(--sem-badge-c); border-radius: 999px;
+  background: color-mix(in srgb, var(--sem-badge-c) 12%, var(--sem-bg));
+  color: var(--sem-fg); font-size: .85em; line-height: 1.5; white-space: nowrap;
+}
+sem-badge::before, .sem-badge::before { content: "•"; content: "•" / "neutral: "; color: var(--sem-badge-c); font-weight: 700; }
+:is(sem-badge, .sem-badge)[variant="success"] { --sem-badge-c: var(--sem-note-tip); }
+:is(sem-badge, .sem-badge)[variant="success"]::before { content: "✓"; content: "✓" / "success: "; }
+:is(sem-badge, .sem-badge)[variant="warning"] { --sem-badge-c: var(--sem-note-warning); }
+:is(sem-badge, .sem-badge)[variant="warning"]::before { content: "⚠"; content: "⚠" / "warning: "; }
+:is(sem-badge, .sem-badge)[variant="danger"] { --sem-badge-c: var(--sem-note-danger); }
+:is(sem-badge, .sem-badge)[variant="danger"]::before { content: "✕"; content: "✕" / "danger: "; }
+:is(sem-badge, .sem-badge)[variant="info"] { --sem-badge-c: var(--sem-note-info); }
+:is(sem-badge, .sem-badge)[variant="info"]::before { content: "ℹ"; content: "ℹ" / "info: "; }
+/* ── end sem-badge ── */
 
 /* SemText — default theme
    v0.6: when `data-sem-theme` is ABSENT from <html>, these tokens apply —

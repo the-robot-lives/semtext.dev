@@ -1,1 +1,1 @@
-import{A as i}from"./reference-shared-C74jU5b5.js";import{d as t}from"./shared-CxbF3Zck.js";class a extends i{static{this.refKind="organization"}}t("agent-kit-organization",a);
+import{A as i}from"./reference-shared-DbqGrTZI.js";import{d as t}from"./shared-BFT5ldMs.js";import"./chrome-CW-g0rG5.js";class a extends i{static{this.refKind="organization"}}t("agent-kit-organization",a);

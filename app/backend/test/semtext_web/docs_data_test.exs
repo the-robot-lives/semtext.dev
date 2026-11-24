@@ -94,11 +94,11 @@ defmodule SemtextWeb.DocsDataTest do
   end
 
   describe "Showcase" do
-    test "items list all nine slug pages" do
+    test "items list all ten slug pages" do
       slugs = Enum.map(Showcase.items(), & &1.slug)
 
       assert Enum.sort(slugs) ==
-               Enum.sort(~w(claude-md documentation onboarding agent command skill data-viewer embedding sem-shell))
+               Enum.sort(~w(claude-md documentation onboarding agent command skill data-viewer embedding sem-shell draftamo))
     end
 
     test "every item has a label, note and /showcase href" do

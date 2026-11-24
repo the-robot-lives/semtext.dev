@@ -1,1 +1,1 @@
-import{A as t}from"./persona-shared-D3ZvPF0N.js";import{d as e}from"./shared-CxbF3Zck.js";class a extends t{static{this.personaKind="agent"}}e("agent-kit-agent-persona",a);
+import{A as t}from"./persona-shared-BLiKR81z.js";import{d as e}from"./shared-BFT5ldMs.js";import"./chrome-CW-g0rG5.js";class a extends t{static{this.personaKind="agent"}}e("agent-kit-agent-persona",a);

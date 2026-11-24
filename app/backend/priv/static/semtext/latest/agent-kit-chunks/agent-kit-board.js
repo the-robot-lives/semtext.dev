@@ -1,4 +1,4 @@
-import{C as n,a as o,b as i,c as r,d as c}from"./shared-CxbF3Zck.js";class d extends n{static{this.properties={...o}}updated(a){super.updated(a),this.afterParse("akit-board-chrome",()=>{i(this,"agent-kit-board-chrome",()=>{const t=this.querySelectorAll("agent-kit-column").length,e=this.querySelectorAll("agent-kit-ticket-ref").length;return r`<span class="agent-kit-board-chip" data-column-count=${String(t)}>
-          Board · ${t} column${t===1?"":"s"} · ${e} ref${e===1?"":"s"}</span>`})})}renderChrome(a){const t=a&&typeof a=="object"?a:{},e=typeof t.updated_at=="string"?t.updated_at:"",s=e?new Date(e):null;return!s||Number.isNaN(s.getTime())?r``:r`<span class="agent-kit-board-snapshot"
-      >snapshot · <time datetime=${e}>${s.toISOString().slice(0,10)}</time></span
-    >`}}c("agent-kit-board",d);
+import{C as n,a as o,b as s,d as i}from"./shared-BFT5ldMs.js";import{a as c}from"./chrome-CW-g0rG5.js";class d extends n{static{this.properties={...o}}updated(a){super.updated(a),this.afterParse("akit-board-chrome",()=>{c(this,"agent-kit-board-chrome",()=>{const t=this.querySelectorAll("agent-kit-column").length,e=this.querySelectorAll("agent-kit-ticket-ref").length;return s`<span class="agent-kit-board-chip" data-column-count=${String(t)}>
+          Board · ${t} column${t===1?"":"s"} · ${e} ref${e===1?"":"s"}</span>`})})}renderChrome(a){const t=a&&typeof a=="object"?a:{},e=typeof t.updated_at=="string"?t.updated_at:"",r=e?new Date(e):null;return!r||Number.isNaN(r.getTime())?s``:s`<span class="agent-kit-board-snapshot"
+      >snapshot · <time datetime=${e}>${r.toISOString().slice(0,10)}</time></span
+    >`}}i("agent-kit-board",d);
