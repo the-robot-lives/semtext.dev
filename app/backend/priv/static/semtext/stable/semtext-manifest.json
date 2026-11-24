@@ -1,6 +1,7 @@
 {
   "sem-api-call": "chunks/sem-api-call.js",
   "sem-artifact-card": "chunks/sem-artifact-card.js",
+  "sem-badge": "chunks/sem-badge.js",
   "sem-browser": "chunks/sem-browser.js",
   "sem-changelogs": "chunks/sem-changelogs.js",
   "sem-changelog": "chunks/sem-changelogs.js",
