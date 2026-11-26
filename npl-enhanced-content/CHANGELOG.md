@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-26
+
+- **fix(focus): classifier default model is the GA `decision-model` id; wire state is capped (owner word 2026-11-26).** `classifierSettings` alibaba default moves from `decision-model-preview` to `decision-model` (the preview id graduated; the workspace endpoint answers both), `bin/lib/focus/config.mjs`; docs (`docs/focus.md` examples + env table) and the `focus-core` test fixture follow. `systemone.mjs` `classify` now caps a string `state` at a named `MAX_STATE_CHARS` (6,000) with deterministic head truncation, so the decision model can never see a huge dataset. Tests: 3 new scenarios in `test/unit/focus-systemone.test.mjs` (default id, cap at 6,000 keeping the head, short state unchanged); focus-suite 24/24 green.
+
 ## 2026-11-24
 
 - **feat(semext): `semext-draftamo-diagram` native JSON export/rehydration (THEROB-170, epic THEROB-130).** The element syncs a hidden `<semext-draftamo-data>` payload child — the native, versioned graph JSON (`v: 1`, `kind`, optional `label`, `nodes`, `edges`) — as the LAST child of the host and outside the `data-sem-chrome` container, so an exported document keeps it through `serialize()` + `sanitizeHtml()` (element carrier, not script). Authored diagrams re-emit after every re-render (compare-before-write, no churn); with no authored children `parseDiagram` hydrates from the payload — authored children win over a stale one and re-sync it; an invalid payload warns once and renders nothing. New `graphToJson`/`graphFromJson` strict v1 codec (`draftamo-diagram-model.ts`): null on any invalid input, never throws. Extraction mints ONE `semext-draftamo-diagram` record whose `graph` field carries the same v1 JSON; the node/edge/data children mint nothing, so records are identical with JS on or off; JS-off the payload is `display:none` (vocabulary CSS). Spec `spec/schema/semext/draftamo-diagram.md` "Data payload (export & rehydration)". Tests: 8 new scenarios, 21/21 green (#113).

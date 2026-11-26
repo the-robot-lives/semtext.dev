@@ -51,7 +51,7 @@ const OPTS = (over = {}) => ({
   dryRun: false,
   verbose: false,
   model: 'qwen3.8-flash',
-  classifierModel: 'decision-model-preview',
+  classifierModel: 'decision-model',
   fileLabel: 'doc.md',
   ...over
 });

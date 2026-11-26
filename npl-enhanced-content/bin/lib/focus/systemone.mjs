@@ -15,7 +15,8 @@
  * distribution policy:
  *   - strict: probabilities must key-match and sum to 1 within 1e-6; a
  *     score answer's probability-weighted index must match the wire score.
- *   - alibaba_rounded_hundredths (qwen decision-model-preview): the wire
+ *   - alibaba_rounded_hundredths (qwen decision-model — the GA id; the
+ *     legacy decision-model-preview id is accepted identically): the wire
  *     carries hundredths-rounded display estimates; when strict decoding
  *     fails, the distribution is canonicalised (unit-normalised) and the
  *     wire score is validated against the attainable-mean range, exactly
@@ -28,6 +29,13 @@
  */
 
 const EPSILON = 1e-6;
+
+/**
+ * Head cap (characters) on what one classifier call may send as `state` —
+ * the decision model must never see a huge dataset (owner word 2026-11-26).
+ * Truncation keeps the head, deterministically.
+ */
+export const MAX_STATE_CHARS = 6000;
 
 export class ClassifierError extends Error {
   constructor(message, options = {}) {
@@ -281,7 +289,8 @@ export async function classify({ settings, input, questions, threshold = 0.5, fe
   }
   const wireQuestions = {};
   for (const q of questions) wireQuestions[q.id] = encodeQuestion(q);
-  const body = { model: settings.model, state: input, questions: wireQuestions };
+  const state = typeof input === 'string' ? input.slice(0, MAX_STATE_CHARS) : input;
+  const body = { model: settings.model, state, questions: wireQuestions };
   const doFetch = fetchImpl || globalThis.fetch;
   if (!doFetch) throw new ClassifierError('no fetch implementation available (Node >= 18 required)');
   const controller = new AbortController();
