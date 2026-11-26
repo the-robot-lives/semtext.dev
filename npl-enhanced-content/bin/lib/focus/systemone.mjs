@@ -61,8 +61,18 @@ export const MAX_STATE_CHARS = 6000;
 /** Items kept (head + tail) per array value sent in state. */
 export const MAX_STATE_ARRAY_ITEMS = 100;
 
+/** Codepoints ("chars") kept per object key sent in state. */
+export const MAX_STATE_KEY_CHARS = 120;
+
+/** Keys kept (head + tail) per object value sent in state; one marker key
+ * stands in for the omitted rest. */
+export const MAX_STATE_OBJECT_KEYS = 100;
+
 /** Hard utf-8 byte ceiling on the serialized state (wire backstop). */
 export const MAX_STATE_BYTES = 32768;
+
+/** In-band marker replacing a repeated (cyclic) object reference. */
+const CYCLE_MARKER = '…[semtext focus: cyclic reference omitted]…';
 
 /** Bytes held back from MAX_STATE_BYTES so the truncation marker always fits. */
 const TRUNCATION_MARKER_RESERVE_BYTES = 80;
@@ -102,6 +112,14 @@ export function capStateString(s, maxChars = MAX_STATE_CHARS) {
  * (nor a surrogate pair). The marker counts dropped bytes.
  */
 export function capSerializedState(serialized, maxBytes = MAX_STATE_BYTES) {
+  if (typeof serialized !== 'string') {
+    // JSON.stringify yields undefined for a top-level undefined, function or
+    // symbol state — fail with one clear error before any request instead of
+    // throwing from the middle of the walk below.
+    throw new ClassifierError(
+      'classifier state is not JSON-serializable (undefined, function or symbol) — the endpoint requires a state'
+    );
+  }
   let total = 0;
   for (const ch of serialized) total += utf8Bytes(ch.codePointAt(0));
   if (total <= maxBytes) return { value: serialized, dropped: 0 };
@@ -136,32 +154,57 @@ export function capSerializedState(serialized, maxBytes = MAX_STATE_BYTES) {
 /**
  * Recursive wire cap on a classifier state. Every string is cut to
  * MAX_STATE_CHARS (head + tail), every array keeps MAX_STATE_ARRAY_ITEMS
- * head+tail items with a marker element between, objects keep their keys
- * with capped values, and scalars pass through. `cuts` collects one
- * "−N unit" note per cut that happened anywhere in the walk.
+ * head+tail items with a marker element between, object keys are cut to
+ * MAX_STATE_KEY_CHARS and each object keeps MAX_STATE_OBJECT_KEYS
+ * head+tail keys with one marker key standing in for the omitted rest,
+ * scalars pass through, and a repeated (cyclic) object reference is
+ * replaced by CYCLE_MARKER instead of recursing forever. `cuts` collects
+ * one "−N unit" note per cut that happened anywhere in the walk.
  */
-function capStateValue(input, cuts) {
+function capStateValue(input, cuts, seen = new WeakSet()) {
   if (typeof input === 'string') {
     const { value, dropped } = capStateString(input);
     if (dropped > 0) cuts.push(`string −${dropped} chars`);
     return value;
   }
-  if (Array.isArray(input)) {
-    const cap = (v) => capStateValue(v, cuts);
-    if (input.length <= MAX_STATE_ARRAY_ITEMS) return input.map(cap);
-    const headLen = Math.ceil(MAX_STATE_ARRAY_ITEMS / 2);
-    const tailLen = MAX_STATE_ARRAY_ITEMS - headLen;
-    const dropped = input.length - headLen - tailLen;
-    cuts.push(`array −${dropped} items`);
-    return [
-      ...input.slice(0, headLen).map(cap),
-      truncationMarker(dropped, 'items').trim(),
-      ...input.slice(input.length - tailLen).map(cap)
-    ];
-  }
   if (input && typeof input === 'object') {
+    if (seen.has(input)) {
+      cuts.push('cycle');
+      return CYCLE_MARKER;
+    }
+    seen.add(input);
+    if (Array.isArray(input)) {
+      const cap = (v) => capStateValue(v, cuts, seen);
+      if (input.length <= MAX_STATE_ARRAY_ITEMS) return input.map(cap);
+      const headLen = Math.ceil(MAX_STATE_ARRAY_ITEMS / 2);
+      const tailLen = MAX_STATE_ARRAY_ITEMS - headLen;
+      const dropped = input.length - headLen - tailLen;
+      cuts.push(`array −${dropped} items`);
+      return [
+        ...input.slice(0, headLen).map(cap),
+        truncationMarker(dropped, 'items').trim(),
+        ...input.slice(input.length - tailLen).map(cap)
+      ];
+    }
+    const keys = Object.keys(input);
+    let keptKeys = keys;
+    let omittedMarker = null;
+    if (keys.length > MAX_STATE_OBJECT_KEYS) {
+      const headLen = Math.ceil(MAX_STATE_OBJECT_KEYS / 2);
+      const tailLen = MAX_STATE_OBJECT_KEYS - headLen;
+      omittedMarker = truncationMarker(keys.length - MAX_STATE_OBJECT_KEYS, 'keys').trim();
+      keptKeys = [...keys.slice(0, headLen), omittedMarker, ...keys.slice(keys.length - tailLen)];
+    }
     const out = {};
-    for (const [k, v] of Object.entries(input)) out[k] = capStateValue(v, cuts);
+    for (const key of keptKeys) {
+      if (key === omittedMarker) {
+        out[key] = null; // the marker key carries its own count; null keeps it on the wire
+        continue;
+      }
+      const { value: name, dropped } = capStateString(key, MAX_STATE_KEY_CHARS);
+      if (dropped > 0) cuts.push(`key −${dropped} chars`);
+      out[name] = capStateValue(input[key], cuts, seen);
+    }
     return out;
   }
   return input;
@@ -424,7 +467,13 @@ export async function classify({ settings, input, questions, threshold = 0.5, fe
   for (const q of questions) wireQuestions[q.id] = encodeQuestion(q);
   const cuts = [];
   let state = capStateValue(input, cuts);
-  const byteCut = capSerializedState(JSON.stringify(state));
+  let serialized;
+  try {
+    serialized = JSON.stringify(state);
+  } catch (e) {
+    throw new ClassifierError(`classifier state is not JSON-serializable — ${e && e.message ? e.message : e}`);
+  }
+  const byteCut = capSerializedState(serialized);
   if (byteCut.dropped > 0) {
     state = byteCut.value;
     cuts.push(`serialized state −${byteCut.dropped} bytes`);

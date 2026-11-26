@@ -4,6 +4,8 @@ import {
   MAX_STATE_ARRAY_ITEMS,
   MAX_STATE_BYTES,
   MAX_STATE_CHARS,
+  MAX_STATE_KEY_CHARS,
+  MAX_STATE_OBJECT_KEYS,
   systemOneEndpoint
 } from '../../bin/lib/focus/systemone.mjs';
 import { classifierSettings } from '../../bin/lib/focus/config.mjs';
@@ -132,5 +134,38 @@ describe('focus classifier model id + state cap', () => {
   it('scalar states pass through', async () => {
     expect((await capturedState(42)).body.state).toBe(42);
     expect((await capturedState(null)).body.state).toBe(null);
+  });
+
+  it('a non-serializable state fails with one clear error before any request', async () => {
+    let captured = null;
+    const fetchImpl = async (_url, init) => {
+      captured = { body: JSON.parse(init.body) };
+      return wireAnswer();
+    };
+    await expect(
+      classify({ settings: SETTINGS, input: undefined, questions: QUESTIONS, fetchImpl })
+    ).rejects.toThrow(/not JSON-serializable/);
+    expect(captured).toBeNull(); // no request was built or sent
+  });
+
+  it('a circular object state is capped — repeated references become a marker, no recursion blowup', async () => {
+    const node = { label: 'self' };
+    node.self = node;
+    const { body } = await capturedState({ transcript: 'hello', node });
+    expect(body.state.node.label).toBe('self');
+    expect(body.state.node.self).toContain('cyclic reference omitted');
+  });
+
+  it('object keys are capped — long keys cut, thousands of keys kept head+tail with one marker key', async () => {
+    const input = {};
+    for (let i = 0; i < 3000; i++) input[`k${i}-` + 'L'.repeat(2000)] = 1;
+    const { body } = await capturedState(input);
+    const keys = Object.keys(body.state);
+    expect(keys.length).toBe(MAX_STATE_OBJECT_KEYS + 1); // kept keys + the marker key
+    const markerKey = keys.find((k) => k.includes('keys dropped'));
+    expect(markerKey).toContain('…[semtext focus: 2900 keys dropped]…');
+    expect(keys.every((k) => Array.from(k).length <= MAX_STATE_KEY_CHARS + 60)).toBe(true); // key cut + marker overhead
+    expect(keys[0].startsWith('k0-')).toBe(true); // head keys survive
+    expect(new TextEncoder().encode(JSON.stringify(body.state)).length).toBeLessThanOrEqual(MAX_STATE_BYTES);
   });
 });
