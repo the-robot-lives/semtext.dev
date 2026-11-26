@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
   classify,
+  DEPTH_MARKER,
   MAX_STATE_ARRAY_ITEMS,
   MAX_STATE_BYTES,
   MAX_STATE_CHARS,
+  MAX_STATE_DEPTH,
   MAX_STATE_KEY_CHARS,
+  MAX_STATE_NODES,
   MAX_STATE_OBJECT_KEYS,
+  STATE_LIMIT_MARKER,
   systemOneEndpoint
 } from '../../bin/lib/focus/systemone.mjs';
 import { classifierSettings } from '../../bin/lib/focus/config.mjs';
@@ -117,9 +121,11 @@ describe('focus classifier model id + state cap', () => {
   });
 
   it('byte backstop cuts the serialized state head+tail to MAX_STATE_BYTES (multibyte CJK)', async () => {
-    // 100 array items x 6000 CJK chars = ~1.8 MB serialized >> 32 KiB cap
+    // 2 array items x 6000 CJK chars ≈ 36 KiB serialized — over the 32 KiB
+    // byte constant, yet only ~12k CHARS, well under the walk's size estimate
+    // (which counts utf-16 units): the hard backstop itself is what fires.
     const item = '日'.repeat(MAX_STATE_CHARS);
-    const input = Array.from({ length: MAX_STATE_ARRAY_ITEMS }, () => item);
+    const input = [item, item];
     const { body } = await capturedState(input);
     expect(typeof body.state).toBe('string');
     expect(body.state).toMatch(/…\[semtext focus: \d+ bytes dropped\]…/);
@@ -129,6 +135,7 @@ describe('focus classifier model id + state cap', () => {
     const serialized = JSON.stringify(input);
     expect(body.state.startsWith(serialized.slice(0, 102))).toBe(true); // "[" + 100 CJK chars
     expect(body.state.endsWith(serialized.slice(-102))).toBe(true); // 100 CJK chars + closing quote/bracket
+    expect(body.state.includes(STATE_LIMIT_MARKER)).toBe(false); // the walk budget did not fire here
   });
 
   it('scalar states pass through', async () => {
@@ -162,6 +169,34 @@ describe('focus classifier model id + state cap', () => {
     expect(body.state.a).toEqual({ note: 'same', detail: 'kept' });
     expect(body.state.b).toEqual({ note: 'same', detail: 'kept' });
     expect(JSON.stringify(body.state)).not.toContain('cyclic reference omitted');
+  });
+
+  it('a 10,000-level-deep state returns without a stack overflow and carries the depth marker', async () => {
+    let input = { leaf: 'bottom' };
+    for (let i = 0; i < 10000; i++) input = { n: i, child: input }; // outermost ends with n = 9999
+    const { body } = await capturedState(input);
+    expect(body.state.n).toBe(9999); // shallow levels survive intact
+    let node = body.state;
+    for (let d = 1; d < MAX_STATE_DEPTH; d++) node = node.child; // → nesting level MAX_STATE_DEPTH - 1
+    expect(typeof node).toBe('object'); // the deepest level the walk descends is a real object
+    expect(node.child).toBe(DEPTH_MARKER); // one deeper: replaced, never recursed into
+  });
+
+  it('a shared-reference explosion is stopped by the walk budget — wire state within MAX_STATE_BYTES', async () => {
+    // One 6000-char string under 8 keys per level, 12 levels deep: full
+    // expansion would be 8^12 copies (~10^11 chars). The node budget
+    // (MAX_STATE_NODES) and the size estimate trip long before that.
+    let input = { blob: asciiOf(MAX_STATE_CHARS) };
+    for (let i = 0; i < 12; i++) {
+      const wrapper = {};
+      for (let j = 0; j < 8; j++) wrapper[`level${i}-share${j}`] = input;
+      input = wrapper;
+    }
+    const { body } = await capturedState(input);
+    const wire = JSON.stringify(body.state);
+    expect(wire).toContain(STATE_LIMIT_MARKER); // unwritten values are marked, nothing further expanded
+    expect(wire).not.toContain('cyclic reference omitted'); // shared ≠ cyclic
+    expect(new TextEncoder().encode(wire).length).toBeLessThanOrEqual(MAX_STATE_BYTES);
   });
 
   it('object keys are capped — long keys cut, thousands of keys kept head+tail with one marker key', async () => {
