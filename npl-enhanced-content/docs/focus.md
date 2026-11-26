@@ -79,7 +79,7 @@ match-threshold: 0.8
 providers:
   alibaba:
     base-url: https://dashscope.aliyuncs.com/api/v1/services/enhance  # else $QWEN_DECISION_BASE_URL
-    model: decision-model-preview
+    model: decision-model
   jev:
     base-url: https://api.typesafe.ai/v1                               # else $JEV_BASE_URL
     model: jev-latest
@@ -94,7 +94,7 @@ Env vars (checked in order, names only — never values):
 
 | role | base | key | model default |
 |---|---|---|---|
-| classifier `alibaba` | `QWEN_DECISION_BASE_URL` | `QWEN_API_KEY` or `DASHSCOPE_API_KEY` | `decision-model-preview` |
+| classifier `alibaba` | `QWEN_DECISION_BASE_URL` | `QWEN_API_KEY` or `DASHSCOPE_API_KEY` | `decision-model` |
 | classifier `jev` | `JEV_BASE_URL` | `JEV_API_KEY` or `TYPESAFE_API_KEY` | `jev-latest` |
 | summarizer | `QWEN_TOKEN_BASE_URL` | `QWEN_TOKEN_KEY` or `QWEN_SUB_KEY` | `qwen3.8-flash` |
 

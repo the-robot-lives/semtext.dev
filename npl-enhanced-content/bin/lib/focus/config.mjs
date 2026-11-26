@@ -180,7 +180,7 @@ export function classifierSettings(cfg, name, env = process.env) {
       baseEnv: providerCfg['base-url'] ? null : 'QWEN_DECISION_BASE_URL',
       key: env.QWEN_API_KEY || env.DASHSCOPE_API_KEY || '',
       keyEnv: ['QWEN_API_KEY', 'DASHSCOPE_API_KEY'],
-      model: providerCfg.model || 'decision-model-preview',
+      model: providerCfg.model || 'decision-model',
       policy: 'alibaba_rounded_hundredths'
     };
   }
