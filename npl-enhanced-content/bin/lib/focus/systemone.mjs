@@ -71,7 +71,7 @@ export const MAX_STATE_OBJECT_KEYS = 100;
 /** Hard utf-8 byte ceiling on the serialized state (wire backstop). */
 export const MAX_STATE_BYTES = 32768;
 
-/** In-band marker replacing a repeated (cyclic) object reference. */
+/** In-band marker replacing a cyclic reference (an object that is its own ancestor). */
 const CYCLE_MARKER = '…[semtext focus: cyclic reference omitted]…';
 
 /** Bytes held back from MAX_STATE_BYTES so the truncation marker always fits. */
@@ -157,9 +157,11 @@ export function capSerializedState(serialized, maxBytes = MAX_STATE_BYTES) {
  * head+tail items with a marker element between, object keys are cut to
  * MAX_STATE_KEY_CHARS and each object keeps MAX_STATE_OBJECT_KEYS
  * head+tail keys with one marker key standing in for the omitted rest,
- * scalars pass through, and a repeated (cyclic) object reference is
- * replaced by CYCLE_MARKER instead of recursing forever. `cuts` collects
- * one "−N unit" note per cut that happened anywhere in the walk.
+ * scalars pass through, and an object that is one of its own ancestors
+ * (a cycle) is replaced by CYCLE_MARKER instead of recursing forever —
+ * a shared but acyclic reference is serialized again in full, bounded by
+ * the key caps and the byte backstop. `cuts` collects one "−N unit" note
+ * per cut that happened anywhere in the walk.
  */
 function capStateValue(input, cuts, seen = new WeakSet()) {
   if (typeof input === 'string') {
@@ -168,46 +170,58 @@ function capStateValue(input, cuts, seen = new WeakSet()) {
     return value;
   }
   if (input && typeof input === 'object') {
+    // `seen` holds the CURRENT recursion path only: an object met again
+    // while still on the path is a cycle; off the path it is a legitimate
+    // shared reference and is capped again in full.
     if (seen.has(input)) {
       cuts.push('cycle');
       return CYCLE_MARKER;
     }
     seen.add(input);
-    if (Array.isArray(input)) {
-      const cap = (v) => capStateValue(v, cuts, seen);
-      if (input.length <= MAX_STATE_ARRAY_ITEMS) return input.map(cap);
-      const headLen = Math.ceil(MAX_STATE_ARRAY_ITEMS / 2);
-      const tailLen = MAX_STATE_ARRAY_ITEMS - headLen;
-      const dropped = input.length - headLen - tailLen;
-      cuts.push(`array −${dropped} items`);
-      return [
-        ...input.slice(0, headLen).map(cap),
-        truncationMarker(dropped, 'items').trim(),
-        ...input.slice(input.length - tailLen).map(cap)
-      ];
-    }
-    const keys = Object.keys(input);
-    let keptKeys = keys;
-    let omittedMarker = null;
-    if (keys.length > MAX_STATE_OBJECT_KEYS) {
-      const headLen = Math.ceil(MAX_STATE_OBJECT_KEYS / 2);
-      const tailLen = MAX_STATE_OBJECT_KEYS - headLen;
-      omittedMarker = truncationMarker(keys.length - MAX_STATE_OBJECT_KEYS, 'keys').trim();
-      keptKeys = [...keys.slice(0, headLen), omittedMarker, ...keys.slice(keys.length - tailLen)];
-    }
-    const out = {};
-    for (const key of keptKeys) {
-      if (key === omittedMarker) {
-        out[key] = null; // the marker key carries its own count; null keeps it on the wire
-        continue;
-      }
-      const { value: name, dropped } = capStateString(key, MAX_STATE_KEY_CHARS);
-      if (dropped > 0) cuts.push(`key −${dropped} chars`);
-      out[name] = capStateValue(input[key], cuts, seen);
-    }
-    return out;
+    const capped = Array.isArray(input)
+      ? capStateArray(input, cuts, seen)
+      : capStateObject(input, cuts, seen);
+    seen.delete(input);
+    return capped;
   }
   return input;
+}
+
+function capStateArray(arr, cuts, seen) {
+  const cap = (v) => capStateValue(v, cuts, seen);
+  if (arr.length <= MAX_STATE_ARRAY_ITEMS) return arr.map(cap);
+  const headLen = Math.ceil(MAX_STATE_ARRAY_ITEMS / 2);
+  const tailLen = MAX_STATE_ARRAY_ITEMS - headLen;
+  const dropped = arr.length - headLen - tailLen;
+  cuts.push(`array −${dropped} items`);
+  return [
+    ...arr.slice(0, headLen).map(cap),
+    truncationMarker(dropped, 'items').trim(),
+    ...arr.slice(arr.length - tailLen).map(cap)
+  ];
+}
+
+function capStateObject(obj, cuts, seen) {
+  const keys = Object.keys(obj);
+  let keptKeys = keys;
+  let omittedMarker = null;
+  if (keys.length > MAX_STATE_OBJECT_KEYS) {
+    const headLen = Math.ceil(MAX_STATE_OBJECT_KEYS / 2);
+    const tailLen = MAX_STATE_OBJECT_KEYS - headLen;
+    omittedMarker = truncationMarker(keys.length - MAX_STATE_OBJECT_KEYS, 'keys').trim();
+    keptKeys = [...keys.slice(0, headLen), omittedMarker, ...keys.slice(keys.length - tailLen)];
+  }
+  const out = {};
+  for (const key of keptKeys) {
+    if (key === omittedMarker) {
+      out[key] = null; // the marker key carries its own count; null keeps it on the wire
+      continue;
+    }
+    const { value: name, dropped } = capStateString(key, MAX_STATE_KEY_CHARS);
+    if (dropped > 0) cuts.push(`key −${dropped} chars`);
+    out[name] = capStateValue(obj[key], cuts, seen);
+  }
+  return out;
 }
 
 export class ClassifierError extends Error {

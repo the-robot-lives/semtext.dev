@@ -156,6 +156,14 @@ describe('focus classifier model id + state cap', () => {
     expect(body.state.node.self).toContain('cyclic reference omitted');
   });
 
+  it('a shared but acyclic object reference is serialized again in full under both keys', async () => {
+    const shared = { note: 'same', detail: 'kept' };
+    const { body } = await capturedState({ a: shared, b: shared });
+    expect(body.state.a).toEqual({ note: 'same', detail: 'kept' });
+    expect(body.state.b).toEqual({ note: 'same', detail: 'kept' });
+    expect(JSON.stringify(body.state)).not.toContain('cyclic reference omitted');
+  });
+
   it('object keys are capped — long keys cut, thousands of keys kept head+tail with one marker key', async () => {
     const input = {};
     for (let i = 0; i < 3000; i++) input[`k${i}-` + 'L'.repeat(2000)] = 1;
