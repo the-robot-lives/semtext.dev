@@ -15,7 +15,8 @@
  * caps below): every string is cut to MAX_STATE_CHARS codepoints keeping
  * the head and the tail with an in-band `…[semtext focus: N chars
  * dropped]…` marker, arrays keep MAX_STATE_ARRAY_ITEMS head+tail items,
- * and a MAX_STATE_BYTES utf-8 backstop bounds the whole serialized state.
+ * and the serialized state is produced by a bounded JSON writer that
+ * measures real utf-8 bytes as it writes and stops within MAX_STATE_BYTES.
  *
  * Response `json.answers` keyed by question id. Decoding honours the
  * distribution policy:
@@ -47,23 +48,23 @@ const EPSILON = 1e-6;
  *   - MAX_STATE_ARRAY_ITEMS: items kept per array value (head + tail items,
  *     marker element between). Objects and arrays are walked recursively;
  *     every string inside is cut to MAX_STATE_CHARS.
- *   - MAX_STATE_BYTES: utf-8 bytes of the whole serialized state — the
- *     hard backstop. If the capped state still serializes larger than
- *     this, the serialized text is replaced by a string cut to this byte
- *     budget (head + bytes-dropped marker + tail). The walk below already
- *     keeps every state within this budget (see MAX_STATE_NODES and the
- *     walk's size estimate), so the backstop fires only as a last resort
- *     (non-ASCII text: utf-16 lengths under-count utf-8 bytes).
+ *   - MAX_STATE_BYTES: utf-8 bytes of the whole serialized state. The
+ *     bounded writer below charges Buffer.byteLength of every piece as it
+ *     writes it and stops admitting values once STATE_WRITE_BUDGET_BYTES
+ *     is reached; markers and closers finish the structure within the
+ *     closing reserve — the output is valid JSON of at most this many
+ *     bytes by construction, and JSON.stringify is never called on the
+ *     whole input structure (only on individual capped strings).
  *   - MAX_STATE_DEPTH: object/array levels the walk descends; a container
  *     deeper than this becomes a DEPTH_MARKER string, never recursed into.
- *   - MAX_STATE_NODES: keys + scalar leaves the walk may write in total;
- *     once gone, every value still unwritten becomes a STATE_LIMIT_MARKER
- *     and nothing further is expanded, so a DAG of shared references or a
- *     simply huge state cannot explode the walk or the stack.
+ *   - MAX_STATE_NODES: keys + scalar leaves the writer may emit in total;
+ *     once gone, no further values are expanded (a second guard beside
+ *     the byte budget) so a DAG of shared references or a simply huge
+ *     state cannot explode the walk or the stack.
  *
  * No cut ever splits a utf-8 codepoint: char cuts walk codepoints with
- * Array.from, and the byte cut accumulates whole codepoints within each
- * byte budget (never a surrogate half).
+ * Array.from, and the writer charges whole utf-8 bytes per piece (never a
+ * surrogate half).
  */
 export const MAX_STATE_CHARS = 6000;
 
@@ -77,11 +78,8 @@ export const MAX_STATE_KEY_CHARS = 120;
  * stands in for the omitted rest. */
 export const MAX_STATE_OBJECT_KEYS = 100;
 
-/** Hard utf-8 byte ceiling on the serialized state (wire backstop). */
+/** Hard utf-8 byte ceiling on the serialized state. */
 export const MAX_STATE_BYTES = 32768;
-
-/** Bytes held back from MAX_STATE_BYTES so the truncation marker always fits. */
-const TRUNCATION_MARKER_RESERVE_BYTES = 80;
 
 /** Object/array levels the walk descends; a container at this depth or
  * beyond becomes DEPTH_MARKER and is never recursed into (scalar leaves
@@ -102,22 +100,19 @@ export const STATE_LIMIT_MARKER = '[state limit]';
 /** In-band marker replacing a cyclic reference (an object that is its own ancestor). */
 const CYCLE_MARKER = '…[semtext focus: cyclic reference omitted]…';
 
-/** Walk size trigger: the byte backstop's own constant minus the reserve
- * its marker needs, minus room for the STATE_LIMIT_MARKER entries that are
- * still written after the budget trips (one per unwritten value of the
- * objects already open). A pathological breadth of open objects can still
- * pass this room — the byte backstop stays the last resort for that. */
-const STATE_LIMIT_MARKER_HEADROOM_CHARS = 4096;
-const STATE_WALK_SIZE_CHARS = MAX_STATE_BYTES - TRUNCATION_MARKER_RESERVE_BYTES - STATE_LIMIT_MARKER_HEADROOM_CHARS;
+/** Bytes held back from MAX_STATE_BYTES for the closing phase: once the
+ * value budget is gone, each open container still gets one `"cut":
+ * "[state limit]"` marker (a bare `"[state limit]"` in arrays) as its last
+ * member plus its closing bracket — worst case MAX_STATE_DEPTH × 23 ≈ 552
+ * bytes, plus the closers of containers that finish normally (≤ 24). The
+ * reserve only limits how far into the budget values may go; markers and
+ * closers are charged like every other piece, so the output stays within
+ * MAX_STATE_BYTES by construction. */
+const CLOSING_RESERVE_BYTES = 1024;
+const STATE_WRITE_BUDGET_BYTES = MAX_STATE_BYTES - CLOSING_RESERVE_BYTES;
 
 function truncationMarker(dropped, unit) {
   return ` …[semtext focus: ${dropped} ${unit} dropped]… `;
-}
-
-/** utf-8 bytes one codepoint encodes to (lone surrogates cannot occur in
- * valid text and JSON-escape to 6 ASCII bytes, an acceptable over-count). */
-function utf8Bytes(cp) {
-  return cp < 0x80 ? 1 : cp < 0x800 ? 2 : cp < 0x10000 ? 3 : 4;
 }
 
 /**
@@ -139,171 +134,188 @@ export function capStateString(s, maxChars = MAX_STATE_CHARS) {
 }
 
 /**
- * Byte-budgeted head+tail cut of an already-serialized state string to
- * `maxBytes` utf-8 bytes. Walks codepoints and accumulates whole
- * codepoints within each byte budget, so the cut never splits a codepoint
- * (nor a surrogate pair). The marker counts dropped bytes.
+ * Bounded JSON writer for one classifier state. The state's JSON text is
+ * written piece by piece while the real utf-8 length of every piece is
+ * charged against STATE_WRITE_BUDGET_BYTES — the size is measured as it is
+ * produced, so no JSON.stringify ever runs on the whole input structure
+ * and the output can never pass MAX_STATE_BYTES.
+ *
+ *   - strings are cut to MAX_STATE_CHARS codepoints (head + tail) by
+ *     capStateString, escaped alone with JSON.stringify, and admitted by
+ *     their exact escaped length; one that does not fit is replaced by a
+ *     short STATE_LIMIT_MARKER string at its position (when even that no
+ *     longer fits, the closing marker of its container stands in for it);
+ *   - object keys are cut to MAX_STATE_KEY_CHARS and every member is
+ *     written atomically (prefix + value), so the text is valid JSON at
+ *     every point;
+ *   - containers keep the cycle detection (an object that is one of its
+ *     own ancestors becomes CYCLE_MARKER — a shared but acyclic reference
+ *     is written again in full, bounded by the byte budget), the depth
+ *     cap and the node budget; once the budget is gone nothing more is
+ *     written except markers and closers: on the way out, each open
+ *     container gets one `"cut": "[state limit]"` marker (bare in arrays)
+ *     as its last member and then its closing bracket.
+ *
+ * `cuts` collects one note per cut that happened anywhere in the write.
+ * Returns the JSON text: valid JSON, at most MAX_STATE_BYTES utf-8 bytes.
  */
-export function capSerializedState(serialized, maxBytes = MAX_STATE_BYTES) {
-  if (typeof serialized !== 'string') {
-    // JSON.stringify yields undefined for a top-level undefined, function or
-    // symbol state — fail with one clear error before any request instead of
-    // throwing from the middle of the walk below.
+export function serializeStateJson(input, cuts = []) {
+  if (input === undefined || typeof input === 'function' || typeof input === 'symbol' || typeof input === 'bigint') {
+    // JSON.stringify yields undefined for such a top-level state — fail
+    // with one clear error before any request instead of mid-write.
     throw new ClassifierError(
       'classifier state is not JSON-serializable (undefined, function or symbol) — the endpoint requires a state'
     );
   }
-  let total = 0;
-  for (const ch of serialized) total += utf8Bytes(ch.codePointAt(0));
-  if (total <= maxBytes) return { value: serialized, dropped: 0 };
-  const keep = maxBytes - TRUNCATION_MARKER_RESERVE_BYTES;
-  const headBudget = Math.ceil(keep / 2);
-  const tailBudget = keep - headBudget;
-  const cps = Array.from(serialized);
-  let headEnd = 0;
-  let headBytes = 0;
-  while (headEnd < cps.length) {
-    const b = utf8Bytes(cps[headEnd].codePointAt(0));
-    if (headBytes + b > headBudget) break;
-    headBytes += b;
-    headEnd++;
-  }
-  let tailStart = cps.length;
-  let tailBytes = 0;
-  while (tailStart > headEnd) {
-    const b = utf8Bytes(cps[tailStart - 1].codePointAt(0));
-    if (tailBytes + b > tailBudget) break;
-    tailBytes += b;
-    tailStart--;
-  }
-  const dropped = total - headBytes - tailBytes;
-  const value =
-    cps.slice(0, headEnd).join('') +
-    truncationMarker(dropped, 'bytes') +
-    cps.slice(tailStart).join('');
-  return { value, dropped };
+  const ctx = { pieces: [], bytes: 0, nodes: 0, depth: 0, exhausted: false, depthNoted: false, seen: new WeakSet() };
+  writeValue(ctx, input, cuts, '');
+  if (ctx.pieces.length === 0) emit(ctx, JSON.stringify(STATE_LIMIT_MARKER)); // defensive: a bare marker is still valid JSON
+  return ctx.pieces.join('');
 }
 
-/**
- * Walking budget shared across one capStateValue walk: recursion depth,
- * nodes (keys + scalar leaves) written, a running serialized-size estimate,
- * and latches so the depth/limit cuts are noted once, not per occurrence.
- */
-function stateWalkBudget() {
-  return { depth: 0, nodes: 0, size: 0, exhausted: false, depthNoted: false };
+/** Append one piece unconditionally, charging its real utf-8 bytes. Used
+ * for markers and closers: exempt from the value budget (they are what
+ * CLOSING_RESERVE_BYTES holds room for) but still accounted, so the byte
+ * count stays exact. */
+function emit(ctx, piece) {
+  ctx.bytes += Buffer.byteLength(piece);
+  ctx.pieces.push(piece);
 }
 
-/** Rough wire charge for one written value: string/key length plus a
- * cushion for the JSON punctuation around it, deliberately at or above the
- * real size for ASCII text so the running estimate never under-counts.
- * Non-ASCII can still under-count (a utf-16 unit may encode to 2–3 utf-8
- * bytes) — MAX_STATE_BYTES remains the hard backstop for that case. */
-function walkCharge(value) {
-  if (typeof value === 'string') return value.length + 4;
-  if (typeof value === 'number') return String(value).length + 3;
-  if (typeof value === 'boolean' || value === null) return 6;
-  return 4; // container opening brackets, cushioned
-}
-
-/** True when writing a value of `charge` would pass the walk budget —
- * already exhausted, node budget gone, or the size estimate would cross
- * the byte trigger. */
-function budgetGone(ctx, charge = 0) {
-  return ctx.exhausted || ctx.nodes >= MAX_STATE_NODES || ctx.size + charge > STATE_WALK_SIZE_CHARS;
-}
-
-/** Replace an unwritten value with STATE_LIMIT_MARKER; the cut is noted once. */
-function limitMarker(ctx, cuts) {
+/** Note the state-limit cut once and stop admitting further values. */
+function noteLimit(ctx, cuts) {
   if (!ctx.exhausted) {
     cuts.push('state limit');
     ctx.exhausted = true;
   }
-  ctx.nodes++;
-  ctx.size += 20; // quotes + "[state limit]" + comma, cushioned
-  return STATE_LIMIT_MARKER;
+}
+
+/** True when one more value of `cost` bytes may still be written: not yet
+ * exhausted, node budget left, and the value stays within the write
+ * budget (the reserve is reserved for markers and closers). */
+function fits(ctx, cost) {
+  return !ctx.exhausted && ctx.nodes < MAX_STATE_NODES && ctx.bytes + cost <= STATE_WRITE_BUDGET_BYTES;
+}
+
+/** Admit one JSON-encoded scalar piece (`text`) with its member prefix,
+ * or stop the budget when it does not fit. Returns true when written. */
+function writeScalarText(ctx, cuts, prefix, prefixCost, text) {
+  if (fits(ctx, prefixCost + Buffer.byteLength(text))) {
+    emit(ctx, prefix + text);
+    ctx.nodes += 2; // the key (if any) and the value
+    return true;
+  }
+  noteLimit(ctx, cuts);
+  return false;
 }
 
 /**
- * Recursive wire cap on a classifier state. Every string is cut to
- * MAX_STATE_CHARS (head + tail), every array keeps MAX_STATE_ARRAY_ITEMS
- * head+tail items with a marker element between, object keys are cut to
- * MAX_STATE_KEY_CHARS and each object keeps MAX_STATE_OBJECT_KEYS
- * head+tail keys with one marker key standing in for the omitted rest,
- * and scalars pass through.
- *
- * The walk itself is bounded, so no input can blow it up:
- *   - an object that is one of its own ancestors (a cycle) is replaced by
- *     CYCLE_MARKER instead of recursing forever — a shared but acyclic
- *     reference is serialized again in full;
- *   - a container at MAX_STATE_DEPTH or beyond becomes DEPTH_MARKER and is
- *     never recursed into;
- *   - MAX_STATE_NODES bounds the keys + scalar leaves written, and a
- *     running size estimate (walkCharge) triggers at the byte constant:
- *     once the budget is gone, every value still unwritten becomes
- *     STATE_LIMIT_MARKER and nothing further is expanded — JSON.stringify
- *     therefore only ever runs on a structure already known to fit, and
- *     the MAX_STATE_BYTES backstop remains a last resort.
- *
- * `cuts` collects one note per cut that happened anywhere in the walk.
+ * Write `prefix + value` — a complete member, or a bare root value when
+ * the prefix is ''. `prefix` carries the separating comma, the escaped
+ * key and the colon for object members, or just the separating comma for
+ * array elements, so a member is written whole or not at all and the text
+ * is valid JSON at every point. Returns true when something was written.
  */
-function capStateValue(input, cuts, seen = new WeakSet(), ctx = stateWalkBudget()) {
+function writeValue(ctx, input, cuts, prefix) {
+  const prefixCost = Buffer.byteLength(prefix);
   if (typeof input === 'string') {
-    if (budgetGone(ctx, input.length + 4)) return limitMarker(ctx, cuts);
     const { value, dropped } = capStateString(input);
     if (dropped > 0) cuts.push(`string −${dropped} chars`);
-    ctx.nodes++;
-    ctx.size += value.length + 4;
-    return value;
-  }
-  if (input && typeof input === 'object') {
-    // `seen` holds the CURRENT recursion path only: an object met again
-    // while still on the path is a cycle; off the path it is a legitimate
-    // shared reference and is capped again in full.
-    if (seen.has(input)) {
-      cuts.push('cycle');
-      return CYCLE_MARKER;
+    const text = JSON.stringify(value); // escape only the capped string
+    if (fits(ctx, prefixCost + Buffer.byteLength(text))) {
+      emit(ctx, prefix + text);
+      ctx.nodes += 2;
+      return true;
     }
-    if (ctx.depth >= MAX_STATE_DEPTH) {
-      if (!ctx.depthNoted) {
-        cuts.push(`depth > ${MAX_STATE_DEPTH} levels`);
-        ctx.depthNoted = true;
-      }
-      return DEPTH_MARKER;
+    const markerCost = prefixCost + Buffer.byteLength(STATE_LIMIT_MARKER);
+    if (fits(ctx, markerCost)) {
+      // a short marker string in place of the string that did not fit
+      noteLimit(ctx, cuts);
+      emit(ctx, prefix + JSON.stringify(STATE_LIMIT_MARKER));
+      ctx.nodes += 2;
+      return true;
     }
-    if (budgetGone(ctx)) return limitMarker(ctx, cuts);
-    seen.add(input);
-    ctx.depth++;
-    ctx.size += 4; // opening bracket(s) of this container, cushioned
-    const capped = Array.isArray(input)
-      ? capStateArray(input, cuts, seen, ctx)
-      : capStateObject(input, cuts, seen, ctx);
-    ctx.depth--;
-    seen.delete(input);
-    return capped;
+    noteLimit(ctx, cuts);
+    return false;
   }
-  // number / boolean / null (and the passthrough non-serializables below,
-  // which capSerializedState rejects before any request)
-  if (budgetGone(ctx, walkCharge(input))) return limitMarker(ctx, cuts);
-  ctx.nodes++;
-  ctx.size += walkCharge(input);
-  return input;
+  if (typeof input === 'number') {
+    return writeScalarText(ctx, cuts, prefix, prefixCost, Number.isFinite(input) ? String(input) : 'null');
+  }
+  if (typeof input === 'boolean') return writeScalarText(ctx, cuts, prefix, prefixCost, input ? 'true' : 'false');
+  if (input === null) return writeScalarText(ctx, cuts, prefix, prefixCost, 'null');
+  if (input === undefined || typeof input === 'function' || typeof input === 'symbol') {
+    return false; // JSON.stringify drops these members / nulls these elements — the caller decides
+  }
+  if (typeof input === 'bigint') {
+    throw new ClassifierError('classifier state is not JSON-serializable — Do not know how to serialize a BigInt');
+  }
+  // object or array
+  if (ctx.seen.has(input)) {
+    cuts.push('cycle');
+    return writeScalarText(ctx, cuts, prefix, prefixCost, JSON.stringify(CYCLE_MARKER));
+  }
+  if (ctx.depth >= MAX_STATE_DEPTH) {
+    if (!ctx.depthNoted) {
+      cuts.push(`depth > ${MAX_STATE_DEPTH} levels`);
+      ctx.depthNoted = true;
+    }
+    return writeScalarText(ctx, cuts, prefix, prefixCost, JSON.stringify(DEPTH_MARKER));
+  }
+  if (!fits(ctx, prefixCost + 2)) {
+    noteLimit(ctx, cuts); // no room even to open this container (and close it)
+    return false;
+  }
+  ctx.nodes += 2; // the key (if any) and the container
+  ctx.seen.add(input);
+  ctx.depth++;
+  const isArray = Array.isArray(input);
+  emit(ctx, prefix + (isArray ? '[' : '{'));
+  const wrote = isArray ? writeArrayItems(ctx, input, cuts) : writeObjectMembers(ctx, input, cuts);
+  if (ctx.exhausted) {
+    // each open container that was cut gets one marker as its last member
+    const marker = isArray ? JSON.stringify(STATE_LIMIT_MARKER) : '"cut":' + JSON.stringify(STATE_LIMIT_MARKER);
+    emit(ctx, (wrote ? ',' : '') + marker);
+  }
+  emit(ctx, isArray ? ']' : '}');
+  ctx.depth--;
+  ctx.seen.delete(input);
+  return true;
 }
 
-function capStateArray(arr, cuts, seen, ctx) {
-  const cap = (v) => capStateValue(v, cuts, seen, ctx);
-  if (arr.length <= MAX_STATE_ARRAY_ITEMS) return arr.map(cap);
+function writeArrayItems(ctx, arr, cuts) {
+  let wrote = false;
+  const writeItem = (item) => {
+    const result = writeValue(ctx, item, cuts, wrote ? ',' : '');
+    wrote = wrote || result;
+  };
+  if (arr.length <= MAX_STATE_ARRAY_ITEMS) {
+    for (const item of arr) {
+      if (ctx.exhausted) break;
+      if (item === undefined || typeof item === 'function' || typeof item === 'symbol') {
+        writeItem(null); // JSON.stringify nulls non-serializable array elements
+        continue;
+      }
+      writeItem(item);
+    }
+    return wrote;
+  }
   const headLen = Math.ceil(MAX_STATE_ARRAY_ITEMS / 2);
   const tailLen = MAX_STATE_ARRAY_ITEMS - headLen;
   const dropped = arr.length - headLen - tailLen;
   cuts.push(`array −${dropped} items`);
-  return [
-    ...arr.slice(0, headLen).map(cap),
-    truncationMarker(dropped, 'items').trim(),
-    ...arr.slice(arr.length - tailLen).map(cap)
-  ];
+  for (const item of arr.slice(0, headLen)) {
+    if (ctx.exhausted) break;
+    writeItem(item);
+  }
+  if (!ctx.exhausted) writeItem(truncationMarker(dropped, 'items').trim());
+  for (const item of arr.slice(arr.length - tailLen)) {
+    if (ctx.exhausted) break;
+    writeItem(item);
+  }
+  return wrote;
 }
 
-function capStateObject(obj, cuts, seen, ctx) {
+function writeObjectMembers(ctx, obj, cuts) {
   const keys = Object.keys(obj);
   let keptKeys = keys;
   let omittedMarker = null;
@@ -313,23 +325,20 @@ function capStateObject(obj, cuts, seen, ctx) {
     omittedMarker = truncationMarker(keys.length - MAX_STATE_OBJECT_KEYS, 'keys').trim();
     keptKeys = [...keys.slice(0, headLen), omittedMarker, ...keys.slice(keys.length - tailLen)];
   }
-  const out = {};
+  let wrote = false;
   for (const key of keptKeys) {
+    if (ctx.exhausted) break;
     if (key === omittedMarker) {
-      out[key] = null; // the marker key carries its own count; null keeps it on the wire
+      // the marker key carries its own count; null keeps it on the wire
+      const prefix = (wrote ? ',' : '') + JSON.stringify(key) + ':';
+      if (writeScalarText(ctx, cuts, prefix, Buffer.byteLength(prefix), 'null')) wrote = true;
       continue;
     }
     const { value: name, dropped } = capStateString(key, MAX_STATE_KEY_CHARS);
     if (dropped > 0) cuts.push(`key −${dropped} chars`);
-    ctx.nodes++;
-    ctx.size += name.length + 8; // the key itself always goes on the wire
-    if (budgetGone(ctx, walkCharge(obj[key]))) {
-      out[name] = limitMarker(ctx, cuts); // its value is replaced, never expanded
-      continue;
-    }
-    out[name] = capStateValue(obj[key], cuts, seen, ctx);
+    if (writeValue(ctx, obj[key], cuts, (wrote ? ',' : '') + JSON.stringify(name) + ':')) wrote = true;
   }
-  return out;
+  return wrote;
 }
 
 export class ClassifierError extends Error {
@@ -588,17 +597,17 @@ export async function classify({ settings, input, questions, threshold = 0.5, fe
   const wireQuestions = {};
   for (const q of questions) wireQuestions[q.id] = encodeQuestion(q);
   const cuts = [];
-  let state = capStateValue(input, cuts);
-  let serialized;
+  let state;
   try {
-    serialized = JSON.stringify(state);
+    // serializeStateJson produces the state's JSON text, bounded by
+    // construction (≤ MAX_STATE_BYTES); parsing it back keeps `state` a
+    // JSON value on the wire — the receiver's shape — without JSON.stringify
+    // ever seeing the input structure. Parsing text the writer produced
+    // cannot fail; the catch only forwards its ClassifierError.
+    state = JSON.parse(serializeStateJson(input, cuts));
   } catch (e) {
+    if (e instanceof ClassifierError) throw e;
     throw new ClassifierError(`classifier state is not JSON-serializable — ${e && e.message ? e.message : e}`);
-  }
-  const byteCut = capSerializedState(serialized);
-  if (byteCut.dropped > 0) {
-    state = byteCut.value;
-    cuts.push(`serialized state −${byteCut.dropped} bytes`);
   }
   if (cuts.length > 0) {
     console.error(`[semtext focus] classifier state truncated: ${cuts.join('; ')}`);

@@ -9,6 +9,7 @@ import {
   MAX_STATE_KEY_CHARS,
   MAX_STATE_NODES,
   MAX_STATE_OBJECT_KEYS,
+  serializeStateJson,
   STATE_LIMIT_MARKER,
   systemOneEndpoint
 } from '../../bin/lib/focus/systemone.mjs';
@@ -120,22 +121,27 @@ describe('focus classifier model id + state cap', () => {
     expect(body.state[Math.floor(MAX_STATE_ARRAY_ITEMS / 2)]).toBe('…[semtext focus: 5 items dropped]…');
   });
 
-  it('byte backstop cuts the serialized state head+tail to MAX_STATE_BYTES (multibyte CJK)', async () => {
-    // 2 array items x 6000 CJK chars ≈ 36 KiB serialized — over the 32 KiB
-    // byte constant, yet only ~12k CHARS, well under the walk's size estimate
-    // (which counts utf-16 units): the hard backstop itself is what fires.
-    const item = '日'.repeat(MAX_STATE_CHARS);
-    const input = [item, item];
-    const { body } = await capturedState(input);
-    expect(typeof body.state).toBe('string');
-    expect(body.state).toMatch(/…\[semtext focus: \d+ bytes dropped\]…/);
-    const wireBytes = new TextEncoder().encode(body.state).length;
-    expect(wireBytes).toBeLessThanOrEqual(MAX_STATE_BYTES);
-    expect(noLoneSurrogates(body.state)).toBe(true); // byte cut never splits a codepoint
-    const serialized = JSON.stringify(input);
-    expect(body.state.startsWith(serialized.slice(0, 102))).toBe(true); // "[" + 100 CJK chars
-    expect(body.state.endsWith(serialized.slice(-102))).toBe(true); // 100 CJK chars + closing quote/bracket
-    expect(body.state.includes(STATE_LIMIT_MARKER)).toBe(false); // the walk budget did not fire here
+  it('a 200,000-character string keeps its head and its tail — JSON.parse succeeds on the written text', () => {
+    const input = 'HEAD-' + asciiOf(200000) + '-TAIL'; // 200010 codepoints, dropped = 194010
+    const text = serializeStateJson(input);
+    const parsed = JSON.parse(text); // the written text is valid JSON
+    expect(parsed).toContain('…[semtext focus: 194010 chars dropped]…');
+    expect(parsed.startsWith('HEAD-')).toBe(true);
+    expect(parsed.endsWith('-TAIL')).toBe(true);
+    expect(new TextEncoder().encode(text).length).toBeLessThanOrEqual(MAX_STATE_BYTES);
+  });
+
+  it('CJK and emoji string states measure real utf-8 bytes — at most MAX_STATE_BYTES, valid JSON', () => {
+    const cjk = '日'.repeat(MAX_STATE_CHARS);
+    const emoji = '🙂'.repeat(MAX_STATE_CHARS);
+    const cjkText = serializeStateJson([cjk, cjk]);
+    expect(() => JSON.parse(cjkText)).not.toThrow();
+    expect(new TextEncoder().encode(cjkText).length).toBeLessThanOrEqual(MAX_STATE_BYTES);
+    expect(cjkText).toContain(STATE_LIMIT_MARKER); // the second copy would pass the byte budget
+    const emojiText = serializeStateJson({ a: emoji, b: emoji });
+    expect(() => JSON.parse(emojiText)).not.toThrow();
+    expect(new TextEncoder().encode(emojiText).length).toBeLessThanOrEqual(MAX_STATE_BYTES);
+    expect(JSON.parse(emojiText).a).toBe(emoji); // the first full copy survives intact
   });
 
   it('scalar states pass through', async () => {
@@ -161,6 +167,7 @@ describe('focus classifier model id + state cap', () => {
     const { body } = await capturedState({ transcript: 'hello', node });
     expect(body.state.node.label).toBe('self');
     expect(body.state.node.self).toContain('cyclic reference omitted');
+    expect(() => JSON.parse(serializeStateJson({ transcript: 'hello', node }))).not.toThrow(); // written text is valid JSON
   });
 
   it('a shared but acyclic object reference is serialized again in full under both keys', async () => {
@@ -169,6 +176,7 @@ describe('focus classifier model id + state cap', () => {
     expect(body.state.a).toEqual({ note: 'same', detail: 'kept' });
     expect(body.state.b).toEqual({ note: 'same', detail: 'kept' });
     expect(JSON.stringify(body.state)).not.toContain('cyclic reference omitted');
+    expect(() => JSON.parse(serializeStateJson({ a: shared, b: shared }))).not.toThrow(); // written text is valid JSON
   });
 
   it('a 10,000-level-deep state returns without a stack overflow and carries the depth marker', async () => {
@@ -180,18 +188,21 @@ describe('focus classifier model id + state cap', () => {
     for (let d = 1; d < MAX_STATE_DEPTH; d++) node = node.child; // → nesting level MAX_STATE_DEPTH - 1
     expect(typeof node).toBe('object'); // the deepest level the walk descends is a real object
     expect(node.child).toBe(DEPTH_MARKER); // one deeper: replaced, never recursed into
+    expect(() => JSON.parse(serializeStateJson(input))).not.toThrow(); // written text is valid JSON
   });
 
-  it('a shared-reference explosion is stopped by the walk budget — wire state within MAX_STATE_BYTES', async () => {
+  it('a shared-reference explosion is stopped by the writer budgets — wire state within MAX_STATE_BYTES', async () => {
     // One 6000-char string under 8 keys per level, 12 levels deep: full
-    // expansion would be 8^12 copies (~10^11 chars). The node budget
-    // (MAX_STATE_NODES) and the size estimate trip long before that.
+    // expansion would be 8^12 copies (~10^11 chars). The writer charges the
+    // real utf-8 byte length of every piece as it writes it and the node
+    // budget (MAX_STATE_NODES) guards beside it — both trip long before that.
     let input = { blob: asciiOf(MAX_STATE_CHARS) };
     for (let i = 0; i < 12; i++) {
       const wrapper = {};
       for (let j = 0; j < 8; j++) wrapper[`level${i}-share${j}`] = input;
       input = wrapper;
     }
+    expect(() => JSON.parse(serializeStateJson(input))).not.toThrow(); // written text is valid JSON
     const { body } = await capturedState(input);
     const wire = JSON.stringify(body.state);
     expect(wire).toContain(STATE_LIMIT_MARKER); // unwritten values are marked, nothing further expanded
@@ -210,5 +221,6 @@ describe('focus classifier model id + state cap', () => {
     expect(keys.every((k) => Array.from(k).length <= MAX_STATE_KEY_CHARS + 60)).toBe(true); // key cut + marker overhead
     expect(keys[0].startsWith('k0-')).toBe(true); // head keys survive
     expect(new TextEncoder().encode(JSON.stringify(body.state)).length).toBeLessThanOrEqual(MAX_STATE_BYTES);
+    expect(() => JSON.parse(serializeStateJson(input))).not.toThrow(); // written text is valid JSON
   });
 });
