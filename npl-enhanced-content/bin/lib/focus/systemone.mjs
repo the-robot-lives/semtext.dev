@@ -11,6 +11,12 @@
  *   - choice   -> `{ type: "choice", instructions, criteria: { id -> label } }` (<= 255)
  *   - score    -> `{ type: "score", instructions, criteria: [labels] }` (<= 10)
  *
+ * `state` is capped before the request is built (see the MAX_STATE_* wire
+ * caps below): every string is cut to MAX_STATE_CHARS codepoints keeping
+ * the head and the tail with an in-band `…[semtext focus: N chars
+ * dropped]…` marker, arrays keep MAX_STATE_ARRAY_ITEMS head+tail items,
+ * and a MAX_STATE_BYTES utf-8 backstop bounds the whole serialized state.
+ *
  * Response `json.answers` keyed by question id. Decoding honours the
  * distribution policy:
  *   - strict: probabilities must key-match and sum to 1 within 1e-6; a
@@ -31,11 +37,135 @@
 const EPSILON = 1e-6;
 
 /**
- * Head cap (characters) on what one classifier call may send as `state` —
- * the decision model must never see a huge dataset (owner word 2026-11-26).
- * Truncation keeps the head, deterministically.
+ * Wire caps on what one classifier call may send as `state` — the decision
+ * model must never see a huge dataset (owner word 2026-11-26).
+ *
+ *   - MAX_STATE_CHARS: codepoints ("chars") kept per string value sent in
+ *     state. The cut keeps the head and the tail with an in-band marker
+ *     between them, so the end of a transcript never silently disappears
+ *     and a cut is never mistaken for the model's own text.
+ *   - MAX_STATE_ARRAY_ITEMS: items kept per array value (head + tail items,
+ *     marker element between). Objects and arrays are walked recursively;
+ *     every string inside is cut to MAX_STATE_CHARS.
+ *   - MAX_STATE_BYTES: utf-8 bytes of the whole serialized state — the
+ *     hard backstop. If the capped state still serializes larger than
+ *     this, the serialized text is replaced by a string cut to this byte
+ *     budget (head + bytes-dropped marker + tail).
+ *
+ * No cut ever splits a utf-8 codepoint: char cuts walk codepoints with
+ * Array.from, and the byte cut accumulates whole codepoints within each
+ * byte budget (never a surrogate half).
  */
 export const MAX_STATE_CHARS = 6000;
+
+/** Items kept (head + tail) per array value sent in state. */
+export const MAX_STATE_ARRAY_ITEMS = 100;
+
+/** Hard utf-8 byte ceiling on the serialized state (wire backstop). */
+export const MAX_STATE_BYTES = 32768;
+
+/** Bytes held back from MAX_STATE_BYTES so the truncation marker always fits. */
+const TRUNCATION_MARKER_RESERVE_BYTES = 80;
+
+function truncationMarker(dropped, unit) {
+  return ` …[semtext focus: ${dropped} ${unit} dropped]… `;
+}
+
+/** utf-8 bytes one codepoint encodes to (lone surrogates cannot occur in
+ * valid text and JSON-escape to 6 ASCII bytes, an acceptable over-count). */
+function utf8Bytes(cp) {
+  return cp < 0x80 ? 1 : cp < 0x800 ? 2 : cp < 0x10000 ? 3 : 4;
+}
+
+/**
+ * Codepoint head+tail cut of one string to `maxChars` codepoints; the
+ * marker (which rides on top of the cap) counts the dropped chars.
+ * Returns `{ value, dropped }` — dropped === 0 means no cut.
+ */
+export function capStateString(s, maxChars = MAX_STATE_CHARS) {
+  const cps = Array.from(s);
+  if (cps.length <= maxChars) return { value: s, dropped: 0 };
+  const headLen = Math.ceil(maxChars / 2);
+  const tailLen = maxChars - headLen;
+  const dropped = cps.length - headLen - tailLen;
+  const value =
+    cps.slice(0, headLen).join('') +
+    truncationMarker(dropped, 'chars') +
+    cps.slice(cps.length - tailLen).join('');
+  return { value, dropped };
+}
+
+/**
+ * Byte-budgeted head+tail cut of an already-serialized state string to
+ * `maxBytes` utf-8 bytes. Walks codepoints and accumulates whole
+ * codepoints within each byte budget, so the cut never splits a codepoint
+ * (nor a surrogate pair). The marker counts dropped bytes.
+ */
+export function capSerializedState(serialized, maxBytes = MAX_STATE_BYTES) {
+  let total = 0;
+  for (const ch of serialized) total += utf8Bytes(ch.codePointAt(0));
+  if (total <= maxBytes) return { value: serialized, dropped: 0 };
+  const keep = maxBytes - TRUNCATION_MARKER_RESERVE_BYTES;
+  const headBudget = Math.ceil(keep / 2);
+  const tailBudget = keep - headBudget;
+  const cps = Array.from(serialized);
+  let headEnd = 0;
+  let headBytes = 0;
+  while (headEnd < cps.length) {
+    const b = utf8Bytes(cps[headEnd].codePointAt(0));
+    if (headBytes + b > headBudget) break;
+    headBytes += b;
+    headEnd++;
+  }
+  let tailStart = cps.length;
+  let tailBytes = 0;
+  while (tailStart > headEnd) {
+    const b = utf8Bytes(cps[tailStart - 1].codePointAt(0));
+    if (tailBytes + b > tailBudget) break;
+    tailBytes += b;
+    tailStart--;
+  }
+  const dropped = total - headBytes - tailBytes;
+  const value =
+    cps.slice(0, headEnd).join('') +
+    truncationMarker(dropped, 'bytes') +
+    cps.slice(tailStart).join('');
+  return { value, dropped };
+}
+
+/**
+ * Recursive wire cap on a classifier state. Every string is cut to
+ * MAX_STATE_CHARS (head + tail), every array keeps MAX_STATE_ARRAY_ITEMS
+ * head+tail items with a marker element between, objects keep their keys
+ * with capped values, and scalars pass through. `cuts` collects one
+ * "−N unit" note per cut that happened anywhere in the walk.
+ */
+function capStateValue(input, cuts) {
+  if (typeof input === 'string') {
+    const { value, dropped } = capStateString(input);
+    if (dropped > 0) cuts.push(`string −${dropped} chars`);
+    return value;
+  }
+  if (Array.isArray(input)) {
+    const cap = (v) => capStateValue(v, cuts);
+    if (input.length <= MAX_STATE_ARRAY_ITEMS) return input.map(cap);
+    const headLen = Math.ceil(MAX_STATE_ARRAY_ITEMS / 2);
+    const tailLen = MAX_STATE_ARRAY_ITEMS - headLen;
+    const dropped = input.length - headLen - tailLen;
+    cuts.push(`array −${dropped} items`);
+    return [
+      ...input.slice(0, headLen).map(cap),
+      truncationMarker(dropped, 'items').trim(),
+      ...input.slice(input.length - tailLen).map(cap)
+    ];
+  }
+  if (input && typeof input === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(input)) out[k] = capStateValue(v, cuts);
+    return out;
+  }
+  return input;
+}
 
 export class ClassifierError extends Error {
   constructor(message, options = {}) {
@@ -277,8 +407,11 @@ function i2(i) {
 /**
  * One classify round-trip. `settings` = classifierSettings() shape
  * ({provider, base, key, model, policy, keyEnv, baseEnv}); `questions` =
- * focus question array. Returns the decoded answers map. Throws
- * ClassifierError (with .envHint) on missing credentials or wire errors.
+ * focus question array. Returns the decoded answers map — a fixed wire
+ * shape with no room for a truncation flag — so state capping is reported
+ * via one stderr line plus the in-band `…[semtext focus: N unit dropped]…`
+ * markers left in what was sent. Throws ClassifierError (with .envHint) on
+ * missing credentials or wire errors.
  */
 export async function classify({ settings, input, questions, threshold = 0.5, fetchImpl, timeoutMs = 60000 }) {
   if (!settingsReady(settings)) {
@@ -289,7 +422,16 @@ export async function classify({ settings, input, questions, threshold = 0.5, fe
   }
   const wireQuestions = {};
   for (const q of questions) wireQuestions[q.id] = encodeQuestion(q);
-  const state = typeof input === 'string' ? input.slice(0, MAX_STATE_CHARS) : input;
+  const cuts = [];
+  let state = capStateValue(input, cuts);
+  const byteCut = capSerializedState(JSON.stringify(state));
+  if (byteCut.dropped > 0) {
+    state = byteCut.value;
+    cuts.push(`serialized state −${byteCut.dropped} bytes`);
+  }
+  if (cuts.length > 0) {
+    console.error(`[semtext focus] classifier state truncated: ${cuts.join('; ')}`);
+  }
   const body = { model: settings.model, state, questions: wireQuestions };
   const doFetch = fetchImpl || globalThis.fetch;
   if (!doFetch) throw new ClassifierError('no fetch implementation available (Node >= 18 required)');
